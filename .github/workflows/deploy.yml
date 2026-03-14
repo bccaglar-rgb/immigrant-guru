@@ -38,8 +38,11 @@ jobs:
           # Upload server code
           rsync -avz --delete server/ root@${{ secrets.DROPLET_IP }}:/var/www/bitrium/server/
 
-          # Upload package files
-          rsync -avz package.json package-lock.json root@${{ secrets.DROPLET_IP }}:/var/www/bitrium/
+          # Upload shared src (server imports from src/)
+          rsync -avz --delete src/ root@${{ secrets.DROPLET_IP }}:/var/www/bitrium/src/
+
+          # Upload config files
+          rsync -avz package.json package-lock.json tsconfig.json root@${{ secrets.DROPLET_IP }}:/var/www/bitrium/
 
           # Install server deps & restart
           ssh root@${{ secrets.DROPLET_IP }} << 'EOF'
