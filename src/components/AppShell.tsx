@@ -6,7 +6,7 @@ import { Sidebar } from "./Sidebar";
 import { TopBar } from "./TopBar";
 
 const titleForPath = (path: string) => {
-  if (path.startsWith("/dashboard")) return "Bitrium Quant Engine";
+  if (path.startsWith("/quant-engine")) return "Bitrium Quant Engine";
   if (path.startsWith("/admin")) return "Admin";
   if (path.startsWith("/exchange-terminal") || path.startsWith("/exchanges")) return "Exchange";
   if (path.startsWith("/trade-ideas")) return "Quant Trade Ideas";

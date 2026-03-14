@@ -28,7 +28,8 @@ function App() {
   return (
     <Routes>
       <Route element={<AppShell />}>
-        <Route path="/dashboard" element={<MarketDashboardPage />} />
+        <Route path="/quant-engine" element={<MarketDashboardPage />} />
+        <Route path="/dashboard" element={<Navigate to="/quant-engine" replace />} />
         <Route path="/exchange-terminal" element={<ExchangeTerminalPage />} />
         <Route path="/exchanges" element={<Navigate to="/exchange-terminal" replace />} />
         <Route path="/crypto-market" element={<CryptoMarketPage />} />
@@ -47,10 +48,10 @@ function App() {
         <Route path="/ai-trader/backtest" element={<AiTraderComingSoonPage title="AI Trader · Backtest" note="Backtest module is coming soon." />} />
         <Route path="/indicators" element={<IndicatorsPage />} />
         <Route path="/icon-gallery" element={<IconGalleryPage />} />
-        <Route path="/open-interest" element={<Navigate to="/dashboard" replace />} />
-        <Route path="/funding-rate" element={<Navigate to="/dashboard" replace />} />
-        <Route path="/liquidation" element={<Navigate to="/dashboard" replace />} />
-        <Route path="/dex-scan" element={<Navigate to="/dashboard" replace />} />
+        <Route path="/open-interest" element={<Navigate to="/quant-engine" replace />} />
+        <Route path="/funding-rate" element={<Navigate to="/quant-engine" replace />} />
+        <Route path="/liquidation" element={<Navigate to="/quant-engine" replace />} />
+        <Route path="/dex-scan" element={<Navigate to="/quant-engine" replace />} />
         <Route path="/bitrium-token" element={<BitriumTokenPage />} />
         <Route path="/bitrium-token" element={<Navigate to="/bitrium-token" replace />} />
         <Route path="/coin-calculator" element={<CoinCalculatorPage />} />
@@ -63,8 +64,8 @@ function App() {
         <Route path="/settings" element={<SettingsPage />} />
         <Route path="/ai-exchange-manager" element={<Navigate to="/admin" replace />} />
         <Route path="/admin" element={<AdminPage />} />
-        <Route path="/" element={<Navigate to="/dashboard" replace />} />
-        <Route path="*" element={<Navigate to="/dashboard" replace />} />
+        <Route path="/" element={<Navigate to="/quant-engine" replace />} />
+        <Route path="*" element={<Navigate to="/quant-engine" replace />} />
       </Route>
     </Routes>
   );

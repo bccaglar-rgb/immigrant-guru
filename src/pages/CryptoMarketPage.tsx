@@ -230,7 +230,7 @@ export default function CryptoMarketPage() {
               return next;
             })
           }
-          onRowClick={(row) => navigate(`/dashboard?symbol=${row.symbol}USDT`)}
+          onRowClick={(row) => navigate(`/quant-engine?symbol=${row.symbol}USDT`)}
         />
 
         {error ? (

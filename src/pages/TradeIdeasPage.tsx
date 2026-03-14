@@ -1591,7 +1591,7 @@ export default function TradeIdeasPage() {
                     ) : null}
                     <button
                       type="button"
-                      onClick={() => navigate("/dashboard", { state: { selectedCoin: toDashboardCoin(plan.symbol) } })}
+                      onClick={() => navigate("/quant-engine", { state: { selectedCoin: toDashboardCoin(plan.symbol) } })}
                       className={`w-full rounded-xl border px-3 py-2 text-center transition hover:brightness-110 ${modeStyle.boxClass}`}
                       title={`Open Bitrium Quant Engine for ${toDashboardCoin(plan.symbol)}`}
                     >

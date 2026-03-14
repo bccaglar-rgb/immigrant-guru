@@ -845,7 +845,7 @@ export default function MarketDashboardPage() {
                   onTradeIdeaView={(coin, ideaId) => {
                     setSelectedCoin(coin);
                     setSelectedIdeaId(ideaId);
-                    navigate("/dashboard");
+                    navigate("/quant-engine");
                   }}
                   onTradeIdeaTrade={(coin, ideaId) => {
                     setSelectedCoin(coin);

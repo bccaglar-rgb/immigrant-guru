@@ -35,7 +35,7 @@ const SettingsIcon = () => <Icon><path d="M12 3l2.2 1.1 2.4-.3.9 2.2 1.9 1.5-.9 
 const AdminIcon = () => <Icon><path d="M12 3l3 2 4-1 1 4 3 3-3 3-1 4-4-1-3 2-3-2-4 1-1-4-3-3 3-3 1-4 4 1z" /><circle cx="12" cy="12" r="2.5" /></Icon>;
 
 const menuItems = [
-  { label: "Bitrium Intelligence System", to: "/dashboard", accent: "var(--menu-accent-1)", icon: () => <DashboardIcon /> },
+  { label: "Bitrium Quant Engine", to: "/quant-engine", accent: "var(--menu-accent-1)", icon: () => <DashboardIcon /> },
   { label: "Trade Ideas", to: "/trade-ideas", accent: "var(--menu-accent-2)", icon: () => <TradeIcon /> },
   { label: "Exchanges", to: "/exchanges", accent: "var(--menu-accent-3)", icon: () => <ExchangeIcon /> },
   { label: "Crypto Market", to: "/crypto-market", accent: "var(--menu-accent-4)", icon: () => <MarketIcon /> },
@@ -278,7 +278,7 @@ export const Sidebar = ({
       onMouseLeave={mobile ? undefined : onMouseLeave}
       className={`relative z-[80] flex h-full ${boxSize} flex-col overflow-visible border-r border-[var(--borderSoft)] bg-[var(--panel)] p-2 transition-[width] duration-[180ms] ease-[cubic-bezier(0.215,0.61,0.355,1)]`}
     >
-      <NavLink to="/dashboard" onClick={onNavigate} title="Bitrium Intelligence System">
+      <NavLink to="/quant-engine" onClick={onNavigate} title="Bitrium Quant Engine">
         <SidebarHeader
           logoUrl={displayLogo}
           collapsed={collapsed}
