@@ -197,6 +197,43 @@ export const FlowModeSettingsPanel = ({ scoringMode, settings, onChange }: Props
         </div>
       </div>
 
+      {/* Conflict Detection Filters */}
+      <div className="mt-3 rounded-xl border border-white/10 bg-[#0F1012] p-3">
+        <p className="mb-2 text-[11px] uppercase tracking-wider text-[#6B6F76]">Conflict Detection</p>
+        <p className="mb-2 text-[10px] text-[#555]">
+          When enabled, opposing signals trigger NO-TRADE and cap score at 48.
+        </p>
+        <div className="grid gap-2 sm:grid-cols-3">
+          {([
+            { key: "conflictTrend" as const, label: "Trend Direction" },
+            { key: "conflictBuySell" as const, label: "Buy/Sell Imbalance" },
+            { key: "conflictOrderbook" as const, label: "Orderbook Imbalance" },
+          ]).map(({ key, label }) => {
+            const enabled = settings.dataFilters[key] !== false;
+            return (
+              <button
+                key={key}
+                type="button"
+                onClick={() =>
+                  onChange({
+                    ...settings,
+                    dataFilters: { ...settings.dataFilters, [key]: !enabled },
+                  })
+                }
+                className={`flex items-center justify-between rounded-lg border px-3 py-2 text-xs font-semibold transition ${
+                  enabled
+                    ? "border-[#6f765f] bg-[#1f251b] text-[#d8decf]"
+                    : "border-white/10 bg-[#171a1f] text-[#6B6F76]"
+                }`}
+              >
+                <span>{label}</span>
+                <span className="text-[10px]">{enabled ? "ON" : "OFF"}</span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
       {/* Scoring Tuning Sections */}
       <div className="mt-4 space-y-2">
         {TUNING_SECTIONS.map((section) => {

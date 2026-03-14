@@ -155,6 +155,9 @@ const initialFlowModeSettings: FlowModeSettings = {
     exchangeFlow: false,
     relativeStrength: false,
     keyLevelReaction: false,
+    conflictTrend: true,
+    conflictBuySell: true,
+    conflictOrderbook: true,
   },
   signalInputs: {
     marketRegime: true,
@@ -219,6 +222,9 @@ const loadPersistedDashboardSettings = (): PersistedDashboardSettings | null => 
           exchangeFlow: Boolean(parsed.flowMode?.dataFilters?.exchangeFlow),
           relativeStrength: Boolean(parsed.flowMode?.dataFilters?.relativeStrength),
           keyLevelReaction: Boolean(parsed.flowMode?.dataFilters?.keyLevelReaction),
+          conflictTrend: parsed.flowMode?.dataFilters?.conflictTrend !== false,
+          conflictBuySell: parsed.flowMode?.dataFilters?.conflictBuySell !== false,
+          conflictOrderbook: parsed.flowMode?.dataFilters?.conflictOrderbook !== false,
         },
         signalInputs: (() => {
           const baseInputs = { ...initialFlowModeSettings.signalInputs };
@@ -539,6 +545,7 @@ export default function MarketDashboardPage() {
     effectiveScoringMode === "FLOW" ? flowModeSettings.signalInputWeights : undefined,
     effectiveScoringMode === "FLOW" ? flowModeSettings.riskChecks : undefined,
     effectiveScoringMode === "FLOW" ? flowModeSettings.flowScoringTuning : undefined,
+    effectiveScoringMode === "FLOW" ? flowModeSettings.dataFilters : undefined,
   );
   const hasLiveData = Boolean(rawSnapshot?.ohlcv?.length);
   const safeSnapshot = rawSnapshot;

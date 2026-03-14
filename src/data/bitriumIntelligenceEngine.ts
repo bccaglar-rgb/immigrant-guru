@@ -6,6 +6,7 @@ import type {
   DataHealthState,
   FeedConfig,
   FeedKey,
+  FlowDataFiltersConfig,
   FlowScoringTuningConfig,
   FlowSignalInputsConfig,
   FlowSignalWeightsConfig,
@@ -202,6 +203,7 @@ const applyLiveOverrides = (
   flowSignalWeights: FlowSignalWeightsConfig | undefined,
   riskChecksInputs: RiskChecksInputsConfig | undefined,
   flowScoringTuning: FlowScoringTuningConfig | undefined,
+  dataFilters: FlowDataFiltersConfig | undefined,
   live: IntelligenceLiveState,
 ): DashboardSnapshot => {
   let tiles = snapshot.tiles;
@@ -687,11 +689,11 @@ const applyLiveOverrides = (
     shortExplanation: "Cascade risk proxy from OI build-up and stress.",
   });
 
-  const conflictVotes = [
-    tiles.find((t) => t.key === "trend-direction")?.state,
-    tiles.find((t) => t.key === "buy-sell-imbalance")?.state,
-    tiles.find((t) => t.key === "orderbook-imbalance")?.state,
-  ];
+  const cf = dataFilters;
+  const conflictVotes: Array<string | undefined> = [];
+  if (cf?.conflictTrend !== false) conflictVotes.push(tiles.find((t) => t.key === "trend-direction")?.state);
+  if (cf?.conflictBuySell !== false) conflictVotes.push(tiles.find((t) => t.key === "buy-sell-imbalance")?.state);
+  if (cf?.conflictOrderbook !== false) conflictVotes.push(tiles.find((t) => t.key === "orderbook-imbalance")?.state);
 
   let conflictScore = 0;
   if (conflictVotes.includes("UP") && conflictVotes.includes("SELL")) conflictScore += 1;
@@ -930,8 +932,9 @@ export const buildBitriumIntelligenceSnapshot = (input: {
   flowSignalWeights?: FlowSignalWeightsConfig;
   riskChecksInputs?: RiskChecksInputsConfig;
   flowScoringTuning?: FlowScoringTuningConfig;
+  dataFilters?: FlowDataFiltersConfig;
 }): DashboardSnapshot | null => {
-  const { live, feeds, scenario, indicators, consensusInputs, scoringMode, flowSignalInputs, flowSignalWeights, riskChecksInputs, flowScoringTuning } = input;
+  const { live, feeds, scenario, indicators, consensusInputs, scoringMode, flowSignalInputs, flowSignalWeights, riskChecksInputs, flowScoringTuning, dataFilters } = input;
   const baseline = createNoMockBaseline(consensusInputs, scoringMode, flowSignalInputs, flowSignalWeights, riskChecksInputs, flowScoringTuning);
   return applyLiveOverrides(
     {
@@ -947,6 +950,7 @@ export const buildBitriumIntelligenceSnapshot = (input: {
     flowSignalWeights,
     riskChecksInputs,
     flowScoringTuning,
+    dataFilters,
     live,
   );
 };

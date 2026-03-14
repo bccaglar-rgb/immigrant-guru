@@ -67,6 +67,9 @@ export interface FlowDataFiltersConfig {
   exchangeFlow: boolean;
   relativeStrength: boolean;
   keyLevelReaction: boolean;
+  conflictTrend: boolean;
+  conflictBuySell: boolean;
+  conflictOrderbook: boolean;
 }
 
 export interface FlowSignalInputsConfig {

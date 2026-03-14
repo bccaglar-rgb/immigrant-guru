@@ -58,6 +58,9 @@ const DEFAULT_FLOW_SETTINGS: FlowModeSettingsConfig = {
     exchangeFlow: false,
     relativeStrength: false,
     keyLevelReaction: false,
+    conflictTrend: true,
+    conflictBuySell: true,
+    conflictOrderbook: true,
   },
   signalInputs: {
     marketRegime: true,

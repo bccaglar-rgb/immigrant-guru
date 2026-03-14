@@ -7,6 +7,7 @@ import type {
   ConsensusInputConfig,
   DashboardSnapshot,
   FeedConfig,
+  FlowDataFiltersConfig,
   FlowScoringTuningConfig,
   FlowSignalInputsConfig,
   FlowSignalWeightsConfig,
@@ -31,6 +32,7 @@ export const useMarketDashboard = (
   flowSignalWeights?: FlowSignalWeightsConfig,
   riskChecksInputs?: RiskChecksInputsConfig,
   flowScoringTuning?: FlowScoringTuningConfig,
+  dataFilters?: FlowDataFiltersConfig,
 ): DashboardSnapshot | null => {
   const symbol = `${coin}USDT`;
   const market = useMarketData({
@@ -182,6 +184,7 @@ export const useMarketDashboard = (
       flowSignalWeights,
       riskChecksInputs,
       flowScoringTuning,
+      dataFilters,
     });
     if (!snapshot) return null;
     return {
@@ -189,7 +192,7 @@ export const useMarketDashboard = (
       ohlcv: liveState.ohlcv ?? [],
       keyLevels: liveState.ohlcv ? deriveKeyLevels(liveState.ohlcv) : [],
     };
-  }, [consensusInputs, feeds, flowSignalInputs, flowSignalWeights, indicators, liveState, riskChecksInputs, scenario, scoringMode]);
+  }, [consensusInputs, dataFilters, feeds, flowSignalInputs, flowSignalWeights, indicators, liveState, riskChecksInputs, scenario, scoringMode]);
 
   return mergedState;
 };
