@@ -1,0 +1,50 @@
+name: Deploy to DigitalOcean
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build frontend
+        run: npm run build
+
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -H ${{ secrets.DROPLET_IP }} >> ~/.ssh/known_hosts
+
+      - name: Deploy to server
+        run: |
+          # Upload frontend build
+          rsync -avz --delete dist/ root@${{ secrets.DROPLET_IP }}:/var/www/bitrium/dist/
+
+          # Upload server code
+          rsync -avz --delete server/ root@${{ secrets.DROPLET_IP }}:/var/www/bitrium/server/
+
+          # Upload package files
+          rsync -avz package.json package-lock.json root@${{ secrets.DROPLET_IP }}:/var/www/bitrium/
+
+          # Install server deps & restart
+          ssh root@${{ secrets.DROPLET_IP }} << 'EOF'
+            cd /var/www/bitrium
+            npm ci --omit=dev
+            pm2 restart bitrium-server || pm2 start server/src/index.ts --name bitrium-server --interpreter "node" -- --experimental-strip-types
+            pm2 save
+          EOF
