@@ -1,4 +1,45 @@
-import type { ScoringMode } from "../types";
+import type { FlowScoringTuningConfig, ScoringMode } from "../types";
+
+export const DEFAULT_FLOW_SCORING_TUNING: FlowScoringTuningConfig = {
+  fillShortfallCoeff: 0.20,
+  slippageSeverityCoeff: 0.10,
+  microSeverityCoeff: 0.10,
+  executionMultiplierFloor: 0.75,
+  stressFailureCoeff: 0.12,
+  cascadeFailureCoeff: 0.10,
+  crowdingFailureCoeff: 0.05,
+  riskMultiplierFloor: 0.75,
+  modeBias: 1.15,
+  compressKnee: 72,
+  compressScale: 16,
+  fillHardBlockThreshold: 0.15,
+  fillGateThreshold: 0.25,
+  hardBlockScoreCap: 42,
+  degradedFeedPenalty: 0.01,
+  dataMultiplierFloor: 0.85,
+};
+
+export const FLOW_SCORING_TUNING_BOUNDS: Record<
+  keyof FlowScoringTuningConfig,
+  { min: number; max: number; step: number; label: string; unit: string }
+> = {
+  fillShortfallCoeff:       { min: 0,    max: 0.50, step: 0.01, label: "Fill Shortfall",         unit: "" },
+  slippageSeverityCoeff:    { min: 0,    max: 0.40, step: 0.01, label: "Slippage Severity",      unit: "" },
+  microSeverityCoeff:       { min: 0,    max: 0.40, step: 0.01, label: "Microstructure",         unit: "" },
+  executionMultiplierFloor: { min: 0.50, max: 1.00, step: 0.01, label: "Execution Floor",        unit: "" },
+  stressFailureCoeff:       { min: 0,    max: 0.40, step: 0.01, label: "Stress Failure",         unit: "" },
+  cascadeFailureCoeff:      { min: 0,    max: 0.40, step: 0.01, label: "Cascade Failure",        unit: "" },
+  crowdingFailureCoeff:     { min: 0,    max: 0.30, step: 0.01, label: "Crowding Failure",       unit: "" },
+  riskMultiplierFloor:      { min: 0.50, max: 1.00, step: 0.01, label: "Risk Floor",             unit: "" },
+  modeBias:                 { min: 0.80, max: 1.50, step: 0.01, label: "Mode Bias",              unit: "x" },
+  compressKnee:             { min: 50,   max: 95,   step: 1,    label: "Compress Knee",          unit: "" },
+  compressScale:            { min: 4,    max: 40,   step: 1,    label: "Compress Scale",         unit: "" },
+  fillHardBlockThreshold:   { min: 0,    max: 0.50, step: 0.01, label: "Fill Hard Block",        unit: "" },
+  fillGateThreshold:        { min: 0.05, max: 0.60, step: 0.01, label: "Fill Gate",              unit: "" },
+  hardBlockScoreCap:        { min: 10,   max: 70,   step: 1,    label: "Hard Block Cap",         unit: "" },
+  degradedFeedPenalty:      { min: 0,    max: 0.05, step: 0.005, label: "Degraded Feed Penalty", unit: "/feed" },
+  dataMultiplierFloor:      { min: 0.50, max: 1.00, step: 0.01, label: "Data Multiplier Floor",  unit: "" },
+};
 
 export type ScoringConfig = {
   sigmoidK: number;
@@ -123,6 +164,7 @@ export type ComputeScoreInput = {
     rawScore: number;
     weight?: number;
   }>;
+  flowScoringTuning?: FlowScoringTuningConfig;
 };
 
 export type ComputeScoreResult = {
@@ -305,11 +347,7 @@ export const computeScore = (input: ComputeScoreInput): ComputeScoreResult => {
   const baseReliability = clamp(1 - latencyPenalty - degradedPenalty, riskFloor, 1);
 
   if (isFlowMode) {
-    // FLOW single-authority fill policy (two-band):
-    // - Hard block only below 0.15
-    // - Gate warning band below 0.25
-    const FLOW_HARD_BLOCK_PFILL = 0.15;
-    const FLOW_GATE_MIN_PFILL = 0.25;
+    const t = input.flowScoringTuning ?? DEFAULT_FLOW_SCORING_TUNING;
 
     const flowPanels = (input.flowPanels ?? []).filter((panel) => panel.include);
     const totalWeight = flowPanels.reduce((sum, panel) => sum + Math.max(0, Number(panel.weight ?? 3)), 0);
@@ -321,32 +359,32 @@ export const computeScore = (input: ComputeScoreInput): ComputeScoreResult => {
       : 0;
     const fillShort = clamp((0.45 - input.pFill) / 0.25, 0, 1);
     const micro = clamp((depthSeverity + spreadSeverity + spoofSeverity) / 3, 0, 1);
-    const penX = (0.20 * fillShort) + (0.10 * slipSeverity) + (0.10 * micro);
-    const executionMultiplier = clamp(1 - penX, 0.75, 1.0);
-    const penR = (0.12 * stressFailure) + (0.10 * cascadeFailure) + (0.05 * crowdingFailure);
-    const riskMultiplier = clamp(1 - penR, 0.75, 1.0);
+    const penX = (t.fillShortfallCoeff * fillShort) + (t.slippageSeverityCoeff * slipSeverity) + (t.microSeverityCoeff * micro);
+    const executionMultiplier = clamp(1 - penX, t.executionMultiplierFloor, 1.0);
+    const penR = (t.stressFailureCoeff * stressFailure) + (t.cascadeFailureCoeff * cascadeFailure) + (t.crowdingFailureCoeff * crowdingFailure);
+    const riskMultiplier = clamp(1 - penR, t.riskMultiplierFloor, 1.0);
     const latPen = 0;
-    const degrPen = clamp((input.degradedFeedsCount ?? 0) * 0.01, 0, 0.04);
-    const dataMultiplier = clamp(1 - latPen - degrPen, 0.85, 1.0);
+    const degrPen = clamp((input.degradedFeedsCount ?? 0) * t.degradedFeedPenalty, 0, 0.04);
+    const dataMultiplier = clamp(1 - latPen - degrPen, t.dataMultiplierFloor, 1.0);
     const hardTradeabilityBlock =
       Boolean(input.dataHealthFail) ||
-      input.pFill < FLOW_HARD_BLOCK_PFILL ||
+      input.pFill < t.fillHardBlockThreshold ||
       (input.depthQualityState === "POOR" && input.spreadRegimeState === "WIDE" && input.slippageLevelState === "HIGH");
-    const modeBias = 1.15;
+    const modeBias = t.modeBias;
     const finalRaw = Boolean(input.dataHealthFail) || totalWeight <= 0
       ? 0
       : clamp(coreActive * executionMultiplier * riskMultiplier * dataMultiplier * modeBias, 0, 100);
     const gatingFlags: ScoreGateFlag[] = [];
-    if (input.pFill < FLOW_GATE_MIN_PFILL) gatingFlags.push("LOW_FILL_PROB");
+    if (input.pFill < t.fillGateThreshold) gatingFlags.push("LOW_FILL_PROB");
     if (input.edgeNetR < cfg.gates.minEdgeR) gatingFlags.push("LOW_EDGE");
     if (input.capacity < cfg.gates.minCapacity) gatingFlags.push("LOW_CAPACITY");
     const penaltyRate = 0;
     const riskAdj = clamp(executionMultiplier * riskMultiplier * dataMultiplier, 0, 1.05);
-    const flowDisplay = Number(compressUpperTail(finalRaw, 72, 16).toFixed(2));
+    const flowDisplay = Number(compressUpperTail(finalRaw, t.compressKnee, t.compressScale).toFixed(2));
     const finalScore = Boolean(input.dataHealthFail) || totalWeight <= 0
       ? 0
       : hardTradeabilityBlock
-        ? Math.min(flowDisplay, 42)
+        ? Math.min(flowDisplay, t.hardBlockScoreCap)
         : flowDisplay;
     return {
       mode: input.mode,
@@ -376,7 +414,7 @@ export const computeScore = (input: ComputeScoreInput): ComputeScoreResult => {
         riskMultiplier: Number((riskMultiplier * dataMultiplier).toFixed(4)),
         aPlusFloorApplied: false,
       },
-      formulaPreview: `FLOW: Final = CoreActive(${coreActive.toFixed(2)}) * X(${executionMultiplier.toFixed(2)}) * R(${riskMultiplier.toFixed(2)}) * D(${dataMultiplier.toFixed(2)}) * Bias(1.15)`,
+      formulaPreview: `FLOW: Final = CoreActive(${coreActive.toFixed(2)}) * X(${executionMultiplier.toFixed(2)}) * R(${riskMultiplier.toFixed(2)}) * D(${dataMultiplier.toFixed(2)}) * Bias(${t.modeBias.toFixed(2)})`,
     };
   }
 

@@ -7,6 +7,7 @@ import type {
   ConsensusInputConfig,
   DashboardSnapshot,
   FeedConfig,
+  FlowScoringTuningConfig,
   FlowSignalInputsConfig,
   FlowSignalWeightsConfig,
   IndicatorsState,
@@ -29,6 +30,7 @@ export const useMarketDashboard = (
   flowSignalInputs?: FlowSignalInputsConfig,
   flowSignalWeights?: FlowSignalWeightsConfig,
   riskChecksInputs?: RiskChecksInputsConfig,
+  flowScoringTuning?: FlowScoringTuningConfig,
 ): DashboardSnapshot | null => {
   const symbol = `${coin}USDT`;
   const market = useMarketData({
@@ -179,6 +181,7 @@ export const useMarketDashboard = (
       flowSignalInputs,
       flowSignalWeights,
       riskChecksInputs,
+      flowScoringTuning,
     });
     if (!snapshot) return null;
     return {

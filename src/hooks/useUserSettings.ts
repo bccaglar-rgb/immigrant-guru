@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { FlowModeSettingsConfig, ScoringMode } from "../types";
-import { isUserSelectableScoringMode } from "../data/scoringEngine";
+import type { FlowModeSettingsConfig, FlowScoringTuningConfig, ScoringMode } from "../types";
+import { DEFAULT_FLOW_SCORING_TUNING, FLOW_SCORING_TUNING_BOUNDS, isUserSelectableScoringMode } from "../data/scoringEngine";
 import { FLOW_SIGNAL_DEFAULT_WEIGHTS } from "../data/quantLayers";
 
 const STORAGE_KEY = "bitrium.scoring_mode";
@@ -88,6 +88,7 @@ const DEFAULT_FLOW_SETTINGS: FlowModeSettingsConfig = {
     stressFilter: true,
     sizeHint: true,
   },
+  flowScoringTuning: { ...DEFAULT_FLOW_SCORING_TUNING },
 };
 
 const normalizeFlowModeSettings = (raw: unknown): FlowModeSettingsConfig | null => {
@@ -123,6 +124,16 @@ const normalizeFlowModeSettings = (raw: unknown): FlowModeSettingsConfig | null 
       if (typeof v === "boolean" && k in dataFilters) dataFilters[k as keyof typeof dataFilters] = v;
     }
   }
+  const flowScoringTuning = { ...DEFAULT_FLOW_SCORING_TUNING };
+  if (item.flowScoringTuning && typeof item.flowScoringTuning === "object") {
+    for (const [k, v] of Object.entries(item.flowScoringTuning)) {
+      const numeric = Number(v);
+      const bounds = FLOW_SCORING_TUNING_BOUNDS[k as keyof FlowScoringTuningConfig];
+      if (Number.isFinite(numeric) && bounds) {
+        flowScoringTuning[k as keyof FlowScoringTuningConfig] = Math.max(bounds.min, Math.min(bounds.max, numeric));
+      }
+    }
+  }
   return {
     minConsensus: Number.isFinite(minConsensus) ? Math.max(20, Math.min(95, minConsensus)) : DEFAULT_FLOW_SETTINGS.minConsensus,
     minValidBars: Number.isFinite(minValidBars) ? Math.max(1, Math.min(12, Math.round(minValidBars))) : DEFAULT_FLOW_SETTINGS.minValidBars,
@@ -131,6 +142,7 @@ const normalizeFlowModeSettings = (raw: unknown): FlowModeSettingsConfig | null 
     signalInputs,
     signalInputWeights,
     riskChecks,
+    flowScoringTuning,
   };
 };
 

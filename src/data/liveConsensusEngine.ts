@@ -3,6 +3,7 @@ import type {
   ConsensusInputConfig,
   DataHealthState,
   FeedConfig,
+  FlowScoringTuningConfig,
   FlowSignalInputsConfig,
   FlowSignalWeightsConfig,
   KeyLevel,
@@ -156,6 +157,7 @@ export const generateAiPanel = (
   flowSignalInputs?: FlowSignalInputsConfig,
   flowSignalWeights?: FlowSignalWeightsConfig,
   riskChecksInputs?: RiskChecksInputsConfig,
+  flowScoringTuning?: FlowScoringTuningConfig,
 ): AiPanelData => {
   const modeConfig = SCORING_CONFIG[scoringMode];
   const trendDirection = tileState(tiles, "trend-direction", "N/A");
@@ -1086,6 +1088,7 @@ export const generateAiPanel = (
     hardBlockExecution: hardExecutionBlock,
     entryClosed: consensusInputs.entryTiming && entryTiming === "CLOSED",
     flowPanels,
+    flowScoringTuning,
   });
   const riskAdjustment = scoreResult.riskAdj;
   const riskAdjustedEdgeR = edgeNetR * riskAdjustment;

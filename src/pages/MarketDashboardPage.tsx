@@ -22,12 +22,14 @@ import { useTradeIdeasStream } from "../hooks/useTradeIdeasStream";
 import { useExchangeConfigs } from "../hooks/useExchangeConfigs";
 import { useUserSettings } from "../hooks/useUserSettings";
 import { FLOW_SIGNAL_DEFAULT_WEIGHTS } from "../data/quantLayers";
+import { DEFAULT_FLOW_SCORING_TUNING, FLOW_SCORING_TUNING_BOUNDS } from "../data/scoringEngine";
 import type {
   Coin,
   ConsensusInputConfig,
   ConsensusInputKey,
   FeedConfig,
   FeedKey,
+  FlowScoringTuningConfig,
   FlowSignalInputsConfig,
   FlowSignalWeightsConfig,
   RiskChecksInputsConfig,
@@ -183,6 +185,7 @@ const initialFlowModeSettings: FlowModeSettings = {
     stressFilter: true,
     sizeHint: true,
   },
+  flowScoringTuning: { ...DEFAULT_FLOW_SCORING_TUNING },
 };
 
 const loadPersistedDashboardSettings = (): PersistedDashboardSettings | null => {
@@ -250,6 +253,19 @@ const loadPersistedDashboardSettings = (): PersistedDashboardSettings | null => 
             }
           }
           return baseChecks;
+        })(),
+        flowScoringTuning: (() => {
+          const base = { ...initialFlowModeSettings.flowScoringTuning };
+          const raw = parsed.flowMode?.flowScoringTuning;
+          if (!raw || typeof raw !== "object") return base;
+          for (const [key, value] of Object.entries(raw)) {
+            const numeric = Number(value);
+            const bounds = FLOW_SCORING_TUNING_BOUNDS[key as keyof FlowScoringTuningConfig];
+            if (Number.isFinite(numeric) && bounds) {
+              base[key as keyof FlowScoringTuningConfig] = Math.max(bounds.min, Math.min(bounds.max, numeric));
+            }
+          }
+          return base;
         })(),
       },
     };
@@ -522,6 +538,7 @@ export default function MarketDashboardPage() {
     effectiveScoringMode === "FLOW" ? flowModeSettings.signalInputs : undefined,
     effectiveScoringMode === "FLOW" ? flowModeSettings.signalInputWeights : undefined,
     effectiveScoringMode === "FLOW" ? flowModeSettings.riskChecks : undefined,
+    effectiveScoringMode === "FLOW" ? flowModeSettings.flowScoringTuning : undefined,
   );
   const hasLiveData = Boolean(rawSnapshot?.ohlcv?.length);
   const safeSnapshot = rawSnapshot;

@@ -6,6 +6,7 @@ import type {
   DataHealthState,
   FeedConfig,
   FeedKey,
+  FlowScoringTuningConfig,
   FlowSignalInputsConfig,
   FlowSignalWeightsConfig,
   IndicatorsState,
@@ -146,6 +147,7 @@ export const createNoMockBaseline = (
   flowSignalInputs?: FlowSignalInputsConfig,
   flowSignalWeights?: FlowSignalWeightsConfig,
   riskChecksInputs?: RiskChecksInputsConfig,
+  flowScoringTuning?: FlowScoringTuningConfig,
 ): Pick<DashboardSnapshot, "tiles" | "aiPanel" | "ohlcv" | "keyLevels"> => {
   const updatedAt = new Date().toISOString();
   const tiles: TileState[] = Object.values(TILE_DEFINITIONS).map((def) => ({
@@ -184,6 +186,7 @@ export const createNoMockBaseline = (
     flowSignalInputs,
     flowSignalWeights,
     riskChecksInputs,
+    flowScoringTuning,
   );
   return { tiles, aiPanel, ohlcv: [], keyLevels: [] };
 };
@@ -198,6 +201,7 @@ const applyLiveOverrides = (
   flowSignalInputs: FlowSignalInputsConfig | undefined,
   flowSignalWeights: FlowSignalWeightsConfig | undefined,
   riskChecksInputs: RiskChecksInputsConfig | undefined,
+  flowScoringTuning: FlowScoringTuningConfig | undefined,
   live: IntelligenceLiveState,
 ): DashboardSnapshot => {
   let tiles = snapshot.tiles;
@@ -903,6 +907,7 @@ const applyLiveOverrides = (
     flowSignalInputs,
     flowSignalWeights,
     riskChecksInputs,
+    flowScoringTuning,
   );
 
   return {
@@ -924,9 +929,10 @@ export const buildBitriumIntelligenceSnapshot = (input: {
   flowSignalInputs?: FlowSignalInputsConfig;
   flowSignalWeights?: FlowSignalWeightsConfig;
   riskChecksInputs?: RiskChecksInputsConfig;
+  flowScoringTuning?: FlowScoringTuningConfig;
 }): DashboardSnapshot | null => {
-  const { live, feeds, scenario, indicators, consensusInputs, scoringMode, flowSignalInputs, flowSignalWeights, riskChecksInputs } = input;
-  const baseline = createNoMockBaseline(consensusInputs, scoringMode, flowSignalInputs, flowSignalWeights, riskChecksInputs);
+  const { live, feeds, scenario, indicators, consensusInputs, scoringMode, flowSignalInputs, flowSignalWeights, riskChecksInputs, flowScoringTuning } = input;
+  const baseline = createNoMockBaseline(consensusInputs, scoringMode, flowSignalInputs, flowSignalWeights, riskChecksInputs, flowScoringTuning);
   return applyLiveOverrides(
     {
       ...baseline,
@@ -940,6 +946,7 @@ export const buildBitriumIntelligenceSnapshot = (input: {
     flowSignalInputs,
     flowSignalWeights,
     riskChecksInputs,
+    flowScoringTuning,
     live,
   );
 };

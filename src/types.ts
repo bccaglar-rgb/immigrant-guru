@@ -104,6 +104,25 @@ export interface RiskChecksInputsConfig {
   sizeHint: boolean;
 }
 
+export interface FlowScoringTuningConfig {
+  fillShortfallCoeff: number;
+  slippageSeverityCoeff: number;
+  microSeverityCoeff: number;
+  executionMultiplierFloor: number;
+  stressFailureCoeff: number;
+  cascadeFailureCoeff: number;
+  crowdingFailureCoeff: number;
+  riskMultiplierFloor: number;
+  modeBias: number;
+  compressKnee: number;
+  compressScale: number;
+  fillHardBlockThreshold: number;
+  fillGateThreshold: number;
+  hardBlockScoreCap: number;
+  degradedFeedPenalty: number;
+  dataMultiplierFloor: number;
+}
+
 export interface FlowModeSettingsConfig {
   minConsensus: number;
   minValidBars: number;
@@ -112,6 +131,7 @@ export interface FlowModeSettingsConfig {
   signalInputs: FlowSignalInputsConfig;
   signalInputWeights: FlowSignalWeightsConfig;
   riskChecks: RiskChecksInputsConfig;
+  flowScoringTuning: FlowScoringTuningConfig;
 }
 
 export type TileCategory =

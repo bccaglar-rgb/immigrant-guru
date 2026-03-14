@@ -242,5 +242,5 @@ export const getFlowInputEnabled = (
     const value = flowInputs[alias];
     if (typeof value === "boolean") return value;
   }
-  return true;
+  return false;
 };
