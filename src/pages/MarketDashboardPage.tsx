@@ -1010,7 +1010,6 @@ export default function MarketDashboardPage() {
                   advanced={resolvedAdvanced}
                   indicatorsEnabled={indicators.state.masterEnabled}
                   excludedKeys={CONSENSUS_TILE_KEYS}
-                  layerScores={normalizedState.aiPanel.layerScores}
                   flowSignalInputs={flowModeSettings.signalInputs}
                   flowSignalWeights={flowModeSettings.signalInputWeights}
                   onFlowSignalInputsChange={(next: FlowSignalInputsConfig) =>

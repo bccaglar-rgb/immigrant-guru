@@ -1217,7 +1217,6 @@ export default function TradeIdeasPage() {
                   : "border-[#31415b]/70 bg-[#121a27] text-[#cdd8ec]";
               const decisionValue = String(row.decision ?? "").toUpperCase();
               const isTradeCard = decisionValue === "TRADE";
-              const layer = row.layerScores;
               const edge = row.edgeDetails;
               const executionEntryWindow =
                 row.executionDetails?.entryWindow ?? undefined;
@@ -1471,14 +1470,6 @@ export default function TradeIdeasPage() {
                   ) : null}
                   {isTradeCard && row.marketComment ? (
                     <p className="mt-1 text-xs text-[#BFC2C7]">{row.marketComment}</p>
-                  ) : null}
-                  {isTradeCard && layer ? (
-                    <p className="mt-1 text-xs text-[#BFC2C7]">
-                      • Structure {Number.isFinite(Number(layer.structure)) ? Math.round(Number(layer.structure)) : "-"} | Liquidity{" "}
-                      {Number.isFinite(Number(layer.liquidity)) ? Math.round(Number(layer.liquidity)) : "-"} | Positioning{" "}
-                      {Number.isFinite(Number(layer.positioning)) ? Math.round(Number(layer.positioning)) : "-"} | Execution{" "}
-                      {Number.isFinite(Number(layer.execution)) ? Math.round(Number(layer.execution)) : "-"}
-                    </p>
                   ) : null}
                   {isTradeCard && edge ? (
                     <p className="mt-1 text-xs text-[#BFC2C7]">

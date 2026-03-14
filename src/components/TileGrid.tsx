@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import type { AiPanelData, FeedConfig, FlowSignalInputsConfig, FlowSignalWeightsConfig, TileState } from "../types";
+import type { FeedConfig, FlowSignalInputsConfig, FlowSignalWeightsConfig, TileState } from "../types";
 import {
   FLOW_SIGNAL_ALIASES,
   FLOW_SIGNAL_DEFAULT_WEIGHTS,
@@ -20,7 +20,6 @@ interface Props {
   flowSignalWeights?: FlowSignalWeightsConfig;
   onFlowSignalInputsChange?: (next: FlowSignalInputsConfig) => void;
   onFlowSignalWeightChange?: (next: FlowSignalWeightsConfig) => void;
-  layerScores?: AiPanelData["layerScores"];
 }
 
 interface LayerPanel {
@@ -44,8 +43,6 @@ const buttonTone = (active: boolean) =>
       : "border-white/15 bg-[#111215] text-[#BFC2C7] hover:bg-[#17191d]"
   }`;
 
-const clamp = (value: number, min: number, max: number) => Math.max(min, Math.min(max, value));
-
 const OTHER_PANEL_TONE: LayerPanel["tone"] = {
   chip: "border-[#5d6472] bg-[#1a202b] text-[#d5deed]",
   border: "border-[#5d6472]/35",
@@ -68,7 +65,6 @@ export const TileGrid = ({
   flowSignalWeights,
   onFlowSignalInputsChange,
   onFlowSignalWeightChange,
-  layerScores,
 }: Props) => {
   const hiddenKeys = new Set(excludedKeys);
   const visibleTiles = tiles.filter((tile) => {
@@ -121,30 +117,6 @@ export const TileGrid = ({
             ? uniquePanelSignalKeys.some((key) => !getFlowInputEnabled(flowSignalInputs, key))
             : false;
 
-        const panelScore = (() => {
-          if (panel.key === "other") return undefined;
-          if (flowSignalInputs && flowSignalWeights) {
-            const activeTiles = panel.tiles.filter((tile) => getFlowInputEnabled(flowSignalInputs, tile.key));
-            const totalWeight = activeTiles.reduce(
-              (sum, tile) => sum + Math.max(1, Math.min(10, Math.round(Number(flowSignalWeights[tile.key] ?? FLOW_SIGNAL_DEFAULT_WEIGHTS[tile.key] ?? 3)))),
-              0,
-            );
-            if (totalWeight <= 0) return 0;
-            const totalScore = activeTiles.reduce(
-              (sum, tile) =>
-                sum +
-                clamp(tile.confidence, 0, 100) *
-                  Math.max(1, Math.min(10, Math.round(Number(flowSignalWeights[tile.key] ?? FLOW_SIGNAL_DEFAULT_WEIGHTS[tile.key] ?? 3)))),
-              0,
-            );
-            return Math.round(totalScore / totalWeight);
-          }
-          if (layerScores && typeof layerScores[panel.key] === "number") {
-            return Math.round(layerScores[panel.key] ?? 0);
-          }
-          return undefined;
-        })();
-
         return (
           <section key={`${panel.id}-${index + 1}`} className={`rounded-2xl border p-3 ${panel.tone.border} ${panel.tone.bg}`}>
             <div className="mb-3 flex items-center justify-between gap-2">
@@ -159,10 +131,6 @@ export const TileGrid = ({
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                <div className="rounded-lg border border-white/10 bg-[#0E121A] px-2.5 py-1 text-right">
-                  <div className="text-[9px] uppercase tracking-wider text-[#7E858F]">Score</div>
-                  <div className="text-xs font-semibold text-[#F5C542]">{panelScore != null ? `${panelScore}%` : "N/A"}</div>
-                </div>
                 {flowSignalInputs && onFlowSignalInputsChange && uniquePanelSignalKeys.length ? (
                   <div className="flex gap-1.5">
                     <button
