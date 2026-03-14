@@ -1682,7 +1682,7 @@ const fetchBinanceLive = async (
     },
     feedExchange,
     feedSource: "WS_HUB",
-    sourceTs: hubRow?.sourceTs ?? Date.now(),
+    sourceTs: Date.now(),
   };
   if (!payload.ohlcv.length) throw new Error(`Binance returned empty candles for ${normalizedSymbol}`);
   return payload;
@@ -2008,7 +2008,7 @@ const fetchGateLive = async (
     },
     feedExchange,
     feedSource: "WS_HUB",
-    sourceTs: hubRow?.sourceTs ?? Date.now(),
+    sourceTs: Date.now(),
   };
   if (!payload.ohlcv.length) throw new Error(`Gate.io returned empty candles for ${normalizedSymbol}`);
   return payload;
