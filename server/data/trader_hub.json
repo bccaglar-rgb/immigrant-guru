@@ -1,0 +1,57 @@
+{
+  "traders": [
+    {
+      "id": "82cbcae3-0a53-4d70-bc19-e66299bd17c4",
+      "userId": "demo-user",
+      "name": "Route Test",
+      "aiModule": "CHATGPT",
+      "exchange": "AUTO",
+      "exchangeAccountId": "",
+      "exchangeAccountName": "Auto",
+      "strategyId": "strategy-scalpc1",
+      "strategyName": "Scalpc1",
+      "symbol": "BTCUSDT",
+      "timeframe": "15m",
+      "scanIntervalSec": 30,
+      "status": "RUNNING",
+      "createdAt": "2026-03-02T04:04:49.746Z",
+      "updatedAt": "2026-03-07T22:40:21.870Z",
+      "nextRunAt": "2026-03-07T22:40:51.869Z",
+      "lastRunAt": "2026-03-07T22:40:21.870Z",
+      "lastError": "",
+      "failStreak": 0,
+      "stats": {
+        "runs": 16402,
+        "tradeCount": 398,
+        "watchCount": 2549,
+        "noTradeCount": 13455,
+        "pnlPct": 18.698
+      },
+      "lastResult": {
+        "ts": "2026-03-07T22:40:21.870Z",
+        "sourceExchange": "Gate.io",
+        "scorePct": 68.01,
+        "decision": "NO_TRADE",
+        "bias": "SHORT",
+        "reason": "CHATGPT rejected setup due to weak edge/quality.",
+        "price": 67208.3,
+        "plan": {
+          "entryLow": 67153.7378,
+          "entryHigh": 67364.192,
+          "sl1": 67402.9103,
+          "sl2": 67480.7544,
+          "tp1": 66698.8076,
+          "tp2": 66469.536
+        },
+        "dataStale": false,
+        "execution": {
+          "state": "REJECTED",
+          "venue": "N/A",
+          "intentId": "186c9b56-a1ff-4891-84e1-4d69d5b3fa4b",
+          "message": "No connected exchange account found. Connect Binance or Gate.io in Settings."
+        }
+      }
+    }
+  ],
+  "updatedAt": "2026-03-07T22:40:21.870Z"
+}

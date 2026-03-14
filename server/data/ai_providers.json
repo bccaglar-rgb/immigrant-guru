@@ -1,0 +1,27 @@
+{
+  "providers": [
+    {
+      "id": "CHATGPT",
+      "enabled": true,
+      "baseUrl": "https://api.openai.com/v1/chat/completions",
+      "apiKey": "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",
+      "model": "gpt-4o-mini",
+      "intervalSec": 180,
+      "timeoutMs": 15000,
+      "temperature": 0.2,
+      "maxTokens": 1200
+    },
+    {
+      "id": "QWEN",
+      "enabled": true,
+      "baseUrl": "https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions",
+      "apiKey": "",
+      "model": "qwen-plus",
+      "intervalSec": 180,
+      "timeoutMs": 15000,
+      "temperature": 0.2,
+      "maxTokens": 1200
+    }
+  ],
+  "updatedAt": "2026-03-01T00:00:00.000Z"
+}

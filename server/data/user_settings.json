@@ -1,0 +1,74 @@
+{
+  "users": [
+    {
+      "user_id": "demo-user",
+      "scoring_mode": "CAPITAL_GUARD",
+      "flow_mode": {
+        "minConsensus": 70,
+        "minValidBars": 12,
+        "requireValidTrade": true,
+        "dataFilters": {
+          "fundingBias": true,
+          "oiChange": true,
+          "volumeSpike": true,
+          "exchangeFlow": true,
+          "relativeStrength": true,
+          "keyLevelReaction": true
+        },
+        "signalInputs": {
+          "marketRegime": false,
+          "distanceToKeyLevel": false,
+          "rangePosition": false,
+          "liquidityClusterNearby": false,
+          "lastSwingDistance": false,
+          "htfLevelReaction": false,
+          "structureAge": false,
+          "timeInRange": false,
+          "trendDirection": false,
+          "trendStrength": false,
+          "trendPhase": false,
+          "emaAlignment": false,
+          "vwapPosition": false,
+          "timeSinceRegimeChange": false,
+          "atrRegime": false,
+          "compression": false,
+          "marketSpeed": false,
+          "breakoutRisk": false,
+          "fakeBreakoutProbability": false,
+          "expansionProbability": false
+        },
+        "signalInputWeights": {
+          "compression": 10,
+          "volume-spike": 10,
+          "market-speed": 7,
+          "sudden-move-risk": 8,
+          "funding-bias": 10,
+          "oi-change": 8,
+          "spot-vs-derivatives-pressure": 6,
+          "move-participation-score": 6,
+          "orderbook-imbalance": 8,
+          "liquidity-density": 7,
+          "depth-quality": 5,
+          "spread-regime": 3,
+          "orderbook-stability": 2,
+          "entry-quality": 3,
+          "rr-potential": 2,
+          "invalidation-distance": 2,
+          "reward-distance": 2,
+          "reward-accessibility": 2,
+          "risk-arrival-speed": 1,
+          "entry-timing-window": 2,
+          "slippage-risk": 2
+        },
+        "riskChecks": {
+          "riskGate": false,
+          "executionCertainty": false,
+          "stressFilter": false,
+          "sizeHint": false
+        }
+      },
+      "created_at": "2026-02-26T06:02:58.638Z",
+      "updated_at": "2026-03-02T12:56:07.831Z"
+    }
+  ]
+}

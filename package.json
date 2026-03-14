@@ -1,0 +1,53 @@
+{
+  "name": "btc-market-dashboard",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "server:dev": "node --experimental-strip-types server/src/index.ts",
+    "build": "tsc -b && vite build",
+    "test:score": "node --experimental-strip-types --test scripts/scoringEngine.test.ts",
+    "test:balanced": "node --experimental-strip-types --test scripts/balancedConsensus.test.ts",
+    "test:capital-guard": "node --experimental-strip-types --test scripts/capitalGuardConsensus.test.ts",
+    "test:velocity": "node --experimental-strip-types --test scripts/velocityConsensus.test.ts",
+    "test:extreme": "node --experimental-strip-types --test scripts/extremeConsensus.test.ts",
+    "test:trade-ideas": "node --experimental-strip-types --test scripts/tradeIdeaLogic.test.ts",
+    "smoke:trade-ideas": "bash ./scripts/smoke-trade-ideas.sh",
+    "preview": "vite preview",
+    "smoke:all": "bash ./scripts/smoke-all.sh"
+  },
+  "dependencies": {
+    "@radix-ui/react-accordion": "^1.2.12",
+    "@radix-ui/react-avatar": "^1.1.11",
+    "@radix-ui/react-dropdown-menu": "^2.1.16",
+    "@radix-ui/react-separator": "^1.1.8",
+    "@radix-ui/react-slot": "^1.2.4",
+    "@radix-ui/react-tabs": "^1.1.13",
+    "@radix-ui/react-tooltip": "^1.2.8",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "cors": "^2.8.5",
+    "express": "^4.21.2",
+    "lightweight-charts": "^4.2.0",
+    "lucide-react": "^0.577.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-router-dom": "^6.30.3",
+    "recharts": "^3.7.0",
+    "tailwind-merge": "^3.5.0",
+    "ws": "^8.18.0",
+    "zustand": "^4.5.5"
+  },
+  "devDependencies": {
+    "@types/node": "^22.7.6",
+    "@types/react": "^18.3.11",
+    "@types/react-dom": "^18.3.1",
+    "@vitejs/plugin-react": "^4.3.2",
+    "autoprefixer": "^10.4.20",
+    "postcss": "^8.4.47",
+    "tailwindcss": "^3.4.13",
+    "typescript": "^5.6.3",
+    "vite": "^5.4.8"
+  }
+}
