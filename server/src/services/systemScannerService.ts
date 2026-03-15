@@ -524,7 +524,7 @@ export class SystemScannerService {
     const filteredResults = allResults.filter((r) => selectedSet.has(r.symbol));
 
     // 5. Assign coins to modes using fixed distribution pattern based on composite rank:
-    //    CG(3) → BAL(3) → AGG(3) → FLOW(3) → CG(2) → BAL(2) → AGG(2) → FLOW(2) → CG(2) → BAL(2) → AGG(2) → FLOW(2)
+    //    AGG(3) → BAL(3) → CG(3) → FLOW(3) → AGG(2) → BAL(2) → CG(2) → FLOW(2) → AGG(2) → BAL(2) → CG(2) → FLOW(2)
     //    Total: 7 per mode = 28
     const assigned = this.assignCoinsToModes(filteredResults, rankedSymbols);
 
@@ -576,25 +576,25 @@ export class SystemScannerService {
    * Assign coins to modes using a fixed distribution pattern based on composite score rank.
    *
    * Pattern (by CoinUniverseEngine composite score, highest first):
-   *   Rank  1-3  → CAPITAL_GUARD  (3)
+   *   Rank  1-3  → AGGRESSIVE     (3)
    *   Rank  4-6  → BALANCED       (3)
-   *   Rank  7-9  → AGGRESSIVE     (3)
+   *   Rank  7-9  → CAPITAL_GUARD  (3)
    *   Rank 10-12 → FLOW           (3)
-   *   Rank 13-14 → CAPITAL_GUARD  (2)
+   *   Rank 13-14 → AGGRESSIVE     (2)
    *   Rank 15-16 → BALANCED       (2)
-   *   Rank 17-18 → AGGRESSIVE     (2)
+   *   Rank 17-18 → CAPITAL_GUARD  (2)
    *   Rank 19-20 → FLOW           (2)
-   *   Rank 21-22 → CAPITAL_GUARD  (2)
+   *   Rank 21-22 → AGGRESSIVE     (2)
    *   Rank 23-24 → BALANCED       (2)
-   *   Rank 25-26 → AGGRESSIVE     (2)
+   *   Rank 25-26 → CAPITAL_GUARD  (2)
    *   Rank 27-28 → FLOW           (2)
    *
    * Total: 7 per mode = 28 coins.
-   * Best coins → safest mode (CAPITAL_GUARD), then BALANCED, AGGRESSIVE, FLOW.
+   * Best coins → most aggressive mode (AGGRESSIVE), then BALANCED, CAPITAL_GUARD, FLOW.
    */
   private assignCoinsToModes(results: EnrichedScanResult[], rankedSymbols: string[]): EnrichedScanResult[] {
     // Fixed distribution: [mode, count] blocks in order
-    const MODE_ORDER: ScoringMode[] = ["CAPITAL_GUARD", "BALANCED", "AGGRESSIVE", "FLOW"];
+    const MODE_ORDER: ScoringMode[] = ["AGGRESSIVE", "BALANCED", "CAPITAL_GUARD", "FLOW"];
     const DISTRIBUTION = [3, 3, 3, 3, 2, 2, 2, 2, 2, 2, 2, 2]; // 12 blocks = 28 total
 
     // Build symbol → mode assignment map using ranked order
