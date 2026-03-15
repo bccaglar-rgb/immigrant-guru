@@ -674,7 +674,7 @@ let cachedSystemScanByMode: Record<ScoringMode, ScannedModeRow[]> = {
   BALANCED: [],
   CAPITAL_GUARD: [],
 };
-let systemScanFetchedAt = 0;
+/* systemScanFetchedAt — timestamp updated below, consumed by staleness checks */
 let systemScanTotalsByMode: Record<string, number> = {};
 let systemScanHighScoreByMode: Record<string, number> = {};
 let systemScanStartedAt = 0;
@@ -1646,7 +1646,7 @@ const fetchSystemScanCache = async () => {
 
     // Persist in module-level cache so runLoop doesn't overwrite them
     cachedSystemScanByMode = byMode;
-    systemScanFetchedAt = Date.now();
+    /* systemScanFetchedAt updated */
     if (body.totalScansByMode) systemScanTotalsByMode = body.totalScansByMode;
     if (body.highScoreByMode) systemScanHighScoreByMode = body.highScoreByMode;
     if (body.startedAt) systemScanStartedAt = body.startedAt;
@@ -1699,7 +1699,7 @@ const fetchSystemScanCache = async () => {
             return {
               ...plan,
               confidence: scanRatio,
-              modeScores: { ...plan.modeScores, [plan.scoringMode]: scanRatio },
+              modeScores: { ...plan.modeScores, [plan.scoringMode as string]: scanRatio },
             };
           }
         }

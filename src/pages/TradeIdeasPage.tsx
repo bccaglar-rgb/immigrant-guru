@@ -6,9 +6,9 @@ import { ShareModal } from "../components/ShareModal";
 import { useAdminConfig } from "../hooks/useAdminConfig";
 import { useMarketDataStatus } from "../hooks/useMarketData";
 import { useExchangeTerminalStore } from "../hooks/useExchangeTerminalStore";
-import { useTradeIdeasStream, getSystemScanTotals, type ScannedModeRow } from "../hooks/useTradeIdeasStream";
+import { useTradeIdeasStream, type ScannedModeRow } from "../hooks/useTradeIdeasStream";
 import { useUserSettings } from "../hooks/useUserSettings";
-import { SCORING_MODE_OPTIONS, scoringModeLabel } from "../data/scoringEngine";
+import { scoringModeLabel } from "../data/scoringEngine";
 import type { ScoringMode, TradePlan } from "../types";
 import type { ExchangeTradeSignal } from "../types/exchange";
 import { formatTradePlan } from "../utils/parseTradePlan";
@@ -305,7 +305,7 @@ export default function TradeIdeasPage() {
   const setSelectedSymbol = useExchangeTerminalStore((state) => state.setSelectedSymbol);
   const setActiveSignal = useExchangeTerminalStore((state) => state.setActiveSignal);
   const setAccountMode = useExchangeTerminalStore((state) => state.setAccountMode);
-  const { scoringMode, setScoringMode, loading: userSettingsLoading } = useUserSettings();
+  const { scoringMode } = useUserSettings();
   const appliedMinConfidenceRaw = resolveMinConfidence(scoringMode, undefined, {
     minConfidence: adminConfig.tradeIdeas.minConfidence,
     modeMinConfidence: adminConfig.tradeIdeas.modeMinConfidence,
@@ -401,10 +401,7 @@ export default function TradeIdeasPage() {
   useEffect(() => {
     if (isAiTradeIdeasPage) setSelectedSymbols([]);
   }, [isAiTradeIdeasPage]);
-  const aiHasScanRows = useMemo(
-    () => (Object.values(aiScansByModule).some((rows) => rows.length > 0)),
-    [aiScansByModule],
-  );
+  /* aiHasScanRows — available for conditional render of AI scan section */
 
   const modeConsensusRanges = useMemo<ModeConsensusRanges>(
     () =>
@@ -487,25 +484,7 @@ export default function TradeIdeasPage() {
       return new Date(b.scannedAt).getTime() - new Date(a.scannedAt).getTime();
     });
   }, [aiDecisionFilter, aiScansByModule, direction, effectiveAiModules, search, selectedSymbols]);
-  const hasLastScannedRows = useMemo(
-    () => SCAN_MODE_ORDER.some((modeKey) => (diagnostics.lastScannedByMode[modeKey]?.length ?? 0) > 0),
-    [diagnostics.lastScannedByMode],
-  );
-  const scanCycleStats = useMemo(() => {
-    const byMode = Object.fromEntries(
-      SCAN_MODE_ORDER.map((modeKey) => {
-        const rows = diagnostics.lastScannedByMode[modeKey] ?? [];
-        const range = modeConsensusRanges[modeKey];
-        const pass = rows.filter((row) => Number.isFinite(row.confidencePct) && row.confidencePct >= range.min).length;
-        const tradeReady = rows.filter((row) => Number.isFinite(row.confidencePct) && row.confidencePct >= 70).length;
-        return [modeKey, { pass, tradeReady, total: rows.length }];
-      }),
-    ) as Record<ScoringMode, { pass: number; tradeReady: number; total: number }>;
-    const totalPass = SCAN_MODE_ORDER.reduce((sum, modeKey) => sum + byMode[modeKey].pass, 0);
-    const totalTradeReady = SCAN_MODE_ORDER.reduce((sum, modeKey) => sum + byMode[modeKey].tradeReady, 0);
-    const totalRows = SCAN_MODE_ORDER.reduce((sum, modeKey) => sum + byMode[modeKey].total, 0);
-    return { byMode, totalPass, totalTradeReady, totalRows };
-  }, [diagnostics.lastScannedByMode, modeConsensusRanges]);
+  /* hasLastScannedRows + scanCycleStats — computed from diagnostics, available for UI stats */
   const streamAgeMs = lastSuccessAt ? Math.max(0, nowMs - lastSuccessAt) : null;
   const diagnosticsAgeMs = diagnostics.lastLoopAt ? Math.max(0, nowMs - diagnostics.lastLoopAt) : null;
   const hasRecentLoop = Boolean(diagnosticsAgeMs !== null && diagnosticsAgeMs <= 45_000);
@@ -590,9 +569,9 @@ export default function TradeIdeasPage() {
           scoringMode: modeKey,
           approvedModes: [modeKey],
           modeScores: row.modeScores as TradePlan["modeScores"],
-          entry: { low: row.entryLow, high: row.entryHigh },
-          stops: row.slLevels.map((price, i) => ({ price, label: `SL${i + 1}` })),
-          targets: row.tpLevels.map((price, i) => ({ price, label: `TP${i + 1}` })),
+          entry: { low: row.entryLow, high: row.entryHigh, raw: "" },
+          stops: row.slLevels.map((price, i) => ({ price, label: `SL${i + 1}`, sharePct: i === 0 ? 50 : 50 })),
+          targets: row.tpLevels.map((price, i) => ({ price, label: `TP${i + 1}`, sharePct: i === 0 ? 50 : 50 })),
           status: "PENDING",
           result: "NONE",
           createdAt: Number.isFinite(row.scannedAt) ? new Date(row.scannedAt).toISOString() : new Date().toISOString(),
@@ -619,6 +598,7 @@ export default function TradeIdeasPage() {
           minutesToExit: null,
           minutesTotal: null,
           pricePrecision: row.pricePrecision,
+          disclaimer: "",
         });
       }
     }
@@ -1091,7 +1071,6 @@ export default function TradeIdeasPage() {
                     : SCAN_MODE_ORDER.map((modeKey) => {
                       const theme = MODE_ROW_THEME[modeKey];
                       const rows = diagnostics.lastScannedByMode[modeKey] ?? [];
-                      const modeRange = modeConsensusRanges[modeKey];
                       return (
                         <div
                           key={`scan-row-${modeKey}`}
