@@ -36,6 +36,7 @@ import { TronClient } from "./payments/tronClient.ts";
 import { TronMonitorService } from "./payments/monitorService.ts";
 import { TokenCreatorService } from "./payments/tokenCreatorService.ts";
 import { SystemScannerService } from "./services/systemScannerService.ts";
+import { CoinUniverseEngine } from "./services/coinUniverseEngine.ts";
 
 const app = express();
 app.use(express.json());
@@ -63,10 +64,12 @@ const exchangeCore = new ExchangeCoreService(connections);
 const traderHubStore = new TraderHubStore();
 const traderHubEngine = new TraderHubEngine(traderHubStore, exchangeMarketHub, { exchangeCore });
 const serverPort = Number(process.env.PORT ?? 8090);
+const coinUniverseEngine = new CoinUniverseEngine({ binanceFuturesHub });
 const systemScanner = new SystemScannerService({
   binanceFuturesHub,
   tradeIdeaStore,
   serverPort,
+  coinUniverseEngine,
 });
 
 // bootstrap admin user (dev)
@@ -81,7 +84,7 @@ if (!process.env.DISABLE_DEV_ADMIN) {
 registerConnectionRoutes(app, connections, encryptionKey);
 registerExchangeRoutes(app, exchangeManager);
 registerTradeRoutes(app, audit, connections);
-registerMarketRoutes(app, { providerStore: adminProviderStore, binanceFuturesHub, exchangeMarketHub, systemScanner });
+registerMarketRoutes(app, { providerStore: adminProviderStore, binanceFuturesHub, exchangeMarketHub, systemScanner, coinUniverseEngine });
 registerAuthRoutes(app, authService);
 registerUserSettingsRoutes(app);
 registerTradeIdeasRoutes(app, tradeIdeaStore, systemScanner);

@@ -19,6 +19,7 @@ import type { TradeIdeaStore } from "./tradeIdeaStore.ts";
 import type { TradeIdeaRecord } from "./tradeIdeaTypes.ts";
 import type { ScoringMode } from "./scoringMode.ts";
 import { computeEnhancedScore } from "./coinScoring.ts";
+import type { CoinUniverseEngine } from "./coinUniverseEngine.ts";
 
 const ALL_MODES: ScoringMode[] = ["FLOW", "AGGRESSIVE", "BALANCED", "CAPITAL_GUARD"];
 const SYSTEM_USER_ID = "system-scanner";
@@ -126,6 +127,7 @@ interface SystemScannerDeps {
   binanceFuturesHub: BinanceFuturesHub;
   tradeIdeaStore: TradeIdeaStore;
   serverPort: number;
+  coinUniverseEngine?: CoinUniverseEngine;
 }
 
 /** Raw Binance Futures 24h ticker */
@@ -237,6 +239,10 @@ export class SystemScannerService {
     const cycleStart = Date.now();
     try {
       await this.ensureUniverse();
+      // Refresh CoinUniverseEngine scoring before scan (uses WS data + klines for top 60)
+      if (this.deps.coinUniverseEngine) {
+        await this.deps.coinUniverseEngine.refresh();
+      }
       await this.runFullScan();
     } catch (err) {
       console.error("[SystemScanner] Scan cycle error:", err instanceof Error ? err.message : err);
@@ -537,6 +543,12 @@ export class SystemScannerService {
     //    The scan row always shows the freshest scan results.
     this.cache = assigned.map(({ text, ...publicFields }) => publicFields);
     this.lastScanAt = Date.now();
+
+    // 10. Notify CoinUniverseEngine: mark selected coins for cooldown & scanner badge
+    if (this.deps.coinUniverseEngine) {
+      this.deps.coinUniverseEngine.markAsSentToQuant(rankedSymbols);
+      this.deps.coinUniverseEngine.markScannerSelected(rankedSymbols);
+    }
   }
 
   /**

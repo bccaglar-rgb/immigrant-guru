@@ -6,38 +6,39 @@ import { CoinIcon } from "../components/CoinIcon";
 /*  Types                                                              */
 /* ------------------------------------------------------------------ */
 
-interface UniverseCandidate {
-  rank: number;
+interface SRLevel {
+  price: number;
+  type: "support" | "resistance";
+  strength: "STRONG" | "MID" | "WEAK";
+  touchCount: number;
+}
+
+interface UniverseCoinRow {
   symbol: string;
   baseAsset: string;
-  icon_url: string;
-  quoteAsset?: string;
-  group: string;
-  opportunity_score: number;
   price: number;
   change24hPct: number;
   volume24hUsd: number;
-  marketCapRank?: number | null;
-  spreadBps?: number | null;
-  markPrice?: number | null;
-  fundingRate?: number | null;
-  oi_value?: number | null;
-  oi_change_1h_pct?: number | null;
-  oi_priority?: "OI_INCREASE_TOP5" | "OI_DECREASE_TOP5" | null;
-  scanner_selected?: boolean;
+  fundingRate: number | null;
+  spreadBps: number | null;
+  atrPct: number | null;
+  rsi14: number | null;
+  srDistPct: number | null;
+  nearestSR: SRLevel | null;
+  tier1Score: number;
+  tier2Score: number | null;
+  compositeScore: number;
+  status: "ACTIVE" | "COOLDOWN" | "NEW";
+  cooldownRoundsLeft: number | null;
+  scanner_selected: boolean;
 }
 
-interface UniverseApiResponse {
+interface UniverseEngineResponse {
   ok: boolean;
-  universe?: {
-    input_total?: number;
-    filtered_total?: number;
-    candidates_total?: number;
-    min_volume_usd?: number;
-    top_n?: number;
-  };
-  ranked_candidates: UniverseCandidate[];
-  fetchedAt?: string;
+  round: number;
+  refreshedAt: string;
+  activeCoins: UniverseCoinRow[];
+  cooldownCoins: UniverseCoinRow[];
   error?: string;
 }
 
@@ -71,39 +72,50 @@ const scoreChipCls = (v: number) => {
   return "bg-[#1A1B1F] text-[#6B6F76]";
 };
 
-const REFRESH_MS = 30_000;
+const atrChipCls = (v: number) => {
+  if (v > 1.5) return "text-[#f87171]";  // HIGH — red
+  if (v > 0.8) return "text-[#F5C542]";  // NORMAL — yellow
+  return "text-[#60a5fa]";               // LOW — blue
+};
+
+const srDistCls = (v: number) => {
+  if (v < 1) return "text-[#4ade80] font-semibold";   // Very close — bright green
+  if (v < 3) return "text-[#8fc9ab]";                  // Moderate — green
+  return "text-[#6B6F76]";                             // Far — dim
+};
+
+const rsiCls = (v: number) => {
+  if (v < 30) return "text-[#4ade80]";    // Oversold — green
+  if (v > 70) return "text-[#f87171]";    // Overbought — red
+  return "text-[#8f95a3]";               // Neutral — gray
+};
+
+const REFRESH_MS = 15_000;
 
 /* ------------------------------------------------------------------ */
 /*  Hook                                                               */
 /* ------------------------------------------------------------------ */
 
-function useCoinUniverse() {
-  const [candidates, setCandidates] = useState<UniverseCandidate[]>([]);
+function useCoinUniverseEngine() {
+  const [activeCoins, setActiveCoins] = useState<UniverseCoinRow[]>([]);
+  const [cooldownCoins, setCooldownCoins] = useState<UniverseCoinRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [fetchedAt, setFetchedAt] = useState<string | null>(null);
-  const [filteredTotal, setFilteredTotal] = useState(0);
+  const [refreshedAt, setRefreshedAt] = useState<string | null>(null);
+  const [round, setRound] = useState(0);
   const abortRef = useRef<AbortController | null>(null);
 
   const fetchData = useCallback(async (signal?: AbortSignal) => {
     try {
-      const qs = new URLSearchParams({
-        exchange: "Binance",
-        min_volume_usd: "5000000",
-        top: "800",
-      });
-      const res = await fetch(`/api/market/universe?${qs}`, { signal });
+      const res = await fetch("/api/market/universe-engine", { signal });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const body = (await res.json()) as UniverseApiResponse;
+      const body = (await res.json()) as UniverseEngineResponse;
       if (!body.ok && body.error) throw new Error(body.error);
 
-      // Sort by volume descending
-      const sorted = [...(body.ranked_candidates ?? [])].sort(
-        (a, b) => b.volume24hUsd - a.volume24hUsd,
-      );
-      setCandidates(sorted);
-      setFetchedAt(body.fetchedAt ?? new Date().toISOString());
-      setFilteredTotal(body.universe?.filtered_total ?? sorted.length);
+      setActiveCoins(body.activeCoins ?? []);
+      setCooldownCoins(body.cooldownCoins ?? []);
+      setRefreshedAt(body.refreshedAt ?? new Date().toISOString());
+      setRound(body.round ?? 0);
       setError(null);
     } catch (err) {
       if ((err as Error).name === "AbortError") return;
@@ -124,7 +136,7 @@ function useCoinUniverse() {
     };
   }, [fetchData]);
 
-  return { candidates, loading, error, fetchedAt, filteredTotal };
+  return { activeCoins, cooldownCoins, loading, error, refreshedAt, round };
 }
 
 /* ------------------------------------------------------------------ */
@@ -147,21 +159,146 @@ const SkeletonRows = () => (
 );
 
 /* ------------------------------------------------------------------ */
+/*  Coin Row                                                           */
+/* ------------------------------------------------------------------ */
+
+function CoinRow({ c, idx, onClick }: { c: UniverseCoinRow; idx: number; onClick: () => void }) {
+  return (
+    <div
+      className="flex cursor-pointer items-center border-b border-white/5 px-4 py-2 text-sm transition hover:bg-[#17191d]"
+      onClick={onClick}
+    >
+      {/* # */}
+      <span className="w-8 text-center text-xs text-[#6B6F76]">{idx + 1}</span>
+
+      {/* Icon */}
+      <span className="w-9 flex-shrink-0">
+        <CoinIcon symbol={c.symbol} className="h-7 w-7" />
+      </span>
+
+      {/* Coin name + badges */}
+      <div className="w-28 min-w-0">
+        <div className="flex items-center gap-1">
+          <span className="font-semibold text-white">{c.baseAsset}</span>
+          <span className="text-[11px] text-[#6B6F76]">/USDT</span>
+          {c.scanner_selected && (
+            <span className="inline-flex items-center rounded-full bg-[#F5C542]/15 px-1 py-px text-[8px] font-bold text-[#F5C542] border border-[#F5C542]/30 leading-tight">
+              SCAN
+            </span>
+          )}
+          {c.status === "NEW" && (
+            <span className="inline-flex items-center rounded-full bg-[#4ade80]/15 px-1 py-px text-[8px] font-bold text-[#4ade80] border border-[#4ade80]/30 leading-tight">
+              NEW
+            </span>
+          )}
+        </div>
+      </div>
+
+      {/* Score */}
+      <span className="hidden w-14 text-right text-xs xl:block">
+        <span className={`inline-flex rounded px-1.5 py-0.5 text-[10px] font-semibold ${scoreChipCls(c.compositeScore)}`}>
+          {c.compositeScore}
+        </span>
+      </span>
+
+      {/* Price */}
+      <span className="ml-auto w-24 text-right font-medium text-white">
+        {fmtPrice(c.price)}
+      </span>
+
+      {/* 24h change */}
+      <span className="w-20 text-right">
+        <span
+          className={`inline-flex rounded-md border px-1.5 py-0.5 text-[11px] font-semibold ${pctChipCls(c.change24hPct)}`}
+        >
+          {c.change24hPct >= 0 ? "+" : ""}
+          {c.change24hPct.toFixed(2)}%
+        </span>
+      </span>
+
+      {/* Volume */}
+      <span className="w-28 text-right text-[#BFC2C7]">
+        {compactUsd(c.volume24hUsd)}
+      </span>
+
+      {/* Funding */}
+      <span
+        className={`hidden w-20 text-right text-xs md:block ${
+          c.fundingRate != null
+            ? c.fundingRate > 0
+              ? "text-[#8fc9ab]"
+              : c.fundingRate < 0
+                ? "text-[#d49f9a]"
+                : "text-[#8f95a3]"
+            : "text-[#6B6F76]"
+        }`}
+      >
+        {c.fundingRate != null
+          ? `${c.fundingRate >= 0 ? "+" : ""}${(c.fundingRate * 100).toFixed(4)}%`
+          : "---"}
+      </span>
+
+      {/* ATR% */}
+      <span className={`hidden w-16 text-right text-xs lg:block ${c.atrPct != null ? atrChipCls(c.atrPct) : "text-[#6B6F76]"}`}>
+        {c.atrPct != null ? `${c.atrPct.toFixed(2)}%` : "---"}
+      </span>
+
+      {/* S/R Distance */}
+      <span className={`hidden w-20 text-right text-xs xl:block ${c.srDistPct != null ? srDistCls(c.srDistPct) : "text-[#6B6F76]"}`}>
+        {c.srDistPct != null && c.nearestSR
+          ? `${c.srDistPct.toFixed(1)}% ${c.nearestSR.type === "support" ? "↑S" : "↓R"}`
+          : "---"}
+      </span>
+
+      {/* RSI */}
+      <span className={`hidden w-12 text-right text-xs xl:block ${c.rsi14 != null ? rsiCls(c.rsi14) : "text-[#6B6F76]"}`}>
+        {c.rsi14 != null ? c.rsi14.toFixed(0) : "---"}
+      </span>
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/*  Cooldown Row                                                       */
+/* ------------------------------------------------------------------ */
+
+function CooldownRow({ c }: { c: UniverseCoinRow }) {
+  return (
+    <div className="flex items-center border-b border-white/5 px-4 py-1.5 text-xs text-[#6B6F76]">
+      <span className="w-9 flex-shrink-0">
+        <CoinIcon symbol={c.symbol} className="h-5 w-5 opacity-60" />
+      </span>
+      <span className="w-24 font-medium text-[#8f95a3]">{c.baseAsset}/USDT</span>
+      <span className={`w-12 text-right ${scoreChipCls(c.compositeScore)}`}>
+        <span className={`inline-flex rounded px-1 py-px text-[9px] font-semibold ${scoreChipCls(c.compositeScore)}`}>
+          {c.compositeScore}
+        </span>
+      </span>
+      <span className="ml-auto text-[11px] text-[#6B6F76]">
+        {c.cooldownRoundsLeft != null
+          ? `${c.cooldownRoundsLeft} round${c.cooldownRoundsLeft > 1 ? "s" : ""} left`
+          : "cooling"}
+      </span>
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
 /*  Page                                                               */
 /* ------------------------------------------------------------------ */
 
 export default function CoinUniversePage() {
   const navigate = useNavigate();
   const [search, setSearch] = useState("");
-  const { candidates, loading, error, fetchedAt, filteredTotal } = useCoinUniverse();
+  const { activeCoins, cooldownCoins, loading, error, refreshedAt, round } = useCoinUniverseEngine();
 
   const filtered = useMemo(() => {
-    if (!search.trim()) return candidates;
+    if (!search.trim()) return activeCoins;
     const q = search.trim().toLowerCase();
-    return candidates.filter(
+    return activeCoins.filter(
       (c) => c.symbol.toLowerCase().includes(q) || c.baseAsset.toLowerCase().includes(q),
     );
-  }, [candidates, search]);
+  }, [activeCoins, search]);
 
   return (
     <main className="min-h-screen bg-[#0B0B0C] p-4 text-[#BFC2C7] md:p-6">
@@ -173,10 +310,12 @@ export default function CoinUniversePage() {
               <h1 className="text-lg font-semibold text-white">Coin Universe</h1>
               <p className="text-xs text-[#6B6F76]">
                 Binance Futures &middot;{" "}
-                {loading && !candidates.length
+                {loading && !activeCoins.length
                   ? "Loading..."
-                  : `${filtered.length} coins${filteredTotal ? ` of ${filteredTotal} above $5M vol` : ""}`}
-                {fetchedAt ? ` \u00b7 ${new Date(fetchedAt).toLocaleTimeString()}` : ""}
+                  : `${filtered.length} active coins`}
+                {round > 0 ? ` \u00b7 Round ${round}` : ""}
+                {refreshedAt ? ` \u00b7 ${new Date(refreshedAt).toLocaleTimeString()}` : ""}
+                {cooldownCoins.length > 0 ? ` \u00b7 ${cooldownCoins.length} cooling down` : ""}
               </p>
             </div>
           </div>
@@ -197,7 +336,7 @@ export default function CoinUniversePage() {
           </div>
         ) : null}
 
-        {/* Coin list */}
+        {/* Active Coin list */}
         <section className="overflow-hidden rounded-2xl border border-white/10 bg-[#121316]">
           {/* Sticky header */}
           <div className="sticky top-0 z-10 flex items-center border-b border-white/10 bg-[#0F1012] px-4 py-2 text-[10px] font-semibold uppercase tracking-wider text-[#6B6F76]">
@@ -209,84 +348,51 @@ export default function CoinUniversePage() {
             <span className="w-20 text-right">24h</span>
             <span className="w-28 text-right">Volume</span>
             <span className="hidden w-20 text-right md:block">Funding</span>
-            <span className="hidden w-24 text-right pr-1 lg:block">OI</span>
+            <span className="hidden w-16 text-right lg:block">ATR%</span>
+            <span className="hidden w-20 text-right xl:block">S/R Dist</span>
+            <span className="hidden w-12 text-right xl:block">RSI</span>
           </div>
 
           {/* Scrollable rows */}
-          <div className="max-h-[calc(100vh-260px)] overflow-y-auto">
-            {loading && !candidates.length ? (
+          <div className="max-h-[calc(100vh-340px)] overflow-y-auto">
+            {loading && !activeCoins.length ? (
               <SkeletonRows />
             ) : (
               filtered.map((c, idx) => (
-                <div
+                <CoinRow
                   key={c.symbol}
-                  className="flex cursor-pointer items-center border-b border-white/5 px-4 py-2 text-sm transition hover:bg-[#17191d]"
+                  c={c}
+                  idx={idx}
                   onClick={() => navigate(`/quant-engine?symbol=${c.symbol}`)}
-                >
-                  <span className="w-8 text-center text-xs text-[#6B6F76]">{idx + 1}</span>
-                  <span className="w-9 flex-shrink-0">
-                    <CoinIcon symbol={c.symbol} className="h-7 w-7" />
-                  </span>
-                  <div className="w-28 min-w-0">
-                    <div className="flex items-center gap-1">
-                      <span className="font-semibold text-white">{c.baseAsset}</span>
-                      <span className="text-[11px] text-[#6B6F76]">
-                        /{c.quoteAsset ?? "USDT"}
-                      </span>
-                      {c.scanner_selected && (
-                        <span className="inline-flex items-center rounded-full bg-[#F5C542]/15 px-1 py-px text-[8px] font-bold text-[#F5C542] border border-[#F5C542]/30 leading-tight">
-                          SCAN
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                  <span className={`hidden w-14 text-right text-xs xl:block`}>
-                    <span className={`inline-flex rounded px-1.5 py-0.5 text-[10px] font-semibold ${scoreChipCls(c.opportunity_score)}`}>
-                      {c.opportunity_score}
-                    </span>
-                  </span>
-                  <span className="ml-auto w-24 text-right font-medium text-white">
-                    {fmtPrice(c.price)}
-                  </span>
-                  <span className="w-20 text-right">
-                    <span
-                      className={`inline-flex rounded-md border px-1.5 py-0.5 text-[11px] font-semibold ${pctChipCls(c.change24hPct)}`}
-                    >
-                      {c.change24hPct >= 0 ? "+" : ""}
-                      {c.change24hPct.toFixed(2)}%
-                    </span>
-                  </span>
-                  <span className="w-28 text-right text-[#BFC2C7]">
-                    {compactUsd(c.volume24hUsd)}
-                  </span>
-                  <span
-                    className={`hidden w-20 text-right text-xs md:block ${
-                      c.fundingRate != null
-                        ? c.fundingRate > 0
-                          ? "text-[#8fc9ab]"
-                          : c.fundingRate < 0
-                            ? "text-[#d49f9a]"
-                            : "text-[#8f95a3]"
-                        : "text-[#6B6F76]"
-                    }`}
-                  >
-                    {c.fundingRate != null
-                      ? `${c.fundingRate >= 0 ? "+" : ""}${(c.fundingRate * 100).toFixed(4)}%`
-                      : "---"}
-                  </span>
-                  <span className="hidden w-24 text-right text-xs text-[#BFC2C7] pr-1 lg:block">
-                    {c.oi_value != null ? compactUsd(c.oi_value) : "---"}
-                  </span>
-                </div>
+                />
               ))
             )}
-            {!loading && filtered.length === 0 && candidates.length > 0 ? (
+            {!loading && filtered.length === 0 && activeCoins.length > 0 ? (
               <div className="px-4 py-8 text-center text-sm text-[#6B6F76]">
                 No coins match your search.
               </div>
             ) : null}
           </div>
         </section>
+
+        {/* Cooldown section */}
+        {cooldownCoins.length > 0 && (
+          <section className="overflow-hidden rounded-2xl border border-white/10 bg-[#121316]">
+            <div className="flex items-center border-b border-white/10 bg-[#0F1012] px-4 py-2">
+              <span className="text-[10px] font-semibold uppercase tracking-wider text-[#6B6F76]">
+                Cooldown
+              </span>
+              <span className="ml-2 inline-flex rounded-full bg-[#F5C542]/10 px-1.5 py-px text-[9px] font-bold text-[#F5C542]">
+                {cooldownCoins.length}
+              </span>
+            </div>
+            <div className="max-h-48 overflow-y-auto">
+              {cooldownCoins.map((c) => (
+                <CooldownRow key={c.symbol} c={c} />
+              ))}
+            </div>
+          </section>
+        )}
       </div>
     </main>
   );

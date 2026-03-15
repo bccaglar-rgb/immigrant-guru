@@ -11,6 +11,7 @@ import type { AdminProviderStore } from "../services/adminProviderStore.ts";
 import type { BinanceFuturesHub } from "../services/binanceFuturesHub.ts";
 import type { ExchangeMarketHub } from "../services/marketHub/index.ts";
 import type { SystemScannerService } from "../services/systemScannerService.ts";
+import type { CoinUniverseEngine } from "../services/coinUniverseEngine.ts";
 import { computeEnhancedScore } from "../services/coinScoring.ts";
 
 type JsonValue = string | number | boolean | null | JsonValue[] | { [k: string]: JsonValue };
@@ -2814,7 +2815,7 @@ const fetchIndicatorsSnapshot = async () => {
 
 export const registerMarketRoutes = (
   app: Express,
-  options?: { providerStore?: AdminProviderStore; binanceFuturesHub?: BinanceFuturesHub; exchangeMarketHub?: ExchangeMarketHub; systemScanner?: SystemScannerService },
+  options?: { providerStore?: AdminProviderStore; binanceFuturesHub?: BinanceFuturesHub; exchangeMarketHub?: ExchangeMarketHub; systemScanner?: SystemScannerService; coinUniverseEngine?: CoinUniverseEngine },
 ) => {
   setMarketProviderStore(options?.providerStore);
   setMarketBinanceHub(options?.binanceFuturesHub);
@@ -2822,6 +2823,23 @@ export const registerMarketRoutes = (
   const binanceFuturesHub = options?.binanceFuturesHub;
   const exchangeMarketHub = options?.exchangeMarketHub;
   const systemScanner = options?.systemScanner;
+  const coinUniverseEngine = options?.coinUniverseEngine;
+
+  // ---- Coin Universe Engine endpoint ----
+  app.get("/api/market/universe-engine", (_req, res) => {
+    if (!coinUniverseEngine) {
+      res.status(503).json({ ok: false, error: "COIN_UNIVERSE_ENGINE_UNAVAILABLE" });
+      return;
+    }
+    const snapshot = coinUniverseEngine.getSnapshot();
+    res.json({
+      ok: true,
+      round: snapshot.round,
+      refreshedAt: snapshot.refreshedAt,
+      activeCoins: snapshot.activeCoins,
+      cooldownCoins: snapshot.cooldownCoins,
+    });
+  });
 
   app.get("/api/market/binance-futures-hub", (_req, res) => {
     if (!binanceFuturesHub) {
