@@ -517,9 +517,9 @@ export const computeVelocityConsensus = (input: VelocityConsensusInput): Velocit
   let decision: "TRADE" | "WATCH" | "NO_TRADE" = "NO_TRADE";
   if (anyHardBlock || gates.data === "BLOCK") {
     decision = "NO_TRADE";
-  } else if (finalScore >= 70) {
-    decision = "TRADE";
   } else if (finalScore >= 55) {
+    decision = "TRADE";
+  } else if (finalScore >= 35) {
     decision = "WATCH";
   } else {
     decision = "NO_TRADE";

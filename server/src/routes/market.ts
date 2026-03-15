@@ -672,7 +672,7 @@ const makeModeBreakdown = (
       edgeAdj: Number.isFinite(consensusCore.edgeNetR) ? consensusCore.edgeNetR : 0,
       riskAdj: Number.isFinite(consensusCore.riskAdjustment) ? consensusCore.riskAdjustment : 0,
       gatingFlags,
-      decision: out.finalScore >= 70 && out.gates.data === "PASS" && out.gates.safety === "PASS" ? "TRADE" : out.finalScore >= 50 ? "WATCH" : "NO_TRADE",
+      decision: out.finalScore >= 65 && out.gates.data === "PASS" && out.gates.safety === "PASS" ? "TRADE" : out.finalScore >= 45 ? "WATCH" : "NO_TRADE",
     };
   }
 
@@ -707,7 +707,7 @@ const makeModeBreakdown = (
     edgeAdj: Number.isFinite(consensusCore.edgeNetR) ? consensusCore.edgeNetR : 0,
     riskAdj: Number.isFinite(consensusCore.riskAdjustment) ? consensusCore.riskAdjustment : 0,
     gatingFlags,
-    decision: out.finalScore >= 70 && out.gates.data === "PASS" && out.gates.safety === "PASS" ? "TRADE" : out.finalScore >= 50 ? "WATCH" : "NO_TRADE",
+    decision: out.finalScore >= 68 && out.gates.data === "PASS" && out.gates.safety === "PASS" ? "TRADE" : out.finalScore >= 48 ? "WATCH" : "NO_TRADE",
   };
 };
 
@@ -3758,15 +3758,15 @@ export const registerMarketRoutes = (
         // Per-mode TRADE decision thresholds — must stay aligned with consensus functions
         const modeTradeThreshold: Record<ScoringMode, number> = {
           FLOW: 50,
-          AGGRESSIVE: 70,
-          BALANCED: 70,
-          CAPITAL_GUARD: 70,
+          AGGRESSIVE: 55,
+          BALANCED: 65,
+          CAPITAL_GUARD: 68,
         };
         const modeWatchThreshold: Record<ScoringMode, number> = {
           FLOW: 30,
-          AGGRESSIVE: 50,
-          BALANCED: 50,
-          CAPITAL_GUARD: 50,
+          AGGRESSIVE: 35,
+          BALANCED: 45,
+          CAPITAL_GUARD: 48,
         };
         for (const mode of SCORING_MODES) {
           const boost = srBoostBase * modeMultiplier[mode];

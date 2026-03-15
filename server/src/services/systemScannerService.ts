@@ -32,12 +32,12 @@ const DIVERSITY_SLOTS = 20; // 20 rotated from remaining pool for diversity
 const SCAN_CONCURRENCY = 8;
 const SCAN_INTERVAL_MS = 15_000; // 15 seconds between cycles
 const STARTUP_DELAY_MS = 20_000; // Wait for WS hubs to connect
-const IDEA_MIN_SCORE_PCT = 70;
+const IDEA_MIN_SCORE_PCT = 50;
 const IDEA_MIN_SCORE_BY_MODE: Record<string, number> = {
-  FLOW: 70,
-  AGGRESSIVE: 70,
-  BALANCED: 70,
-  CAPITAL_GUARD: 70,
+  FLOW: 50,
+  AGGRESSIVE: 55,
+  BALANCED: 65,
+  CAPITAL_GUARD: 68,
 };
 const MAX_TRADE_PER_MODE: Record<string, number> = {
   FLOW: 4,
