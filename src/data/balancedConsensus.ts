@@ -199,23 +199,23 @@ const conflictMultiplier = (conflictLevel: ConflictLevel | undefined): number =>
 
 const riskStressMultiplier = (stressLevel: TernaryRisk | undefined): number => {
   if (stressLevel === "LOW") return 1.0;
-  if (stressLevel === "MID") return 0.92;
-  if (stressLevel === "HIGH") return 0.78;
-  return 0.92;
+  if (stressLevel === "MID") return 0.96;
+  if (stressLevel === "HIGH") return 0.88;
+  return 0.96;
 };
 
 const riskCrowdingMultiplier = (crowdingRisk: TernaryRisk | undefined): number => {
   if (crowdingRisk === "LOW") return 1.0;
-  if (crowdingRisk === "MID") return 0.95;
-  if (crowdingRisk === "HIGH") return 0.88;
-  return 0.95;
+  if (crowdingRisk === "MID") return 0.97;
+  if (crowdingRisk === "HIGH") return 0.92;
+  return 0.97;
 };
 
 const riskCascadeMultiplier = (cascadeRisk: TernaryRisk | undefined): number => {
   if (cascadeRisk === "LOW") return 1.0;
-  if (cascadeRisk === "MID") return 0.93;
-  if (cascadeRisk === "HIGH") return 0.82;
-  return 0.93;
+  if (cascadeRisk === "MID") return 0.96;
+  if (cascadeRisk === "HIGH") return 0.88;
+  return 0.96;
 };
 
 const computeRegimeModifier = (
@@ -370,7 +370,7 @@ export const computeBalancedConsensus = (input: BalancedConsensusInput): Balance
     riskStressMultiplier(input.stressLevel) *
       riskCrowdingMultiplier(input.crowdingRisk) *
       riskCascadeMultiplier(input.cascadeRisk),
-    0.72,
+    0.82,
     1.0,
   );
   const rm = computeRegimeModifier(breakoutOnly, input.regime, input.compression, input.trendStrength, input.structureAge);
@@ -460,9 +460,9 @@ export const computeBalancedConsensus = (input: BalancedConsensusInput): Balance
   if (capacityBlocked) addReason(reasons, `Capacity gate BLOCK: capacity ${roundTo2(input.capacity ?? 0)}`, 780);
 
   const latencyP = latencyPenalty(Math.max(0, safeNumber(input.dataHealth.latencyMs, 0)));
-  const slippageP = input.slippageLevel === "HIGH" ? 0.06 : input.slippageLevel === "MED" ? 0.03 : 0;
-  const spoofP = input.spoofRisk === "HIGH" ? 0.05 : input.spoofRisk === "MID" ? 0.02 : 0;
-  const stressP = input.stressLevel === "HIGH" ? 0.08 : input.stressLevel === "MID" ? 0.04 : 0;
+  const slippageP = input.slippageLevel === "HIGH" ? 0.03 : input.slippageLevel === "MED" ? 0.01 : 0;
+  const spoofP = input.spoofRisk === "HIGH" ? 0.03 : input.spoofRisk === "MID" ? 0.01 : 0;
+  const stressP = input.stressLevel === "HIGH" ? 0.04 : input.stressLevel === "MID" ? 0.02 : 0;
   const degradedP = degradedFeedsPenalty(input.dataHealth.feeds ?? {});
   const liquidityLowP = input.liquidityDensity === "LOW" ? 0.05 : 0;
   const entryClosedP = input.entryWindow === "CLOSED" ? 0.06 : 0;
@@ -481,7 +481,7 @@ export const computeBalancedConsensus = (input: BalancedConsensusInput): Balance
   if (degradedP > 0) addReason(reasons, "Penalty: degraded feeds", degradedP * 900);
   if (liquidityLowP > 0) addReason(reasons, "Penalty: liquidity density LOW", 650);
 
-  let finalScore = roundTo2(clamp(adjusted01 * (1 - penaltyRate), 0, 1) * 100 + 8);
+  let finalScore = roundTo2(clamp(adjusted01 * (1 - penaltyRate), 0, 1) * 100 + 14);
   const anyHardBlock = riskBlocked || entryBlocked || fillBlocked || capacityBlocked;
   if (anyHardBlock) finalScore = roundTo2(Math.min(finalScore, 45));
 

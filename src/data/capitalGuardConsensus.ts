@@ -180,23 +180,23 @@ const agreementConflictMultiplier = (conflict: ConflictLevel | undefined): numbe
 
 const remStressMultiplier = (stress: TernaryRisk | undefined): number => {
   if (stress === "LOW") return 1.0;
-  if (stress === "MID") return 0.90;
-  if (stress === "HIGH") return 0.75;
-  return 0.90;
+  if (stress === "MID") return 0.94;
+  if (stress === "HIGH") return 0.84;
+  return 0.94;
 };
 
 const remCrowdingMultiplier = (crowding: TernaryRisk | undefined): number => {
   if (crowding === "LOW") return 1.0;
-  if (crowding === "MID") return 0.95;
-  if (crowding === "HIGH") return 0.86;
-  return 0.95;
+  if (crowding === "MID") return 0.97;
+  if (crowding === "HIGH") return 0.90;
+  return 0.97;
 };
 
 const remCascadeMultiplier = (cascade: TernaryRisk | undefined): number => {
   if (cascade === "LOW") return 1.0;
-  if (cascade === "MID") return 0.93;
-  if (cascade === "HIGH") return 0.82;
-  return 0.93;
+  if (cascade === "MID") return 0.96;
+  if (cascade === "HIGH") return 0.88;
+  return 0.96;
 };
 
 const entryModifier = (entryWindow: EntryWindow | undefined): number => {
@@ -327,7 +327,7 @@ export const computeCapitalGuardConsensus = (
     remStressMultiplier(input.stressLevel) *
       remCrowdingMultiplier(input.crowdingRisk) *
       remCascadeMultiplier(input.cascadeRisk),
-    0.70,
+    0.78,
     1.0,
   );
   const em = entryModifier(input.entryWindow);
@@ -342,7 +342,7 @@ export const computeCapitalGuardConsensus = (
   if (input.entryWindow === "CLOSED") addReason(reasons, "Modifier: entry window closed", 35);
 
   const latencyPenalty = latencyPenaltyRate(Math.max(0, safeNumber(input.dataHealth?.latencyMs, 0)));
-  const executionWeaknessPenalty = executionWeaknessPenaltyRate(pFill, input.slippageLevel, input.spoofRisk) * 0.6;
+  const executionWeaknessPenalty = executionWeaknessPenaltyRate(pFill, input.slippageLevel, input.spoofRisk) * 0.35;
   const entryClosedPenalty = input.entryWindow === "CLOSED" ? 0.05 : 0;
   const dataDegradedPenalty = degradedFeedsPenaltyRate(input.dataHealth?.feeds ?? {});
 
@@ -376,7 +376,7 @@ export const computeCapitalGuardConsensus = (
   if (safetyGateBlocked) addReason(reasons, "Safety block", 9_000);
 
   const final01PreFloor = clamp(adjusted01 * (1 - clamp(penaltyRate, 0, 1)), 0, 1);
-  const finalScorePreFloor = roundTo2(final01PreFloor * 100 + 6);
+  const finalScorePreFloor = roundTo2(final01PreFloor * 100 + 12);
 
   let floorsApplied = false;
   let finalScore = finalScorePreFloor;
@@ -388,7 +388,7 @@ export const computeCapitalGuardConsensus = (
   }
 
   if (safetyGate === "BLOCK") {
-    finalScore = Math.min(adjustedScore, 38);
+    finalScore = Math.min(adjustedScore, 44);
   }
 
   if (dataGate === "BLOCK") {
