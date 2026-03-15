@@ -940,6 +940,19 @@ export default function MarketDashboardPage() {
                 scoringMode={scoringMode}
                 settings={flowModeSettings}
                 onChange={setFlowModeSettings}
+                onResetAll={() => {
+                  setFeeds(initialFeeds);
+                  setScenario(initialScenario);
+                  setConsensusInputs(initialConsensusInputs);
+                  setFlowModeSettings(initialFlowModeSettings);
+                  setAdvanced(false);
+                  try {
+                    window.localStorage.removeItem(DASHBOARD_SETTINGS_STORAGE_KEY);
+                    window.localStorage.removeItem(LEGACY_DASHBOARD_SETTINGS_STORAGE_KEY);
+                    window.localStorage.removeItem("bitrium.flow_mode_settings.v2");
+                    window.localStorage.removeItem("bitrium.flow_mode_settings");
+                  } catch { /* ignore */ }
+                }}
               />
 
               <FeedToggles

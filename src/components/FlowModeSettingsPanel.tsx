@@ -8,6 +8,7 @@ interface Props {
   scoringMode: ScoringMode;
   settings: FlowModeSettings;
   onChange: (next: FlowModeSettings) => void;
+  onResetAll?: () => void;
 }
 
 const clamp = (value: number, min: number, max: number) => Math.max(min, Math.min(max, value));
@@ -79,7 +80,7 @@ const TuningSlider = ({
   );
 };
 
-export const FlowModeSettingsPanel = ({ scoringMode, settings, onChange }: Props) => {
+export const FlowModeSettingsPanel = ({ scoringMode, settings, onChange, onResetAll }: Props) => {
   const isFlowActive = scoringMode === "FLOW";
   const [openSections, setOpenSections] = useState<Record<TuningSectionKey, boolean>>({
     scoreTuning: false,
@@ -122,15 +123,30 @@ export const FlowModeSettingsPanel = ({ scoringMode, settings, onChange }: Props
             Customize consensus strength, execution tolerance, and risk filters to align with your trading style.
           </p>
         </div>
-        <span
-          className={`shrink-0 rounded-full border px-2 py-1 text-[10px] font-semibold ${
-            isFlowActive
-              ? "border-[#6f765f] bg-[#1f251b] text-[#d8decf]"
-              : "border-white/15 bg-[#171a1f] text-[#b5bbc6]"
-          }`}
-        >
-          {isFlowActive ? "Flow Active" : "Flow Inactive"}
-        </span>
+        <div className="flex shrink-0 items-center gap-2">
+          {onResetAll && (
+            <button
+              type="button"
+              onClick={onResetAll}
+              title="Reset all settings to defaults"
+              className="flex items-center gap-1 rounded-full border border-white/10 bg-[#171a1f] px-2 py-1 text-[10px] font-semibold text-[#9BA1AE] transition hover:border-[#F5C542]/40 hover:text-[#F5C542]"
+            >
+              <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+              Reset All
+            </button>
+          )}
+          <span
+            className={`rounded-full border px-2 py-1 text-[10px] font-semibold ${
+              isFlowActive
+                ? "border-[#6f765f] bg-[#1f251b] text-[#d8decf]"
+                : "border-white/15 bg-[#171a1f] text-[#b5bbc6]"
+            }`}
+          >
+            {isFlowActive ? "Flow Active" : "Flow Inactive"}
+          </span>
+        </div>
       </div>
 
       <div className="grid gap-3 md:grid-cols-3">

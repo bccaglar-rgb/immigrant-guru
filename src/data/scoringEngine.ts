@@ -10,7 +10,7 @@ export const DEFAULT_FLOW_SCORING_TUNING: FlowScoringTuningConfig = {
   crowdingFailureCoeff: 0.04,
   riskMultiplierFloor: 0.80,
   modeBias: 1.38,
-  compressKnee: 88,
+  compressKnee: 99,
   compressScale: 22,
   fillHardBlockThreshold: 0.10,
   fillGateThreshold: 0.20,
