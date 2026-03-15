@@ -32,7 +32,11 @@ export const AppShell = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
   const location = useLocation();
   const title = useMemo(() => titleForPath(location.pathname), [location.pathname]);
-  const sidebar = useSidebarStore();
+  const sidebarExpanded = useSidebarStore((s) => s.expanded);
+  const sidebarMode = useSidebarStore((s) => s.mode);
+  const setHovered = useSidebarStore((s) => s.setHovered);
+  const toggleMode = useSidebarStore((s) => s.toggleMode);
+  const clearPinned = useSidebarStore((s) => s.clearPinned);
 
   useEffect(() => {
     applyStoredTheme();
@@ -44,24 +48,24 @@ export const AppShell = () => {
   }, []);
 
   useEffect(() => {
-    if (sidebar.mode === "auto") {
-      sidebar.clearPinned();
+    if (sidebarMode === "auto") {
+      clearPinned();
     }
-  }, [location.pathname]);
+  }, [location.pathname, sidebarMode, clearPinned]);
 
   return (
     <div className="min-h-screen bg-[var(--bg)] text-[var(--textMuted)]">
       <div className="hidden md:fixed md:inset-y-0 md:left-0 md:z-[70] md:block">
         <Sidebar
-          expanded={sidebar.expanded}
-          mode={sidebar.mode}
-          onMouseEnter={() => sidebar.setHovered(true)}
-          onMouseLeave={() => sidebar.setHovered(false)}
-          onToggleMode={sidebar.toggleMode}
+          expanded={sidebarExpanded}
+          mode={sidebarMode}
+          onMouseEnter={() => setHovered(true)}
+          onMouseLeave={() => setHovered(false)}
+          onToggleMode={toggleMode}
         />
       </div>
 
-      <div className={`transition-[padding] duration-300 ${sidebar.expanded ? "md:pl-[260px]" : "md:pl-16"}`}>
+      <div className={`transition-[padding] duration-300 ${sidebarExpanded ? "md:pl-[260px]" : "md:pl-16"}`}>
         <TopBar title={title} onMenuClick={() => setMobileOpen(true)} />
         <Outlet />
       </div>
