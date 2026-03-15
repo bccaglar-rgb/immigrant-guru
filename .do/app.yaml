@@ -1,0 +1,23 @@
+name: bitrium
+region: fra
+services:
+  - name: web
+    github:
+      repo: bccaglar-rgb/Bitrium
+      branch: main
+      deploy_on_push: true
+    dockerfile_path: Dockerfile
+    http_port: 8090
+    instance_size_slug: professional-xs
+    instance_count: 1
+    routes:
+      - path: /
+    envs:
+      - key: NODE_ENV
+        value: production
+      - key: HOST
+        value: "0.0.0.0"
+      - key: PORT
+        value: "8090"
+      - key: DISABLE_DEV_ADMIN
+        value: "1"

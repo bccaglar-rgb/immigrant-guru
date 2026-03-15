@@ -1,5 +1,7 @@
 import express from "express";
 import http from "node:http";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { randomBytes } from "node:crypto";
 import { registerConnectionRoutes } from "./routes/connections.ts";
 import { registerExchangeRoutes } from "./routes/exchanges.ts";
@@ -82,6 +84,19 @@ registerExchangeCoreRoutes(app, exchangeCore);
 registerTraderHubRoutes(app, traderHubEngine);
 registerPaymentsRoutes(app, authService, paymentService);
 registerTokenCreatorRoutes(app, authService, tokenCreatorService);
+
+// In production, serve the Vite-built frontend
+if (process.env.NODE_ENV === "production") {
+  const __dirname = path.dirname(fileURLToPath(import.meta.url));
+  const distPath = path.resolve(__dirname, "../../dist");
+  app.use(express.static(distPath));
+  // SPA fallback: any non-API route returns index.html
+  app.get("*", (_req, res) => {
+    if (!_req.path.startsWith("/api") && !_req.path.startsWith("/ws")) {
+      res.sendFile(path.join(distPath, "index.html"));
+    }
+  });
+}
 
 const server = http.createServer(app);
 createGateway(server);
