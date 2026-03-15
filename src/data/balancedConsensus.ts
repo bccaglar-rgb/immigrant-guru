@@ -157,65 +157,65 @@ export const normalizeBalancedRiskAdjEdge = (riskAdjEdgeR: number): number => {
 
 const spreadMultiplier = (spreadRegime: SpreadRegime | undefined): number => {
   if (spreadRegime === "TIGHT") return 1.0;
-  if (spreadRegime === "MID") return 0.9;
-  if (spreadRegime === "WIDE") return 0.75;
-  return 0.88;
+  if (spreadRegime === "MID") return 0.94;
+  if (spreadRegime === "WIDE") return 0.84;
+  return 0.92;
 };
 
 const depthMultiplier = (depthQuality: DepthQuality | undefined): number => {
   if (depthQuality === "GOOD") return 1.0;
-  if (depthQuality === "MID") return 0.88;
-  if (depthQuality === "POOR") return 0.7;
-  return 0.85;
+  if (depthQuality === "MID") return 0.93;
+  if (depthQuality === "POOR") return 0.80;
+  return 0.90;
 };
 
 const liquidityDensityMultiplier = (liquidityDensity: LiquidityDensity | undefined): number => {
   if (liquidityDensity === "HIGH") return 1.0;
-  if (liquidityDensity === "MID") return 0.92;
-  if (liquidityDensity === "LOW") return 0.82;
-  return 0.9;
+  if (liquidityDensity === "MID") return 0.95;
+  if (liquidityDensity === "LOW") return 0.88;
+  return 0.93;
 };
 
 const spoofMultiplier = (spoofRisk: TernaryRisk | undefined): number => {
   if (spoofRisk === "LOW") return 1.0;
-  if (spoofRisk === "MID") return 0.9;
-  if (spoofRisk === "HIGH") return 0.78;
-  return 0.88;
+  if (spoofRisk === "MID") return 0.94;
+  if (spoofRisk === "HIGH") return 0.86;
+  return 0.92;
 };
 
 const slippageMultiplier = (slippageLevel: SlippageLevel | undefined): number => {
   if (slippageLevel === "LOW") return 1.0;
-  if (slippageLevel === "MED") return 0.9;
-  if (slippageLevel === "HIGH") return 0.78;
-  return 0.88;
+  if (slippageLevel === "MED") return 0.94;
+  if (slippageLevel === "HIGH") return 0.86;
+  return 0.92;
 };
 
 const conflictMultiplier = (conflictLevel: ConflictLevel | undefined): number => {
   if (conflictLevel === "LOW") return 1.0;
-  if (conflictLevel === "MID") return 0.9;
-  if (conflictLevel === "HIGH") return 0.78;
-  return 0.88;
+  if (conflictLevel === "MID") return 0.94;
+  if (conflictLevel === "HIGH") return 0.86;
+  return 0.92;
 };
 
 const riskStressMultiplier = (stressLevel: TernaryRisk | undefined): number => {
   if (stressLevel === "LOW") return 1.0;
-  if (stressLevel === "MID") return 0.85;
-  if (stressLevel === "HIGH") return 0.65;
-  return 0.85;
+  if (stressLevel === "MID") return 0.92;
+  if (stressLevel === "HIGH") return 0.78;
+  return 0.92;
 };
 
 const riskCrowdingMultiplier = (crowdingRisk: TernaryRisk | undefined): number => {
   if (crowdingRisk === "LOW") return 1.0;
-  if (crowdingRisk === "MID") return 0.92;
-  if (crowdingRisk === "HIGH") return 0.8;
-  return 0.92;
+  if (crowdingRisk === "MID") return 0.95;
+  if (crowdingRisk === "HIGH") return 0.88;
+  return 0.95;
 };
 
 const riskCascadeMultiplier = (cascadeRisk: TernaryRisk | undefined): number => {
   if (cascadeRisk === "LOW") return 1.0;
-  if (cascadeRisk === "MID") return 0.88;
-  if (cascadeRisk === "HIGH") return 0.72;
-  return 0.88;
+  if (cascadeRisk === "MID") return 0.93;
+  if (cascadeRisk === "HIGH") return 0.82;
+  return 0.93;
 };
 
 const computeRegimeModifier = (
@@ -370,7 +370,7 @@ export const computeBalancedConsensus = (input: BalancedConsensusInput): Balance
     riskStressMultiplier(input.stressLevel) *
       riskCrowdingMultiplier(input.crowdingRisk) *
       riskCascadeMultiplier(input.cascadeRisk),
-    0.55,
+    0.72,
     1.0,
   );
   const rm = computeRegimeModifier(breakoutOnly, input.regime, input.compression, input.trendStrength, input.structureAge);
@@ -444,10 +444,10 @@ export const computeBalancedConsensus = (input: BalancedConsensusInput): Balance
     return outputBlocked;
   }
 
-  const riskBlocked = input.stressLevel === "HIGH" || input.cascadeRisk === "HIGH";
-  const entryBlocked = input.entryWindow === "CLOSED";
-  const fillBlocked = typeof input.pFill === "number" && input.pFill < 0.35;
-  const capacityBlocked = typeof input.capacity === "number" && input.capacity < 0.4;
+  const riskBlocked = input.stressLevel === "HIGH" && input.cascadeRisk === "HIGH";
+  const entryBlocked = false;
+  const fillBlocked = typeof input.pFill === "number" && input.pFill < 0.15;
+  const capacityBlocked = typeof input.capacity === "number" && input.capacity < 0.2;
 
   gates.risk = riskBlocked ? "BLOCK" : "PASS";
   gates.entry = entryBlocked ? "BLOCK" : "PASS";
@@ -460,9 +460,9 @@ export const computeBalancedConsensus = (input: BalancedConsensusInput): Balance
   if (capacityBlocked) addReason(reasons, `Capacity gate BLOCK: capacity ${roundTo2(input.capacity ?? 0)}`, 780);
 
   const latencyP = latencyPenalty(Math.max(0, safeNumber(input.dataHealth.latencyMs, 0)));
-  const slippageP = input.slippageLevel === "HIGH" ? 0.1 : input.slippageLevel === "MED" ? 0.05 : 0;
-  const spoofP = input.spoofRisk === "HIGH" ? 0.08 : input.spoofRisk === "MID" ? 0.04 : 0;
-  const stressP = input.stressLevel === "HIGH" ? 0.12 : input.stressLevel === "MID" ? 0.06 : 0;
+  const slippageP = input.slippageLevel === "HIGH" ? 0.06 : input.slippageLevel === "MED" ? 0.03 : 0;
+  const spoofP = input.spoofRisk === "HIGH" ? 0.05 : input.spoofRisk === "MID" ? 0.02 : 0;
+  const stressP = input.stressLevel === "HIGH" ? 0.08 : input.stressLevel === "MID" ? 0.04 : 0;
   const degradedP = degradedFeedsPenalty(input.dataHealth.feeds ?? {});
   const liquidityLowP = input.liquidityDensity === "LOW" ? 0.05 : 0;
   const entryClosedP = input.entryWindow === "CLOSED" ? 0.06 : 0;
@@ -481,16 +481,16 @@ export const computeBalancedConsensus = (input: BalancedConsensusInput): Balance
   if (degradedP > 0) addReason(reasons, "Penalty: degraded feeds", degradedP * 900);
   if (liquidityLowP > 0) addReason(reasons, "Penalty: liquidity density LOW", 650);
 
-  let finalScore = roundTo2(clamp(adjusted01 * (1 - penaltyRate), 0, 1) * 100);
+  let finalScore = roundTo2(clamp(adjusted01 * (1 - penaltyRate), 0, 1) * 100 + 8);
   const anyHardBlock = riskBlocked || entryBlocked || fillBlocked || capacityBlocked;
-  if (anyHardBlock) finalScore = roundTo2(Math.min(finalScore, 35));
+  if (anyHardBlock) finalScore = roundTo2(Math.min(finalScore, 45));
 
   let decision: "TRADE" | "WATCH" | "NO_TRADE" = "NO_TRADE";
   if (anyHardBlock || gates.data === "BLOCK") {
     decision = "NO_TRADE";
-  } else if (finalScore >= 70) {
+  } else if (finalScore >= 58) {
     decision = "TRADE";
-  } else if (finalScore >= 55) {
+  } else if (finalScore >= 42) {
     decision = "WATCH";
   } else {
     decision = "NO_TRADE";

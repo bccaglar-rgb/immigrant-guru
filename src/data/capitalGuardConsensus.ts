@@ -145,58 +145,58 @@ export const normalizeRiskAdjEdge = (riskAdjEdgeR: number): number => {
 
 const spreadMultiplier = (spreadRegime: CapitalGuardConsensusInput["spreadRegime"]): number => {
   if (spreadRegime === "TIGHT") return 1.0;
-  if (spreadRegime === "MID") return 0.92;
-  if (spreadRegime === "WIDE") return 0.8;
-  return 0.9;
+  if (spreadRegime === "MID") return 0.95;
+  if (spreadRegime === "WIDE") return 0.86;
+  return 0.93;
 };
 
 const depthMultiplier = (depth: CapitalGuardConsensusInput["depthQuality"]): number => {
   if (depth === "GOOD") return 1.0;
-  if (depth === "MID") return 0.9;
-  if (depth === "POOR") return 0.75;
-  return 0.88;
+  if (depth === "MID") return 0.94;
+  if (depth === "POOR") return 0.82;
+  return 0.91;
 };
 
 const spoofMultiplier = (spoofRisk: TernaryRisk | undefined): number => {
   if (spoofRisk === "LOW") return 1.0;
-  if (spoofRisk === "MID") return 0.92;
-  if (spoofRisk === "HIGH") return 0.8;
-  return 0.9;
+  if (spoofRisk === "MID") return 0.95;
+  if (spoofRisk === "HIGH") return 0.86;
+  return 0.93;
 };
 
 const slippageMultiplier = (slippage: SlippageLevel | undefined): number => {
   if (slippage === "LOW") return 1.0;
-  if (slippage === "MED") return 0.92;
-  if (slippage === "HIGH") return 0.82;
-  return 0.9;
+  if (slippage === "MED") return 0.95;
+  if (slippage === "HIGH") return 0.88;
+  return 0.93;
 };
 
 const agreementConflictMultiplier = (conflict: ConflictLevel | undefined): number => {
   if (conflict === "LOW") return 1.0;
-  if (conflict === "MID") return 0.92;
-  if (conflict === "HIGH") return 0.8;
-  return 0.9;
+  if (conflict === "MID") return 0.95;
+  if (conflict === "HIGH") return 0.86;
+  return 0.93;
 };
 
 const remStressMultiplier = (stress: TernaryRisk | undefined): number => {
   if (stress === "LOW") return 1.0;
-  if (stress === "MID") return 0.85;
-  if (stress === "HIGH") return 0.65;
-  return 0.85;
+  if (stress === "MID") return 0.90;
+  if (stress === "HIGH") return 0.75;
+  return 0.90;
 };
 
 const remCrowdingMultiplier = (crowding: TernaryRisk | undefined): number => {
   if (crowding === "LOW") return 1.0;
-  if (crowding === "MID") return 0.92;
-  if (crowding === "HIGH") return 0.8;
-  return 0.92;
+  if (crowding === "MID") return 0.95;
+  if (crowding === "HIGH") return 0.86;
+  return 0.95;
 };
 
 const remCascadeMultiplier = (cascade: TernaryRisk | undefined): number => {
   if (cascade === "LOW") return 1.0;
-  if (cascade === "MID") return 0.9;
-  if (cascade === "HIGH") return 0.75;
-  return 0.9;
+  if (cascade === "MID") return 0.93;
+  if (cascade === "HIGH") return 0.82;
+  return 0.93;
 };
 
 const entryModifier = (entryWindow: EntryWindow | undefined): number => {
@@ -256,10 +256,10 @@ const degradedFeedsPenaltyRate = (feeds: CapitalGuardDataHealth["feeds"]): numbe
 };
 
 const scoreFactorFromFinalScore = (finalScore: number): number => {
-  if (finalScore < 60) return 0;
-  if (finalScore <= 75) return lerpRange(finalScore, 60, 75, 0.3, 0.6);
-  if (finalScore <= 90) return lerpRange(finalScore, 75, 90, 0.6, 0.9);
-  return lerpRange(clamp(finalScore, 90, 100), 90, 100, 0.9, 1.0);
+  if (finalScore < 45) return 0;
+  if (finalScore <= 65) return lerpRange(finalScore, 45, 65, 0.3, 0.6);
+  if (finalScore <= 85) return lerpRange(finalScore, 65, 85, 0.6, 0.9);
+  return lerpRange(clamp(finalScore, 85, 100), 85, 100, 0.9, 1.0);
 };
 
 const addReason = (reasons: ReasonEntry[], text: string, impact: number) => {
@@ -327,7 +327,7 @@ export const computeCapitalGuardConsensus = (
     remStressMultiplier(input.stressLevel) *
       remCrowdingMultiplier(input.crowdingRisk) *
       remCascadeMultiplier(input.cascadeRisk),
-    0.6,
+    0.70,
     1.0,
   );
   const em = entryModifier(input.entryWindow);
@@ -342,7 +342,7 @@ export const computeCapitalGuardConsensus = (
   if (input.entryWindow === "CLOSED") addReason(reasons, "Modifier: entry window closed", 35);
 
   const latencyPenalty = latencyPenaltyRate(Math.max(0, safeNumber(input.dataHealth?.latencyMs, 0)));
-  const executionWeaknessPenalty = executionWeaknessPenaltyRate(pFill, input.slippageLevel, input.spoofRisk);
+  const executionWeaknessPenalty = executionWeaknessPenaltyRate(pFill, input.slippageLevel, input.spoofRisk) * 0.6;
   const entryClosedPenalty = input.entryWindow === "CLOSED" ? 0.05 : 0;
   const dataDegradedPenalty = degradedFeedsPenaltyRate(input.dataHealth?.feeds ?? {});
 
@@ -351,7 +351,7 @@ export const computeCapitalGuardConsensus = (
     0,
     0.4,
   );
-  const isAPlus = structure01 >= 0.75 && edge01 >= 0.75;
+  const isAPlus = structure01 >= 0.60 && edge01 >= 0.55;
   const penaltyRate = roundTo2(isAPlus ? rawPenalty * 0.5 : rawPenalty);
 
   if (latencyPenalty > 0) addReason(reasons, "Penalty: latency high", latencyPenalty * 1000);
@@ -376,19 +376,19 @@ export const computeCapitalGuardConsensus = (
   if (safetyGateBlocked) addReason(reasons, "Safety block", 9_000);
 
   const final01PreFloor = clamp(adjusted01 * (1 - clamp(penaltyRate, 0, 1)), 0, 1);
-  const finalScorePreFloor = roundTo2(final01PreFloor * 100);
+  const finalScorePreFloor = roundTo2(final01PreFloor * 100 + 6);
 
   let floorsApplied = false;
   let finalScore = finalScorePreFloor;
   if (isAPlus && dataGate === "PASS" && safetyGate === "PASS") {
-    const floored = Math.max(finalScorePreFloor, 65);
+    const floored = Math.max(finalScorePreFloor, 55);
     floorsApplied = floored > finalScorePreFloor;
     finalScore = floored;
     if (floorsApplied) addReason(reasons, "A+ setup floor applied", 150);
   }
 
   if (safetyGate === "BLOCK") {
-    finalScore = Math.min(adjustedScore, 25);
+    finalScore = Math.min(adjustedScore, 38);
   }
 
   if (dataGate === "BLOCK") {

@@ -214,65 +214,65 @@ const suddenMoveFilter = (suddenMoveRisk: TernaryRisk | undefined): number => {
 
 const spreadMultiplier = (spreadRegime: SpreadRegime | undefined): number => {
   if (spreadRegime === "TIGHT") return 1.0;
-  if (spreadRegime === "MID") return 0.92;
-  if (spreadRegime === "WIDE") return 0.78;
-  return 0.9;
+  if (spreadRegime === "MID") return 0.96;
+  if (spreadRegime === "WIDE") return 0.88;
+  return 0.94;
 };
 
 const depthMultiplier = (depthQuality: DepthQuality | undefined): number => {
   if (depthQuality === "GOOD") return 1.0;
-  if (depthQuality === "MID") return 0.9;
-  if (depthQuality === "POOR") return 0.72;
-  return 0.86;
+  if (depthQuality === "MID") return 0.95;
+  if (depthQuality === "POOR") return 0.84;
+  return 0.92;
 };
 
 const liquidityDensityMultiplier = (liquidityDensity: LiquidityDensity | undefined): number => {
   if (liquidityDensity === "HIGH") return 1.0;
-  if (liquidityDensity === "MID") return 0.93;
-  if (liquidityDensity === "LOW") return 0.84;
-  return 0.9;
+  if (liquidityDensity === "MID") return 0.96;
+  if (liquidityDensity === "LOW") return 0.90;
+  return 0.94;
 };
 
 const spoofMultiplier = (spoofRisk: TernaryRisk | undefined): number => {
   if (spoofRisk === "LOW") return 1.0;
-  if (spoofRisk === "MID") return 0.92;
-  if (spoofRisk === "HIGH") return 0.82;
-  return 0.9;
+  if (spoofRisk === "MID") return 0.96;
+  if (spoofRisk === "HIGH") return 0.90;
+  return 0.94;
 };
 
 const slippageMultiplier = (slippageLevel: SlippageLevel | undefined): number => {
   if (slippageLevel === "LOW") return 1.0;
-  if (slippageLevel === "MED") return 0.92;
-  if (slippageLevel === "HIGH") return 0.82;
-  return 0.9;
+  if (slippageLevel === "MED") return 0.96;
+  if (slippageLevel === "HIGH") return 0.90;
+  return 0.94;
 };
 
 const conflictMultiplier = (conflictLevel: ConflictLevel | undefined): number => {
   if (conflictLevel === "LOW") return 1.0;
-  if (conflictLevel === "MID") return 0.92;
-  if (conflictLevel === "HIGH") return 0.82;
-  return 0.9;
+  if (conflictLevel === "MID") return 0.96;
+  if (conflictLevel === "HIGH") return 0.90;
+  return 0.94;
 };
 
 const remStressMultiplier = (stressLevel: TernaryRisk | undefined): number => {
   if (stressLevel === "LOW") return 1.0;
-  if (stressLevel === "MID") return 0.93;
-  if (stressLevel === "HIGH") return 0.84;
-  return 0.93;
+  if (stressLevel === "MID") return 0.96;
+  if (stressLevel === "HIGH") return 0.90;
+  return 0.96;
 };
 
 const remCrowdingMultiplier = (crowdingRisk: TernaryRisk | undefined): number => {
   if (crowdingRisk === "LOW") return 1.0;
-  if (crowdingRisk === "MID") return 0.96;
-  if (crowdingRisk === "HIGH") return 0.9;
-  return 0.96;
+  if (crowdingRisk === "MID") return 0.98;
+  if (crowdingRisk === "HIGH") return 0.94;
+  return 0.97;
 };
 
 const remCascadeMultiplier = (cascadeRisk: TernaryRisk | undefined): number => {
   if (cascadeRisk === "LOW") return 1.0;
-  if (cascadeRisk === "MID") return 0.95;
-  if (cascadeRisk === "HIGH") return 0.88;
-  return 0.95;
+  if (cascadeRisk === "MID") return 0.97;
+  if (cascadeRisk === "HIGH") return 0.92;
+  return 0.96;
 };
 
 const computeBreakoutModifier = (
@@ -406,12 +406,12 @@ export const computeVelocityConsensus = (input: VelocityConsensusInput): Velocit
     remStressMultiplier(input.stressLevel) *
       remCrowdingMultiplier(input.crowdingRisk) *
       remCascadeMultiplier(input.cascadeRisk),
-    0.76,
+    0.84,
     1.0,
   );
   const bm = computeBreakoutModifier(breakoutOnly, input.compression, input.regime, input.trendStrength);
   const vm = computeVolatilityModifier(input.atrRegime, input.marketSpeed);
-  const momentumLift = momentum01 >= 0.8 ? 0.1 : momentum01 >= 0.65 ? 0.07 : momentum01 >= 0.5 ? 0.03 : 0;
+  const momentumLift = momentum01 >= 0.7 ? 0.14 : momentum01 >= 0.55 ? 0.10 : momentum01 >= 0.4 ? 0.06 : 0.02;
   const adjusted01 = clamp((base01 * rem * bm * vm) + momentumLift, 0, 1);
   const adjustedScore = roundTo2(adjusted01 * 100);
 
@@ -478,8 +478,8 @@ export const computeVelocityConsensus = (input: VelocityConsensusInput): Velocit
 
   const riskBlocked =
     (input.stressLevel === "HIGH" && input.cascadeRisk === "HIGH");
-  const entryBlocked = input.entryWindow === "CLOSED";
-  const fillBlocked = typeof input.pFill === "number" && input.pFill < 0.15;
+  const entryBlocked = false;
+  const fillBlocked = typeof input.pFill === "number" && input.pFill < 0.08;
 
   gates.risk = riskBlocked ? "BLOCK" : "PASS";
   gates.entry = entryBlocked ? "BLOCK" : "PASS";
@@ -505,20 +505,21 @@ export const computeVelocityConsensus = (input: VelocityConsensusInput): Velocit
   const penaltyRate = 0;
 
   const opportunityUplift =
-    (input.volumeSpike === "ON" ? 6 : 0) +
-    (input.impulseReadiness === "HIGH" ? 5 : input.impulseReadiness === "MID" ? 3 : 0) +
-    (input.marketSpeed === "FAST" ? 4 : input.marketSpeed === "NORMAL" ? 2 : 0) +
-    (input.regime === "TREND" ? 3 : 0);
-  let finalScore = roundTo2(clamp((adjusted01 * 100) + opportunityUplift, 0, 100));
+    (input.volumeSpike === "ON" ? 8 : 0) +
+    (input.impulseReadiness === "HIGH" ? 7 : input.impulseReadiness === "MID" ? 4 : 0) +
+    (input.marketSpeed === "FAST" ? 6 : input.marketSpeed === "NORMAL" ? 3 : 0) +
+    (input.regime === "TREND" ? 5 : input.regime === "MIXED" ? 2 : 0) +
+    (input.atrRegime === "HIGH" ? 4 : input.atrRegime === "MID" ? 2 : 0);
+  let finalScore = roundTo2(clamp((adjusted01 * 100) + opportunityUplift + 12, 0, 100));
   const anyHardBlock = riskBlocked || entryBlocked || fillBlocked;
-  if (anyHardBlock) finalScore = roundTo2(Math.min(finalScore, 40));
+  if (anyHardBlock) finalScore = roundTo2(Math.min(finalScore, 52));
 
   let decision: "TRADE" | "WATCH" | "NO_TRADE" = "NO_TRADE";
   if (anyHardBlock || gates.data === "BLOCK") {
     decision = "NO_TRADE";
-  } else if (finalScore >= 54) {
+  } else if (finalScore >= 45) {
     decision = "TRADE";
-  } else if (finalScore >= 40) {
+  } else if (finalScore >= 30) {
     decision = "WATCH";
   } else {
     decision = "NO_TRADE";
