@@ -43,6 +43,36 @@ interface UniverseEngineResponse {
 }
 
 /* ------------------------------------------------------------------ */
+/*  Sort                                                               */
+/* ------------------------------------------------------------------ */
+
+type SortKey =
+  | "compositeScore"
+  | "price"
+  | "change24hPct"
+  | "volume24hUsd"
+  | "fundingRate"
+  | "spreadBps"
+  | "atrPct"
+  | "srDistPct"
+  | "rsi14";
+
+type SortDir = "asc" | "desc";
+
+const numVal = (v: number | null | undefined): number =>
+  v != null && Number.isFinite(v) ? v : -Infinity;
+
+function sortCoins(coins: UniverseCoinRow[], key: SortKey, dir: SortDir): UniverseCoinRow[] {
+  const m = dir === "desc" ? -1 : 1;
+  return [...coins].sort((a, b) => {
+    const va = numVal(a[key] as number | null);
+    const vb = numVal(b[key] as number | null);
+    if (va === vb) return 0;
+    return va < vb ? -1 * m : 1 * m;
+  });
+}
+
+/* ------------------------------------------------------------------ */
 /*  Formatters                                                         */
 /* ------------------------------------------------------------------ */
 
@@ -73,21 +103,27 @@ const scoreChipCls = (v: number) => {
 };
 
 const atrChipCls = (v: number) => {
-  if (v > 1.5) return "text-[#f87171]";  // HIGH — red
-  if (v > 0.8) return "text-[#F5C542]";  // NORMAL — yellow
-  return "text-[#60a5fa]";               // LOW — blue
+  if (v > 1.5) return "text-[#f87171]";
+  if (v > 0.8) return "text-[#F5C542]";
+  return "text-[#60a5fa]";
 };
 
 const srDistCls = (v: number) => {
-  if (v < 1) return "text-[#4ade80] font-semibold";   // Very close — bright green
-  if (v < 3) return "text-[#8fc9ab]";                  // Moderate — green
-  return "text-[#6B6F76]";                             // Far — dim
+  if (v < 1) return "text-[#4ade80] font-semibold";
+  if (v < 3) return "text-[#8fc9ab]";
+  return "text-[#6B6F76]";
 };
 
 const rsiCls = (v: number) => {
-  if (v < 30) return "text-[#4ade80]";    // Oversold — green
-  if (v > 70) return "text-[#f87171]";    // Overbought — red
-  return "text-[#8f95a3]";               // Neutral — gray
+  if (v < 30) return "text-[#4ade80]";
+  if (v > 70) return "text-[#f87171]";
+  return "text-[#8f95a3]";
+};
+
+const spreadCls = (v: number) => {
+  if (v <= 2) return "text-[#4ade80]";   // Tight
+  if (v <= 5) return "text-[#F5C542]";   // Moderate
+  return "text-[#f87171]";               // Wide
 };
 
 const REFRESH_MS = 15_000;
@@ -159,6 +195,37 @@ const SkeletonRows = () => (
 );
 
 /* ------------------------------------------------------------------ */
+/*  Sortable Header                                                    */
+/* ------------------------------------------------------------------ */
+
+function SortHeader({
+  label,
+  sortKey,
+  activeKey,
+  dir,
+  onSort,
+  className,
+}: {
+  label: string;
+  sortKey: SortKey;
+  activeKey: SortKey;
+  dir: SortDir;
+  onSort: (key: SortKey) => void;
+  className?: string;
+}) {
+  const isActive = sortKey === activeKey;
+  const arrow = isActive ? (dir === "desc" ? " ▼" : " ▲") : "";
+  return (
+    <span
+      className={`cursor-pointer select-none transition-colors hover:text-[#BFC2C7] ${isActive ? "text-[#E7E9ED]" : ""} ${className ?? ""}`}
+      onClick={() => onSort(sortKey)}
+    >
+      {label}{arrow}
+    </span>
+  );
+}
+
+/* ------------------------------------------------------------------ */
 /*  Coin Row                                                           */
 /* ------------------------------------------------------------------ */
 
@@ -168,15 +235,10 @@ function CoinRow({ c, idx, onClick }: { c: UniverseCoinRow; idx: number; onClick
       className="flex cursor-pointer items-center border-b border-white/5 px-4 py-2 text-sm transition hover:bg-[#17191d]"
       onClick={onClick}
     >
-      {/* # */}
       <span className="w-8 text-center text-xs text-[#6B6F76]">{idx + 1}</span>
-
-      {/* Icon */}
       <span className="w-9 flex-shrink-0">
         <CoinIcon symbol={c.symbol} className="h-7 w-7" />
       </span>
-
-      {/* Coin name + badges */}
       <div className="w-28 min-w-0">
         <div className="flex items-center gap-1">
           <span className="font-semibold text-white">{c.baseAsset}</span>
@@ -193,43 +255,26 @@ function CoinRow({ c, idx, onClick }: { c: UniverseCoinRow; idx: number; onClick
           )}
         </div>
       </div>
-
-      {/* Score */}
       <span className="hidden w-14 text-right text-xs xl:block">
         <span className={`inline-flex rounded px-1.5 py-0.5 text-[10px] font-semibold ${scoreChipCls(c.compositeScore)}`}>
           {c.compositeScore}
         </span>
       </span>
-
-      {/* Price */}
       <span className="ml-auto w-24 text-right font-medium text-white">
         {fmtPrice(c.price)}
       </span>
-
-      {/* 24h change */}
       <span className="w-20 text-right">
-        <span
-          className={`inline-flex rounded-md border px-1.5 py-0.5 text-[11px] font-semibold ${pctChipCls(c.change24hPct)}`}
-        >
-          {c.change24hPct >= 0 ? "+" : ""}
-          {c.change24hPct.toFixed(2)}%
+        <span className={`inline-flex rounded-md border px-1.5 py-0.5 text-[11px] font-semibold ${pctChipCls(c.change24hPct)}`}>
+          {c.change24hPct >= 0 ? "+" : ""}{c.change24hPct.toFixed(2)}%
         </span>
       </span>
-
-      {/* Volume */}
-      <span className="w-28 text-right text-[#BFC2C7]">
+      <span className="w-24 text-right text-[#BFC2C7]">
         {compactUsd(c.volume24hUsd)}
       </span>
-
-      {/* Funding */}
       <span
         className={`hidden w-20 text-right text-xs md:block ${
           c.fundingRate != null
-            ? c.fundingRate > 0
-              ? "text-[#8fc9ab]"
-              : c.fundingRate < 0
-                ? "text-[#d49f9a]"
-                : "text-[#8f95a3]"
+            ? c.fundingRate > 0 ? "text-[#8fc9ab]" : c.fundingRate < 0 ? "text-[#d49f9a]" : "text-[#8f95a3]"
             : "text-[#6B6F76]"
         }`}
       >
@@ -237,20 +282,17 @@ function CoinRow({ c, idx, onClick }: { c: UniverseCoinRow; idx: number; onClick
           ? `${c.fundingRate >= 0 ? "+" : ""}${(c.fundingRate * 100).toFixed(4)}%`
           : "---"}
       </span>
-
-      {/* ATR% */}
+      <span className={`hidden w-14 text-right text-xs lg:block ${c.spreadBps != null ? spreadCls(c.spreadBps) : "text-[#6B6F76]"}`}>
+        {c.spreadBps != null ? `${c.spreadBps.toFixed(1)}` : "---"}
+      </span>
       <span className={`hidden w-16 text-right text-xs lg:block ${c.atrPct != null ? atrChipCls(c.atrPct) : "text-[#6B6F76]"}`}>
         {c.atrPct != null ? `${c.atrPct.toFixed(2)}%` : "---"}
       </span>
-
-      {/* S/R Distance */}
       <span className={`hidden w-20 text-right text-xs xl:block ${c.srDistPct != null ? srDistCls(c.srDistPct) : "text-[#6B6F76]"}`}>
         {c.srDistPct != null && c.nearestSR
           ? `${c.srDistPct.toFixed(1)}% ${c.nearestSR.type === "support" ? "↑S" : "↓R"}`
           : "---"}
       </span>
-
-      {/* RSI */}
       <span className={`hidden w-12 text-right text-xs xl:block ${c.rsi14 != null ? rsiCls(c.rsi14) : "text-[#6B6F76]"}`}>
         {c.rsi14 != null ? c.rsi14.toFixed(0) : "---"}
       </span>
@@ -269,7 +311,7 @@ function CooldownRow({ c }: { c: UniverseCoinRow }) {
         <CoinIcon symbol={c.symbol} className="h-5 w-5 opacity-60" />
       </span>
       <span className="w-24 font-medium text-[#8f95a3]">{c.baseAsset}/USDT</span>
-      <span className={`w-12 text-right ${scoreChipCls(c.compositeScore)}`}>
+      <span className="w-12 text-right">
         <span className={`inline-flex rounded px-1 py-px text-[9px] font-semibold ${scoreChipCls(c.compositeScore)}`}>
           {c.compositeScore}
         </span>
@@ -290,15 +332,31 @@ function CooldownRow({ c }: { c: UniverseCoinRow }) {
 export default function CoinUniversePage() {
   const navigate = useNavigate();
   const [search, setSearch] = useState("");
+  const [sortKey, setSortKey] = useState<SortKey>("compositeScore");
+  const [sortDir, setSortDir] = useState<SortDir>("desc");
   const { activeCoins, cooldownCoins, loading, error, refreshedAt, round } = useCoinUniverseEngine();
 
+  const handleSort = useCallback((key: SortKey) => {
+    setSortKey((prev) => {
+      if (prev === key) {
+        setSortDir((d) => (d === "desc" ? "asc" : "desc"));
+        return prev;
+      }
+      setSortDir("desc");
+      return key;
+    });
+  }, []);
+
   const filtered = useMemo(() => {
-    if (!search.trim()) return activeCoins;
-    const q = search.trim().toLowerCase();
-    return activeCoins.filter(
-      (c) => c.symbol.toLowerCase().includes(q) || c.baseAsset.toLowerCase().includes(q),
-    );
-  }, [activeCoins, search]);
+    let list = activeCoins;
+    if (search.trim()) {
+      const q = search.trim().toLowerCase();
+      list = list.filter(
+        (c) => c.symbol.toLowerCase().includes(q) || c.baseAsset.toLowerCase().includes(q),
+      );
+    }
+    return sortCoins(list, sortKey, sortDir);
+  }, [activeCoins, search, sortKey, sortDir]);
 
   return (
     <main className="min-h-screen bg-[#0B0B0C] p-4 text-[#BFC2C7] md:p-6">
@@ -338,19 +396,20 @@ export default function CoinUniversePage() {
 
         {/* Active Coin list */}
         <section className="overflow-hidden rounded-2xl border border-white/10 bg-[#121316]">
-          {/* Sticky header */}
+          {/* Sticky header — sortable */}
           <div className="sticky top-0 z-10 flex items-center border-b border-white/10 bg-[#0F1012] px-4 py-2 text-[10px] font-semibold uppercase tracking-wider text-[#6B6F76]">
             <span className="w-8 text-center">#</span>
             <span className="w-9" />
             <span className="w-28">Coin</span>
-            <span className="hidden w-14 text-right xl:block">Score</span>
-            <span className="ml-auto w-24 text-right">Price</span>
-            <span className="w-20 text-right">24h</span>
-            <span className="w-28 text-right">Volume</span>
-            <span className="hidden w-20 text-right md:block">Funding</span>
-            <span className="hidden w-16 text-right lg:block">ATR%</span>
-            <span className="hidden w-20 text-right xl:block">S/R Dist</span>
-            <span className="hidden w-12 text-right xl:block">RSI</span>
+            <SortHeader label="Score" sortKey="compositeScore" activeKey={sortKey} dir={sortDir} onSort={handleSort} className="hidden w-14 text-right xl:block" />
+            <SortHeader label="Price" sortKey="price" activeKey={sortKey} dir={sortDir} onSort={handleSort} className="ml-auto w-24 text-right" />
+            <SortHeader label="24h" sortKey="change24hPct" activeKey={sortKey} dir={sortDir} onSort={handleSort} className="w-20 text-right" />
+            <SortHeader label="Volume" sortKey="volume24hUsd" activeKey={sortKey} dir={sortDir} onSort={handleSort} className="w-24 text-right" />
+            <SortHeader label="Funding" sortKey="fundingRate" activeKey={sortKey} dir={sortDir} onSort={handleSort} className="hidden w-20 text-right md:block" />
+            <SortHeader label="Spread" sortKey="spreadBps" activeKey={sortKey} dir={sortDir} onSort={handleSort} className="hidden w-14 text-right lg:block" />
+            <SortHeader label="ATR%" sortKey="atrPct" activeKey={sortKey} dir={sortDir} onSort={handleSort} className="hidden w-16 text-right lg:block" />
+            <SortHeader label="S/R Dist" sortKey="srDistPct" activeKey={sortKey} dir={sortDir} onSort={handleSort} className="hidden w-20 text-right xl:block" />
+            <SortHeader label="RSI" sortKey="rsi14" activeKey={sortKey} dir={sortDir} onSort={handleSort} className="hidden w-12 text-right xl:block" />
           </div>
 
           {/* Scrollable rows */}
