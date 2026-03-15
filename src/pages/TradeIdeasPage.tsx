@@ -336,6 +336,7 @@ export default function TradeIdeasPage() {
   const [visibleCount, setVisibleCount] = useState(80);
   const [sharePlan, setSharePlan] = useState<TradePlan | null>(null);
   const [emailPlan, setEmailPlan] = useState<TradePlan | null>(null);
+  const [popupScanRow, setPopupScanRow] = useState<{ row: ScannedModeRow; mode: ScoringMode } | null>(null);
   const [aiModules, setAiModules] = useState<Record<AiProviderId, boolean>>({
     CHATGPT: true,
     QWEN: true,
@@ -352,6 +353,13 @@ export default function TradeIdeasPage() {
   const [aiLastUpdatedAt, setAiLastUpdatedAt] = useState("");
   const [aiStateError, setAiStateError] = useState("");
   const sentinelRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (!popupScanRow) return;
+    const handler = (e: KeyboardEvent) => { if (e.key === "Escape") setPopupScanRow(null); };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [popupScanRow]);
 
   useEffect(() => {
     if (!isAiTradeIdeasPage) return;
@@ -1102,13 +1110,15 @@ export default function TradeIdeasPage() {
                                         : "border-[#31415b]/70 bg-[#121a27] text-[#cdd8ec]";
                                     const createdTone = row.created ? "shadow-[0_0_0_1px_rgba(93,207,154,0.28)]" : "";
                                     return (
-                                      <span
+                                      <button
+                                        type="button"
                                         key={`${modeKey}-${row.symbol}-${idx}`}
-                                        className={`inline-flex shrink-0 items-center rounded-md border px-2 py-1 text-[11px] ${passTone} ${createdTone}`}
+                                        onClick={() => setPopupScanRow({ row, mode: modeKey })}
+                                        className={`inline-flex shrink-0 items-center rounded-md border px-2 py-1 text-[11px] cursor-pointer transition hover:brightness-110 ${passTone} ${createdTone}`}
                                         title={row.reason}
                                       >
                                         {row.symbol} • {scorePct}% • {decLabel}
-                                      </span>
+                                      </button>
                                     );
                                   })
                                 ) : (
@@ -1778,6 +1788,110 @@ export default function TradeIdeasPage() {
           <div ref={sentinelRef} className="h-10" />
         </section>
       </div>
+
+      {/* Scan badge popup */}
+      {popupScanRow && (() => {
+        const { row, mode } = popupScanRow;
+        const theme = MODE_ROW_THEME[mode];
+        const scorePct = Math.max(0, Math.min(100, Math.round(row.confidencePct)));
+        const dec = (row.decision ?? "").toUpperCase();
+        const isTrade = dec === "TRADE";
+        const isWatch = dec === "WATCH";
+        const precision = row.pricePrecision ?? 4;
+        const fmt = (n: number) => n.toFixed(precision);
+        const decColor = isTrade
+          ? "border-[#2e7a5e]/80 bg-[#103326] text-[#b9f5dc]"
+          : isWatch
+            ? "border-[#9a7b2e]/80 bg-[#3a2c13] text-[#f7e2a4]"
+            : "border-[#31415b]/70 bg-[#121a27] text-[#cdd8ec]";
+        const dirColor = row.direction === "LONG"
+          ? "border-[#2e7a5e]/60 bg-[#0e2a1d] text-[#5dcf9a]"
+          : row.direction === "SHORT"
+            ? "border-[#7a2e2e]/60 bg-[#2a0e0e] text-[#e87c7c]"
+            : "border-white/10 bg-[#1a1a1a] text-[#8f95a3]";
+        return (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" onClick={() => setPopupScanRow(null)}>
+            <div className="w-full max-w-md rounded-xl border border-white/15 bg-[#121316] p-4 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+              {/* Header */}
+              <div className="mb-3 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <CoinIcon symbol={row.symbol} className="h-6 w-6" />
+                  <span className="text-sm font-bold text-white">{row.symbol}</span>
+                  <span className={`rounded-md border px-1.5 py-0.5 text-[10px] font-semibold ${theme.chipClass}`}>{theme.label}</span>
+                </div>
+                <button type="button" onClick={() => setPopupScanRow(null)} className="rounded p-1 text-[#6B6F76] transition hover:bg-white/10 hover:text-white">
+                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M1 1l12 12M13 1L1 13" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
+                </button>
+              </div>
+
+              {/* Score + Decision */}
+              <div className="mb-3 flex items-center gap-3">
+                <span className="text-3xl font-bold text-white">{scorePct}%</span>
+                <span className={`rounded-md border px-2 py-1 text-xs font-semibold ${decColor}`}>
+                  {isTrade ? "TRADE" : isWatch ? "WATCH" : "NO TRADE"}
+                </span>
+                <span className={`rounded-md border px-2 py-1 text-xs font-semibold ${dirColor}`}>
+                  {row.direction || "—"}
+                </span>
+              </div>
+
+              {/* Info badges */}
+              <div className="mb-3 flex flex-wrap gap-1.5">
+                {row.setup ? <span className="rounded border border-white/10 bg-[#1a1d22] px-2 py-0.5 text-[10px] text-[#8f95a3]">{row.setup}</span> : null}
+                <span className="rounded border border-white/10 bg-[#1a1d22] px-2 py-0.5 text-[10px] text-[#8f95a3]">{row.horizon} · {row.timeframe}</span>
+                <span className={`rounded border px-2 py-0.5 text-[10px] ${row.tradeValidity === "VALID" ? "border-[#2e7a5e]/50 text-[#5dcf9a]" : row.tradeValidity === "WEAK" ? "border-[#9a7b2e]/50 text-[#f7e2a4]" : "border-[#7a2e2e]/50 text-[#e87c7c]"}`}>{row.tradeValidity}</span>
+                <span className={`rounded border px-2 py-0.5 text-[10px] ${row.entryWindow === "OPEN" ? "border-[#2e7a5e]/50 text-[#5dcf9a]" : row.entryWindow === "NARROW" ? "border-[#9a7b2e]/50 text-[#f7e2a4]" : "border-[#7a2e2e]/50 text-[#e87c7c]"}`}>Entry: {row.entryWindow}</span>
+              </div>
+
+              {/* Entry / SL / TP */}
+              {(row.entryLow > 0 || row.entryHigh > 0) && (
+                <div className="mb-2 grid grid-cols-3 gap-2">
+                  <div className="rounded-lg border border-white/10 bg-[#0F1012] p-2">
+                    <p className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-[#6B6F76]">Entry Zone</p>
+                    <p className="text-xs text-white">{fmt(row.entryLow)}</p>
+                    <p className="text-xs text-white">{fmt(row.entryHigh)}</p>
+                  </div>
+                  <div className="rounded-lg border border-white/10 bg-[#0F1012] p-2">
+                    <p className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-[#e87c7c]">Stops</p>
+                    {row.slLevels.length ? row.slLevels.map((sl, i) => (
+                      <p key={i} className="text-xs text-[#e87c7c]">{fmt(sl)}</p>
+                    )) : <p className="text-xs text-[#6B6F76]">—</p>}
+                  </div>
+                  <div className="rounded-lg border border-white/10 bg-[#0F1012] p-2">
+                    <p className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-[#5dcf9a]">Targets</p>
+                    {row.tpLevels.length ? row.tpLevels.map((tp, i) => (
+                      <p key={i} className="text-xs text-[#5dcf9a]">{fmt(tp)}</p>
+                    )) : <p className="text-xs text-[#6B6F76]">—</p>}
+                  </div>
+                </div>
+              )}
+
+              {/* Mode Scores */}
+              <div className="mb-3 grid grid-cols-4 gap-1.5">
+                {(["FLOW", "AGGRESSIVE", "BALANCED", "CAPITAL_GUARD"] as ScoringMode[]).map((m) => {
+                  const s = Math.round((row.modeScores[m] ?? 0) * 100);
+                  const isActive = m === mode;
+                  return (
+                    <div key={m} className={`rounded border p-1.5 text-center ${isActive ? "border-white/20 bg-white/5" : "border-white/5 bg-[#0F1012]"}`}>
+                      <p className="text-[9px] text-[#6B6F76]">{MODE_ROW_THEME[m].label}</p>
+                      <p className={`text-sm font-bold ${s >= 60 ? "text-[#5dcf9a]" : s >= 40 ? "text-[#f7e2a4]" : "text-[#6B6F76]"}`}>{s}%</p>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Open in Quant Engine */}
+              <button
+                type="button"
+                onClick={() => { setPopupScanRow(null); navigate("/quant-engine", { state: { selectedCoin: toDashboardCoin(row.symbol) } }); }}
+                className="w-full rounded-lg border border-[#F5C542]/30 bg-[#2a2418] py-2 text-center text-xs font-semibold text-[#F5C542] transition hover:bg-[#3a3020]"
+              >
+                Open in Quant Engine
+              </button>
+            </div>
+          </div>
+        );
+      })()}
 
       <ShareModal
         open={!!sharePlan}
