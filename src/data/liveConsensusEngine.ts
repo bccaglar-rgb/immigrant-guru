@@ -1158,7 +1158,7 @@ export const generateAiPanel = (
     const hardBlockConsensusCap = isCapitalGuardMode ? 35 : isBalancedMode ? 40 : 48;
     finalScore = Math.min(finalScore, hardBlockConsensusCap);
   } else if (entryTimingGateEnabled && entryTiming === "CLOSED") {
-    const waitConsensusCap = isCapitalGuardMode ? 62 : isBalancedMode ? 66 : 70;
+    const waitConsensusCap = isCapitalGuardMode ? 62 : isBalancedMode ? 66 : 78;
     finalScore = Math.min(finalScore, waitConsensusCap);
   }
 

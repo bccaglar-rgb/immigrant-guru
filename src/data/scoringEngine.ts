@@ -1,22 +1,22 @@
 import type { FlowScoringTuningConfig, ScoringMode } from "../types";
 
 export const DEFAULT_FLOW_SCORING_TUNING: FlowScoringTuningConfig = {
-  fillShortfallCoeff: 0.20,
-  slippageSeverityCoeff: 0.10,
-  microSeverityCoeff: 0.10,
-  executionMultiplierFloor: 0.75,
-  stressFailureCoeff: 0.12,
-  cascadeFailureCoeff: 0.10,
-  crowdingFailureCoeff: 0.05,
-  riskMultiplierFloor: 0.75,
-  modeBias: 1.15,
-  compressKnee: 72,
-  compressScale: 16,
-  fillHardBlockThreshold: 0.15,
-  fillGateThreshold: 0.25,
-  hardBlockScoreCap: 42,
-  degradedFeedPenalty: 0.01,
-  dataMultiplierFloor: 0.85,
+  fillShortfallCoeff: 0.15,
+  slippageSeverityCoeff: 0.08,
+  microSeverityCoeff: 0.08,
+  executionMultiplierFloor: 0.80,
+  stressFailureCoeff: 0.10,
+  cascadeFailureCoeff: 0.08,
+  crowdingFailureCoeff: 0.04,
+  riskMultiplierFloor: 0.80,
+  modeBias: 1.38,
+  compressKnee: 88,
+  compressScale: 22,
+  fillHardBlockThreshold: 0.10,
+  fillGateThreshold: 0.20,
+  hardBlockScoreCap: 38,
+  degradedFeedPenalty: 0.008,
+  dataMultiplierFloor: 0.90,
 };
 
 export const FLOW_SCORING_TUNING_BOUNDS: Record<
