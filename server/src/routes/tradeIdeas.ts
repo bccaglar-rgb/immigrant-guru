@@ -143,13 +143,9 @@ export const registerTradeIdeasRoutes = (app: Express, store: TradeIdeaStore, sy
       CAPITAL_GUARD: 68,
     };
 
-    // Fetch ALL ideas across all users (up to 5000)
-    const allIdeas = await store.listIdeas({ limit: 5000 });
-
-    // Show ALL ideas — no session filter.
-    // totalScan is session-based (resets on restart) but totalIdeas/resolved/success
-    // should always reflect the full set of trade ideas in the store.
-    // This prevents stats showing 0 while Last 100 section displays existing ideas.
+    // Only count system-scanner ideas in the report — demo-user ideas are excluded
+    // so that totalIdeas never exceeds totalScans (both are scanner-scoped).
+    const allIdeas = await store.listIdeas({ userId: "system-scanner", limit: 5000 });
     const sessionIdeas = allIdeas;
 
     const statsByMode: Record<string, {
