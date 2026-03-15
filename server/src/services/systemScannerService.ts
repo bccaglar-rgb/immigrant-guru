@@ -497,22 +497,37 @@ export class SystemScannerService {
       }
     }
 
-    // 4. Pre-filter to top SELECTED_COINS (28) by best trade-idea mode score
-    //    Group by symbol, find each symbol's best score across all modes
-    const bestScoreBySymbol = new Map<string, number>();
-    for (const r of allResults) {
-      const current = bestScoreBySymbol.get(r.symbol) ?? 0;
-      if (r.scorePct > current) bestScoreBySymbol.set(r.symbol, r.scorePct);
+    // 4. Select top 28 coins by CoinUniverseEngine composite score (or scan score fallback)
+    //    CoinUniverseEngine ranking = S/R proximity + ATR + RSI + WS data
+    const scannedSymbolSet = new Set(allResults.map((r) => r.symbol));
+    let rankedSymbols: string[];
+
+    if (this.deps.coinUniverseEngine) {
+      // Use CoinUniverseEngine composite score order — only include coins that were scanned
+      rankedSymbols = this.deps.coinUniverseEngine
+        .getActiveSymbolsRanked()
+        .filter((s) => scannedSymbolSet.has(s))
+        .slice(0, SELECTED_COINS);
+    } else {
+      // Fallback: rank by best Quant Engine scan score
+      const bestScoreBySymbol = new Map<string, number>();
+      for (const r of allResults) {
+        const current = bestScoreBySymbol.get(r.symbol) ?? 0;
+        if (r.scorePct > current) bestScoreBySymbol.set(r.symbol, r.scorePct);
+      }
+      rankedSymbols = [...bestScoreBySymbol.entries()]
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, SELECTED_COINS)
+        .map(([sym]) => sym);
     }
-    const rankedSymbols = [...bestScoreBySymbol.entries()]
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, SELECTED_COINS)
-      .map(([sym]) => sym);
+
     const selectedSet = new Set(rankedSymbols);
     const filteredResults = allResults.filter((r) => selectedSet.has(r.symbol));
 
-    // 5. Assign each coin to exactly ONE mode — 7 coins per mode, no duplicates
-    const assigned = this.assignCoinsToModes(filteredResults);
+    // 5. Assign coins to modes using fixed distribution pattern based on composite rank:
+    //    CG(3) → BAL(3) → AGG(3) → FLOW(3) → CG(2) → BAL(2) → AGG(2) → FLOW(2) → CG(2) → BAL(2) → AGG(2) → FLOW(2)
+    //    Total: 7 per mode = 28
+    const assigned = this.assignCoinsToModes(filteredResults, rankedSymbols);
 
     // 5b. Increment cumulative scan counts per mode
     for (const r of assigned) {
@@ -559,59 +574,63 @@ export class SystemScannerService {
   }
 
   /**
-   * Assign each coin to exactly ONE mode. 10 coins per mode, no duplicates.
-   * Algorithm: each coin tries its best-scoring mode first, falls back to next-best.
-   * Highest-scoring coins get priority.
+   * Assign coins to modes using a fixed distribution pattern based on composite score rank.
+   *
+   * Pattern (by CoinUniverseEngine composite score, highest first):
+   *   Rank  1-3  → CAPITAL_GUARD  (3)
+   *   Rank  4-6  → BALANCED       (3)
+   *   Rank  7-9  → AGGRESSIVE     (3)
+   *   Rank 10-12 → FLOW           (3)
+   *   Rank 13-14 → CAPITAL_GUARD  (2)
+   *   Rank 15-16 → BALANCED       (2)
+   *   Rank 17-18 → AGGRESSIVE     (2)
+   *   Rank 19-20 → FLOW           (2)
+   *   Rank 21-22 → CAPITAL_GUARD  (2)
+   *   Rank 23-24 → BALANCED       (2)
+   *   Rank 25-26 → AGGRESSIVE     (2)
+   *   Rank 27-28 → FLOW           (2)
+   *
+   * Total: 7 per mode = 28 coins.
+   * Best coins → safest mode (CAPITAL_GUARD), then BALANCED, AGGRESSIVE, FLOW.
    */
-  private assignCoinsToModes(results: EnrichedScanResult[]): EnrichedScanResult[] {
-    // Build map: symbol → [{mode, score, result}, ...] sorted by score desc
-    const coinData = new Map<string, Array<{ mode: ScoringMode; score: number; result: EnrichedScanResult }>>();
+  private assignCoinsToModes(results: EnrichedScanResult[], rankedSymbols: string[]): EnrichedScanResult[] {
+    // Fixed distribution: [mode, count] blocks in order
+    const MODE_ORDER: ScoringMode[] = ["CAPITAL_GUARD", "BALANCED", "AGGRESSIVE", "FLOW"];
+    const DISTRIBUTION = [3, 3, 3, 3, 2, 2, 2, 2, 2, 2, 2, 2]; // 12 blocks = 28 total
+
+    // Build symbol → mode assignment map using ranked order
+    const assignedCoins = new Map<string, ScoringMode>();
+    let symbolIdx = 0;
+
+    for (let block = 0; block < DISTRIBUTION.length; block++) {
+      const mode = MODE_ORDER[block % MODE_ORDER.length];
+      const count = DISTRIBUTION[block];
+      for (let i = 0; i < count && symbolIdx < rankedSymbols.length; i++) {
+        assignedCoins.set(rankedSymbols[symbolIdx], mode);
+        symbolIdx++;
+      }
+    }
+
+    // Build final results: for each assigned (symbol, mode) pair,
+    // pick the scan result matching that mode (or best available if mode wasn't scanned)
+    const resultsBySymbol = new Map<string, EnrichedScanResult[]>();
     for (const r of results) {
-      const arr = coinData.get(r.symbol) ?? [];
-      arr.push({ mode: r.mode as ScoringMode, score: r.scorePct, result: r });
-      coinData.set(r.symbol, arr);
-    }
-    for (const [, arr] of coinData) {
-      arr.sort((a, b) => b.score - a.score);
+      const arr = resultsBySymbol.get(r.symbol) ?? [];
+      arr.push(r);
+      resultsBySymbol.set(r.symbol, arr);
     }
 
-    const assignedCoins = new Map<string, ScoringMode>(); // symbol → assigned mode
-    const modeCount: Record<string, number> = {};
-    for (const mode of ALL_MODES) modeCount[mode] = 0;
-
-    // Sort coins by their top score descending — best coins get first pick
-    const sortedCoins = [...coinData.entries()]
-      .sort((a, b) => (b[1][0]?.score ?? 0) - (a[1][0]?.score ?? 0));
-
-    // Pass 1: assign each coin to its best available mode
-    for (const [symbol, modes] of sortedCoins) {
-      for (const { mode } of modes) {
-        if ((modeCount[mode] ?? 0) < COINS_PER_MODE) {
-          assignedCoins.set(symbol, mode);
-          modeCount[mode]++;
-          break;
-        }
-      }
-    }
-
-    // Pass 2: any remaining unassigned coins → any mode with room
-    for (const [symbol] of sortedCoins) {
-      if (assignedCoins.has(symbol)) continue;
-      for (const mode of ALL_MODES) {
-        if ((modeCount[mode] ?? 0) < COINS_PER_MODE) {
-          assignedCoins.set(symbol, mode);
-          modeCount[mode]++;
-          break;
-        }
-      }
-    }
-
-    // Build final results: only include the assigned (symbol, mode) pairs
     const assigned: EnrichedScanResult[] = [];
-    for (const r of results) {
-      if (assignedCoins.get(r.symbol) === r.mode) {
-        assigned.push(r);
-      }
+    for (const [symbol, mode] of assignedCoins) {
+      const symbolResults = resultsBySymbol.get(symbol);
+      if (!symbolResults?.length) continue;
+
+      // Prefer the result for the assigned mode; fall back to highest-scoring result
+      const modeResult = symbolResults.find((r) => r.mode === mode);
+      const bestResult = modeResult ?? symbolResults.sort((a, b) => b.scorePct - a.scorePct)[0];
+
+      // Override mode to the assigned mode
+      assigned.push({ ...bestResult, mode });
     }
 
     return assigned;
