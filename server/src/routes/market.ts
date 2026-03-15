@@ -2542,8 +2542,6 @@ const AI_COINS = new Set(["FET", "AGIX", "OCEAN", "RNDR", "TAO", "ARKM"]);
 const L1_COINS = new Set(["SOL", "ADA", "AVAX", "DOT", "ATOM", "NEAR", "APT", "SUI"]);
 const DEFI_COINS = new Set(["UNI", "AAVE", "CRV", "MKR", "COMP", "SNX", "1INCH"]);
 
-const clamp01 = (value: number) => Math.max(0, Math.min(1, value));
-
 const COIN_ICON_ALIAS: Record<string, string> = {
   SUI: "sui",
   WIF: "wif",
