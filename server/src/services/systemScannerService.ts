@@ -420,30 +420,37 @@ export class SystemScannerService {
   }
 
   /**
-   * Pick top-scored coins for scanning.
-   * Hybrid strategy: Top 20 by enhanced score (always scanned) + 20 diversity picks
-   * from the remaining pool (rotating window through positions 21-300).
-   * Total: up to 40 coins scanned per cycle.
+   * Pick coins for scanning.
+   *
+   * If CoinUniverseEngine is available: use ONLY its ranked active list.
+   * Hybrid: top 20 by composite score (always) + 20 diversity from rest.
+   *
+   * Fallback (no engine): use own enhancedUniverse with same hybrid logic.
    */
   private pickScoredBatch(): string[] {
-    if (!this.enhancedUniverse.length) return [];
+    // Source: CoinUniverseEngine (primary) or own enhancedUniverse (fallback)
+    const rankedSymbols = this.deps.coinUniverseEngine
+      ? this.deps.coinUniverseEngine.getActiveSymbolsRanked()
+      : this.enhancedUniverse.map((c) => c.symbol);
 
-    const total = this.enhancedUniverse.length;
+    if (!rankedSymbols.length) return [];
+
+    const total = rankedSymbols.length;
     const batch = new Set<string>();
 
-    // 1. Always include top TOP_FIXED_SLOTS by enhanced score
+    // 1. Always include top TOP_FIXED_SLOTS by score
     const fixedCount = Math.min(TOP_FIXED_SLOTS, total);
     for (let i = 0; i < fixedCount; i++) {
-      batch.add(this.enhancedUniverse[i].symbol);
+      batch.add(rankedSymbols[i]);
     }
 
     // 2. Rotate through remaining coins for diversity
-    const remaining = this.enhancedUniverse.slice(fixedCount);
+    const remaining = rankedSymbols.slice(fixedCount);
     if (remaining.length > 0) {
       const diversityCount = Math.min(DIVERSITY_SLOTS, remaining.length);
       let idx = this.rotationIndex % remaining.length;
       for (let i = 0; i < diversityCount; i++) {
-        batch.add(remaining[idx % remaining.length].symbol);
+        batch.add(remaining[idx % remaining.length]);
         idx++;
       }
       this.rotationIndex = idx % remaining.length;

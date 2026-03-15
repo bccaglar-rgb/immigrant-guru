@@ -575,6 +575,13 @@ export class CoinUniverseEngine {
   }
 
   /**
+   * Get ALL active coin symbols ranked by composite score (for batch picking).
+   */
+  getActiveSymbolsRanked(): string[] {
+    return this.rankedActive.map((c) => c.symbol);
+  }
+
+  /**
    * Mark symbols as sent to Quant Engine — starts cooldown.
    */
   markAsSentToQuant(symbols: string[]): void {
