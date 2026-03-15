@@ -375,13 +375,21 @@ export const computeCapitalGuardConsensus = (
   const safetyGate: "PASS" | "BLOCK" = safetyGateBlocked ? "BLOCK" : "PASS";
   if (safetyGateBlocked) addReason(reasons, "Safety block", 9_000);
 
+  // Conservative uplift — only for genuinely safe conditions
+  const safetyUplift =
+    (input.stressLevel === "LOW" ? 3 : input.stressLevel === "MID" ? 1 : 0) +
+    (input.cascadeRisk === "LOW" ? 2 : input.cascadeRisk === "MID" ? 1 : 0) +
+    (input.crowdingRisk === "LOW" ? 2 : 0) +
+    (input.entryWindow === "OPEN" ? 2 : 0) +
+    (input.slippageLevel === "LOW" ? 2 : 0);
+
   const final01PreFloor = clamp(adjusted01 * (1 - clamp(penaltyRate, 0, 1)), 0, 1);
-  const finalScorePreFloor = roundTo2(final01PreFloor * 100 + 12);
+  const finalScorePreFloor = roundTo2(final01PreFloor * 100 + safetyUplift + 14);
 
   let floorsApplied = false;
   let finalScore = finalScorePreFloor;
   if (isAPlus && dataGate === "PASS" && safetyGate === "PASS") {
-    const floored = Math.max(finalScorePreFloor, 55);
+    const floored = Math.max(finalScorePreFloor, 52);
     floorsApplied = floored > finalScorePreFloor;
     finalScore = floored;
     if (floorsApplied) addReason(reasons, "A+ setup floor applied", 150);

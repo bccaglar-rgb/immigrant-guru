@@ -61,7 +61,7 @@ export interface ExtremeConsensusOutput {
 }
 
 export const clamp = (value: number, min: number, max: number): number => Math.max(min, Math.min(max, value));
-const EXTREME_PENALTY_MULTIPLIER = 0.5;
+const EXTREME_PENALTY_MULTIPLIER = 0.20;
 
 const normalizePercent = (value: number | null | undefined): number | null => {
   if (!Number.isFinite(value)) return null;
@@ -85,10 +85,10 @@ const ratingFromScore = (score: number): ExtremeConsensusOutput["rating"] => {
 };
 
 const phaseFromScore = (score: number): ExtremeConsensusOutput["phase"] => {
-  if (score <= 29) return "NO_TRADE";
-  if (score <= 44) return "WAIT";
-  if (score <= 59) return "SPECULATIVE";
-  if (score <= 74) return "TRADE";
+  if (score <= 24) return "NO_TRADE";
+  if (score <= 39) return "WAIT";
+  if (score <= 54) return "SPECULATIVE";
+  if (score <= 84) return "TRADE";
   return "SQUEEZE_EVENT";
 };
 
@@ -252,8 +252,8 @@ export const computeExtremeConsensus = (input: ExtremeConsensusInput): ExtremeCo
   const pFill = clamp(input.pFill, 0, 1);
   const hardNoTrade =
     (input.depthQuality === "POOR" && input.spreadRegime === "WIDE") ||
-    pFill < 0.2 ||
-    (input.slippageLevel === "HIGH" && input.depthQuality === "POOR");
+    pFill < 0.05 ||
+    (input.slippageLevel === "HIGH" && input.depthQuality === "POOR" && pFill < 0.15);
 
   const directionBias = resolveDirectionBias(input);
   const funding = fundingCrowdInfo(input);
@@ -322,12 +322,12 @@ export const computeExtremeConsensus = (input: ExtremeConsensusInput): ExtremeCo
   const appliedPenalty = penalties * EXTREME_PENALTY_MULTIPLIER;
   score = clamp(score - appliedPenalty, 0, 100);
 
-  if (directionBias.direction === "NEUTRAL") score = Math.min(score, 44);
-  if (baseAlignedCount === 0) score = Math.min(score, 24);
-  else if (baseAlignedCount < 2) score = Math.min(score, 44);
-  if (execution.badCount >= 4) score = Math.min(score, 34);
-  if (strictFilterCount < 5) score = Math.min(score, 44);
-  if (hardNoTrade) score = Math.min(score, 19);
+  if (directionBias.direction === "NEUTRAL") score = Math.min(score, 78);
+  if (baseAlignedCount === 0) score = Math.min(score, 62);
+  else if (baseAlignedCount < 2) score = Math.min(score, 78);
+  if (execution.badCount >= 4) score = Math.min(score, 65);
+  if (strictFilterCount < 5) score = Math.min(score, 78);
+  if (hardNoTrade) score = Math.min(score, 38);
 
   const extremeScore = clamp(Number(score.toFixed(2)), 0, 100);
   return {

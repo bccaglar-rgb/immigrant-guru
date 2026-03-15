@@ -98,6 +98,7 @@ export class BinanceFuturesHub {
   private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
   private heartbeatTimer: ReturnType<typeof setInterval> | null = null;
   private watchdogTimer: ReturnType<typeof setInterval> | null = null;
+  private precisionRefreshTimer: ReturnType<typeof setInterval> | null = null;
   private started = false;
   private reconnectAttempts = 0;
   private reconnectCount = 0;
@@ -108,12 +109,17 @@ export class BinanceFuturesHub {
   private readonly tickerBySymbol = new Map<string, TickerRow>();
   private readonly markBySymbol = new Map<string, MarkRow>();
   private readonly bookBySymbol = new Map<string, BookRow>();
+  private readonly precisionBySymbol = new Map<string, { pricePrecision: number; quantityPrecision: number }>();
+  private precisionLoading = false;
 
   start() {
     if (this.started) return;
     this.started = true;
     this.startWatchdog();
     this.connect();
+    // Fetch precision data from REST API on start, refresh every 4 hours
+    void this.fetchPrecisions();
+    this.precisionRefreshTimer = setInterval(() => void this.fetchPrecisions(), 4 * 60 * 60 * 1000);
   }
 
   stop() {
@@ -126,6 +132,10 @@ export class BinanceFuturesHub {
     if (this.watchdogTimer) {
       clearInterval(this.watchdogTimer);
       this.watchdogTimer = null;
+    }
+    if (this.precisionRefreshTimer) {
+      clearInterval(this.precisionRefreshTimer);
+      this.precisionRefreshTimer = null;
     }
     if (this.ws) {
       this.ws.removeAllListeners();
@@ -236,6 +246,64 @@ export class BinanceFuturesHub {
       nextFundingTime: mark?.nextFundingTime ?? null,
       sourceTs: ticker.sourceTs ?? mark?.sourceTs ?? book?.sourceTs ?? null,
     };
+  }
+
+  /** Returns Binance Futures pricePrecision for a symbol (number of decimal places). */
+  getPricePrecision(symbol: string): number {
+    const normalized = normalizeSymbol(symbol);
+    const info = this.precisionBySymbol.get(normalized);
+    if (info) return info.pricePrecision;
+    // Fallback: infer from current price magnitude
+    const ticker = this.tickerBySymbol.get(normalized);
+    if (ticker && ticker.price > 0) {
+      const p = ticker.price;
+      if (p >= 1000) return 2;
+      if (p >= 1) return 2;
+      if (p >= 0.1) return 4;
+      if (p >= 0.01) return 5;
+      if (p >= 0.001) return 6;
+      return 8;
+    }
+    return 8;
+  }
+
+  /** Returns Binance Futures quantityPrecision for a symbol. */
+  getQuantityPrecision(symbol: string): number {
+    const normalized = normalizeSymbol(symbol);
+    return this.precisionBySymbol.get(normalized)?.quantityPrecision ?? 3;
+  }
+
+  private async fetchPrecisions(): Promise<void> {
+    if (this.precisionLoading) return;
+    this.precisionLoading = true;
+    try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 8_000);
+      const res = await fetch("https://fapi.binance.com/fapi/v1/exchangeInfo", { signal: controller.signal });
+      clearTimeout(timeout);
+      if (!res.ok) throw new Error(`precision_http_${res.status}`);
+      const raw = (await res.json()) as Record<string, unknown>;
+      const symbols = Array.isArray(raw.symbols) ? raw.symbols : [];
+      let count = 0;
+      for (const row of symbols) {
+        const rec = row as Record<string, unknown>;
+        const status = String(rec.status ?? "").toUpperCase();
+        const quoteAsset = String(rec.quoteAsset ?? "").toUpperCase();
+        if (status !== "TRADING" || quoteAsset !== "USDT") continue;
+        const symbol = normalizeSymbol(rec.symbol);
+        if (!symbol) continue;
+        const pricePrecision = Number(rec.pricePrecision ?? 8);
+        const quantityPrecision = Number(rec.quantityPrecision ?? 8);
+        if (!Number.isFinite(pricePrecision) || !Number.isFinite(quantityPrecision)) continue;
+        this.precisionBySymbol.set(symbol, { pricePrecision, quantityPrecision });
+        count++;
+      }
+      console.log(`[BinanceFuturesHub] Loaded precision for ${count} symbols`);
+    } catch (error) {
+      console.error(`[BinanceFuturesHub] fetchPrecisions failed: ${error instanceof Error ? error.message : "unknown"}`);
+    } finally {
+      this.precisionLoading = false;
+    }
   }
 
   private connect() {

@@ -6,7 +6,7 @@ import { ShareModal } from "../components/ShareModal";
 import { useAdminConfig } from "../hooks/useAdminConfig";
 import { useMarketDataStatus } from "../hooks/useMarketData";
 import { useExchangeTerminalStore } from "../hooks/useExchangeTerminalStore";
-import { useTradeIdeasStream } from "../hooks/useTradeIdeasStream";
+import { useTradeIdeasStream, getSystemScanTotals, type ScannedModeRow } from "../hooks/useTradeIdeasStream";
 import { useUserSettings } from "../hooks/useUserSettings";
 import { SCORING_MODE_OPTIONS, scoringModeLabel } from "../data/scoringEngine";
 import type { ScoringMode, TradePlan } from "../types";
@@ -159,6 +159,9 @@ const resolveModeScorePct = (plan: TradePlan, mode: ScoringMode): number => {
   if (typeof modeRaw === "number" && Number.isFinite(modeRaw)) {
     return normalizeScorePct(modeRaw);
   }
+  // If modeScores exists but doesn't have this mode, score is 0 for that mode
+  if (plan.modeScores && Object.keys(plan.modeScores).length > 0) return 0;
+  // Legacy ideas without modeScores: fall back to confidence only for matching mode
   const planMode = (plan.scoringMode ?? "BALANCED") as ScoringMode;
   return planMode === mode ? resolveConsensusPct(plan) : 0;
 };
@@ -257,7 +260,9 @@ const formatPx = (value: number, fixedDecimals?: number) => {
   });
 };
 
-const resolveDisplayDecimals = (values: number[]): number => {
+const resolveDisplayDecimals = (values: number[], planPrecision?: number): number => {
+  // If Binance precision is known, use it directly
+  if (typeof planPrecision === "number" && planPrecision > 0) return planPrecision;
   const finite = values.filter((v) => Number.isFinite(v));
   if (!finite.length) return 2;
   let decimals = Math.max(...finite.map((v) => basePricePrecision(v)));
@@ -328,7 +333,7 @@ export default function TradeIdeasPage() {
     };
   });
   const [nowMs, setNowMs] = useState(() => Date.now());
-  const [visibleCount, setVisibleCount] = useState(40);
+  const [visibleCount, setVisibleCount] = useState(80);
   const [sharePlan, setSharePlan] = useState<TradePlan | null>(null);
   const [emailPlan, setEmailPlan] = useState<TradePlan | null>(null);
   const [aiModules, setAiModules] = useState<Record<AiProviderId, boolean>>({
@@ -559,7 +564,70 @@ export default function TradeIdeasPage() {
     return () => observer.disconnect();
   }, [aiFilteredRows.length, filtered.length, isAiTradeIdeasPage]);
 
-  const visible = selectedScanModes.length ? filtered.slice(0, visibleCount) : [];
+  // Convert scan row items to TradePlan objects for card display.
+  // Cards show the SAME coins as the scan row and update when scan refreshes.
+  const scanBasedPlans = useMemo((): TradePlan[] => {
+    if (!selectedScanModes.length) return [];
+    const plans: TradePlan[] = [];
+    for (const modeKey of SCAN_MODE_ORDER) {
+      if (!selectedScanModes.includes(modeKey)) continue;
+      const rows: ScannedModeRow[] = diagnostics.lastScannedByMode[modeKey] ?? [];
+      const range = modeConsensusRanges[modeKey];
+      for (const row of rows) {
+        if (!row.entryLow && !row.entryHigh) continue; // skip items without price data
+        // Apply consensus range filter — hide cards below the user's minimum
+        if (Number.isFinite(row.confidencePct) && row.confidencePct < range.min) continue;
+        const q = search.trim().toLowerCase();
+        if (q && !row.symbol.toLowerCase().includes(q)) continue;
+        if (direction !== ALL && row.direction !== direction) continue;
+        if (quantDecisionFilter === "TRADE" && row.tradeValidity !== "VALID") continue;
+        if (quantDecisionFilter === "NO_TRADE" && row.tradeValidity === "VALID") continue;
+        plans.push({
+          id: `scan-${modeKey}-${row.symbol}-${row.scannedAt}`,
+          symbol: row.symbol,
+          direction: (row.direction as "LONG" | "SHORT") ?? "LONG",
+          confidence: row.confidencePct / 100,
+          scoringMode: modeKey,
+          approvedModes: [modeKey],
+          modeScores: row.modeScores as TradePlan["modeScores"],
+          entry: { low: row.entryLow, high: row.entryHigh },
+          stops: row.slLevels.map((price, i) => ({ price, label: `SL${i + 1}` })),
+          targets: row.tpLevels.map((price, i) => ({ price, label: `TP${i + 1}` })),
+          status: "PENDING",
+          result: "NONE",
+          createdAt: Number.isFinite(row.scannedAt) ? new Date(row.scannedAt).toISOString() : new Date().toISOString(),
+          timestampUtc: Number.isFinite(row.scannedAt) ? new Date(row.scannedAt).toISOString() : new Date().toISOString(),
+          horizon: (row.horizon as TradePlan["horizon"]) ?? "INTRADAY",
+          timeframe: (row.timeframe as TradePlan["timeframe"]) ?? "15m",
+          setup: row.setup ?? "",
+          tradeValidity: (row.tradeValidity as TradePlan["tradeValidity"]) ?? "NO-TRADE",
+          entryWindow: (row.entryWindow as TradePlan["entryWindow"]) ?? "CLOSED",
+          slippageRisk: (row.slippageRisk as TradePlan["slippageRisk"]) ?? "HIGH",
+          triggersToActivate: [],
+          invalidation: "",
+          validUntilBars: 0,
+          validUntilUtc: "",
+          marketState: { trend: "", htfBias: "", volatility: "", execution: "" },
+          flowAnalysis: [],
+          tradeIntent: [],
+          rawText: "",
+          incomplete: false,
+          hitLevelType: null,
+          hitLevelIndex: null,
+          hitLevelPrice: null,
+          minutesToEntry: null,
+          minutesToExit: null,
+          minutesTotal: null,
+          pricePrecision: row.pricePrecision,
+        });
+      }
+    }
+    // Sort by score descending
+    plans.sort((a, b) => b.confidence - a.confidence);
+    return plans;
+  }, [diagnostics.lastScannedByMode, selectedScanModes, search, direction, quantDecisionFilter, modeConsensusRanges]);
+
+  const visible = scanBasedPlans.slice(0, visibleCount);
   const visibleAiRows = aiFilteredRows.slice(0, Math.min(40, visibleCount));
   const noVisibleCards = isAiTradeIdeasPage ? !visibleAiRows.length : !visible.length;
   const reportBase = useMemo(
@@ -594,6 +662,48 @@ export default function TradeIdeasPage() {
     const successRate = total ? (successful / total) * 100 : 0;
     return { total, successful, failed, successRate };
   }, [aiScansByModule, effectiveAiModules, isAiTradeIdeasPage, reportBase]);
+
+  // Per-mode report stats — fetched from API for consistency with detail report page
+  const [reportStatsByMode, setReportStatsByMode] = useState<Record<string, {
+    totalScan: number; highScoreScan: number; totalIdeas: number; resolved: number;
+    successful: number; failed: number; entryMissed: number; successRate: number;
+  }>>({});
+  useEffect(() => {
+    if (isAiTradeIdeasPage) return;
+    let mounted = true;
+    const fetchReportStats = async () => {
+      try {
+        const res = await fetch("/api/trade-ideas/report-stats");
+        if (!res.ok || !mounted) return;
+        const body = await res.json() as {
+          ok?: boolean;
+          startedAt?: number;
+          statsByMode?: Record<string, {
+            totalScan: number; highScoreScan: number; totalIdeas: number; resolved: number;
+            success: number; failed: number; entryMissed: number; successRate: number;
+          }>;
+        };
+        if (!body?.ok || !body.statsByMode || !mounted) return;
+        const mapped: Record<string, { totalScan: number; highScoreScan: number; totalIdeas: number; resolved: number; successful: number; failed: number; entryMissed: number; successRate: number }> = {};
+        for (const [mode, s] of Object.entries(body.statsByMode)) {
+          mapped[mode] = {
+            totalScan: s.totalScan,
+            highScoreScan: s.highScoreScan ?? 0,
+            totalIdeas: s.totalIdeas,
+            resolved: s.resolved,
+            successful: s.success,
+            failed: s.failed,
+            entryMissed: s.entryMissed ?? 0,
+            successRate: s.successRate,
+          };
+        }
+        setReportStatsByMode(mapped);
+      } catch { /* keep existing data */ }
+    };
+    void fetchReportStats();
+    const timer = window.setInterval(() => void fetchReportStats(), 10_000);
+    return () => { mounted = false; window.clearInterval(timer); };
+  }, [isAiTradeIdeasPage]);
 
   const sourceLabelFromDiagnostics = (sourceKey: string): string => {
     const value = String(sourceKey ?? "").trim().toUpperCase();
@@ -715,7 +825,7 @@ export default function TradeIdeasPage() {
           <div className="pointer-events-none absolute -left-12 bottom-0 h-44 w-44 rounded-full bg-[radial-gradient(circle,rgba(90,146,255,0.08),transparent_68%)]" />
 
           <div className="relative space-y-3">
-            <div className="grid gap-3 xl:grid-cols-[minmax(0,1.6fr)_minmax(360px,1fr)]">
+            <div className="grid gap-3 xl:grid-cols-[minmax(0,1fr)_minmax(420px,1.2fr)]">
               <div className="rounded-xl border border-white/10 bg-[linear-gradient(145deg,#10141b,#0d1118)] px-3 py-2.5 shadow-[0_12px_28px_rgba(0,0,0,0.35)]">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <h1 className="text-lg font-semibold text-white">{isAiTradeIdeasPage ? "AI Trade Ideas" : "Quant Trade Ideas"}</h1>
@@ -747,82 +857,84 @@ export default function TradeIdeasPage() {
               </div>
 
               <div className="rounded-xl border border-white/10 bg-[radial-gradient(circle_at_top_right,rgba(245,197,66,0.08),transparent_45%),linear-gradient(180deg,#101216,#0D0F13)] px-3 py-2.5 shadow-[0_12px_24px_rgba(0,0,0,0.34)]">
-                <div className="flex flex-wrap items-start justify-between gap-2">
-                  <div>
-                    <p className="text-sm font-semibold text-white">Trade Ideas Report</p>
-                    <p className="text-[11px] text-[#7f8796]">Live performance snapshot</p>
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-sm font-semibold text-white">Trade Ideas Report</p>
+                  <button
+                    type="button"
+                    onClick={() => navigate(isAiTradeIdeasPage ? "/ai-trade-ideas/report" : "/trade-ideas/report")}
+                    className="shrink-0 rounded-lg border border-white/10 bg-[#11151c] px-2.5 py-1 text-[11px] text-[#b7bec9] transition hover:text-white"
+                  >
+                    Open detailed report
+                  </button>
+                </div>
+                {isAiTradeIdeasPage ? (
+                  <div className="mt-2 grid grid-cols-2 gap-1.5 text-[11px] sm:grid-cols-4">
+                    <div className="rounded-lg border border-[#31415b]/60 bg-[#121a27] px-2 py-1.5 text-center">
+                      <p className="text-[#7f8796]">Total</p>
+                      <p className="text-base font-semibold text-white">{reportStats.total}</p>
+                    </div>
+                    <div className="rounded-lg border border-[#2f5a4d]/60 bg-[#11201b] px-2 py-1.5 text-center">
+                      <p className="text-[#7f8796]">Success</p>
+                      <p className="text-base font-semibold text-[#8fc9ab]">{reportStats.successful}</p>
+                    </div>
+                    <div className="rounded-lg border border-[#5f3a3a]/60 bg-[#221516] px-2 py-1.5 text-center">
+                      <p className="text-[#7f8796]">Failed</p>
+                      <p className="text-base font-semibold text-[#d49f9a]">{reportStats.failed}</p>
+                    </div>
+                    <div className="rounded-lg border border-[#5b4b2c]/60 bg-[#221c12] px-2 py-1.5 text-center">
+                      <p className="text-[#7f8796]">Success %</p>
+                      <p className="text-base font-semibold text-[#F5C542]">{reportStats.successRate.toFixed(1)}%</p>
+                    </div>
                   </div>
-                  <div className="inline-flex items-center rounded-lg border border-white/10 bg-[#111316] p-0.5">
-                    {isAiTradeIdeasPage
-                      ? (Object.keys(aiModules) as AiProviderId[]).map((moduleId) => {
-                        const active = aiModules[moduleId];
-                        const theme = AI_MODULE_THEME[moduleId];
+                ) : (
+                  <table className="mt-1.5 w-full text-[11px]">
+                    <thead>
+                      <tr className="text-[#7f8796]">
+                        <th className="pb-1 pl-2 text-left font-medium">Mode</th>
+                        <th className="pb-1 text-center font-medium">Total Scan</th>
+                        <th className="pb-1 text-center font-medium">Ideas</th>
+                        <th className="pb-1 text-center font-medium">Entry Missed</th>
+                        <th className="pb-1 text-center font-medium">Resolved</th>
+                        <th className="pb-1 text-center font-medium">Success</th>
+                        <th className="pb-1 text-center font-medium">Failed</th>
+                        <th className="pb-1 pr-2 text-center font-medium">S/R</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {(["FLOW", "AGGRESSIVE", "BALANCED", "CAPITAL_GUARD"] as const).map((mode) => {
+                        const s = reportStatsByMode[mode] ?? { totalScan: 0, totalIdeas: 0, resolved: 0, successful: 0, failed: 0, entryMissed: 0, successRate: 0 };
+                        const modeColors: Record<string, string> = {
+                          FLOW: "border-[#3d5f8f]/50 text-[#b8d3ff]",
+                          AGGRESSIVE: "border-[#8b5cf6]/50 text-[#c4b5fd]",
+                          BALANCED: "border-[#d4a74a]/50 text-[#F5C542]",
+                          CAPITAL_GUARD: "border-[#2f8a5e]/50 text-[#8fc9ab]",
+                        };
                         return (
-                          <button
-                            type="button"
-                            key={moduleId}
-                            onClick={() => setAiModules((prev) => ({ ...prev, [moduleId]: !prev[moduleId] }))}
-                            className={`rounded-md px-2 py-1 text-[10px] font-semibold transition ${
-                              active ? theme.labelClass : "text-[#9da3ae] hover:text-[#d1d6de]"
-                            }`}
-                          >
-                            {theme.label}
-                          </button>
-                        );
-                      })
-                      : SCORING_MODE_OPTIONS.map((modeOption) => {
-                        const active = scoringMode === modeOption.id;
-                        const selectable = modeOption.userSelectable;
-                        return (
-                          <button
-                            type="button"
-                            key={modeOption.id}
-                            disabled={userSettingsLoading || !selectable}
-                            title={selectable ? modeOption.description : `${modeOption.label} is system controlled`}
-                            onClick={() => setScoringMode(modeOption.id)}
-                            className={`rounded-md px-2 py-1 text-[10px] font-semibold transition disabled:opacity-60 ${
-                              active
-                                ? "bg-[#1f2530] text-[#e6edf8] shadow-[inset_0_0_0_1px_rgba(170,190,220,0.25)]"
-                                : "text-[#9da3ae] hover:text-[#d1d6de]"
-                            }`}
-                          >
-                            {scoringModeLabel(modeOption.id)}
-                          </button>
+                          <tr key={mode} className="border-t border-white/5">
+                            <td className="py-1 pl-2">
+                              <span className={`inline-block rounded-md border px-1.5 py-0.5 text-[10px] font-semibold ${modeColors[mode]}`}>
+                                {scoringModeLabel(mode)}
+                              </span>
+                            </td>
+                            <td className="py-1 text-center font-semibold text-[#8f95a3]">{s.totalScan}</td>
+                            <td className="py-1 text-center font-semibold text-white">{s.totalIdeas}</td>
+                            <td className="py-1 text-center font-semibold text-[#8A8F98]">{s.entryMissed}</td>
+                            <td className="py-1 text-center font-semibold text-[#b7bec9]">{s.resolved}</td>
+                            <td className="py-1 text-center font-semibold text-[#8fc9ab]">{s.successful}</td>
+                            <td className="py-1 text-center font-semibold text-[#d49f9a]">{s.failed}</td>
+                            <td className="py-1 pr-2 text-center font-semibold text-[#F5C542]">{s.successRate.toFixed(1)}%</td>
+                          </tr>
                         );
                       })}
-                  </div>
-                </div>
-	                <div className="mt-2 grid grid-cols-2 gap-1.5 text-[11px] sm:grid-cols-4">
-                  <div className="rounded-lg border border-[#31415b]/60 bg-[#121a27] px-2 py-1.5 text-center">
-                    <p className="text-[#7f8796]">Total</p>
-                    <p className="text-base font-semibold text-white">{reportStats.total}</p>
-                  </div>
-                  <div className="rounded-lg border border-[#2f5a4d]/60 bg-[#11201b] px-2 py-1.5 text-center">
-                    <p className="text-[#7f8796]">Success</p>
-                    <p className="text-base font-semibold text-[#8fc9ab]">{reportStats.successful}</p>
-                  </div>
-                  <div className="rounded-lg border border-[#5f3a3a]/60 bg-[#221516] px-2 py-1.5 text-center">
-                    <p className="text-[#7f8796]">Failed</p>
-                    <p className="text-base font-semibold text-[#d49f9a]">{reportStats.failed}</p>
-                  </div>
-                  <div className="rounded-lg border border-[#5b4b2c]/60 bg-[#221c12] px-2 py-1.5 text-center">
-                    <p className="text-[#7f8796]">Success %</p>
-                    <p className="text-base font-semibold text-[#F5C542]">{reportStats.successRate.toFixed(1)}%</p>
-                  </div>
-                </div>
-	                <button
-	                  type="button"
-	                  onClick={() => navigate(isAiTradeIdeasPage ? "/ai-trade-ideas/report" : "/trade-ideas/report")}
-	                  className="mt-2 w-full rounded-lg border border-white/10 bg-[#11151c] px-2 py-1.5 text-[11px] text-[#b7bec9] transition hover:text-white"
-	                >
-	                  Open detailed report
-	                </button>
-	                <p className="mt-1 text-center text-[11px] text-[#8A8F98]">
-	                  {isAiTradeIdeasPage
-                      ? "AI report tracks only ideas scoring 60% and above."
-                      : "All Modes report tracks only ideas scoring 70% and above."}
-	                </p>
-	              </div>
+                    </tbody>
+                  </table>
+                )}
+                <p className="mt-1 text-center text-[11px] text-[#8A8F98]">
+                  {isAiTradeIdeasPage
+                    ? "AI report tracks only ideas scoring 60% and above."
+                    : "Since startup · Ideas scoring per mode threshold."}
+                </p>
+              </div>
 	            </div>
 
             <div className="flex flex-col gap-2">
@@ -915,17 +1027,17 @@ export default function TradeIdeasPage() {
                 onClick={() => setScanPanelExpanded((prev) => !prev)}
                 className="flex w-full items-center justify-between text-left"
               >
-                <div>
-                  <p className="text-[11px] font-semibold uppercase tracking-wider text-[#8f95a3]">
-                    {isAiTradeIdeasPage ? "Last AI scan results" : `Last scanned by mode (${diagnostics.scanBatchSize} each)`}
-                  </p>
-                  <p className="text-[11px] text-[#6B6F76]">
-                    {isAiTradeIdeasPage
-                      ? (aiHasScanRows ? "Latest cycle symbols and outcomes per AI module." : "No AI scan results yet.")
-                      : (hasLastScannedRows ? "Latest cycle symbols and outcomes per mode." : "No scanned symbols yet.")}
-                  </p>
+                <p className="text-[11px] font-semibold uppercase tracking-wider text-[#8f95a3]">
+                  {isAiTradeIdeasPage ? "Last AI scan results" : "Last scanned by mode"}
+                </p>
+                <div className="flex items-center gap-2">
+                  {!isAiTradeIdeasPage && (
+                    <span className="text-[11px] text-[#6B6F76]">
+                      Coin Universe ({Math.max(0, diagnostics.universeFilteredPairs)}) · Updated {diagnosticsAgeSec !== null ? `${diagnosticsAgeSec}s` : "-"} ago
+                    </span>
+                  )}
+                  <span className="text-xs text-[#8f95a3]">{scanPanelExpanded ? "▾" : "▸"}</span>
                 </div>
-                <span className="text-xs text-[#8f95a3]">{scanPanelExpanded ? "▾" : "▸"}</span>
               </button>
               {scanPanelExpanded ? (
                 <div className="mt-2 space-y-2.5">
@@ -1000,14 +1112,14 @@ export default function TradeIdeasPage() {
                                 {rows.length ? (
                                   rows.map((row, idx) => {
                                     const scorePct = Math.max(0, Math.min(100, Math.round(row.confidencePct)));
-                                    const passModeThreshold = scorePct >= modeRange.min;
-                                    const passTradeBand = scorePct >= 70;
-                                    const passTone = passTradeBand
+                                    const dec = (row.decision ?? "").toUpperCase();
+                                    const isTrade = dec === "TRADE";
+                                    const isWatch = dec === "WATCH";
+                                    const decLabel = isTrade ? "TRADE" : isWatch ? "WATCH" : "NO TRADE";
+                                    const passTone = isTrade
                                       ? "border-[#2e7a5e]/80 bg-[#103326] text-[#b9f5dc]"
-                                      : scorePct >= 40
-                                        ? (passModeThreshold
-                                          ? "border-[#9a7b2e]/80 bg-[#3a2c13] text-[#f7e2a4]"
-                                          : "border-[#6e5b31]/70 bg-[#262015] text-[#cfbf98]")
+                                      : isWatch
+                                        ? "border-[#9a7b2e]/80 bg-[#3a2c13] text-[#f7e2a4]"
                                         : "border-[#31415b]/70 bg-[#121a27] text-[#cdd8ec]";
                                     const createdTone = row.created ? "shadow-[0_0_0_1px_rgba(93,207,154,0.28)]" : "";
                                     return (
@@ -1016,7 +1128,7 @@ export default function TradeIdeasPage() {
                                         className={`inline-flex shrink-0 items-center rounded-md border px-2 py-1 text-[11px] ${passTone} ${createdTone}`}
                                         title={row.reason}
                                       >
-                                        {row.symbol} • {scorePct}% • {row.reason}
+                                        {row.symbol} • {scorePct}% • {decLabel}
                                       </span>
                                     );
                                   })
@@ -1029,24 +1141,6 @@ export default function TradeIdeasPage() {
                         </div>
                       );
                     })}
-                </div>
-              ) : null}
-              <div className="mt-2 border-t border-white/10 pt-2 text-[11px] text-[#8f95a3]">
-                {isAiTradeIdeasPage
-                  ? null
-                  : `Updated ${diagnosticsAgeSec !== null ? `${diagnosticsAgeSec}s` : "-"} · Total Scan ${scanCycleStats.totalRows} · Bitrium Trade ideas ${scanCycleStats.totalTradeReady} (70%+ ideas only) · User Config Ideas ${scanCycleStats.totalPass} (40-69 and within user min range) · Universe ${Math.max(0, diagnostics.universeFilteredPairs)} coins`}
-              </div>
-              {!isAiTradeIdeasPage ? (
-                <div className="mt-1 text-[10px] text-[#7f8796]">
-                  {SCAN_MODE_ORDER.map((modeKey) => {
-                    const telemetry = diagnostics.telemetryByMode?.[modeKey];
-                    if (!telemetry || telemetry.count <= 0) return null;
-                    return (
-                      <span key={`telemetry-${modeKey}`} className="mr-3 inline-block">
-                        {scoringModeLabel(modeKey)} n={telemetry.count} pass={telemetry.passRatePct}% conf p50/p90 {telemetry.confidenceP50}/{telemetry.confidenceP90} top {telemetry.topGateFailReason ?? telemetry.topHardReason ?? "-"}
-                      </span>
-                    );
-                  })}
                 </div>
               ) : null}
             </div>
@@ -1520,21 +1614,12 @@ export default function TradeIdeasPage() {
             })
             : visible.map((plan) => {
             const formatted = formatTradePlan(plan);
-            const entryDecimals = resolveDisplayDecimals([plan.entry.low, plan.entry.high]);
-            const stopDecimals = resolveDisplayDecimals(plan.stops.map((s) => s.price));
-            const targetDecimals = resolveDisplayDecimals(plan.targets.map((t) => t.price));
-            const candidateModesForDisplay = SCAN_MODE_ORDER.filter((modeKey) => selectedScanModes.includes(modeKey));
-            const modeDisplayPairs = candidateModesForDisplay
-              .map((modeKey) => {
-                const score = resolveModeScoreForFilterPct(plan, modeKey);
-                const range = modeConsensusRanges[modeKey] ?? { min: FLOW_MIN_CONSENSUS, max: 100 };
-                return { modeKey, score, range };
-              })
-              .filter(({ score, range }) => Number.isFinite(score) && score >= range.min && score <= range.max);
-            const sortedModesByScore = modeDisplayPairs.slice().sort((a, b) => b.score - a.score);
-            if (!sortedModesByScore.length) return null;
-            const primaryModeKey: ScoringMode = sortedModesByScore[0].modeKey;
-            const consensusPct = sortedModesByScore[0].score;
+            const entryDecimals = resolveDisplayDecimals([plan.entry.low, plan.entry.high], plan.pricePrecision);
+            const stopDecimals = resolveDisplayDecimals(plan.stops.map((s) => s.price), plan.pricePrecision);
+            const targetDecimals = resolveDisplayDecimals(plan.targets.map((t) => t.price), plan.pricePrecision);
+            // Use the plan's own scoring mode — matches the scan row it came from
+            const primaryModeKey: ScoringMode = (plan.scoringMode as ScoringMode) ?? "BALANCED";
+            const consensusPct = Math.round((plan.confidence ?? 0) * 100);
             const primaryModeLabel = scoringModeLabel(primaryModeKey);
             const modeStyle = modeConsensusTone(primaryModeKey);
             const consensusHint = consensusGuidance(consensusPct);
@@ -1575,7 +1660,7 @@ export default function TradeIdeasPage() {
                     </div>
                   </div>
                   <div className="flex min-w-[210px] self-start flex-col items-center justify-start">
-                    {plan.tradeValidity === "NO-TRADE" ? (
+                    {plan.tradeValidity === "NO-TRADE" && consensusPct < 70 ? (
                       <span className="mb-1 inline-flex items-center rounded-full border border-[#704844]/80 bg-[#271a19] px-2 py-0.5 text-[10px] font-semibold text-[#efb5b5]">
                         NO-TRADE warning
                       </span>
@@ -1640,9 +1725,9 @@ export default function TradeIdeasPage() {
                 <p className="mt-2 text-xs text-[#BFC2C7]">Invalid if {plan.invalidation.replace(/^Invalid if\s*/i, "")}</p>
                 {(plan.tradeValidity !== "VALID" || plan.entryWindow !== "OPEN") && plan.triggersToActivate.length ? (
                   <div className="mt-1 flex flex-wrap gap-1 text-xs">
-                    <span className="text-[#6B6F76]">Triggers:</span>
+                    <span className="text-[#6B6F76]">Activation:</span>
                     {plan.triggersToActivate.slice(0, 2).map((trigger) => (
-                      <span key={trigger} className="rounded border border-[#7a6840] bg-[#2a2418] px-2 py-0.5 text-[#e7d9b3]">{trigger}</span>
+                      <span key={trigger} className="rounded border border-[#7a6840] bg-[#2a2418] px-2 py-0.5 text-[#e7d9b3]">{"⏳ " + trigger}</span>
                     ))}
                   </div>
                 ) : null}
@@ -1669,7 +1754,7 @@ export default function TradeIdeasPage() {
                   <span>{plan.horizon}/{plan.timeframe} · Always manage your own risk.</span>
                   <div className="flex flex-wrap items-center justify-end gap-2">
                     <p className="text-[11px] leading-4 text-[#6B6F76]">
-                      Time: {new Date(plan.timestampUtc).toISOString()} | {elapsedText(plan.timestampUtc, nowMs)} | until {new Date(plan.validUntilUtc).toISOString()}
+                      Time: {(() => { try { return new Date(plan.timestampUtc).toISOString(); } catch { return "-"; } })()} | {elapsedText(plan.timestampUtc, nowMs)} | until {(() => { try { return new Date(plan.validUntilUtc).toISOString(); } catch { return "-"; } })()}
                     </p>
                     <div className="flex items-center gap-1">
                       <button type="button" onClick={() => void copy(formatted)} className="rounded border border-white/15 bg-[#0F1012] px-2 py-1 text-[11px] text-[#BFC2C7]">

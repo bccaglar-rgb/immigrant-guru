@@ -35,6 +35,7 @@ import { PaymentService } from "./payments/paymentService.ts";
 import { TronClient } from "./payments/tronClient.ts";
 import { TronMonitorService } from "./payments/monitorService.ts";
 import { TokenCreatorService } from "./payments/tokenCreatorService.ts";
+import { SystemScannerService } from "./services/systemScannerService.ts";
 
 const app = express();
 app.use(express.json());
@@ -61,6 +62,12 @@ const exchangeMarketHub = new ExchangeMarketHub();
 const exchangeCore = new ExchangeCoreService(connections);
 const traderHubStore = new TraderHubStore();
 const traderHubEngine = new TraderHubEngine(traderHubStore, exchangeMarketHub, { exchangeCore });
+const serverPort = Number(process.env.PORT ?? 8090);
+const systemScanner = new SystemScannerService({
+  binanceFuturesHub,
+  tradeIdeaStore,
+  serverPort,
+});
 
 // bootstrap admin user (dev)
 if (!process.env.DISABLE_DEV_ADMIN) {
@@ -77,7 +84,7 @@ registerTradeRoutes(app, audit, connections);
 registerMarketRoutes(app, { providerStore: adminProviderStore, binanceFuturesHub, exchangeMarketHub });
 registerAuthRoutes(app, authService);
 registerUserSettingsRoutes(app);
-registerTradeIdeasRoutes(app, tradeIdeaStore);
+registerTradeIdeasRoutes(app, tradeIdeaStore, systemScanner);
 registerAdminProviderRoutes(app, adminProviderStore);
 registerAiTradeIdeasRoutes(app, aiProviderStore, { binanceFuturesHub });
 registerExchangeCoreRoutes(app, exchangeCore);
@@ -111,6 +118,7 @@ server.listen(port, host, () => {
   traderHubEngine.start();
   tronMonitor.start();
   tradeIdeaTracker.start();
+  systemScanner.start();
   // eslint-disable-next-line no-console
   console.log(`Exchange terminal backend on http://${host}:${port}`);
 });

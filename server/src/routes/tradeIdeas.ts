@@ -3,6 +3,7 @@ import type { Express, Request } from "express";
 import { TradeIdeaStore } from "../services/tradeIdeaStore.ts";
 import type { TradeIdeaDirection, TradeIdeaRecord, TradeIdeaStatus } from "../services/tradeIdeaTypes.ts";
 import { isScoringMode, normalizeScoringMode, SCORING_MODES } from "../services/scoringMode.ts";
+import type { SystemScannerService } from "../services/systemScannerService.ts";
 
 const readUserId = (req: Request): string => {
   const raw = req.headers["x-user-id"];
@@ -105,7 +106,89 @@ const normalizeLegacyIdea = (idea: TradeIdeaRecord): TradeIdeaRecord => {
   };
 };
 
-export const registerTradeIdeasRoutes = (app: Express, store: TradeIdeaStore) => {
+export const registerTradeIdeasRoutes = (app: Express, store: TradeIdeaStore, systemScanner?: SystemScannerService) => {
+  // System scan cache endpoint — returns latest background scan results instantly
+  app.get("/api/trade-ideas/system-scan", (_req, res) => {
+    if (!systemScanner) {
+      return res.json({ ok: true, results: [], lastScanAt: 0, universeSize: 0, scanRound: 0, startedAt: 0, totalScansByMode: {} });
+    }
+    const mode = typeof _req.query.mode === "string" ? _req.query.mode : undefined;
+    const cache = systemScanner.getCache();
+    const results = mode ? systemScanner.getLatestResults(mode) : cache.results;
+    return res.json({
+      ok: true,
+      results,
+      lastScanAt: cache.lastScanAt,
+      universeSize: cache.universeSize,
+      scanRound: cache.scanRound,
+      startedAt: cache.startedAt,
+      totalScansByMode: cache.totalScansByMode,
+      highScoreByMode: cache.highScoreByMode,
+    });
+  });
+
+  // ── Report stats — single endpoint returning consistent stats for ALL modes ──
+  app.get("/api/trade-ideas/report-stats", async (_req, res) => {
+    const ALL_MODES = ["FLOW", "AGGRESSIVE", "BALANCED", "CAPITAL_GUARD"] as const;
+    const cache = systemScanner?.getCache();
+    const totalScansByMode = cache?.totalScansByMode ?? {};
+    const highScoreByMode = cache?.highScoreByMode ?? {};
+    const startedAt = cache?.startedAt ?? 0;
+    const startedAtIso = startedAt > 0 ? new Date(startedAt).toISOString() : "";
+
+    // Report only includes high-confidence ideas (70%+ for all modes)
+    // Note: FLOW creates ideas at 50%+ but only 70%+ appear in the report
+    const REPORT_MIN_SCORE: Record<string, number> = {
+      FLOW: 70,
+      AGGRESSIVE: 70,
+      BALANCED: 70,
+      CAPITAL_GUARD: 70,
+    };
+
+    // Fetch ALL ideas across all users (up to 5000)
+    const allIdeas = await store.listIdeas({ limit: 5000 });
+
+    // Filter to only ideas created since scanner startup — so totalScan and totalIdeas
+    // cover the same time window. Without this, totalIdeas is all-time from DB but
+    // totalScan resets on every restart, leading to confusing mismatches.
+    const sessionIdeas = startedAtIso
+      ? allIdeas.filter((i) => i.created_at >= startedAtIso)
+      : allIdeas;
+
+    const statsByMode: Record<string, {
+      totalScan: number; highScoreScan: number; totalIdeas: number; resolved: number;
+      success: number; failed: number; entryMissed: number; successRate: number;
+    }> = {};
+
+    for (const mode of ALL_MODES) {
+      const minScore = REPORT_MIN_SCORE[mode] ?? 70;
+      const modeIdeas = sessionIdeas.filter(
+        (i) => normalizeScoringMode(i.scoring_mode) === mode && i.confidence_pct >= minScore,
+      );
+      // Entry-missed: created but price never reached entry zone
+      const isEntryMissed = (i: typeof modeIdeas[number]) =>
+        i.result === "FAIL" && !i.activated_at && !i.hit_level_type;
+      const entryMissedCount = modeIdeas.filter((i) => isEntryMissed(i)).length;
+      // Real trades: ideas that were activated (entry was reached) and resolved
+      const activatedIdeas = modeIdeas.filter((i) => !isEntryMissed(i));
+      const success = activatedIdeas.filter((i) => i.result === "SUCCESS").length;
+      const failed = activatedIdeas.filter((i) => i.result === "FAIL").length;
+      const resolved = success + failed;
+      statsByMode[mode] = {
+        totalScan: totalScansByMode[mode] ?? 0,
+        highScoreScan: highScoreByMode[mode] ?? 0,
+        totalIdeas: modeIdeas.length,  // ALL session ideas including entry-missed (Ideas >= Entry Missed always)
+        resolved,
+        success,
+        failed,
+        entryMissed: entryMissedCount,
+        successRate: resolved > 0 ? (success / resolved) * 100 : 0,
+      };
+    }
+
+    return res.json({ ok: true, statsByMode, startedAt });
+  });
+
   app.post("/api/trade-ideas", async (req, res) => {
     const userId = readUserId(req);
     const symbol = String(req.body?.symbol ?? "").toUpperCase().trim();
@@ -130,6 +213,12 @@ export const registerTradeIdeasRoutes = (app: Express, store: TradeIdeaStore) =>
     const horizon = toHorizon(req.body?.horizon);
     const confidenceRaw = req.body?.confidence_pct ?? req.body?.confidence ?? 0;
     const confidencePct = (() => {
+      // If mode_scores has a score for the active mode, use it for consistency
+      const modeScoreRaw = modeScores[scoringMode];
+      if (typeof modeScoreRaw === "number" && Number.isFinite(modeScoreRaw) && modeScoreRaw > 0) {
+        const pct = modeScoreRaw > 1 ? modeScoreRaw : modeScoreRaw * 100;
+        return Math.max(0, Math.min(100, Math.round(pct)));
+      }
       const n = toNumber(confidenceRaw, 0);
       if (n <= 1) return Math.max(0, Math.min(100, n * 100));
       return Math.max(0, Math.min(100, n));
@@ -212,6 +301,10 @@ export const registerTradeIdeasRoutes = (app: Express, store: TradeIdeaStore) =>
         : [],
       raw_text: String(req.body?.raw_text ?? req.body?.rawText ?? ""),
       incomplete: Boolean(req.body?.incomplete),
+      price_precision: (() => {
+        const pp = Number(req.body?.price_precision ?? req.body?.pricePrecision);
+        return Number.isFinite(pp) && pp >= 0 && pp <= 18 ? pp : undefined;
+      })(),
     };
 
     const initialPrice = Number(((idea.entry_low + idea.entry_high) / 2).toFixed(8));
@@ -254,6 +347,14 @@ export const registerTradeIdeasRoutes = (app: Express, store: TradeIdeaStore) =>
   app.delete("/api/trade-ideas", async (req, res) => {
     const userId = readUserId(req);
     const result = await store.clearUserIdeas(userId);
+    return res.json({ ok: true, ...result });
+  });
+
+  /** Reset everything: clear ALL trade ideas + reset scanner stats */
+  app.post("/api/trade-ideas/reset", async (_req, res) => {
+    const result = await store.clearAll();
+    if (systemScanner) systemScanner.resetStats();
+    console.log(`[Reset] Cleared ${result.deletedIdeas} ideas, ${result.deletedEvents} events — scanner stats zeroed`);
     return res.json({ ok: true, ...result });
   });
 

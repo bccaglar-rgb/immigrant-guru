@@ -29,7 +29,7 @@ const p = (v: number) => v.toLocaleString(undefined, { maximumFractionDigits: 2 
 const f2 = (v: number) => Number(v).toFixed(2);
 const engineMetric = (dataComplete: boolean, value: number, suffix = "") => (dataComplete ? `${f2(value)}${suffix}` : "N/A");
 const engineBars = (dataComplete: boolean, value: number) => (dataComplete ? `${Math.round(value)} bars` : "N/A");
-const consensusPct = (value: number) => `${Number(value).toFixed(2)}%`;
+const consensusPct = (value: number) => `${Math.min(100, Math.max(0, Number(value))).toFixed(2)}%`;
 
 const copyText = async (text: string) => {
   try {

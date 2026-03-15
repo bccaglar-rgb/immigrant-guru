@@ -310,22 +310,26 @@ export class TradeIdeaTracker {
           );
           if (pendingLevelHit) {
             const minutesTotal = minutesBetween(idea.created_at, candleIso);
+            const pendingResult = pendingLevelHit.type === "TP" ? "SUCCESS" : "FAIL";
           await this.store.updateIdea(idea.id, {
             status: "RESOLVED",
+            activated_at: candleIso,
             resolved_at: candleIso,
-            result: "FAIL",
+            result: pendingResult,
             hit_level_type: pendingLevelHit.type,
             hit_level_index: pendingLevelHit.index,
             hit_level_price: pendingLevelHit.price,
+            minutes_to_entry: minutesTotal,
+            minutes_to_exit: 0,
             minutes_total: minutesTotal,
           });
             await this.store.appendEvent({
               idea_id: idea.id,
-              event_type: "RESOLVED",
+              event_type: pendingLevelHit.type === "TP" ? "TP_HIT" : "SL_HIT",
               ts: candleIso,
               price: currentPrice,
               meta: {
-                reason: "ENTRY_MISSED_LEVEL_HIT",
+                reason: "PENDING_LEVEL_HIT",
                 level_type: pendingLevelHit.type,
                 level_index: pendingLevelHit.index,
                 level_price: pendingLevelHit.price,
@@ -444,8 +448,41 @@ export class TradeIdeaTracker {
         if (!candles.length) continue;
         await this.reconcileIdeaWithHistory(idea, candles);
       }
+
+      // Repair: fill missing minutes_to_exit for resolved ideas with hit_level_type
+      await this.repairMissingExitTimes();
     } finally {
       this.processing = false;
+    }
+  }
+
+  private async repairMissingExitTimes() {
+    try {
+      const allIdeas = await this.store.listIdeas({ limit: 10000 });
+      let repaired = 0;
+      for (const idea of allIdeas) {
+        if (idea.status !== "RESOLVED") continue;
+        if (idea.hit_level_type === null) continue; // entry missed — no exit
+        if (typeof idea.minutes_to_exit === "number") continue; // already has exit time
+        // Has a TP/SL hit but no minutes_to_exit — repair it
+        if (idea.activated_at && idea.resolved_at) {
+          const exitMin = minutesBetween(idea.activated_at, idea.resolved_at);
+          await this.store.updateIdea(idea.id, { minutes_to_exit: exitMin ?? 0 });
+          repaired++;
+        } else if (idea.resolved_at) {
+          // Was never activated (PENDING → direct hit) — set exit to 0
+          const totalMin = minutesBetween(idea.created_at, idea.resolved_at);
+          await this.store.updateIdea(idea.id, {
+            activated_at: idea.resolved_at,
+            minutes_to_entry: totalMin,
+            minutes_to_exit: 0,
+          });
+          repaired++;
+        }
+      }
+      if (repaired > 0) console.log(`[TradeIdeaTracker] Repaired ${repaired} ideas with missing minutes_to_exit`);
+    } catch (err) {
+      console.error("[TradeIdeaTracker] repairMissingExitTimes error:", err instanceof Error ? err.message : err);
     }
   }
 
@@ -516,23 +553,28 @@ export class TradeIdeaTracker {
           } else {
             const pendingLevelHit = resolveFirstHit(idea.direction, idea.tp_levels, idea.sl_levels, prevPrice, currentPrice);
             if (pendingLevelHit) {
+              const pendingResult = pendingLevelHit.type === "TP" ? "SUCCESS" : "FAIL";
               const minutesTotal = minutesBetween(idea.created_at, nowIso);
+              const minutesToEntry = minutesTotal;
               await this.store.updateIdea(idea.id, {
                 status: "RESOLVED",
+                activated_at: nowIso,
                 resolved_at: nowIso,
-                result: "FAIL",
+                result: pendingResult,
                 hit_level_type: pendingLevelHit.type,
                 hit_level_index: pendingLevelHit.index,
                 hit_level_price: pendingLevelHit.price,
+                minutes_to_entry: minutesToEntry,
+                minutes_to_exit: 0,
                 minutes_total: minutesTotal,
               });
               await this.store.appendEvent({
                 idea_id: idea.id,
-                event_type: "RESOLVED",
+                event_type: pendingLevelHit.type === "TP" ? "TP_HIT" : "SL_HIT",
                 ts: nowIso,
                 price: currentPrice,
                 meta: {
-                  reason: "ENTRY_MISSED_LEVEL_HIT",
+                  reason: "PENDING_LEVEL_HIT",
                   level_type: pendingLevelHit.type,
                   level_index: pendingLevelHit.index,
                   level_price: pendingLevelHit.price,

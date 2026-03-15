@@ -1,5 +1,6 @@
 import type { Express } from "express";
 import { buildBitriumIntelligenceSnapshot } from "../../../src/data/bitriumIntelligenceEngine.ts";
+import { deriveKeyLevels } from "../../../src/data/liveConsensusEngine.ts";
 import { computeBalancedConsensus } from "../../../src/data/balancedConsensus.ts";
 import { computeCapitalGuardConsensus } from "../../../src/data/capitalGuardConsensus.ts";
 import { getConsensusBucketLabel, isTradeIdeaEligibleBucket } from "../../../src/data/consensusBuckets.ts";
@@ -571,11 +572,12 @@ const makeModeBreakdown = (
       atrRegime,
       rsiState,
     });
-    const decision: ModeBreakdown["decision"] = out.phase === "TRADE" || out.phase === "SQUEEZE_EVENT"
-      ? "TRADE"
-      : out.phase === "SPECULATIVE" || out.phase === "WAIT"
-        ? "WATCH"
-        : "NO_TRADE";
+    const decision: ModeBreakdown["decision"] =
+      out.phase === "TRADE" || out.phase === "SQUEEZE_EVENT" || out.phase === "SPECULATIVE"
+        ? "TRADE"
+        : out.phase === "WAIT"
+          ? "WATCH"
+          : "NO_TRADE";
     return {
       raw: out.extremeScore,
       base: out.extremeScore,
@@ -648,18 +650,13 @@ const makeModeBreakdown = (
       spoofRisk,
       spreadRegime,
       depthQuality,
-      liquidityDensity,
       crowdingRisk,
       cascadeRisk,
       stressLevel,
       entryWindow,
-      breakoutOnly,
     });
     const gatingFlags = [
-      ...(out.gates.risk === "BLOCK" ? ["RISK_BLOCK"] : []),
-      ...(out.gates.entry === "BLOCK" ? ["ENTRY_BLOCK"] : []),
-      ...(out.gates.fill === "BLOCK" ? ["FILL_BLOCK"] : []),
-      ...(out.gates.capacity === "BLOCK" ? ["CAPACITY_BLOCK"] : []),
+      ...(out.gates.safety === "BLOCK" ? ["SAFETY_BLOCK"] : []),
       ...(out.gates.data === "BLOCK" ? ["DATA_BLOCK"] : []),
     ];
     return {
@@ -672,7 +669,7 @@ const makeModeBreakdown = (
       edgeAdj: Number.isFinite(consensusCore.edgeNetR) ? consensusCore.edgeNetR : 0,
       riskAdj: Number.isFinite(consensusCore.riskAdjustment) ? consensusCore.riskAdjustment : 0,
       gatingFlags,
-      decision: out.decision,
+      decision: out.finalScore >= 70 && out.gates.data === "PASS" && out.gates.safety === "PASS" ? "TRADE" : out.finalScore >= 50 ? "WATCH" : "NO_TRADE",
     };
   }
 
@@ -707,7 +704,7 @@ const makeModeBreakdown = (
     edgeAdj: Number.isFinite(consensusCore.edgeNetR) ? consensusCore.edgeNetR : 0,
     riskAdj: Number.isFinite(consensusCore.riskAdjustment) ? consensusCore.riskAdjustment : 0,
     gatingFlags,
-    decision: out.finalScore >= 68 && out.gates.data === "PASS" && out.gates.safety === "PASS" ? "TRADE" : out.finalScore >= 52 ? "WATCH" : "NO_TRADE",
+    decision: out.finalScore >= 70 && out.gates.data === "PASS" && out.gates.safety === "PASS" ? "TRADE" : out.finalScore >= 50 ? "WATCH" : "NO_TRADE",
   };
 };
 
@@ -1129,6 +1126,37 @@ const fetchBinanceFuturesJson = async <T,>(path: string, timeoutMs = 9000): Prom
     }
   }
   throw (lastError instanceof Error ? lastError : new Error(`BINANCE_FUTURES_UNAVAILABLE:${path}`));
+};
+
+/**
+ * Fetch klines with cascading fallback: Futures API → Spot API → data-api.binance.vision
+ * Spot kline format is identical to futures — safe for chart display.
+ */
+const fetchBinanceKlinesFallback = async (symbol: string, interval: string, limit: number): Promise<unknown[]> => {
+  // 1. Futures API (primary)
+  try {
+    const data = await fetchBinanceFuturesJson<unknown>(`/fapi/v1/klines?symbol=${symbol}&interval=${interval}&limit=${limit}`, 3000);
+    if (Array.isArray(data) && data.length >= 10) return data;
+  } catch { /* continue */ }
+  // 2. Binance Spot API (same kline format, different rate limit pool)
+  try {
+    const spotData = await fetchJson<unknown>(
+      `https://api.binance.com/api/v3/klines?symbol=${symbol}&interval=${interval}&limit=${limit}`,
+      undefined,
+      5000,
+    );
+    if (Array.isArray(spotData) && spotData.length >= 10) return spotData;
+  } catch { /* continue */ }
+  // 3. data-api.binance.vision (public, no rate limit)
+  try {
+    const visionData = await fetchJson<unknown>(
+      `https://data-api.binance.vision/api/v3/klines?symbol=${symbol}&interval=${interval}&limit=${limit}`,
+      undefined,
+      5000,
+    );
+    if (Array.isArray(visionData) && visionData.length >= 10) return visionData;
+  } catch { /* all sources failed */ }
+  return [];
 };
 
 const normalizeExchange = (input: string): ExchangeName => {
@@ -1597,7 +1625,7 @@ const fetchBinanceLive = async (
     const klinesRaw = await fetchWithComponentCache<unknown>(
       `binance:bootstrap:klines:${normalizedSymbol}:${interval}:${safeLimit}`,
       30_000,
-      () => fetchBinanceFuturesJson<unknown>(`/fapi/v1/klines?symbol=${normalizedSymbol}&interval=${interval}&limit=${safeLimit}`, 2600),
+      () => fetchBinanceKlinesFallback(normalizedSymbol, interval, safeLimit),
     ).catch(() => []);
     const historical = asList(klinesRaw)
       .map((row) => parseBinanceKlineRow(row))
@@ -3694,25 +3722,43 @@ export const registerMarketRoutes = (
       ) as Record<ScoringMode, ModeBreakdown>;
 
       const close = Number(liveBundle.ohlcv.at(-1)?.close ?? 0);
-      const nearestLevelDistance = nearestKeyLevelDistancePct(close, selectedSnapshot.keyLevels as Array<{ price?: number }>);
+      // Compute key levels: prefer snapshot, fallback to direct OHLCV computation
+      const snapshotKeyLevels = (selectedSnapshot.keyLevels ?? []) as Array<{ price: number; type?: string; label?: string; strength?: string; touchCount?: number }>;
+      const directKeyLevels = liveBundle.ohlcv && liveBundle.ohlcv.length >= 10
+        ? deriveKeyLevels(liveBundle.ohlcv as Array<{ time: number; open: number; high: number; low: number; close: number; volume: number }>)
+        : [];
+      const effectiveKeyLevels = snapshotKeyLevels.length > 0 ? snapshotKeyLevels : directKeyLevels;
+      const nearestLevelDistance = nearestKeyLevelDistancePct(close, effectiveKeyLevels as Array<{ price?: number }>);
       const srBoostBase = supportResistanceBoost(nearestLevelDistance);
       if (srBoostBase > 0) {
         const modeMultiplier: Record<ScoringMode, number> = {
           FLOW: 1.3,
           AGGRESSIVE: 1.1,
-          BALANCED: 0.8,
-          CAPITAL_GUARD: 0.75,
+          BALANCED: 0.95,
+          CAPITAL_GUARD: 0.85,
+        };
+        // Per-mode TRADE decision thresholds — must stay aligned with consensus functions
+        const modeTradeThreshold: Record<ScoringMode, number> = {
+          FLOW: 50,
+          AGGRESSIVE: 70,
+          BALANCED: 70,
+          CAPITAL_GUARD: 70,
+        };
+        const modeWatchThreshold: Record<ScoringMode, number> = {
+          FLOW: 30,
+          AGGRESSIVE: 50,
+          BALANCED: 50,
+          CAPITAL_GUARD: 50,
         };
         for (const mode of SCORING_MODES) {
           const boost = srBoostBase * modeMultiplier[mode];
           const boostedFinal = clamp(modeBreakdown[mode].final + boost, 0, 100);
-          const bucket = getConsensusBucketLabel(boostedFinal);
           modeBreakdown[mode] = {
             ...modeBreakdown[mode],
             final: Number(boostedFinal.toFixed(2)),
-            decision: isTradeIdeaEligibleBucket(bucket)
+            decision: boostedFinal >= modeTradeThreshold[mode]
               ? "TRADE"
-              : boostedFinal >= 45
+              : boostedFinal >= modeWatchThreshold[mode]
                 ? "WATCH"
                 : "NO_TRADE",
           };
@@ -3752,12 +3798,68 @@ export const registerMarketRoutes = (
       const entryWindow = tileState("entry-timing-window", "CLOSED");
       const slippageRisk = tileState("slippage-risk", "HIGH");
 
-      const entryLow = direction === "LONG" ? close * 0.9985 : close * 1.0015;
-      const entryHigh = direction === "LONG" ? close * 1.001 : close * 0.999;
-      const sl1 = direction === "LONG" ? close * 0.995 : close * 1.005;
-      const sl2 = direction === "LONG" ? close * 0.992 : close * 1.008;
-      const tp1 = direction === "LONG" ? close * 1.004 : close * 0.996;
-      const tp2 = direction === "LONG" ? close * 1.008 : close * 0.992;
+      // --- S/R based Entry / SL / TP calculation ---
+      const pricePrecision = binanceFuturesHub?.getPricePrecision(symbol) ?? 8;
+      const roundTick = (p: number) => Number(p.toFixed(pricePrecision));
+
+      // Compute ATR from OHLCV for fallback distances
+      const ohlcvArr = liveBundle.ohlcv ?? [];
+      let atrValue = 0;
+      if (ohlcvArr.length >= 16) {
+        let trSum = 0;
+        for (let i = ohlcvArr.length - 14; i < ohlcvArr.length; i++) {
+          const c = ohlcvArr[i], pc = ohlcvArr[i - 1].close;
+          trSum += Math.max(c.high - c.low, Math.abs(c.high - pc), Math.abs(c.low - pc));
+        }
+        atrValue = trSum / 14;
+      }
+      if (!Number.isFinite(atrValue) || atrValue <= 0) atrValue = close * 0.01; // 1% fallback
+
+      // Extract supports and resistances from key levels (effectiveKeyLevels computed above)
+      const kl = effectiveKeyLevels;
+      const supports = kl
+        .filter((l) => (l.type === "support" || l.price < close) && l.price > 0 && l.price < close)
+        .sort((a, b) => b.price - a.price); // closest first
+      const resistances = kl
+        .filter((l) => (l.type === "resistance" || l.price > close) && l.price > 0 && l.price > close)
+        .sort((a, b) => a.price - b.price); // closest first
+
+      let sl1: number, sl2: number, tp1: number, tp2: number, entryLow: number, entryHigh: number;
+      const buffer = atrValue * 0.15; // small buffer beyond S/R levels
+
+      if (direction === "LONG") {
+        sl1 = supports.length >= 1 ? supports[0].price - buffer : close - atrValue * 1.0;
+        sl2 = supports.length >= 2 ? supports[1].price - buffer : close - atrValue * 1.5;
+        tp1 = resistances.length >= 1 ? resistances[0].price : close + atrValue * 1.5;
+        tp2 = resistances.length >= 2 ? resistances[1].price : close + atrValue * 2.5;
+        entryLow = close - atrValue * 0.2;
+        entryHigh = close + atrValue * 0.1;
+      } else {
+        sl1 = resistances.length >= 1 ? resistances[0].price + buffer : close + atrValue * 1.0;
+        sl2 = resistances.length >= 2 ? resistances[1].price + buffer : close + atrValue * 1.5;
+        tp1 = supports.length >= 1 ? supports[0].price : close - atrValue * 1.5;
+        tp2 = supports.length >= 2 ? supports[1].price : close - atrValue * 2.5;
+        entryLow = close + atrValue * 0.2;
+        entryHigh = close - atrValue * 0.1;
+      }
+
+      // Ensure correct ordering
+      if (entryLow > entryHigh) [entryLow, entryHigh] = [entryHigh, entryLow];
+      if (direction === "LONG") {
+        if (sl2 > sl1) [sl1, sl2] = [sl2, sl1]; // sl1 closer to price
+        if (tp2 < tp1) [tp1, tp2] = [tp2, tp1]; // tp1 closer to price
+      } else {
+        if (sl2 < sl1) [sl1, sl2] = [sl2, sl1];
+        if (tp2 > tp1) [tp1, tp2] = [tp2, tp1];
+      }
+
+      // Round all to Binance tick size
+      entryLow = roundTick(entryLow);
+      entryHigh = roundTick(entryHigh);
+      sl1 = roundTick(sl1);
+      sl2 = roundTick(sl2);
+      tp1 = roundTick(tp1);
+      tp2 = roundTick(tp2);
 
       const validBars = Math.max(0, Number(selectedPanel.freshness.validForBars ?? 0));
       const tfMin = timeframe === "1m" ? 1 : timeframe === "5m" ? 5 : timeframe === "15m" ? 15 : timeframe === "30m" ? 30 : timeframe === "1h" ? 60 : timeframe === "4h" ? 240 : 1440;
@@ -3791,15 +3893,15 @@ Invalidation: ${(selectedPanel.invalidationTriggers.slice(0, 2).join(" / ") || "
 Time: ${now.toISOString()} | Valid ~${validBars} bars (until ${until.toISOString()})
 
 ENTRY ZONE
-${entryLow.toLocaleString(undefined, { maximumFractionDigits: 2 })} – ${entryHigh.toLocaleString(undefined, { maximumFractionDigits: 2 })}
+${entryLow.toLocaleString(undefined, { minimumFractionDigits: pricePrecision, maximumFractionDigits: pricePrecision })} – ${entryHigh.toLocaleString(undefined, { minimumFractionDigits: pricePrecision, maximumFractionDigits: pricePrecision })}
 
 STOP LEVELS
-SL1: ${sl1.toLocaleString(undefined, { maximumFractionDigits: 2 })}    Share %50
-SL2: ${sl2.toLocaleString(undefined, { maximumFractionDigits: 2 })}    Share %50
+SL1: ${sl1.toLocaleString(undefined, { minimumFractionDigits: pricePrecision, maximumFractionDigits: pricePrecision })}    Share %50
+SL2: ${sl2.toLocaleString(undefined, { minimumFractionDigits: pricePrecision, maximumFractionDigits: pricePrecision })}    Share %50
 
 TARGETS
-TP1: ${tp1.toLocaleString(undefined, { maximumFractionDigits: 2 })}     Share %50
-TP2: ${tp2.toLocaleString(undefined, { maximumFractionDigits: 2 })}     Share %50
+TP1: ${tp1.toLocaleString(undefined, { minimumFractionDigits: pricePrecision, maximumFractionDigits: pricePrecision })}     Share %50
+TP2: ${tp2.toLocaleString(undefined, { minimumFractionDigits: pricePrecision, maximumFractionDigits: pricePrecision })}     Share %50
 
 MARKET STATE
 Trend: ${trendLabel}
@@ -3820,6 +3922,12 @@ ${intentLines[2] ?? "Always manage your own risk."}
 
 Always manage your own risk.`;
 
+      const keyLevelsResponse = kl.map((l: { label?: string; price?: number; type?: string; strength?: string; touchCount?: number }) => ({
+        label: l.label,
+        price: l.price,
+        type: l.type,
+        strength: l.strength,
+      }));
       res.json({
         ok: true,
         text,
@@ -3848,6 +3956,21 @@ Always manage your own risk.`;
         },
         approved_modes: approvedModes,
         oi_change_1h: liveBundle.derivatives?.oiChange1h ?? null,
+        entry_low: entryLow,
+        entry_high: entryHigh,
+        sl_levels: [sl1, sl2],
+        tp_levels: [tp1, tp2],
+        price_precision: pricePrecision,
+        direction,
+        trade_validity: tradeValidity,
+        entry_window: entryWindow,
+        slippage_risk: slippageRisk,
+        horizon: normalizedHorizon,
+        timeframe,
+        setup: selectedPanel.playbook,
+        triggers_to_activate: selectedPanel.triggerConditions.slice(0, 4),
+        invalidation_triggers: selectedPanel.invalidationTriggers.slice(0, 2),
+        key_levels: keyLevelsResponse,
       });
     } catch (err) {
       res.status(500).json({ ok: false, error: err instanceof Error ? err.message : "trade idea fetch failed" });

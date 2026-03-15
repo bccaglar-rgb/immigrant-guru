@@ -1,22 +1,22 @@
 import type { FlowScoringTuningConfig, ScoringMode } from "../types";
 
 export const DEFAULT_FLOW_SCORING_TUNING: FlowScoringTuningConfig = {
-  fillShortfallCoeff: 0.15,
-  slippageSeverityCoeff: 0.08,
-  microSeverityCoeff: 0.08,
-  executionMultiplierFloor: 0.80,
-  stressFailureCoeff: 0.10,
-  cascadeFailureCoeff: 0.08,
-  crowdingFailureCoeff: 0.04,
-  riskMultiplierFloor: 0.80,
-  modeBias: 1.38,
+  fillShortfallCoeff: 0.06,
+  slippageSeverityCoeff: 0.03,
+  microSeverityCoeff: 0.03,
+  executionMultiplierFloor: 0.92,
+  stressFailureCoeff: 0.04,
+  cascadeFailureCoeff: 0.03,
+  crowdingFailureCoeff: 0.02,
+  riskMultiplierFloor: 0.92,
+  modeBias: 1.48,
   compressKnee: 99,
   compressScale: 22,
-  fillHardBlockThreshold: 0.10,
-  fillGateThreshold: 0.20,
-  hardBlockScoreCap: 38,
-  degradedFeedPenalty: 0.008,
-  dataMultiplierFloor: 0.90,
+  fillHardBlockThreshold: 0.04,
+  fillGateThreshold: 0.08,
+  hardBlockScoreCap: 55,
+  degradedFeedPenalty: 0.004,
+  dataMultiplierFloor: 0.95,
 };
 
 export const FLOW_SCORING_TUNING_BOUNDS: Record<
@@ -94,15 +94,16 @@ export const SCORING_CONFIG: Record<ScoringMode, ScoringConfig> = {
     gates: { minFillProb: 0.48, minEdgeR: 0.01, minCapacity: 0.32 },
   },
   // User-configurable mode — all tuning via FlowScoringTuning panel.
+  // Default: permissive — users tighten via Flow Settings.
   FLOW: {
     sigmoidK: 7.2,
-    edgeBaselineR: 0.1,
+    edgeBaselineR: 0.12,
     minFloor: 0,
     riskModel: "LINEAR",
     penaltyModel: "MULTIPLY",
     linearRiskSlope: 0.4,
     linearRiskFloor: 0.45,
-    gates: { minFillProb: 0.2, minEdgeR: -0.02, minCapacity: 0.2 },
+    gates: { minFillProb: 0.08, minEdgeR: -0.05, minCapacity: 0.08 },
   },
   // ~90% accuracy target: fortress mode. Only elite setups with
   // pristine execution, low stress, confirmed edge, and deep liquidity.
@@ -388,11 +389,15 @@ export const computeScore = (input: ComputeScoreInput): ComputeScoreResult => {
     const penaltyRate = 0;
     const riskAdj = clamp(executionMultiplier * riskMultiplier * dataMultiplier, 0, 1.05);
     const flowDisplay = Number(compressUpperTail(finalRaw, t.compressKnee, t.compressScale).toFixed(2));
-    const finalScore = Boolean(input.dataHealthFail) || totalWeight <= 0
-      ? 0
-      : hardTradeabilityBlock
-        ? Math.min(flowDisplay, t.hardBlockScoreCap)
-        : flowDisplay;
+    const finalScore = clamp(
+      Boolean(input.dataHealthFail) || totalWeight <= 0
+        ? 0
+        : hardTradeabilityBlock
+          ? Math.min(flowDisplay, t.hardBlockScoreCap)
+          : flowDisplay,
+      0,
+      100,
+    );
     return {
       mode: input.mode,
       finalScore,

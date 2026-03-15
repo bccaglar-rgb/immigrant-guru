@@ -620,12 +620,16 @@ export default function MarketDashboardPage() {
     const targetPad = last.close * Math.max(0.0024, atrProxy * Math.max(0.1, Number(riskCfg.targetAtrFactor) || 1.15));
     const target2Multiplier = Math.max(1, Number(riskCfg.target2Multiplier) || 1.65);
 
-    const entryLow = Number((isShort ? last.close : last.close - entryPad).toFixed(2));
-    const entryHigh = Number((isShort ? last.close + entryPad : last.close).toFixed(2));
-    const sl1 = Number((isShort ? entryHigh + stopPad : entryLow - stopPad).toFixed(2));
-    const sl2 = Number((isShort ? entryHigh + stopPad * 1.5 : entryLow - stopPad * 1.5).toFixed(2));
-    const tp1 = Number((isShort ? entryLow - targetPad : entryHigh + targetPad).toFixed(2));
-    const tp2 = Number((isShort ? entryLow - targetPad * target2Multiplier : entryHigh + targetPad * target2Multiplier).toFixed(2));
+    // Dynamic precision based on price magnitude (matches Binance tick sizes)
+    const pricePrecision = last.close >= 1000 ? 2 : last.close >= 1 ? 4 : last.close >= 0.01 ? 6 : 8;
+    const roundP = (v: number) => Number(v.toFixed(pricePrecision));
+
+    const entryLow = roundP(isShort ? last.close : last.close - entryPad);
+    const entryHigh = roundP(isShort ? last.close + entryPad : last.close);
+    const sl1 = roundP(isShort ? entryHigh + stopPad : entryLow - stopPad);
+    const sl2 = roundP(isShort ? entryHigh + stopPad * 1.5 : entryLow - stopPad * 1.5);
+    const tp1 = roundP(isShort ? entryLow - targetPad : entryHigh + targetPad);
+    const tp2 = roundP(isShort ? entryLow - targetPad * target2Multiplier : entryHigh + targetPad * target2Multiplier);
 
     return [
       {
@@ -677,6 +681,9 @@ export default function MarketDashboardPage() {
       .filter((m) => {
         if (!isModeApproved(m)) return false;
         if (!passesFlowGate(m)) return false;
+        // Only show ideas matching the currently selected coin on the dashboard
+        const ideaCoin = toCoin(m.symbol);
+        if (ideaCoin !== selectedCoin) return false;
         const ts = Date.parse(String(m.createdAt ?? ""));
         if (!Number.isFinite(ts)) return false;
         return now - ts <= MAX_IDEA_AGE_MS;
@@ -714,6 +721,7 @@ export default function MarketDashboardPage() {
     flowModeSettings.minConsensus,
     flowModeSettings.minValidBars,
     flowModeSettings.requireValidTrade,
+    selectedCoin,
     streamMessages,
   ]);
 

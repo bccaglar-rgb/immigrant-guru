@@ -273,6 +273,7 @@ type ApiTradeIdea = {
   trade_intent: string[];
   raw_text: string;
   incomplete: boolean;
+  price_precision?: number;
 };
 
 const normalizeIdeaStatus = (
@@ -345,13 +346,29 @@ export type ModeTelemetrySummary = {
 
 type TelemetryByMode = Record<ScoringMode, ModeTelemetrySummary>;
 
-type ScannedModeRow = {
+export type ScannedModeRow = {
   symbol: string;
   confidencePct: number;
   confidencePass: boolean;
   passed: boolean;
   created: boolean;
   reason: string;
+  // Card display fields from scan cache
+  direction: string;
+  decision: string;
+  entryLow: number;
+  entryHigh: number;
+  slLevels: number[];
+  tpLevels: number[];
+  horizon: string;
+  timeframe: string;
+  setup: string;
+  tradeValidity: string;
+  entryWindow: string;
+  slippageRisk: string;
+  modeScores: Record<string, number>;
+  scannedAt: number;
+  pricePrecision?: number;
 };
 
 type LastScannedByMode = Record<ScoringMode, ScannedModeRow[]>;
@@ -499,6 +516,7 @@ const toTradePlanFromApi = (idea: ApiTradeIdea): TradePlan => ({
   minutesToEntry: idea.minutes_to_entry,
   minutesToExit: idea.minutes_to_exit,
   minutesTotal: idea.minutes_total,
+  pricePrecision: idea.price_precision,
 });
 
 const normalizeStoredPlan = (raw: any): TradePlan | null => {
@@ -593,6 +611,7 @@ const normalizeStoredPlan = (raw: any): TradePlan | null => {
     minutesToEntry: Number.isFinite(raw.minutesToEntry) ? Number(raw.minutesToEntry) : null,
     minutesToExit: Number.isFinite(raw.minutesToExit) ? Number(raw.minutesToExit) : null,
     minutesTotal: Number.isFinite(raw.minutesTotal) ? Number(raw.minutesTotal) : null,
+    pricePrecision: Number.isFinite(raw.pricePrecision) ? Number(raw.pricePrecision) : undefined,
   };
 };
 
@@ -648,10 +667,24 @@ const useTradeIdeasStreamStore = create<TradeIdeasStreamState>((set) => ({
     })),
 }));
 
+// Server-side system scan cache for 3 system modes (persists across client loop iterations)
+let cachedSystemScanByMode: Record<ScoringMode, ScannedModeRow[]> = {
+  FLOW: [],
+  AGGRESSIVE: [],
+  BALANCED: [],
+  CAPITAL_GUARD: [],
+};
+let systemScanFetchedAt = 0;
+let systemScanTotalsByMode: Record<string, number> = {};
+let systemScanHighScoreByMode: Record<string, number> = {};
+let systemScanStartedAt = 0;
+const SYSTEM_SCAN_REFRESH_MS = 5_000; // re-fetch server cache every 5s for responsive "Updated Xs ago" timer
+
 let subscribers = 0;
 let running = false;
 let loopTimer: number | null = null;
 let syncTimer: number | null = null;
+let systemScanTimer: number | null = null;
 let syncInFlight = false;
 let binanceConnectResetArmed = true;
 let scanSymbols = [...FALLBACK_SCAN_SYMBOLS];
@@ -874,6 +907,13 @@ const clearSyncTimer = () => {
   }
 };
 
+const clearSystemScanTimer = () => {
+  if (systemScanTimer !== null) {
+    window.clearInterval(systemScanTimer);
+    systemScanTimer = null;
+  }
+};
+
 const setStreamErrorByAvailability = (fallbackMessage: string) => {
   const hasMessages = useTradeIdeasStreamStore.getState().messages.length > 0;
   useTradeIdeasStreamStore.getState().setStreamError(hasMessages ? null : fallbackMessage);
@@ -941,13 +981,62 @@ const evaluateFreshIdea = (
 };
 
 const refreshTrackedIdeas = async () => {
-  const res = await fetch("/api/trade-ideas?limit=500", {
-    headers: { "x-user-id": USER_ID },
-  });
-  if (!res.ok) throw new Error(`trade ideas list HTTP ${res.status}`);
-  const body = (await res.json()) as { ok?: boolean; items?: ApiTradeIdea[] };
-  const items = Array.isArray(body.items) ? body.items : [];
-  const plans = items.map((idea) => toTradePlanFromApi(idea));
+  // Fetch both user ideas and system-scanner ideas
+  const [userRes, systemRes] = await Promise.all([
+    fetch("/api/trade-ideas?limit=500", { headers: { "x-user-id": USER_ID } }),
+    fetch("/api/trade-ideas?limit=500", { headers: { "x-user-id": "system-scanner" } }),
+  ]);
+  const userItems: ApiTradeIdea[] = [];
+  const systemItems: ApiTradeIdea[] = [];
+  if (userRes.ok) {
+    const body = (await userRes.json()) as { ok?: boolean; items?: ApiTradeIdea[] };
+    if (Array.isArray(body.items)) userItems.push(...body.items);
+  }
+  if (systemRes.ok) {
+    const body = (await systemRes.json()) as { ok?: boolean; items?: ApiTradeIdea[] };
+    if (Array.isArray(body.items)) systemItems.push(...body.items);
+  }
+  // Merge and deduplicate (prefer user ideas when same symbol+mode)
+  const seenKeys = new Set<string>();
+  const merged: ApiTradeIdea[] = [];
+  for (const idea of userItems) {
+    const key = `${idea.symbol}:${idea.scoring_mode}:${idea.status}`;
+    seenKeys.add(key);
+    merged.push(idea);
+  }
+  for (const idea of systemItems) {
+    const key = `${idea.symbol}:${idea.scoring_mode}:${idea.status}`;
+    if (!seenKeys.has(key)) {
+      seenKeys.add(key);
+      merged.push(idea);
+    }
+  }
+  // Sort by created_at descending
+  merged.sort((a, b) => Date.parse(b.created_at) - Date.parse(a.created_at));
+  let plans = merged.map((idea) => toTradePlanFromApi(idea));
+
+  // SINGLE SOURCE OF TRUTH: always patch trade plan scores to match the cached scan row scores.
+  // Without this, the 2-second sync timer would overwrite the patch applied by fetchSystemScanCache.
+  if (cachedSystemScanByMode) {
+    const scanLookup = new Map<string, number>();
+    for (const mode of (["FLOW", "AGGRESSIVE", "BALANCED", "CAPITAL_GUARD"] as ScoringMode[])) {
+      for (const row of cachedSystemScanByMode[mode]) {
+        scanLookup.set(`${row.symbol}:${mode}`, row.confidencePct);
+      }
+    }
+    if (scanLookup.size > 0) {
+      plans = plans.map((plan) => {
+        const key = `${plan.symbol}:${plan.scoringMode}`;
+        const scanPct = scanLookup.get(key);
+        if (scanPct !== undefined) {
+          const scanRatio = scanPct / 100;
+          return { ...plan, confidence: scanRatio, modeScores: { ...plan.modeScores, [plan.scoringMode as ScoringMode]: scanRatio } };
+        }
+        return plan;
+      });
+    }
+  }
+
   useTradeIdeasStreamStore.getState().setMessages(() => plans);
 };
 
@@ -982,9 +1071,8 @@ const resetTradeIdeasOnce = async () => {
 
 const resetTradeIdeasForFreshBinanceSession = async () => {
   clearLocalIdeaCache();
-  useTradeIdeasStreamStore.getState().setMessages(() => []);
-  useTradeIdeasStreamStore.getState().setLastSuccessAt(null);
-  useTradeIdeasStreamStore.getState().setStreamError("Preparing fresh Binance trade ideas...");
+  // Don't clear messages — keep system-scanner ideas visible while syncing
+  useTradeIdeasStreamStore.getState().setStreamError(null);
   try {
     await fetch("/api/trade-ideas", {
       method: "DELETE",
@@ -994,6 +1082,8 @@ const resetTradeIdeasForFreshBinanceSession = async () => {
     // retry happens on next arm
   }
   await refreshScanUniverse(readSourceContext());
+  // Immediately sync to restore system-scanner ideas + remove stale user ideas
+  await syncTrackedIdeas();
 };
 
 const createTrackedIdea = async (
@@ -1012,10 +1102,16 @@ const createTrackedIdea = async (
         .map(([mode, value]) => [mode, value as number]),
     ) as Partial<Record<ScoringMode, number>>
     : plan.modeScores;
+  // Use mode-specific score for confidence when available (avoids mismatch between
+  // text-parsed general confidence and mode consensus score)
+  const modeSpecificScore = normalizedModeScores?.[scoringMode];
+  const effectiveConfidence = typeof modeSpecificScore === "number" && Number.isFinite(modeSpecificScore)
+    ? modeSpecificScore
+    : plan.confidence;
   const payload = {
     symbol: plan.symbol,
     direction: plan.direction,
-    confidence: plan.confidence,
+    confidence: effectiveConfidence,
     scoring_mode: scoringMode,
     approved_modes: approvedModes,
     mode_scores: normalizedModeScores,
@@ -1439,8 +1535,182 @@ const runLoop = async () => {
     }
   } finally {
     loopDiagnostics.telemetryByMode = summarizeTelemetryByMode();
-    useTradeIdeasStreamStore.getState().setDiagnostics(() => loopDiagnostics);
+
+    // Preserve lastScannedByMode from fetchSystemScanCache — it is the single source of truth.
+    // The client loop must NOT overwrite it to avoid race conditions where stale
+    // cachedSystemScanByMode data replaces fresh server scan results.
+    // Preserve the server scan timestamp for "Updated Xs ago" display.
+    // Without this, the client loop overwrites lastLoopAt and the timer jumps to 30s+.
+    const prevDiags = useTradeIdeasStreamStore.getState().diagnostics;
+    if (prevDiags.lastLoopAt && prevDiags.lastLoopAt > 0) {
+      loopDiagnostics.lastLoopAt = prevDiags.lastLoopAt;
+    }
+    // Also preserve universe stats from server scan cache
+    if (prevDiags.universeFilteredPairs > loopDiagnostics.universeFilteredPairs) {
+      loopDiagnostics.universeFilteredPairs = prevDiags.universeFilteredPairs;
+    }
+    if (prevDiags.universeSize > loopDiagnostics.universeSize) {
+      loopDiagnostics.universeSize = prevDiags.universeSize;
+    }
+
+    // Merge: update client-loop fields but preserve server-managed lastScannedByMode
+    useTradeIdeasStreamStore.getState().setDiagnostics((prev) => ({
+      ...loopDiagnostics,
+      lastScannedByMode: prev.lastScannedByMode,
+    }));
+
     if (running) scheduleNext(() => void runLoop());
+  }
+};
+
+const fetchSystemScanCache = async () => {
+  try {
+    const res = await fetch("/api/trade-ideas/system-scan");
+    if (!res.ok) return;
+    const body = (await res.json()) as {
+      ok?: boolean;
+      results?: Array<{
+        symbol: string;
+        mode: string;
+        scorePct: number;
+        decision: string;
+        direction: string;
+        tradeValidity: string;
+        entryWindow: string;
+        slippageRisk: string;
+        setup: string;
+        scannedAt: number;
+        entryLow: number;
+        entryHigh: number;
+        slLevels: number[];
+        tpLevels: number[];
+        horizon: string;
+        timeframe: string;
+        modeScores: Record<string, number>;
+        pricePrecision?: number;
+      }>;
+      lastScanAt?: number;
+      universeSize?: number;
+      scanRound?: number;
+      startedAt?: number;
+      totalScansByMode?: Record<string, number>;
+      highScoreByMode?: Record<string, number>;
+    };
+    if (!body.ok || !Array.isArray(body.results) || !body.results.length) return;
+
+    // Group results by mode and transform to ScannedModeRow format
+    const byMode: Record<ScoringMode, ScannedModeRow[]> = {
+      FLOW: [],
+      AGGRESSIVE: [],
+      BALANCED: [],
+      CAPITAL_GUARD: [],
+    };
+
+    for (const r of body.results) {
+      const mode = normalizeScoringMode(r.mode);
+      const minPct = effectiveMinScorePctForMode(mode);
+      const passed = r.scorePct >= minPct;
+      const created = r.scorePct >= TRADE_IDEA_MIN_SCORE_PCT && r.decision !== "NO_TRADE" && r.tradeValidity !== "NO-TRADE";
+      const reason = created
+        ? (r.scorePct >= 70 ? "PASS" : "PASS_LOW")
+        : (r.scorePct < TRADE_IDEA_MIN_SCORE_PCT ? "NO_TRADE_LOW_CONF" : r.decision === "NO_TRADE" ? "NO_TRADE" : "GATED");
+      byMode[mode].push({
+        symbol: r.symbol,
+        confidencePct: r.scorePct,
+        confidencePass: passed,
+        passed,
+        created,
+        reason,
+        direction: r.direction ?? "LONG",
+        decision: r.decision ?? "NO_TRADE",
+        entryLow: r.entryLow ?? 0,
+        entryHigh: r.entryHigh ?? 0,
+        slLevels: Array.isArray(r.slLevels) ? r.slLevels : [],
+        tpLevels: Array.isArray(r.tpLevels) ? r.tpLevels : [],
+        horizon: r.horizon ?? "INTRADAY",
+        timeframe: r.timeframe ?? "15m",
+        setup: r.setup ?? "",
+        tradeValidity: r.tradeValidity ?? "NO-TRADE",
+        entryWindow: r.entryWindow ?? "CLOSED",
+        slippageRisk: r.slippageRisk ?? "HIGH",
+        modeScores: r.modeScores ?? {},
+        scannedAt: r.scannedAt ?? Date.now(),
+        pricePrecision: r.pricePrecision,
+      });
+    }
+
+    // Sort each mode by confidence descending
+    for (const mode of ["FLOW", "AGGRESSIVE", "BALANCED", "CAPITAL_GUARD"] as ScoringMode[]) {
+      byMode[mode].sort((a, b) => b.confidencePct - a.confidencePct);
+    }
+
+    // Persist in module-level cache so runLoop doesn't overwrite them
+    cachedSystemScanByMode = byMode;
+    systemScanFetchedAt = Date.now();
+    if (body.totalScansByMode) systemScanTotalsByMode = body.totalScansByMode;
+    if (body.highScoreByMode) systemScanHighScoreByMode = body.highScoreByMode;
+    if (body.startedAt) systemScanStartedAt = body.startedAt;
+
+    // Update diagnostics with cached system scan results (top 10 per mode)
+    useTradeIdeasStreamStore.getState().setDiagnostics((prev) => ({
+      ...prev,
+      lastScannedByMode: {
+        FLOW: byMode.FLOW.slice(0, 10),
+        AGGRESSIVE: byMode.AGGRESSIVE.slice(0, 10),
+        BALANCED: byMode.BALANCED.slice(0, 10),
+        CAPITAL_GUARD: byMode.CAPITAL_GUARD.slice(0, 10),
+      },
+      lastLoopAt: body.lastScanAt ?? prev.lastLoopAt,
+      universeSize: body.universeSize ?? prev.universeSize,
+      universeFilteredPairs: body.universeSize ?? prev.universeFilteredPairs,
+    }));
+
+    // Mark stream as having recent data
+    if (body.lastScanAt && body.lastScanAt > 0) {
+      useTradeIdeasStreamStore.getState().setLastSuccessAt(body.lastScanAt);
+      useTradeIdeasStreamStore.getState().setStreamError(null);
+    }
+
+    // Immediately sync trade ideas so cards update at the same time as scan rows
+    // Server-side syncExistingIdeaScores already updated the stored ideas — fetch them now
+    await syncTrackedIdeas();
+
+    // SINGLE SOURCE OF TRUTH: patch trade plan scores to match scan row scores.
+    // This guarantees the scan row chip and the trade card always show the exact same %.
+    // Without this, small timing gaps between cache and tradeIdeaStore cause visual mismatches.
+    const scanScoreLookup = new Map<string, number>(); // "SYMBOL:MODE" → scorePct (0..100)
+    for (const mode of (["FLOW", "AGGRESSIVE", "BALANCED", "CAPITAL_GUARD"] as ScoringMode[])) {
+      for (const row of byMode[mode]) {
+        scanScoreLookup.set(`${row.symbol}:${mode}`, row.confidencePct);
+      }
+    }
+    if (scanScoreLookup.size > 0) {
+      const currentPlans = useTradeIdeasStreamStore.getState().messages;
+      let patched = false;
+      const patchedPlans = currentPlans.map((plan) => {
+        const key = `${plan.symbol}:${plan.scoringMode}`;
+        const scanPct = scanScoreLookup.get(key);
+        if (scanPct !== undefined) {
+          const scanRatio = scanPct / 100;
+          const currentRatio = plan.modeScores?.[plan.scoringMode as ScoringMode];
+          // Only patch if different (avoid unnecessary re-renders)
+          if (typeof currentRatio !== "number" || Math.abs(currentRatio - scanRatio) > 0.001) {
+            patched = true;
+            return {
+              ...plan,
+              confidence: scanRatio,
+              modeScores: { ...plan.modeScores, [plan.scoringMode]: scanRatio },
+            };
+          }
+        }
+        return plan;
+      });
+      if (patched) {
+        useTradeIdeasStreamStore.getState().setMessages(() => patchedPlans);
+      }
+    }
+  } catch {
+    // ignore — system scan cache is a best-effort optimization
   }
 };
 
@@ -1453,6 +1723,13 @@ const startStream = () => {
   const watchSymbols = scanSymbols.slice(0, watchCount);
   watchSymbols.forEach((symbol) => MarketDataRouter.subscribe(symbol, "15m", 240));
   void refreshScanUniverse(readSourceContext());
+  // Immediately fetch server-side system scan cache for instant results
+  void fetchSystemScanCache();
+  // Independent timer: re-fetch system scan cache every 15s regardless of client loop state
+  clearSystemScanTimer();
+  systemScanTimer = window.setInterval(() => {
+    void fetchSystemScanCache();
+  }, SYSTEM_SCAN_REFRESH_MS);
   void (async () => {
     await resetTradeIdeasOnce();
     if (!running) return;
@@ -1474,12 +1751,20 @@ const stopStream = () => {
   running = false;
   clearLoopTimer();
   clearSyncTimer();
+  clearSystemScanTimer();
   const { scanBatchSize } = readScanConfig();
   const watchCount = Math.max(6, Math.min(12, scanBatchSize));
   const watchSymbols = scanSymbols.slice(0, watchCount);
   watchSymbols.forEach((symbol) => MarketDataRouter.unsubscribe(symbol, "15m"));
   MarketDataRouter.unmount();
 };
+
+/** Get cumulative scan counts per mode from the server scanner */
+export const getSystemScanTotals = () => ({
+  totalScansByMode: systemScanTotalsByMode,
+  highScoreByMode: systemScanHighScoreByMode,
+  startedAt: systemScanStartedAt,
+});
 
 export const useTradeIdeasStream = (_minConfidence: number, _exchange?: string) => {
   const connectionStatus = useExchangeTerminalStore((state) => state.connectionStatus);

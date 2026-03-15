@@ -144,7 +144,7 @@ export class TradeIdeaStore {
     await this.ensureLoaded();
     const statuses = params?.statuses?.length ? new Set(params.statuses) : null;
     const symbol = params?.symbol?.toUpperCase();
-    const limit = Math.max(1, Math.min(1000, params?.limit ?? 100));
+    const limit = Math.max(1, Math.min(10000, params?.limit ?? 100));
 
     return this.state.ideas
       .filter((idea) => {
@@ -215,5 +215,15 @@ export class TradeIdeaStore {
       deletedIdeas: beforeIdeas - this.state.ideas.length,
       deletedEvents: beforeEvents - this.state.events.length,
     };
+  }
+
+  /** Clear ALL trade ideas and events regardless of user_id */
+  async clearAll() {
+    await this.ensureLoaded();
+    const deletedIdeas = this.state.ideas.length;
+    const deletedEvents = this.state.events.length;
+    this.state = defaultStorage();
+    await this.flush();
+    return { deletedIdeas, deletedEvents };
   }
 }

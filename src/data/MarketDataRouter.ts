@@ -78,10 +78,10 @@ let wsConnected = false;
 let wsReconnectTimer: number | null = null;
 let stopped = false;
 let lastWsKeepalivePollAt = 0;
-const ROUTER_POLL_MS = 2500;
-const ROUTER_STALE_THRESHOLD_MS = 25_000;
-const ROUTER_STALE_TICK_MS = 1000;
-const ROUTER_WS_KEEPALIVE_POLL_MS = 10_000;
+const ROUTER_POLL_MS = 5000;
+const ROUTER_STALE_THRESHOLD_MS = 45_000;
+const ROUTER_STALE_TICK_MS = 3000;
+const ROUTER_WS_KEEPALIVE_POLL_MS = 20_000;
 
 const getPublicSourceOverride = (): SourceId | null => {
   const values = Object.values(publicSourceOverrides);
@@ -311,7 +311,7 @@ const sendWsSubscriptions = () => {
 
 const scheduleWsReconnect = () => {
   if (stopped || wsReconnectTimer !== null) return;
-  const backoffMs = Math.min(5000, 500 * Math.max(1, reconnectAttempts));
+  const backoffMs = Math.min(15000, 1000 * Math.max(1, reconnectAttempts));
   wsReconnectTimer = window.setTimeout(() => {
     wsReconnectTimer = null;
     if (!stopped) connectWebSocket();

@@ -1114,20 +1114,24 @@ export const generateAiPanel = (
 
   const hardGates = {
     tradeValidity: !tradeValidityGateEnabled || tradeValidityState !== "NO-TRADE",
-    dataHealth: !Boolean(dataHealth?.staleFeed) && (dataHealth?.lastUpdateAgeSec ?? 0) <= 20,
+    dataHealth: !Boolean(dataHealth?.staleFeed) && (dataHealth?.lastUpdateAgeSec ?? 0) <= (isFlowUserMode ? 45 : 20),
     riskGate: !riskGateEnabled
       ? true
       : isCapitalGuardMode
       ? marketStress === "LOW" && cascadeRisk === "LOW"
       : isBalancedMode
         ? marketStress !== "HIGH"
-        : !stressCascadeBlock && (!riskChecks.riskGate || provisionalRiskGate === "PASS"),
+        : isFlowUserMode
+          ? true  // FLOW: risk gate never hard-blocks — user controls via Flow penalties
+          : !stressCascadeBlock && (!riskChecks.riskGate || provisionalRiskGate === "PASS"),
     entryWindow: !entryTimingGateEnabled || entryTiming === "OPEN",
-    fillProb: !fillGateEnabled || (isCapitalGuardMode ? pFill >= 0.38 : isBalancedMode ? pFill >= 0.25 : pFill >= 0.15),
-    edge: isCapitalGuardMode ? riskAdjustedEdgeR >= 0.06 : isBalancedMode ? riskAdjustedEdgeR >= 0.04 : isAggressiveMode ? true : edgeNetR >= modeConfig.gates.minEdgeR,
-    capacity: isCapitalGuardMode ? capacityFactor >= 0.35 : capacityFactor >= 0.15,
+    fillProb: !fillGateEnabled || (isCapitalGuardMode ? pFill >= 0.38 : isBalancedMode ? pFill >= 0.25 : isFlowUserMode ? pFill >= 0.05 : pFill >= 0.15),
+    edge: isCapitalGuardMode ? riskAdjustedEdgeR >= 0.06 : isBalancedMode ? riskAdjustedEdgeR >= 0.04 : (isAggressiveMode || isFlowUserMode) ? true : edgeNetR >= modeConfig.gates.minEdgeR,
+    capacity: isCapitalGuardMode ? capacityFactor >= 0.35 : isFlowUserMode ? capacityFactor >= 0.05 : capacityFactor >= 0.15,
   };
   const effectiveGatingFlags = scoreResult.gatingFlags.filter((flag) => {
+    // FLOW mode: skip all gating flags — user controls scoring via Flow panels
+    if (isFlowUserMode) return false;
     if (!consensusInputs.slippage && (flag === "LOW_FILL_PROB" || flag === "LOW_CAPACITY")) return false;
     if (!riskChecks.executionCertainty && (flag === "LOW_FILL_PROB" || flag === "LOW_CAPACITY")) return false;
     if (isAggressiveMode && flag === "LOW_EDGE") return false;
@@ -1153,8 +1157,8 @@ export const generateAiPanel = (
     !hardGates.dataHealth ||
     !hardGates.riskGate ||
     !hardGates.fillProb ||
-    hardExecutionBlock ||
-    stressCascadeBlock ||
+    (!isFlowUserMode && hardExecutionBlock) ||
+    (!isFlowUserMode && stressCascadeBlock) ||
     capitalGuardStrictBlock ||
     balancedStrictBlock;
 
@@ -1163,10 +1167,10 @@ export const generateAiPanel = (
     ((entryTimingGateEnabled && entryTiming === "CLOSED") || pFill < 0.3 || (consensusInputs.slippage && slippage === "HIGH") || liquidityDensity === "LOW");
 
   if (hardBlocked) {
-    const hardBlockConsensusCap = isCapitalGuardMode ? 38 : isBalancedMode ? 44 : 48;
+    const hardBlockConsensusCap = isCapitalGuardMode ? 38 : isBalancedMode ? 44 : isFlowUserMode ? 58 : 48;
     finalScore = Math.min(finalScore, hardBlockConsensusCap);
   } else if (entryTimingGateEnabled && entryTiming === "CLOSED") {
-    const waitConsensusCap = isCapitalGuardMode ? 62 : isBalancedMode ? 68 : 78;
+    const waitConsensusCap = isCapitalGuardMode ? 62 : isBalancedMode ? 68 : isFlowUserMode ? 88 : 78;
     finalScore = Math.min(finalScore, waitConsensusCap);
   }
 
@@ -1197,6 +1201,14 @@ export const generateAiPanel = (
                 : finalScore < 60
                   ? "WATCHLIST"
                   : finalScore < 76
+                    ? "TRADE_ELIGIBLE"
+                    : "HIGH_CONFIDENCE"
+            : isFlowUserMode
+              ? finalScore < 35
+                ? "NO_TRADE"
+                : finalScore < 52
+                  ? "WATCHLIST"
+                  : finalScore < 70
                     ? "TRADE_ELIGIBLE"
                     : "HIGH_CONFIDENCE"
             : finalScore < 60
@@ -1409,7 +1421,7 @@ export const generateAiPanel = (
     ],
     tradeValidity,
     bias,
-    signalConsensus: finalScore,
+    signalConsensus: clamp(finalScore, 0, 100),
     conflictLevel,
     marketIntent: intent,
     playbook,
@@ -1457,9 +1469,9 @@ export const generateAiPanel = (
       riskAdjustedEdgeR: Number(riskAdjustedEdgeR.toFixed(4)),
       expectedHoldingBars,
       inputModifier: Number(inputModifier.toFixed(4)),
-      rawConsensus: Number(rawConsensus.toFixed(4)),
-      adjustedConsensus: Number(adjustedConsensus.toFixed(4)),
-      penalizedConsensus: Number(scoreResult.penalizedScore.toFixed(4)),
+      rawConsensus: clamp(Number(rawConsensus.toFixed(4)), 0, 100),
+      adjustedConsensus: clamp(Number(adjustedConsensus.toFixed(4)), 0, 100),
+      penalizedConsensus: clamp(Number(scoreResult.penalizedScore.toFixed(4)), 0, 100),
       penaltyTotal: Number(scoreResult.penaltyApplied.toFixed(4)),
       penaltyModel: scoreResult.penaltyModel,
       penaltyRate: Number(scoreResult.penaltyRate.toFixed(4)),
@@ -1498,13 +1510,139 @@ export const calculateVwap = (series: OhlcvPoint[]): Array<{ time: number; value
   });
 };
 
+/**
+ * Derives real support/resistance key levels from OHLCV data.
+ * Uses swing high/low detection + clustering + classic pivot points.
+ * Returns close-proximate levels sorted by distance to current price.
+ */
 export const deriveKeyLevels = (series: OhlcvPoint[]): KeyLevel[] => {
-  if (!series.length) return [];
-  const last = series[series.length - 1].close;
-  return [
-    { label: "Weekly Resistance", price: Number((last * 1.018).toFixed(2)) },
-    { label: "Current Pivot", price: Number((last * 1.004).toFixed(2)) },
-    { label: "VWAP Magnet", price: Number((last * 0.997).toFixed(2)) },
-    { label: "Weekly Support", price: Number((last * 0.982).toFixed(2)) },
-  ];
+  if (series.length < 10) return [];
+  const close = series[series.length - 1].close;
+  if (!Number.isFinite(close) || close <= 0) return [];
+
+  const rawLevels: Array<{ price: number; type: "support" | "resistance"; source: string }> = [];
+
+  // --- 1. Swing High/Low detection (lookback = 5 bars each side) ---
+  const SWING_LOOKBACK = 5;
+  const swingLen = series.length;
+  for (let i = SWING_LOOKBACK; i < swingLen - SWING_LOOKBACK; i++) {
+    const bar = series[i];
+    let isSwingHigh = true;
+    let isSwingLow = true;
+    for (let j = 1; j <= SWING_LOOKBACK; j++) {
+      if (series[i - j].high >= bar.high || series[i + j].high >= bar.high) isSwingHigh = false;
+      if (series[i - j].low <= bar.low || series[i + j].low <= bar.low) isSwingLow = false;
+    }
+    if (isSwingHigh) {
+      rawLevels.push({ price: bar.high, type: bar.high > close ? "resistance" : "support", source: "swing" });
+    }
+    if (isSwingLow) {
+      rawLevels.push({ price: bar.low, type: bar.low < close ? "support" : "resistance", source: "swing" });
+    }
+  }
+
+  // --- 2. Classic Pivot Points (from recent range) ---
+  const pivotBars = series.slice(-Math.min(80, series.length));
+  const pivotHigh = Math.max(...pivotBars.map((b) => b.high));
+  const pivotLow = Math.min(...pivotBars.map((b) => b.low));
+  const pivotClose = series[series.length - 1].close;
+  const P = (pivotHigh + pivotLow + pivotClose) / 3;
+  const R1 = 2 * P - pivotLow;
+  const R2 = P + (pivotHigh - pivotLow);
+  const S1 = 2 * P - pivotHigh;
+  const S2 = P - (pivotHigh - pivotLow);
+
+  if (R1 > close) rawLevels.push({ price: R1, type: "resistance", source: "pivot_R1" });
+  if (R2 > close) rawLevels.push({ price: R2, type: "resistance", source: "pivot_R2" });
+  if (S1 < close) rawLevels.push({ price: S1, type: "support", source: "pivot_S1" });
+  if (S2 < close) rawLevels.push({ price: S2, type: "support", source: "pivot_S2" });
+  // Add pivot itself
+  rawLevels.push({ price: P, type: P > close ? "resistance" : "support", source: "pivot_P" });
+
+  // --- 3. Range High/Low (recent 20 bars) ---
+  const recentBars = series.slice(-20);
+  const rangeHigh = Math.max(...recentBars.map((b) => b.high));
+  const rangeLow = Math.min(...recentBars.map((b) => b.low));
+  if (rangeHigh > close) rawLevels.push({ price: rangeHigh, type: "resistance", source: "range_high" });
+  if (rangeLow < close) rawLevels.push({ price: rangeLow, type: "support", source: "range_low" });
+
+  // --- 4. Cluster nearby levels (within 0.3% of each other) ---
+  const CLUSTER_PCT = 0.003;
+  const sorted = rawLevels
+    .filter((l) => Number.isFinite(l.price) && l.price > 0)
+    .sort((a, b) => a.price - b.price);
+
+  const clusters: Array<{
+    price: number;
+    type: "support" | "resistance";
+    touchCount: number;
+    sources: string[];
+  }> = [];
+
+  for (const level of sorted) {
+    const existing = clusters.find(
+      (c) => Math.abs(c.price - level.price) / Math.max(c.price, 1e-10) < CLUSTER_PCT,
+    );
+    if (existing) {
+      // Merge: weighted average price, increment touch count
+      existing.price = (existing.price * existing.touchCount + level.price) / (existing.touchCount + 1);
+      existing.touchCount += 1;
+      existing.sources.push(level.source);
+      // If type differs, classify by position relative to close
+      existing.type = existing.price > close ? "resistance" : "support";
+    } else {
+      clusters.push({
+        price: level.price,
+        type: level.type,
+        touchCount: 1,
+        sources: [level.source],
+      });
+    }
+  }
+
+  // --- 5. Score and sort: prefer levels with more touches, closer to price ---
+  const withScore = clusters.map((c) => {
+    const distPct = Math.abs(c.price - close) / close;
+    // Penalize levels too close (< 0.1%) or too far (> 5%)
+    const distScore = distPct < 0.001 ? 0.1 : distPct > 0.05 ? 0.3 : 1 - distPct * 5;
+    const touchScore = Math.min(c.touchCount / 3, 1); // max out at 3 touches
+    const score = distScore * 0.6 + touchScore * 0.4;
+    return { ...c, score, distPct };
+  });
+
+  // --- 6. Pick top 2 supports + top 2 resistances closest to price ---
+  const supports = withScore
+    .filter((c) => c.type === "support" && c.distPct > 0.001)
+    .sort((a, b) => a.distPct - b.distPct)
+    .slice(0, 2);
+
+  const resistances = withScore
+    .filter((c) => c.type === "resistance" && c.distPct > 0.001)
+    .sort((a, b) => a.distPct - b.distPct)
+    .slice(0, 2);
+
+  const toStrength = (touchCount: number): "STRONG" | "MID" | "WEAK" =>
+    touchCount >= 3 ? "STRONG" : touchCount >= 2 ? "MID" : "WEAK";
+
+  const result: KeyLevel[] = [];
+  for (const [idx, r] of resistances.entries()) {
+    result.push({
+      label: `Resistance ${idx + 1}`,
+      price: r.price,
+      type: "resistance",
+      strength: toStrength(r.touchCount),
+      touchCount: r.touchCount,
+    });
+  }
+  for (const [idx, s] of supports.entries()) {
+    result.push({
+      label: `Support ${idx + 1}`,
+      price: s.price,
+      type: "support",
+      strength: toStrength(s.touchCount),
+      touchCount: s.touchCount,
+    });
+  }
+
+  return result;
 };

@@ -505,21 +505,21 @@ export const computeVelocityConsensus = (input: VelocityConsensusInput): Velocit
   const penaltyRate = 0;
 
   const opportunityUplift =
-    (input.volumeSpike === "ON" ? 8 : 0) +
-    (input.impulseReadiness === "HIGH" ? 7 : input.impulseReadiness === "MID" ? 4 : 0) +
-    (input.marketSpeed === "FAST" ? 6 : input.marketSpeed === "NORMAL" ? 3 : 0) +
-    (input.regime === "TREND" ? 5 : input.regime === "MIXED" ? 2 : 0) +
-    (input.atrRegime === "HIGH" ? 4 : input.atrRegime === "MID" ? 2 : 0);
-  let finalScore = roundTo2(clamp((adjusted01 * 100) + opportunityUplift + 12, 0, 100));
+    (input.volumeSpike === "ON" ? 5 : 0) +
+    (input.impulseReadiness === "HIGH" ? 4 : input.impulseReadiness === "MID" ? 2 : 0) +
+    (input.marketSpeed === "FAST" ? 3 : input.marketSpeed === "NORMAL" ? 1 : 0) +
+    (input.regime === "TREND" ? 3 : input.regime === "MIXED" ? 1 : 0) +
+    (input.atrRegime === "HIGH" ? 2 : input.atrRegime === "MID" ? 1 : 0);
+  let finalScore = roundTo2(clamp((adjusted01 * 100) + opportunityUplift + 4, 0, 100));
   const anyHardBlock = riskBlocked || entryBlocked || fillBlocked;
   if (anyHardBlock) finalScore = roundTo2(Math.min(finalScore, 52));
 
   let decision: "TRADE" | "WATCH" | "NO_TRADE" = "NO_TRADE";
   if (anyHardBlock || gates.data === "BLOCK") {
     decision = "NO_TRADE";
-  } else if (finalScore >= 45) {
+  } else if (finalScore >= 70) {
     decision = "TRADE";
-  } else if (finalScore >= 30) {
+  } else if (finalScore >= 55) {
     decision = "WATCH";
   } else {
     decision = "NO_TRADE";

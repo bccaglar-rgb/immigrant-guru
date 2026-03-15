@@ -60,6 +60,7 @@ export interface TradeIdeaRecord {
   trade_intent: string[];
   raw_text: string;
   incomplete: boolean;
+  price_precision?: number;
 }
 
 export interface TradeIdeaEventRecord {

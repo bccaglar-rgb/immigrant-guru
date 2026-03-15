@@ -617,18 +617,26 @@ export const ChartPanel = ({
         <div className="rounded-lg border border-white/10 bg-[#0F1012] p-2 text-xs text-[#BFC2C7]">
           <p className="mb-1 text-[10px] uppercase tracking-wider text-[#6B6F76]">Featured Plan</p>
           {featuredPlan ? (
-            <>
-              <p>
-                Entry: {featuredPlan.entryLow.toLocaleString(undefined, { maximumFractionDigits: 2 })} - {featuredPlan.entryHigh.toLocaleString(undefined, { maximumFractionDigits: 2 })}
-              </p>
-              <p>
-                Stops: {featuredPlan.stops.map((s) => s.price.toLocaleString(undefined, { maximumFractionDigits: 2 })).join(" / ")}
-              </p>
-              <p>
-                Targets: {featuredPlan.targets.map((t) => t.price.toLocaleString(undefined, { maximumFractionDigits: 2 })).join(" / ")}
-              </p>
-              <p>Confidence: {featuredPlan.confidence.toFixed(2)}</p>
-            </>
+            (() => {
+              const refPrice = Math.max(featuredPlan.entryLow, featuredPlan.entryHigh, 0.0001);
+              const fd = refPrice >= 1000 ? 2 : refPrice >= 1 ? 4 : refPrice >= 0.01 ? 6 : 8;
+              const fp = (v: number) => v.toLocaleString(undefined, { minimumFractionDigits: fd, maximumFractionDigits: fd });
+              return (
+                <>
+                  <p>
+                    Entry: {fp(featuredPlan.entryLow)} - {fp(featuredPlan.entryHigh)}
+                  </p>
+                  <p>
+                    Stops: {featuredPlan.stops.map((s) => fp(s.price)).join(" / ")}
+                  </p>
+                  <p>
+                    Targets: {featuredPlan.targets.map((t) => fp(t.price)).join(" / ")}
+                  </p>
+                  <p>Confidence: {featuredPlan.confidence.toFixed(2)}</p>
+                </>
+              );
+            })()
+
           ) : (
             <p className="text-[#6B6F76]">No active plan.</p>
           )}

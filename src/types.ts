@@ -365,6 +365,9 @@ export interface OhlcvPoint {
 export interface KeyLevel {
   label: string;
   price: number;
+  type?: "support" | "resistance";
+  strength?: "STRONG" | "MID" | "WEAK";
+  touchCount?: number;
 }
 
 export interface DashboardSnapshot {
@@ -565,4 +568,5 @@ export interface TradePlan {
   minutesToEntry?: number | null;
   minutesToExit?: number | null;
   minutesTotal?: number | null;
+  pricePrecision?: number;
 }
