@@ -576,9 +576,9 @@ const makeModeBreakdown = (
       rsiState,
     });
     const decision: ModeBreakdown["decision"] =
-      out.phase === "TRADE" || out.phase === "SQUEEZE_EVENT" || out.phase === "SPECULATIVE"
+      out.phase === "TRADE" || out.phase === "SQUEEZE_EVENT"
         ? "TRADE"
-        : out.phase === "WAIT"
+        : out.phase === "WAIT" || out.phase === "SPECULATIVE"
           ? "WATCH"
           : "NO_TRADE";
     return {
@@ -3757,14 +3757,14 @@ export const registerMarketRoutes = (
         };
         // Per-mode TRADE decision thresholds — must stay aligned with consensus functions
         const modeTradeThreshold: Record<ScoringMode, number> = {
-          FLOW: 50,
-          AGGRESSIVE: 55,
+          FLOW: 55,
+          AGGRESSIVE: 60,
           BALANCED: 65,
           CAPITAL_GUARD: 68,
         };
         const modeWatchThreshold: Record<ScoringMode, number> = {
-          FLOW: 30,
-          AGGRESSIVE: 35,
+          FLOW: 35,
+          AGGRESSIVE: 40,
           BALANCED: 45,
           CAPITAL_GUARD: 48,
         };
