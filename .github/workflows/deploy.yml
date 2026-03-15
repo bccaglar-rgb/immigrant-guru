@@ -48,6 +48,8 @@ jobs:
           ssh root@${{ secrets.DROPLET_IP }} << 'EOF'
             cd /var/www/bitrium
             npm ci --omit=dev
+            # Clear trade ideas data to prevent stale data surviving across deploys
+            rm -f server/data/trade_ideas.json
             pm2 restart bitrium-server || pm2 start server/src/index.ts --name bitrium-server --interpreter "node" -- --experimental-strip-types
             pm2 save
           EOF
