@@ -587,11 +587,11 @@ export default function TradeIdeasPage() {
       const successRate = total ? (successful / total) * 100 : 0;
       return { total, successful, failed, successRate };
     }
-    const total = reportBase.length;
     const resolved = reportBase.filter((m) => m.status === "RESOLVED");
     const successful = resolved.filter((m) => m.result === "SUCCESS").length;
     const failed = resolved.filter((m) => m.result === "FAIL").length;
-    const successRate = resolved.length ? (successful / resolved.length) * 100 : 0;
+    const total = resolved.length;
+    const successRate = total ? (successful / total) * 100 : 0;
     return { total, successful, failed, successRate };
   }, [aiScansByModule, effectiveAiModules, isAiTradeIdeasPage, reportBase]);
 
@@ -1034,7 +1034,7 @@ export default function TradeIdeasPage() {
               <div className="mt-2 border-t border-white/10 pt-2 text-[11px] text-[#8f95a3]">
                 {isAiTradeIdeasPage
                   ? null
-                  : `Updated ${diagnosticsAgeSec !== null ? `${diagnosticsAgeSec}s` : "-"} · Total Scan ${scanCycleStats.totalRows} · Bitrium Trade ideas ${scanCycleStats.totalTradeReady} (70% ustu ideas only) · User Config Ideas ${scanCycleStats.totalPass} (40-69 and within user min range) · Universe ${Math.max(0, diagnostics.universeFilteredPairs)} coins`}
+                  : `Updated ${diagnosticsAgeSec !== null ? `${diagnosticsAgeSec}s` : "-"} · Total Scan ${scanCycleStats.totalRows} · Bitrium Trade ideas ${scanCycleStats.totalTradeReady} (70%+ ideas only) · User Config Ideas ${scanCycleStats.totalPass} (40-69 and within user min range) · Universe ${Math.max(0, diagnostics.universeFilteredPairs)} coins`}
               </div>
               {!isAiTradeIdeasPage ? (
                 <div className="mt-1 text-[10px] text-[#7f8796]">
@@ -1170,7 +1170,7 @@ export default function TradeIdeasPage() {
                           <div className="relative" data-flow-slider>
                             <input
                               type="range"
-                              min={0}
+                              min={FLOW_MIN_CONSENSUS}
                               max={100}
                               step={1}
                               value={range.min}
