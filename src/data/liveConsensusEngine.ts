@@ -3,6 +3,7 @@ import type {
   ConsensusInputConfig,
   DataHealthState,
   FeedConfig,
+  FlowDataFiltersConfig,
   FlowScoringTuningConfig,
   FlowSignalInputsConfig,
   FlowSignalWeightsConfig,
@@ -158,6 +159,7 @@ export const generateAiPanel = (
   flowSignalWeights?: FlowSignalWeightsConfig,
   riskChecksInputs?: RiskChecksInputsConfig,
   flowScoringTuning?: FlowScoringTuningConfig,
+  dataFilters?: FlowDataFiltersConfig,
 ): AiPanelData => {
   const modeConfig = SCORING_CONFIG[scoringMode];
   const trendDirection = tileState(tiles, "trend-direction", "N/A");
@@ -245,7 +247,15 @@ export const generateAiPanel = (
     "risk-adjusted-edge",
     "model-agreement",
   ]);
-  const flowEnabled = (key: string) => (isFlowUserMode ? getFlowInputEnabled(flowInputs, key) : true);
+  const conflictFilterExcluded = new Map<string, boolean>([
+    ["trend-direction", dataFilters?.conflictTrend === false],
+    ["buy-sell-imbalance", dataFilters?.conflictBuySell === false],
+    ["orderbook-imbalance", dataFilters?.conflictOrderbook === false],
+  ]);
+  const flowEnabled = (key: string) => {
+    if (conflictFilterExcluded.get(key)) return false;
+    return isFlowUserMode ? getFlowInputEnabled(flowInputs, key) : true;
+  };
   const modeEnabled = (key: string) => {
     if (isAggressiveMode && aggressiveExcluded.has(key)) return false;
     return flowEnabled(key);
