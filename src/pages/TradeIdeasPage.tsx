@@ -321,10 +321,10 @@ export default function TradeIdeasPage() {
   const [modeMinConsensus, setModeMinConsensus] = useState<Record<ScoringMode, number>>(() => {
     const stored = readUserModeConsensusMinPct();
     return {
-      FLOW: Number.isFinite(stored.FLOW) ? Number(stored.FLOW) : 70,
-      AGGRESSIVE: Number.isFinite(stored.AGGRESSIVE) ? Number(stored.AGGRESSIVE) : 70,
-      BALANCED: Number.isFinite(stored.BALANCED) ? Number(stored.BALANCED) : 70,
-      CAPITAL_GUARD: Number.isFinite(stored.CAPITAL_GUARD) ? Number(stored.CAPITAL_GUARD) : 70,
+      FLOW: Number.isFinite(stored.FLOW) ? Number(stored.FLOW) : FLOW_MIN_CONSENSUS,
+      AGGRESSIVE: Number.isFinite(stored.AGGRESSIVE) ? Number(stored.AGGRESSIVE) : FLOW_MIN_CONSENSUS,
+      BALANCED: Number.isFinite(stored.BALANCED) ? Number(stored.BALANCED) : FLOW_MIN_CONSENSUS,
+      CAPITAL_GUARD: Number.isFinite(stored.CAPITAL_GUARD) ? Number(stored.CAPITAL_GUARD) : FLOW_MIN_CONSENSUS,
     };
   });
   const [nowMs, setNowMs] = useState(() => Date.now());
@@ -362,10 +362,10 @@ export default function TradeIdeasPage() {
 
   useEffect(() => {
     setModeMinConsensus((prev) => ({
-      FLOW: Math.max(FLOW_MIN_CONSENSUS, Math.min(100, Math.round(prev.FLOW || 70))),
-      AGGRESSIVE: Math.max(FLOW_MIN_CONSENSUS, Math.min(100, Math.round(prev.AGGRESSIVE || 70))),
-      BALANCED: Math.max(FLOW_MIN_CONSENSUS, Math.min(100, Math.round(prev.BALANCED || 70))),
-      CAPITAL_GUARD: Math.max(FLOW_MIN_CONSENSUS, Math.min(100, Math.round(prev.CAPITAL_GUARD || 70))),
+      FLOW: Math.max(FLOW_MIN_CONSENSUS, Math.min(100, Math.round(prev.FLOW || FLOW_MIN_CONSENSUS))),
+      AGGRESSIVE: Math.max(FLOW_MIN_CONSENSUS, Math.min(100, Math.round(prev.AGGRESSIVE || FLOW_MIN_CONSENSUS))),
+      BALANCED: Math.max(FLOW_MIN_CONSENSUS, Math.min(100, Math.round(prev.BALANCED || FLOW_MIN_CONSENSUS))),
+      CAPITAL_GUARD: Math.max(FLOW_MIN_CONSENSUS, Math.min(100, Math.round(prev.CAPITAL_GUARD || FLOW_MIN_CONSENSUS))),
     }));
   }, []);
 
@@ -404,7 +404,7 @@ export default function TradeIdeasPage() {
   const modeConsensusRanges = useMemo<ModeConsensusRanges>(
     () =>
       SCAN_MODE_ORDER.reduce((acc, modeKey) => {
-        const rawMin = Number(modeMinConsensus[modeKey] ?? 70);
+        const rawMin = Number(modeMinConsensus[modeKey] ?? FLOW_MIN_CONSENSUS);
         acc[modeKey] = {
           min: Math.max(FLOW_MIN_CONSENSUS, Math.min(100, Math.round(rawMin))),
           max: 100,
