@@ -134,7 +134,6 @@ export const registerTradeIdeasRoutes = (app: Express, store: TradeIdeaStore, sy
     const totalScansByMode = cache?.totalScansByMode ?? {};
     const highScoreByMode = cache?.highScoreByMode ?? {};
     const startedAt = cache?.startedAt ?? 0;
-    const startedAtIso = startedAt > 0 ? new Date(startedAt).toISOString() : "";
 
     // Report only includes high-confidence ideas (70%+ for all modes)
     // Note: FLOW creates ideas at 50%+ but only 70%+ appear in the report
@@ -148,12 +147,11 @@ export const registerTradeIdeasRoutes = (app: Express, store: TradeIdeaStore, sy
     // Fetch ALL ideas across all users (up to 5000)
     const allIdeas = await store.listIdeas({ limit: 5000 });
 
-    // Filter to only ideas created since scanner startup — so totalScan and totalIdeas
-    // cover the same time window. Without this, totalIdeas is all-time from DB but
-    // totalScan resets on every restart, leading to confusing mismatches.
-    const sessionIdeas = startedAtIso
-      ? allIdeas.filter((i) => i.created_at >= startedAtIso)
-      : allIdeas;
+    // Show ALL ideas — no session filter.
+    // totalScan is session-based (resets on restart) but totalIdeas/resolved/success
+    // should always reflect the full set of trade ideas in the store.
+    // This prevents stats showing 0 while Last 100 section displays existing ideas.
+    const sessionIdeas = allIdeas;
 
     const statsByMode: Record<string, {
       totalScan: number; highScoreScan: number; totalIdeas: number; resolved: number;
