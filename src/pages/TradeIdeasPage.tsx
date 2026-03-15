@@ -1212,7 +1212,7 @@ export default function TradeIdeasPage() {
                         active ? "border-white/10" : "border-white/5 opacity-55"
                       }`}
                     >
-                      <div className="flex flex-wrap items-center gap-2">
+                      <div className="mb-2 flex items-center justify-between">
                         <button
                           type="button"
                           onClick={() => toggleScanMode(modeKey)}
@@ -1235,27 +1235,27 @@ export default function TradeIdeasPage() {
                         >
                           {active ? "ON" : "OFF"}
                         </button>
-                        <div className={`min-w-[240px] flex-1 ${active ? "" : "opacity-45"}`}>
-                          <div className="mb-1 flex items-center justify-between text-[10px] text-[#8f95a3]">
-                            <span>Consensus range</span>
-                            <span>{range.min}% - 100%</span>
-                          </div>
-                          <div className="relative" data-flow-slider>
-                            <input
-                              type="range"
-                              min={FLOW_MIN_CONSENSUS}
-                              max={100}
-                              step={1}
-                              value={range.min}
-                              onChange={(e) => setModeRangeMin(modeKey, Number(e.target.value))}
-                              disabled={false}
-                              className="relative z-20 h-1.5 w-full cursor-pointer accent-[#F5C542]"
-                            />
-                          </div>
-                          <p className="mt-1 text-[10px] text-[#6B6F76]">
-                            {`User configurable · Min ${range.min}%`}
-                          </p>
+                      </div>
+                      <div className={active ? "" : "opacity-45"}>
+                        <div className="mb-1 flex items-center justify-between text-[10px] text-[#8f95a3]">
+                          <span>Consensus range</span>
+                          <span>{range.min}% - 100%</span>
                         </div>
+                        <div className="relative" data-flow-slider>
+                          <input
+                            type="range"
+                            min={FLOW_MIN_CONSENSUS}
+                            max={100}
+                            step={1}
+                            value={range.min}
+                            onChange={(e) => setModeRangeMin(modeKey, Number(e.target.value))}
+                            disabled={false}
+                            className="relative z-20 h-1.5 w-full cursor-pointer accent-[#F5C542]"
+                          />
+                        </div>
+                        <p className="mt-1 text-[10px] text-[#6B6F76]">
+                          {`User configurable · Min ${range.min}%`}
+                        </p>
                       </div>
                     </div>
                   );
