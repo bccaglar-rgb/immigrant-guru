@@ -81,7 +81,7 @@ if (!process.env.DISABLE_DEV_ADMIN) {
 registerConnectionRoutes(app, connections, encryptionKey);
 registerExchangeRoutes(app, exchangeManager);
 registerTradeRoutes(app, audit, connections);
-registerMarketRoutes(app, { providerStore: adminProviderStore, binanceFuturesHub, exchangeMarketHub });
+registerMarketRoutes(app, { providerStore: adminProviderStore, binanceFuturesHub, exchangeMarketHub, systemScanner });
 registerAuthRoutes(app, authService);
 registerUserSettingsRoutes(app);
 registerTradeIdeasRoutes(app, tradeIdeaStore, systemScanner);

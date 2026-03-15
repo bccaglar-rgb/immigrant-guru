@@ -24,6 +24,7 @@ interface UniverseCandidate {
   oi_value?: number | null;
   oi_change_1h_pct?: number | null;
   oi_priority?: "OI_INCREASE_TOP5" | "OI_DECREASE_TOP5" | null;
+  scanner_selected?: boolean;
 }
 
 interface UniverseApiResponse {
@@ -62,6 +63,12 @@ const pctChipCls = (v: number) => {
   if (v > 0) return "bg-[#162016] text-[#4ade80] border-[#2a4a2a]";
   if (v < 0) return "bg-[#201414] text-[#f87171] border-[#4a2a2a]";
   return "bg-[#1A1B1F] text-[#8f95a3] border-white/10";
+};
+
+const scoreChipCls = (v: number) => {
+  if (v >= 70) return "bg-[#162016] text-[#4ade80]";
+  if (v >= 40) return "bg-[#1c1a10] text-[#F5C542]";
+  return "bg-[#1A1B1F] text-[#6B6F76]";
 };
 
 const REFRESH_MS = 30_000;
@@ -197,6 +204,7 @@ export default function CoinUniversePage() {
             <span className="w-8 text-center">#</span>
             <span className="w-9" />
             <span className="w-28">Coin</span>
+            <span className="hidden w-14 text-right xl:block">Score</span>
             <span className="ml-auto w-24 text-right">Price</span>
             <span className="w-20 text-right">24h</span>
             <span className="w-28 text-right">Volume</span>
@@ -220,11 +228,23 @@ export default function CoinUniversePage() {
                     <CoinIcon symbol={c.symbol} className="h-7 w-7" />
                   </span>
                   <div className="w-28 min-w-0">
-                    <span className="font-semibold text-white">{c.baseAsset}</span>
-                    <span className="ml-0.5 text-[11px] text-[#6B6F76]">
-                      /{c.quoteAsset ?? "USDT"}
-                    </span>
+                    <div className="flex items-center gap-1">
+                      <span className="font-semibold text-white">{c.baseAsset}</span>
+                      <span className="text-[11px] text-[#6B6F76]">
+                        /{c.quoteAsset ?? "USDT"}
+                      </span>
+                      {c.scanner_selected && (
+                        <span className="inline-flex items-center rounded-full bg-[#F5C542]/15 px-1 py-px text-[8px] font-bold text-[#F5C542] border border-[#F5C542]/30 leading-tight">
+                          SCAN
+                        </span>
+                      )}
+                    </div>
                   </div>
+                  <span className={`hidden w-14 text-right text-xs xl:block`}>
+                    <span className={`inline-flex rounded px-1.5 py-0.5 text-[10px] font-semibold ${scoreChipCls(c.opportunity_score)}`}>
+                      {c.opportunity_score}
+                    </span>
+                  </span>
                   <span className="ml-auto w-24 text-right font-medium text-white">
                     {fmtPrice(c.price)}
                   </span>

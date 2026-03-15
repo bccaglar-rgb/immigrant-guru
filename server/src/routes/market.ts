@@ -10,6 +10,8 @@ import { normalizeScoringMode, SCORING_MODES, type ScoringMode } from "../servic
 import type { AdminProviderStore } from "../services/adminProviderStore.ts";
 import type { BinanceFuturesHub } from "../services/binanceFuturesHub.ts";
 import type { ExchangeMarketHub } from "../services/marketHub/index.ts";
+import type { SystemScannerService } from "../services/systemScannerService.ts";
+import { computeEnhancedScore } from "../services/coinScoring.ts";
 
 type JsonValue = string | number | boolean | null | JsonValue[] | { [k: string]: JsonValue };
 type ExchangeName = "Binance" | "Bybit" | "OKX" | "Gate.io";
@@ -2624,22 +2626,8 @@ const classifyUniverseGroup = (
   return "LOW_CAP";
 };
 
-const computeOpportunityScore = (input: {
-  volume24hUsd: number;
-  absChange24hPct: number;
-  exchangeCount: number;
-  marketCapRank: number | null;
-}): number => {
-  const volumeScore = clamp01((Math.log10(Math.max(input.volume24hUsd, 1)) - 6) / 3); // 1m..1b
-  const momentumScore = clamp01(input.absChange24hPct / 8);
-  const exchangeScore = clamp01((input.exchangeCount - 1) / 4);
-  const capBonus =
-    input.marketCapRank !== null
-      ? clamp01((80 - Math.min(80, Math.max(1, input.marketCapRank))) / 80)
-      : 0.1;
-  const weighted = 0.45 * volumeScore + 0.3 * momentumScore + 0.15 * exchangeScore + 0.1 * capBonus;
-  return Math.round(Math.max(0, Math.min(100, weighted * 100)));
-};
+// computeOpportunityScore replaced by computeEnhancedScore from coinScoring.ts
+// Enhanced scoring adds funding rate (15%) and spread quality (15%) to the formula
 
 const fetchBinanceTickers = async (): Promise<TickerItem[]> => {
   const rowsRaw = await fetchBinanceFuturesJson<unknown>(
@@ -2828,13 +2816,14 @@ const fetchIndicatorsSnapshot = async () => {
 
 export const registerMarketRoutes = (
   app: Express,
-  options?: { providerStore?: AdminProviderStore; binanceFuturesHub?: BinanceFuturesHub; exchangeMarketHub?: ExchangeMarketHub },
+  options?: { providerStore?: AdminProviderStore; binanceFuturesHub?: BinanceFuturesHub; exchangeMarketHub?: ExchangeMarketHub; systemScanner?: SystemScannerService },
 ) => {
   setMarketProviderStore(options?.providerStore);
   setMarketBinanceHub(options?.binanceFuturesHub);
   setMarketExchangeHub(options?.exchangeMarketHub);
   const binanceFuturesHub = options?.binanceFuturesHub;
   const exchangeMarketHub = options?.exchangeMarketHub;
+  const systemScanner = options?.systemScanner;
 
   app.get("/api/market/binance-futures-hub", (_req, res) => {
     if (!binanceFuturesHub) {
@@ -3016,11 +3005,12 @@ export const registerMarketRoutes = (
                 : null;
             const meta = metaBySymbolDual[base] ?? null;
             const group = classifyUniverseGroup(base, meta);
-            const opportunityScore = computeOpportunityScore({
+            const opportunityScore = computeEnhancedScore({
               volume24hUsd,
               absChange24hPct: Math.abs(change24hPct),
-              exchangeCount: 2,
               marketCapRank: meta?.marketCapRank ?? null,
+              fundingRate: wsMeta?.fundingRate ?? null,
+              spreadBps: wsMeta?.spreadBps ?? null,
             });
             return {
               symbol,
@@ -3098,6 +3088,15 @@ export const registerMarketRoutes = (
             }),
         ].slice(0, topN);
 
+        // Build scanner-selected symbol set for badge display
+        const scannerSelectedSet = new Set<string>();
+        if (systemScanner) {
+          const scanCache = systemScanner.getCache();
+          for (const tc of scanCache.topScoredCoins) {
+            scannerSelectedSet.add(tc.symbol);
+          }
+        }
+
         const rankedCandidatesDual = rankedRowsDual
           .map((row, index) => ({
             rank: index + 1,
@@ -3118,6 +3117,7 @@ export const registerMarketRoutes = (
             oi_value: row.oiValue ?? null,
             oi_change_1h_pct: row.oiChange1hPct ?? null,
             oi_priority: oiPriorityMap.get(row.symbol) ?? null,
+            scanner_selected: scannerSelectedSet.has(row.symbol),
           }));
 
         const groupOrderDual = ["MAJORS", "LARGE_CAP", "MID_CAP", "LOW_CAP", "MEME", "AI", "L1", "DEFI"];
@@ -3170,11 +3170,12 @@ export const registerMarketRoutes = (
         const normalizedUniverse = wsRows.map((row) => {
           const meta = metaBySymbol[row.baseAsset] ?? null;
           const group = classifyUniverseGroup(row.baseAsset, meta);
-          const opportunityScore = computeOpportunityScore({
+          const opportunityScore = computeEnhancedScore({
             volume24hUsd: row.volume24hUsd,
             absChange24hPct: Math.abs(row.change24hPct),
-            exchangeCount: 1,
             marketCapRank: meta?.marketCapRank ?? null,
+            fundingRate: row.fundingRate ?? null,
+            spreadBps: row.spreadBps ?? null,
           });
           return {
             symbol: row.symbol,
@@ -3363,11 +3364,12 @@ export const registerMarketRoutes = (
             : 0;
         const meta = metaBySymbol[row.baseAsset] ?? null;
         const group = classifyUniverseGroup(row.baseAsset, meta);
-        const opportunityScore = computeOpportunityScore({
+        const opportunityScore = computeEnhancedScore({
           volume24hUsd: row.volume24hUsd,
           absChange24hPct: Math.abs(avgChange),
-          exchangeCount: row.exchanges.size,
           marketCapRank: meta?.marketCapRank ?? null,
+          fundingRate: null,
+          spreadBps: null,
         });
         return {
           symbol: row.symbol,

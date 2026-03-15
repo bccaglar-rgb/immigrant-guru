@@ -1,13 +1,16 @@
 /**
  * SystemScannerService
  *
- * Continuously scans 24 coins per cycle across 4 modes (FLOW, AGGRESSIVE, BALANCED, CAPITAL_GUARD).
- * Each mode gets 6 coins per cycle. Each coin is assigned to exactly ONE mode.
+ * Continuously scans up to 40 coins per cycle, selects the top 28 by score,
+ * and distributes 7 coins each across 4 modes (FLOW, AGGRESSIVE, BALANCED, CAPITAL_GUARD).
  *
  * Per coin: picks ONE random timeframe from [3m, 5m, 15m] → 1 API call per coin.
- * Total per cycle: 24 coins × 1 call = 24 API calls → ~3 seconds with concurrency 8.
+ * Total per cycle: ~40 coins × 1 call = ~40 API calls → ~10s with concurrency 8.
  *
  * UNIVERSE: Top 300 Binance Futures coins by 24h volume, refreshed every 4 hours.
+ * Enhanced scoring (volume + momentum + funding + spread + cap rank) re-calculated each cycle.
+ * Top 20 by score always scanned + 20 diversity picks rotated from the rest.
+ *
  * Results cached in memory so Trade Ideas page loads instantly.
  */
 
@@ -15,20 +18,23 @@ import { randomUUID } from "node:crypto";
 import type { TradeIdeaStore } from "./tradeIdeaStore.ts";
 import type { TradeIdeaRecord } from "./tradeIdeaTypes.ts";
 import type { ScoringMode } from "./scoringMode.ts";
+import { computeEnhancedScore } from "./coinScoring.ts";
 
 const ALL_MODES: ScoringMode[] = ["FLOW", "AGGRESSIVE", "BALANCED", "CAPITAL_GUARD"];
 const SYSTEM_USER_ID = "system-scanner";
 
 const UNIVERSE_SIZE = 300; // Lock top 300 Binance Futures coins
 const UNIVERSE_REFRESH_MS = 4 * 60 * 60 * 1000; // Refresh universe every 4 hours
-const MAX_SCAN_PER_CYCLE = 24; // 4 modes × 6 coins = 24 coins per cycle
-const COINS_PER_MODE = 6;
+const SELECTED_COINS = 28; // 4 modes × 7 coins = 28 coins for output
+const COINS_PER_MODE = 7;
+const TOP_FIXED_SLOTS = 20; // Top 20 by enhanced score always scanned
+const DIVERSITY_SLOTS = 20; // 20 rotated from remaining pool for diversity
 const SCAN_CONCURRENCY = 8;
 const SCAN_INTERVAL_MS = 15_000; // 15 seconds between cycles
 const STARTUP_DELAY_MS = 20_000; // Wait for WS hubs to connect
 const IDEA_MIN_SCORE_PCT = 70;
 const IDEA_MIN_SCORE_BY_MODE: Record<string, number> = {
-  FLOW: 50,
+  FLOW: 70,
   AGGRESSIVE: 70,
   BALANCED: 70,
   CAPITAL_GUARD: 70,
@@ -52,7 +58,22 @@ interface BinanceFuturesHub {
     baseAsset: string;
     price: number;
     volume24hUsd: number;
+    change24hPct: number;
+    spreadBps: number | null;
+    fundingRate: number | null;
   }>;
+}
+
+/** Enriched universe coin with enhanced scoring data */
+interface EnhancedUniverseCoin {
+  symbol: string;
+  baseAsset: string;
+  price: number;
+  volume24hUsd: number;
+  change24hPct: number;
+  spreadBps: number | null;
+  fundingRate: number | null;
+  enhancedScore: number; // 0-100
 }
 
 export interface SystemScanResult {
@@ -85,6 +106,7 @@ export interface SystemScanCache {
   startedAt: number; // ms timestamp — when scanner started
   totalScansByMode: Record<string, number>; // cumulative scans per mode since startup
   highScoreByMode: Record<string, number>; // scans scoring >= 70% per mode since startup
+  topScoredCoins: Array<{ symbol: string; enhancedScore: number }>; // top coins by enhanced score
 }
 
 /** Internal enriched result — holds full API data so we never re-fetch */
@@ -136,9 +158,10 @@ export class SystemScannerService {
 
   // Locked universe — fetched once, refreshed every 4 hours
   private lockedUniverse: string[] = [];
+  private enhancedUniverse: EnhancedUniverseCoin[] = []; // Scored & sorted by enhancedScore desc
   private universeLockedAt = 0;
 
-  // Rotation pointer — cycle through the 300-coin universe in batches of 40
+  // Rotation pointer — cycle through the remaining universe coins for diversity
   private rotationIndex = 0;
 
   // Track open ideas per mode to avoid duplicates
@@ -182,6 +205,9 @@ export class SystemScannerService {
       startedAt: this.startedAt,
       totalScansByMode: { ...this.totalScansByMode },
       highScoreByMode: { ...this.highScoreByMode },
+      topScoredCoins: this.enhancedUniverse
+        .slice(0, 40)
+        .map((c) => ({ symbol: c.symbol, enhancedScore: c.enhancedScore })),
     };
   }
 
@@ -198,6 +224,7 @@ export class SystemScannerService {
     this.cache = [];
     this.lastScanAt = 0;
     this.rotationIndex = 0;
+    this.enhancedUniverse = [];
     this.openIdeasBySymbol.clear();
     console.log("[SystemScanner] Stats reset — counters zeroed, fresh start");
   }
@@ -235,13 +262,14 @@ export class SystemScannerService {
 
     try {
       // Try Binance REST API first
-      const symbols = await this.fetchUniverseFromBinanceRest();
-      if (symbols.length >= 50) {
-        this.lockedUniverse = symbols;
-        this.universeSize = symbols.length;
+      const enriched = await this.fetchUniverseFromBinanceRest();
+      if (enriched.length >= 50) {
+        this.enhancedUniverse = enriched;
+        this.lockedUniverse = enriched.map((c) => c.symbol);
+        this.universeSize = enriched.length;
         this.universeLockedAt = now;
         this.rotationIndex = 0;
-        console.log(`[SystemScanner] Locked universe: ${symbols.length} coins from Binance Futures REST API`);
+        console.log(`[SystemScanner] Locked universe: ${enriched.length} coins from Binance Futures REST API`);
         return;
       }
     } catch (err) {
@@ -250,13 +278,14 @@ export class SystemScannerService {
 
     // Fallback: use WS hub data
     try {
-      const symbols = this.fetchUniverseFromWsHub();
-      if (symbols.length >= 10) {
-        this.lockedUniverse = symbols;
-        this.universeSize = symbols.length;
+      const enriched = this.fetchUniverseFromWsHub();
+      if (enriched.length >= 10) {
+        this.enhancedUniverse = enriched;
+        this.lockedUniverse = enriched.map((c) => c.symbol);
+        this.universeSize = enriched.length;
         this.universeLockedAt = now;
         this.rotationIndex = 0;
-        console.log(`[SystemScanner] Locked universe: ${symbols.length} coins from WS hub (fallback)`);
+        console.log(`[SystemScanner] Locked universe: ${enriched.length} coins from WS hub (fallback)`);
         return;
       }
     } catch {
@@ -270,8 +299,9 @@ export class SystemScannerService {
 
   /**
    * Fetch top 300 Binance Futures coins by 24h volume via REST API.
+   * Returns enriched coins with enhanced scoring (funding/spread null from REST).
    */
-  private async fetchUniverseFromBinanceRest(): Promise<string[]> {
+  private async fetchUniverseFromBinanceRest(): Promise<EnhancedUniverseCoin[]> {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 10_000);
 
@@ -298,7 +328,26 @@ export class SystemScannerService {
         .sort((a, b) => Number(b.quoteVolume) - Number(a.quoteVolume))
         .slice(0, UNIVERSE_SIZE);
 
-      return filtered.map((t) => t.symbol);
+      return filtered.map((t) => {
+        const volume24hUsd = Number(t.quoteVolume);
+        const change24hPct = Number(t.priceChangePercent);
+        return {
+          symbol: t.symbol,
+          baseAsset: t.symbol.replace("USDT", ""),
+          price: Number(t.lastPrice),
+          volume24hUsd,
+          change24hPct,
+          spreadBps: null, // not available from REST
+          fundingRate: null, // not available from REST
+          enhancedScore: computeEnhancedScore({
+            volume24hUsd,
+            absChange24hPct: Math.abs(change24hPct),
+            marketCapRank: null,
+            fundingRate: null,
+            spreadBps: null,
+          }),
+        };
+      });
     } finally {
       clearTimeout(timeout);
     }
@@ -306,33 +355,95 @@ export class SystemScannerService {
 
   /**
    * Fallback: get universe from the BinanceFuturesHub WS data.
+   * Returns enriched coins with enhanced scoring from live WS data (funding + spread included).
    */
-  private fetchUniverseFromWsHub(): string[] {
+  private fetchUniverseFromWsHub(): EnhancedUniverseCoin[] {
     const rows = this.deps.binanceFuturesHub.getUniverseRows();
     return rows
       .filter((r) => !EXCLUDED_BASE_ASSETS.has(r.baseAsset))
-      .sort((a, b) => b.volume24hUsd - a.volume24hUsd)
-      .slice(0, UNIVERSE_SIZE)
-      .map((r) => r.symbol);
+      .map((r) => ({
+        symbol: r.symbol,
+        baseAsset: r.baseAsset,
+        price: r.price,
+        volume24hUsd: r.volume24hUsd,
+        change24hPct: r.change24hPct,
+        spreadBps: r.spreadBps,
+        fundingRate: r.fundingRate,
+        enhancedScore: computeEnhancedScore({
+          volume24hUsd: r.volume24hUsd,
+          absChange24hPct: Math.abs(r.change24hPct),
+          marketCapRank: null,
+          fundingRate: r.fundingRate,
+          spreadBps: r.spreadBps,
+        }),
+      }))
+      .sort((a, b) => b.enhancedScore - a.enhancedScore || b.volume24hUsd - a.volume24hUsd)
+      .slice(0, UNIVERSE_SIZE);
   }
 
   /**
-   * Pick the next 40 coins from the locked universe (rotating window).
+   * Refresh enhanced scores with latest WS hub data every cycle.
+   * Universe membership stays locked (refreshed every 4h), but scores update live.
    */
-  private pickScanBatch(): string[] {
-    if (!this.lockedUniverse.length) return [];
+  private refreshScores(): void {
+    if (!this.enhancedUniverse.length) return;
 
-    const batch: string[] = [];
-    const total = this.lockedUniverse.length;
-    let idx = this.rotationIndex;
+    const freshRows = this.deps.binanceFuturesHub.getUniverseRows();
+    const rowMap = new Map(freshRows.map((r) => [r.symbol, r]));
 
-    for (let i = 0; i < MAX_SCAN_PER_CYCLE && i < total; i++) {
-      batch.push(this.lockedUniverse[idx % total]);
-      idx++;
+    for (const coin of this.enhancedUniverse) {
+      const fresh = rowMap.get(coin.symbol);
+      if (!fresh) continue;
+
+      coin.volume24hUsd = fresh.volume24hUsd;
+      coin.change24hPct = fresh.change24hPct;
+      coin.spreadBps = fresh.spreadBps;
+      coin.fundingRate = fresh.fundingRate;
+      coin.price = fresh.price;
+      coin.enhancedScore = computeEnhancedScore({
+        volume24hUsd: fresh.volume24hUsd,
+        absChange24hPct: Math.abs(fresh.change24hPct),
+        marketCapRank: null,
+        fundingRate: fresh.fundingRate,
+        spreadBps: fresh.spreadBps,
+      });
     }
 
-    this.rotationIndex = idx % total;
-    return batch;
+    // Re-sort by enhanced score descending
+    this.enhancedUniverse.sort((a, b) => b.enhancedScore - a.enhancedScore || b.volume24hUsd - a.volume24hUsd);
+  }
+
+  /**
+   * Pick top-scored coins for scanning.
+   * Hybrid strategy: Top 20 by enhanced score (always scanned) + 20 diversity picks
+   * from the remaining pool (rotating window through positions 21-300).
+   * Total: up to 40 coins scanned per cycle.
+   */
+  private pickScoredBatch(): string[] {
+    if (!this.enhancedUniverse.length) return [];
+
+    const total = this.enhancedUniverse.length;
+    const batch = new Set<string>();
+
+    // 1. Always include top TOP_FIXED_SLOTS by enhanced score
+    const fixedCount = Math.min(TOP_FIXED_SLOTS, total);
+    for (let i = 0; i < fixedCount; i++) {
+      batch.add(this.enhancedUniverse[i].symbol);
+    }
+
+    // 2. Rotate through remaining coins for diversity
+    const remaining = this.enhancedUniverse.slice(fixedCount);
+    if (remaining.length > 0) {
+      const diversityCount = Math.min(DIVERSITY_SLOTS, remaining.length);
+      let idx = this.rotationIndex % remaining.length;
+      for (let i = 0; i < diversityCount; i++) {
+        batch.add(remaining[idx % remaining.length].symbol);
+        idx++;
+      }
+      this.rotationIndex = idx % remaining.length;
+    }
+
+    return [...batch];
   }
 
   private async runFullScan(): Promise<void> {
@@ -345,8 +456,11 @@ export class SystemScannerService {
       return;
     }
 
-    // 1. Pick next 40 coins from locked universe (rotating)
-    const batch = this.pickScanBatch();
+    // 0. Refresh scores with latest WS hub data
+    this.refreshScores();
+
+    // 1. Pick scored batch (top 20 by score + 20 diversity = ~40 coins)
+    const batch = this.pickScoredBatch();
     if (!batch.length) return;
 
     // 2. Refresh open ideas to avoid duplicates
@@ -370,15 +484,29 @@ export class SystemScannerService {
       }
     }
 
-    // 4. Assign each coin to exactly ONE mode — 10 coins per mode, no duplicates
-    const assigned = this.assignCoinsToModes(allResults);
+    // 4. Pre-filter to top SELECTED_COINS (28) by best trade-idea mode score
+    //    Group by symbol, find each symbol's best score across all modes
+    const bestScoreBySymbol = new Map<string, number>();
+    for (const r of allResults) {
+      const current = bestScoreBySymbol.get(r.symbol) ?? 0;
+      if (r.scorePct > current) bestScoreBySymbol.set(r.symbol, r.scorePct);
+    }
+    const rankedSymbols = [...bestScoreBySymbol.entries()]
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, SELECTED_COINS)
+      .map(([sym]) => sym);
+    const selectedSet = new Set(rankedSymbols);
+    const filteredResults = allResults.filter((r) => selectedSet.has(r.symbol));
 
-    // 4b. Increment cumulative scan counts per mode
+    // 5. Assign each coin to exactly ONE mode — 7 coins per mode, no duplicates
+    const assigned = this.assignCoinsToModes(filteredResults);
+
+    // 5b. Increment cumulative scan counts per mode
     for (const r of assigned) {
       this.totalScansByMode[r.mode] = (this.totalScansByMode[r.mode] ?? 0) + 1;
     }
 
-    // 5. Apply per-mode TRADE cap — keep only top N as TRADE, downgrade rest to WATCH
+    // 6. Apply per-mode TRADE cap — keep only top N as TRADE, downgrade rest to WATCH
     const tradeCounts: Record<string, number> = {};
     for (const mode of ALL_MODES) {
       const cap = MAX_TRADE_PER_MODE[mode] ?? 8;
@@ -395,17 +523,17 @@ export class SystemScannerService {
 
     const elapsed = ((Date.now() - t0) / 1000).toFixed(1);
     console.log(
-      `[SystemScanner] Round ${round}: ${batch.length}/${this.lockedUniverse.length} coins in ${elapsed}s → ` +
+      `[SystemScanner] Round ${round}: scanned ${batch.length} → selected ${rankedSymbols.length}/${this.lockedUniverse.length} coins in ${elapsed}s → ` +
       `FLOW ${tradeCounts.FLOW ?? 0} | AGG ${tradeCounts.AGGRESSIVE ?? 0} | BAL ${tradeCounts.BALANCED ?? 0} | CG ${tradeCounts.CAPITAL_GUARD ?? 0} TRADE`,
     );
 
-    // 6. Sync existing trade ideas' scores FIRST (so ideas are updated before cache goes live)
+    // 7. Sync existing trade ideas' scores FIRST (so ideas are updated before cache goes live)
     await this.syncExistingIdeaScores(assigned);
 
-    // 7. Create trade ideas for qualifying results (using SAME data, no re-fetch)
+    // 8. Create trade ideas for qualifying results (using SAME data, no re-fetch)
     await this.createQualifyingIdeas(assigned);
 
-    // 8. Replace cache with ONLY the latest 24 scanned coins (6 per mode).
+    // 9. Replace cache with ONLY the latest 28 scanned coins (7 per mode).
     //    The scan row always shows the freshest scan results.
     this.cache = assigned.map(({ text, ...publicFields }) => publicFields);
     this.lastScanAt = Date.now();
