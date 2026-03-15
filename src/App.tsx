@@ -18,6 +18,7 @@ const IconGalleryPage = lazy(() => import("./pages/IconGalleryPage"));
 const BitriumTokenPage = lazy(() => import("./pages/BitriumTokenPage"));
 const CoinCalculatorPage = lazy(() => import("./pages/CoinCalculatorPage"));
 const TokenCreatorPage = lazy(() => import("./pages/TokenCreatorPage"));
+const CoinUniversePage = lazy(() => import("./pages/CoinUniversePage"));
 const PricingPage = lazy(() => import("./pages/PricingPage"));
 const LoginPage = lazy(() => import("./pages/LoginPage"));
 const SignupPage = lazy(() => import("./pages/SignupPage"));
@@ -41,6 +42,7 @@ function App() {
         <Route path="/exchange-terminal" element={<Suspense fallback={<PageLoader />}><ExchangeTerminalPage /></Suspense>} />
         <Route path="/exchanges" element={<Navigate to="/exchange-terminal" replace />} />
         <Route path="/crypto-market" element={<Suspense fallback={<PageLoader />}><CryptoMarketPage /></Suspense>} />
+        <Route path="/coin-universe" element={<Suspense fallback={<PageLoader />}><CoinUniversePage /></Suspense>} />
         <Route path="/super-charts" element={<Suspense fallback={<PageLoader />}><SuperChartsPage /></Suspense>} />
         <Route path="/trade-ideas" element={<Suspense fallback={<PageLoader />}><TradeIdeasPage /></Suspense>} />
         <Route path="/bitrium-trade-ideas" element={<Navigate to="/trade-ideas" replace />} />

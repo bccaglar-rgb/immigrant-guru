@@ -17,6 +17,7 @@ const titleForPath = (path: string) => {
   if (path.startsWith("/ai-trader/strategy")) return "AI Trader · Strategy";
   if (path.startsWith("/ai-trader/arena")) return "AI Trader · AI Arena";
   if (path.startsWith("/ai-trader/backtest")) return "AI Trader · Backtest";
+  if (path.startsWith("/coin-universe")) return "Coin Universe";
   if (path.startsWith("/crypto-market")) return "Crypto Market";
   if (path.startsWith("/super-charts")) return "Super Charts";
   if (path.startsWith("/indicators")) return "Indicators";

@@ -30,6 +30,7 @@ const IndicatorIcon = () => <Icon><path d="M4 18l4-6 4 3 8-10" /><circle cx="8" 
 const BitriumTokenIcon = () => <Icon><path d="M12 2l8 4.5v11L12 22l-8-4.5v-11z" /><path d="M8.5 10.5h7" /><path d="M8.5 14h5" /></Icon>;
 const CreatorIcon = () => <Icon><circle cx="7" cy="7" r="3" /><circle cx="17" cy="17" r="3" /><path d="M10 10l4 4" /><path d="M17 6v3" /><path d="M15.5 7.5h3" /></Icon>;
 const ToolsIcon = () => <Icon><path d="M4 7h16" /><path d="M4 12h16" /><path d="M4 17h10" /><circle cx="18" cy="17" r="2" /></Icon>;
+const UniverseIcon = () => <Icon><circle cx="12" cy="12" r="9" /><ellipse cx="12" cy="12" rx="9" ry="4" /><path d="M12 3v18" /></Icon>;
 const PricingIcon = () => <Icon><rect x="3" y="5" width="18" height="14" rx="2" /><path d="M7 11h10" /><path d="M7 15h6" /></Icon>;
 const SettingsIcon = () => <Icon><path d="M12 3l2.2 1.1 2.4-.3.9 2.2 1.9 1.5-.9 2.2.4 2.3-1.9 1.5-.9 2.2-2.4-.3L12 21l-2.2-1.1-2.4.3-.9-2.2-1.9-1.5.9-2.2-.4-2.3 1.9-1.5.9-2.2 2.4.3z" /><circle cx="12" cy="12" r="2.2" /></Icon>;
 const AdminIcon = () => <Icon><path d="M12 3l3 2 4-1 1 4 3 3-3 3-1 4-4-1-3 2-3-2-4 1-1-4-3-3 3-3 1-4 4 1z" /><circle cx="12" cy="12" r="2.5" /></Icon>;
@@ -39,6 +40,7 @@ const menuItems = [
   { label: "Trade Ideas", to: "/trade-ideas", accent: "var(--menu-accent-2)", icon: () => <TradeIcon /> },
   { label: "Exchanges", to: "/exchanges", accent: "var(--menu-accent-3)", icon: () => <ExchangeIcon /> },
   { label: "Crypto Market", to: "/crypto-market", accent: "var(--menu-accent-4)", icon: () => <MarketIcon /> },
+  { label: "Coin Universe", to: "/coin-universe", accent: "var(--menu-accent-8)", icon: () => <UniverseIcon /> },
   { label: "Super Charts", to: "/super-charts", accent: "var(--menu-accent-5)", icon: () => <SuperChartIcon /> },
   { label: "Indicators", to: "/indicators", accent: "var(--menu-accent-6)", icon: () => <IndicatorIcon /> },
   { label: "Bitrium Token", to: "/bitrium-token", accent: "var(--menu-accent-11)", icon: () => <BitriumTokenIcon /> },
