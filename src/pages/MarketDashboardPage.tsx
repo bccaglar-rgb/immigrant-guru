@@ -155,9 +155,9 @@ const initialFlowModeSettings: FlowModeSettings = {
     exchangeFlow: false,
     relativeStrength: false,
     keyLevelReaction: false,
-    conflictTrend: true,
-    conflictBuySell: true,
-    conflictOrderbook: true,
+    conflictTrend: false,
+    conflictBuySell: false,
+    conflictOrderbook: false,
   },
   signalInputs: {
     marketRegime: true,
@@ -222,9 +222,9 @@ const loadPersistedDashboardSettings = (): PersistedDashboardSettings | null => 
           exchangeFlow: Boolean(parsed.flowMode?.dataFilters?.exchangeFlow),
           relativeStrength: Boolean(parsed.flowMode?.dataFilters?.relativeStrength),
           keyLevelReaction: Boolean(parsed.flowMode?.dataFilters?.keyLevelReaction),
-          conflictTrend: parsed.flowMode?.dataFilters?.conflictTrend !== false,
-          conflictBuySell: parsed.flowMode?.dataFilters?.conflictBuySell !== false,
-          conflictOrderbook: parsed.flowMode?.dataFilters?.conflictOrderbook !== false,
+          conflictTrend: Boolean(parsed.flowMode?.dataFilters?.conflictTrend),
+          conflictBuySell: Boolean(parsed.flowMode?.dataFilters?.conflictBuySell),
+          conflictOrderbook: Boolean(parsed.flowMode?.dataFilters?.conflictOrderbook),
         },
         signalInputs: (() => {
           const baseInputs = { ...initialFlowModeSettings.signalInputs };
