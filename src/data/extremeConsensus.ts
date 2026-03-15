@@ -85,10 +85,11 @@ const ratingFromScore = (score: number): ExtremeConsensusOutput["rating"] => {
 };
 
 const phaseFromScore = (score: number): ExtremeConsensusOutput["phase"] => {
-  if (score <= 24) return "NO_TRADE";
-  if (score <= 39) return "WAIT";
-  if (score <= 54) return "SPECULATIVE";
-  if (score <= 84) return "TRADE";
+  const rounded = Math.round(score);
+  if (rounded <= 24) return "NO_TRADE";
+  if (rounded <= 39) return "WAIT";
+  if (rounded <= 54) return "SPECULATIVE";
+  if (rounded <= 84) return "TRADE";
   return "SQUEEZE_EVENT";
 };
 

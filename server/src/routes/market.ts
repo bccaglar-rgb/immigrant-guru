@@ -672,7 +672,7 @@ const makeModeBreakdown = (
       edgeAdj: Number.isFinite(consensusCore.edgeNetR) ? consensusCore.edgeNetR : 0,
       riskAdj: Number.isFinite(consensusCore.riskAdjustment) ? consensusCore.riskAdjustment : 0,
       gatingFlags,
-      decision: out.finalScore >= 65 && out.gates.data === "PASS" && out.gates.safety === "PASS" ? "TRADE" : out.finalScore >= 45 ? "WATCH" : "NO_TRADE",
+      decision: Math.round(out.finalScore) >= 65 && out.gates.data === "PASS" && out.gates.safety === "PASS" ? "TRADE" : Math.round(out.finalScore) >= 45 ? "WATCH" : "NO_TRADE",
     };
   }
 
@@ -707,7 +707,7 @@ const makeModeBreakdown = (
     edgeAdj: Number.isFinite(consensusCore.edgeNetR) ? consensusCore.edgeNetR : 0,
     riskAdj: Number.isFinite(consensusCore.riskAdjustment) ? consensusCore.riskAdjustment : 0,
     gatingFlags,
-    decision: out.finalScore >= 68 && out.gates.data === "PASS" && out.gates.safety === "PASS" ? "TRADE" : out.finalScore >= 48 ? "WATCH" : "NO_TRADE",
+    decision: Math.round(out.finalScore) >= 68 && out.gates.data === "PASS" && out.gates.safety === "PASS" ? "TRADE" : Math.round(out.finalScore) >= 48 ? "WATCH" : "NO_TRADE",
   };
 };
 
@@ -3774,9 +3774,9 @@ export const registerMarketRoutes = (
           modeBreakdown[mode] = {
             ...modeBreakdown[mode],
             final: Number(boostedFinal.toFixed(2)),
-            decision: boostedFinal >= modeTradeThreshold[mode]
+            decision: Math.round(boostedFinal) >= modeTradeThreshold[mode]
               ? "TRADE"
-              : boostedFinal >= modeWatchThreshold[mode]
+              : Math.round(boostedFinal) >= modeWatchThreshold[mode]
                 ? "WATCH"
                 : "NO_TRADE",
           };
