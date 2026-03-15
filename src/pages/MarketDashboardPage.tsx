@@ -39,7 +39,7 @@ import type {
 import type { TradeIdea } from "../types";
 import type { ExchangeTradeSignal } from "../types/exchange";
 
-const DASHBOARD_SETTINGS_STORAGE_KEY = "bitrium.market_dashboard.settings.v1";
+const DASHBOARD_SETTINGS_STORAGE_KEY = "bitrium.market_dashboard.settings.v2";
 const LEGACY_DASHBOARD_SETTINGS_STORAGE_KEY = "bitrium.market_dashboard.settings.v1";
 const SOURCE_WARNING_STALE_SEC = 25;
 const SOURCE_NO_CONNECTION_SEC = 60;

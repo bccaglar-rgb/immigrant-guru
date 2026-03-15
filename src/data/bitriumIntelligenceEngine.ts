@@ -884,17 +884,11 @@ const applyLiveOverrides = (
     typeof live.derivatives?.oiChange1h === "number";
 
   if (!hasCoreFeeds) {
-    tiles = updateTile(tiles, "risk-gate", {
-      state: "BLOCK",
+    tiles = updateTile(tiles, "data-feed-status", {
+      state: "DEGRADED",
       confidence: 0,
       rawValue: "missing_live_feeds",
-      shortExplanation: "Critical live feeds missing. Trading blocked.",
-    });
-    tiles = updateTile(tiles, "trade-validity", {
-      state: "NO-TRADE",
-      confidence: 0,
-      rawValue: "missing_live_feeds",
-      shortExplanation: "No-trade until all required live feeds are available.",
+      shortExplanation: "Some live feeds unavailable. Data quality reduced.",
     });
   }
 

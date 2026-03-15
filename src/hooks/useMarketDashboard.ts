@@ -192,7 +192,7 @@ export const useMarketDashboard = (
       ohlcv: liveState.ohlcv ?? [],
       keyLevels: liveState.ohlcv ? deriveKeyLevels(liveState.ohlcv) : [],
     };
-  }, [consensusInputs, dataFilters, feeds, flowSignalInputs, flowSignalWeights, indicators, liveState, riskChecksInputs, scenario, scoringMode]);
+  }, [consensusInputs, dataFilters, feeds, flowSignalInputs, flowSignalWeights, flowScoringTuning, indicators, liveState, riskChecksInputs, scenario, scoringMode]);
 
   return mergedState;
 };

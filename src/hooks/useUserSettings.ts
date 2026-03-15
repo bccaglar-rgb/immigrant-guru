@@ -3,9 +3,9 @@ import type { FlowModeSettingsConfig, FlowScoringTuningConfig, ScoringMode } fro
 import { DEFAULT_FLOW_SCORING_TUNING, FLOW_SCORING_TUNING_BOUNDS, isUserSelectableScoringMode } from "../data/scoringEngine";
 import { FLOW_SIGNAL_DEFAULT_WEIGHTS } from "../data/quantLayers";
 
-const STORAGE_KEY = "bitrium.scoring_mode";
+const STORAGE_KEY = "bitrium.scoring_mode.v2";
 const LEGACY_STORAGE_KEY = "bitrium.scoring_mode";
-const FLOW_STORAGE_KEY = "bitrium.flow_mode_settings";
+const FLOW_STORAGE_KEY = "bitrium.flow_mode_settings.v2";
 const LEGACY_FLOW_STORAGE_KEY = "bitrium.flow_mode_settings";
 const DEFAULT_SCORING_MODE: ScoringMode = "FLOW";
 const DEMO_USER_ID = "demo-user";
