@@ -63,23 +63,23 @@ export type ScoringConfig = {
 };
 
 export const SCORING_CONFIG: Record<ScoringMode, ScoringConfig> = {
-  // ~70% accuracy target: lenient gates, high bias, flow-weighted.
-  // Catches more opportunities, tolerates moderate execution risk.
+  // Mirrors FLOW settings: ultra-permissive gates, high bias, flow-weighted.
+  // Best-scored coins go here — catches most opportunities.
   AGGRESSIVE: {
-    sigmoidK: 3.6,
-    edgeBaselineR: 0.14,
-    minFloor: 14,
+    sigmoidK: 7.2,
+    edgeBaselineR: 0.12,
+    minFloor: 0,
     riskModel: "LINEAR",
     penaltyModel: "MULTIPLY",
-    linearRiskSlope: 0.25,
-    linearRiskFloor: 0.55,
+    linearRiskSlope: 0.4,
+    linearRiskFloor: 0.45,
     flowWeights: {
       momentum: 0.16,
       volumeSpike: 0.14,
       liquiditySweep: 0.12,
       chopPenalty: 0.05,
     },
-    gates: { minFillProb: 0.22, minEdgeR: -0.03, minCapacity: 0.12 },
+    gates: { minFillProb: 0.08, minEdgeR: -0.05, minCapacity: 0.08 },
   },
   // ~80% accuracy target: moderate gates, balanced risk/reward.
   // Requires solid execution conditions and directional conviction.

@@ -41,7 +41,7 @@ const IDEA_MIN_SCORE_BY_MODE: Record<string, number> = {
 };
 const MAX_TRADE_PER_MODE: Record<string, number> = {
   FLOW: 4,
-  AGGRESSIVE: 8,
+  AGGRESSIVE: 4,
   BALANCED: 4,
   CAPITAL_GUARD: 8,
 };
