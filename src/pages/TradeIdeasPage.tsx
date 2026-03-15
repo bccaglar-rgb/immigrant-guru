@@ -653,7 +653,7 @@ export default function TradeIdeasPage() {
 
   // Per-mode report stats — fetched from API for consistency with detail report page
   const [reportStatsByMode, setReportStatsByMode] = useState<Record<string, {
-    totalScan: number; highScoreScan: number; totalIdeas: number; resolved: number;
+    totalScan: number; highScoreScan: number; totalIdeas: number; active: number; resolved: number;
     successful: number; failed: number; entryMissed: number; successRate: number;
   }>>({});
   useEffect(() => {
@@ -667,17 +667,18 @@ export default function TradeIdeasPage() {
           ok?: boolean;
           startedAt?: number;
           statsByMode?: Record<string, {
-            totalScan: number; highScoreScan: number; totalIdeas: number; resolved: number;
+            totalScan: number; highScoreScan: number; totalIdeas: number; active: number; resolved: number;
             success: number; failed: number; entryMissed: number; successRate: number;
           }>;
         };
         if (!body?.ok || !body.statsByMode || !mounted) return;
-        const mapped: Record<string, { totalScan: number; highScoreScan: number; totalIdeas: number; resolved: number; successful: number; failed: number; entryMissed: number; successRate: number }> = {};
+        const mapped: Record<string, { totalScan: number; highScoreScan: number; totalIdeas: number; active: number; resolved: number; successful: number; failed: number; entryMissed: number; successRate: number }> = {};
         for (const [mode, s] of Object.entries(body.statsByMode)) {
           mapped[mode] = {
             totalScan: s.totalScan,
             highScoreScan: s.highScoreScan ?? 0,
             totalIdeas: s.totalIdeas,
+            active: s.active ?? 0,
             resolved: s.resolved,
             successful: s.success,
             failed: s.failed,
@@ -882,6 +883,7 @@ export default function TradeIdeasPage() {
                         <th className="pb-1 text-center font-medium">Total Scan</th>
                         <th className="pb-1 text-center font-medium">Ideas</th>
                         <th className="pb-1 text-center font-medium">Entry Missed</th>
+                        <th className="pb-1 text-center font-medium">Active</th>
                         <th className="pb-1 text-center font-medium">Resolved</th>
                         <th className="pb-1 text-center font-medium">Success</th>
                         <th className="pb-1 text-center font-medium">Failed</th>
@@ -890,7 +892,7 @@ export default function TradeIdeasPage() {
                     </thead>
                     <tbody>
                       {(["FLOW", "AGGRESSIVE", "BALANCED", "CAPITAL_GUARD"] as const).map((mode) => {
-                        const s = reportStatsByMode[mode] ?? { totalScan: 0, totalIdeas: 0, resolved: 0, successful: 0, failed: 0, entryMissed: 0, successRate: 0 };
+                        const s = reportStatsByMode[mode] ?? { totalScan: 0, totalIdeas: 0, active: 0, resolved: 0, successful: 0, failed: 0, entryMissed: 0, successRate: 0 };
                         const modeColors: Record<string, string> = {
                           FLOW: "border-[#3d5f8f]/50 text-[#b8d3ff]",
                           AGGRESSIVE: "border-[#8b5cf6]/50 text-[#c4b5fd]",
@@ -907,6 +909,7 @@ export default function TradeIdeasPage() {
                             <td className="py-1 text-center font-semibold text-[#8f95a3]">{s.totalScan}</td>
                             <td className="py-1 text-center font-semibold text-white">{s.totalIdeas}</td>
                             <td className="py-1 text-center font-semibold text-[#8A8F98]">{s.entryMissed}</td>
+                            <td className="py-1 text-center font-semibold text-[#F5C542]">{s.active}</td>
                             <td className="py-1 text-center font-semibold text-[#b7bec9]">{s.resolved}</td>
                             <td className="py-1 text-center font-semibold text-[#8fc9ab]">{s.successful}</td>
                             <td className="py-1 text-center font-semibold text-[#d49f9a]">{s.failed}</td>

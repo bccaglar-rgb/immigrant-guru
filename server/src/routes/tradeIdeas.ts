@@ -149,7 +149,7 @@ export const registerTradeIdeasRoutes = (app: Express, store: TradeIdeaStore, sy
     const sessionIdeas = allIdeas;
 
     const statsByMode: Record<string, {
-      totalScan: number; highScoreScan: number; totalIdeas: number; resolved: number;
+      totalScan: number; highScoreScan: number; totalIdeas: number; active: number; resolved: number;
       success: number; failed: number; entryMissed: number; successRate: number;
     }> = {};
 
@@ -162,6 +162,8 @@ export const registerTradeIdeasRoutes = (app: Express, store: TradeIdeaStore, sy
       const isEntryMissed = (i: typeof modeIdeas[number]) =>
         i.result === "FAIL" && !i.activated_at && !i.hit_level_type;
       const entryMissedCount = modeIdeas.filter((i) => isEntryMissed(i)).length;
+      // Active: still open (PENDING or ACTIVE status)
+      const activeCount = modeIdeas.filter((i) => i.status === "PENDING" || i.status === "ACTIVE").length;
       // Real trades: ideas that were activated (entry was reached) and resolved
       const activatedIdeas = modeIdeas.filter((i) => !isEntryMissed(i));
       const success = activatedIdeas.filter((i) => i.result === "SUCCESS").length;
@@ -170,7 +172,8 @@ export const registerTradeIdeasRoutes = (app: Express, store: TradeIdeaStore, sy
       statsByMode[mode] = {
         totalScan: totalScansByMode[mode] ?? 0,
         highScoreScan: highScoreByMode[mode] ?? 0,
-        totalIdeas: modeIdeas.length,  // ALL session ideas including entry-missed (Ideas >= Entry Missed always)
+        totalIdeas: modeIdeas.length,
+        active: activeCount,
         resolved,
         success,
         failed,
