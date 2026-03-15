@@ -27,7 +27,6 @@ const SYSTEM_USER_ID = "system-scanner";
 const UNIVERSE_SIZE = 300; // Lock top 300 Binance Futures coins
 const UNIVERSE_REFRESH_MS = 4 * 60 * 60 * 1000; // Refresh universe every 4 hours
 const SELECTED_COINS = 28; // 4 modes × 7 coins = 28 coins for output
-const COINS_PER_MODE = 7;
 const TOP_FIXED_SLOTS = 20; // Top 20 by enhanced score always scanned
 const DIVERSITY_SLOTS = 20; // 20 rotated from remaining pool for diversity
 const SCAN_CONCURRENCY = 8;
