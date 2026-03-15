@@ -83,7 +83,7 @@ function useCoinUniverse() {
       const qs = new URLSearchParams({
         exchange: "Binance",
         min_volume_usd: "5000000",
-        top: "300",
+        top: "800",
       });
       const res = await fetch(`/api/market/universe?${qs}`, { signal });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);

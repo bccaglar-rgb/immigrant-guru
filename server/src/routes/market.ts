@@ -2910,7 +2910,7 @@ export const registerMarketRoutes = (
     const exchange = await resolveExchangeFromQuery(req.query.exchange);
     const sourceMode = String(req.query.source ?? "exchange").toLowerCase() === "fallback" ? "fallback" : "exchange";
     const minVolumeUsd = Math.max(0, Number(req.query.min_volume_usd ?? 20_000_000));
-    const topN = Math.max(10, Math.min(800, Number(req.query.top ?? 80)));
+    const topN = Math.max(10, Math.min(2000, Number(req.query.top ?? 80)));
     const excludedSymbols = parseSymbolList(req.query.exclude_symbols);
     const cooldownSymbols = parseSymbolList(req.query.cooldown_symbols);
 
