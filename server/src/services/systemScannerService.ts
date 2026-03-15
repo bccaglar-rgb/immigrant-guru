@@ -43,7 +43,7 @@ const MAX_TRADE_PER_MODE: Record<string, number> = {
   FLOW: 4,
   AGGRESSIVE: 4,
   BALANCED: 4,
-  CAPITAL_GUARD: 8,
+  CAPITAL_GUARD: 4,
 };
 
 // Stablecoins to exclude from universe
