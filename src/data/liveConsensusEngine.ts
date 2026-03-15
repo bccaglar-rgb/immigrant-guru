@@ -1123,9 +1123,9 @@ export const generateAiPanel = (
         ? marketStress !== "HIGH"
         : !stressCascadeBlock && (!riskChecks.riskGate || provisionalRiskGate === "PASS"),
     entryWindow: !entryTimingGateEnabled || entryTiming === "OPEN",
-    fillProb: !fillGateEnabled || (isCapitalGuardMode ? pFill >= 0.5 : isBalancedMode ? pFill >= 0.35 : pFill >= 0.2),
-    edge: isCapitalGuardMode ? riskAdjustedEdgeR >= 0.1 : isBalancedMode ? riskAdjustedEdgeR >= 0.08 : isAggressiveMode ? true : edgeNetR >= modeConfig.gates.minEdgeR,
-    capacity: isCapitalGuardMode ? capacityFactor >= 0.5 : capacityFactor >= 0.2,
+    fillProb: !fillGateEnabled || (isCapitalGuardMode ? pFill >= 0.38 : isBalancedMode ? pFill >= 0.25 : pFill >= 0.15),
+    edge: isCapitalGuardMode ? riskAdjustedEdgeR >= 0.06 : isBalancedMode ? riskAdjustedEdgeR >= 0.04 : isAggressiveMode ? true : edgeNetR >= modeConfig.gates.minEdgeR,
+    capacity: isCapitalGuardMode ? capacityFactor >= 0.35 : capacityFactor >= 0.15,
   };
   const effectiveGatingFlags = scoreResult.gatingFlags.filter((flag) => {
     if (!consensusInputs.slippage && (flag === "LOW_FILL_PROB" || flag === "LOW_CAPACITY")) return false;
@@ -1136,21 +1136,17 @@ export const generateAiPanel = (
     return true;
   });
   const capitalGuardStrictBlock = isCapitalGuardMode && (
-    pFill < 0.55 ||
-    slippage !== "LOW" ||
-    (depthQuality !== "GOOD" && depthQuality !== "MID") === false && depthQuality === "POOR" ||
-    marketStress !== "LOW" ||
-    cascadeRisk !== "LOW" ||
-    riskAdjustedEdgeR < 0.12 ||
-    asymmetry === "RISK_DOMINANT" ||
-    crowdingRisk === "HIGH"
+    pFill < 0.42 ||
+    (slippage === "HIGH" && depthQuality === "POOR") ||
+    (marketStress === "HIGH" && cascadeRisk !== "LOW") ||
+    riskAdjustedEdgeR < 0.06 ||
+    (asymmetry === "RISK_DOMINANT" && crowdingRisk === "HIGH")
   );
   const balancedStrictBlock = isBalancedMode && (
-    pFill < 0.38 ||
-    (slippage === "HIGH" && (depthQuality === "POOR" || depthQuality === "MID")) ||
-    marketStress === "HIGH" ||
-    (marketStress === "BUILDING" && cascadeRisk !== "LOW") ||
-    riskAdjustedEdgeR < 0.06
+    pFill < 0.28 ||
+    (slippage === "HIGH" && depthQuality === "POOR") ||
+    (marketStress === "HIGH" && cascadeRisk !== "LOW") ||
+    riskAdjustedEdgeR < 0.02
   );
   const hardBlocked =
     !hardGates.tradeValidity ||
@@ -1167,10 +1163,10 @@ export const generateAiPanel = (
     ((entryTimingGateEnabled && entryTiming === "CLOSED") || pFill < 0.3 || (consensusInputs.slippage && slippage === "HIGH") || liquidityDensity === "LOW");
 
   if (hardBlocked) {
-    const hardBlockConsensusCap = isCapitalGuardMode ? 28 : isBalancedMode ? 36 : 48;
+    const hardBlockConsensusCap = isCapitalGuardMode ? 38 : isBalancedMode ? 44 : 48;
     finalScore = Math.min(finalScore, hardBlockConsensusCap);
   } else if (entryTimingGateEnabled && entryTiming === "CLOSED") {
-    const waitConsensusCap = isCapitalGuardMode ? 55 : isBalancedMode ? 62 : 78;
+    const waitConsensusCap = isCapitalGuardMode ? 62 : isBalancedMode ? 68 : 78;
     finalScore = Math.min(finalScore, waitConsensusCap);
   }
 
@@ -1182,25 +1178,25 @@ export const generateAiPanel = (
         : (entryTimingGateEnabled && entryTiming === "CLOSED")
           ? "WATCHLIST"
           : isCapitalGuardMode
-            ? finalScore < 65
+            ? finalScore < 55
               ? "NO_TRADE"
-              : finalScore < 78
+              : finalScore < 68
                 ? "WATCHLIST"
-                : finalScore < 88
+                : finalScore < 82
                   ? "TRADE_ELIGIBLE"
                   : "HIGH_CONFIDENCE"
           : isAggressiveMode
-            ? finalScore < 45
+            ? finalScore < 38
               ? "WATCHLIST"
-              : finalScore < 58
+              : finalScore < 52
                 ? "TRADE_ELIGIBLE"
                 : "HIGH_CONFIDENCE"
             : isBalancedMode
-              ? finalScore < 55
+              ? finalScore < 48
                 ? "NO_TRADE"
-                : finalScore < 68
+                : finalScore < 60
                   ? "WATCHLIST"
-                  : finalScore < 82
+                  : finalScore < 76
                     ? "TRADE_ELIGIBLE"
                     : "HIGH_CONFIDENCE"
             : finalScore < 60
