@@ -105,6 +105,7 @@ const KLINES_CONCURRENT = 10;                // Max concurrent klines fetches
 const TIER2_TOP_N = 60;                      // Compute Tier 2 for top 60 coins
 const COOLDOWN_ROUNDS = 3;                   // Minimum 3 cycles cooldown
 const SELECTED_TOP_28 = 28;                  // Output: top 28 active coins for Quant Engine
+const MIN_VOLUME_USD = 3_000_000;            // Minimum $3M daily volume to enter universe
 
 // Stablecoins to exclude
 const EXCLUDED_BASE_ASSETS = new Set([
@@ -418,7 +419,9 @@ export class CoinUniverseEngine {
 
     // 1. Get all coins from WS hub
     const wsRows = this.deps.binanceFuturesHub.getUniverseRows();
-    const filtered = wsRows.filter((r) => !EXCLUDED_BASE_ASSETS.has(r.baseAsset));
+    const filtered = wsRows.filter(
+      (r) => !EXCLUDED_BASE_ASSETS.has(r.baseAsset) && r.volume24hUsd >= MIN_VOLUME_USD,
+    );
 
     if (!filtered.length) {
       console.log(`[CoinUniverseEngine] Refresh #${this.currentRound}: No WS data available`);
