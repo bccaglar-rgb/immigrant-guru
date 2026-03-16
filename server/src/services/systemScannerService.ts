@@ -245,7 +245,7 @@ export class SystemScannerService {
     });
   }
 
-  /** Reset all stats — counters, scan round, cache — fresh start */
+  /** Reset all stats — counters, scan round, cache, persisted scan_counts — fresh start */
   resetStats(): void {
     this.totalScansByMode = {
       FLOW: 0, AGGRESSIVE: 0, BALANCED: 0, CAPITAL_GUARD: 0,
@@ -260,7 +260,11 @@ export class SystemScannerService {
     this.rotationIndex = 0;
     this.enhancedUniverse = [];
     this.openIdeasBySymbol.clear();
-    console.log("[SystemScanner] Stats reset — counters zeroed, fresh start");
+    // Also clear persisted scan_counts from PostgreSQL
+    pool.query(`DELETE FROM scan_counts`).catch((err) => {
+      console.error("[SystemScanner] Failed to clear scan_counts:", err);
+    });
+    console.log("[SystemScanner] Stats reset — counters zeroed, scan_counts cleared, fresh start");
   }
 
   // ---- internal ----

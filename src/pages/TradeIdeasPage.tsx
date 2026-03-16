@@ -657,6 +657,9 @@ export default function TradeIdeasPage() {
     totalScan: number; highScoreScan: number; totalIdeas: number; active: number; resolved: number;
     successful: number; failed: number; entryMissed: number; successRate: number;
   }>>({});
+  // When reset is triggered, bump epoch to bypass the backwards-guard for one cycle
+  const [reportResetEpoch, setReportResetEpoch] = useState(0);
+  const [reportResetting, setReportResetting] = useState(false);
   useEffect(() => {
     if (isAiTradeIdeasPage) return;
     let mounted = true;
@@ -689,7 +692,9 @@ export default function TradeIdeasPage() {
         }
         // Guard: if any mode's totalScan went backwards (cache not ready yet),
         // keep previous data to avoid 0-flickering on the UI.
+        // Skip guard right after a reset so zeros are shown.
         setReportStatsByMode((prev) => {
+          if (reportResetEpoch > 0) return mapped; // bypass guard after reset
           for (const [mode, s] of Object.entries(mapped)) {
             const p = prev[mode];
             if (p && s.totalScan < p.totalScan) return prev;
@@ -701,7 +706,22 @@ export default function TradeIdeasPage() {
     void fetchReportStats();
     const timer = window.setInterval(() => void fetchReportStats(), 10_000);
     return () => { mounted = false; window.clearInterval(timer); };
-  }, [isAiTradeIdeasPage, reportTimeRange]);
+  }, [isAiTradeIdeasPage, reportTimeRange, reportResetEpoch]);
+
+  // Reset report: clear all trade ideas + scan counts + scanner stats
+  const handleReportReset = async () => {
+    if (reportResetting) return;
+    if (!window.confirm("Reset all trade ideas, scan counts and scanner stats? This cannot be undone.")) return;
+    setReportResetting(true);
+    try {
+      const res = await fetch("/api/trade-ideas/reset", { method: "POST" });
+      if (res.ok) {
+        setReportStatsByMode({});
+        setReportResetEpoch((e) => e + 1);
+      }
+    } catch { /* ignore */ }
+    setReportResetting(false);
+  };
 
   const sourceLabelFromDiagnostics = (sourceKey: string): string => {
     const value = String(sourceKey ?? "").trim().toUpperCase();
@@ -879,6 +899,17 @@ export default function TradeIdeasPage() {
                     >
                       Open detailed report
                     </button>
+                    {!isAiTradeIdeasPage && (
+                      <button
+                        type="button"
+                        onClick={() => void handleReportReset()}
+                        disabled={reportResetting}
+                        className="shrink-0 rounded-lg border border-red-500/20 bg-[#1a0f0f] px-2.5 py-1 text-[11px] text-red-400/80 transition hover:border-red-500/40 hover:text-red-400 disabled:opacity-50"
+                        title="Reset all trade ideas, scan counts and scanner stats"
+                      >
+                        {reportResetting ? "Resetting..." : "Reset"}
+                      </button>
+                    )}
                   </div>
                 </div>
                 {isAiTradeIdeasPage ? (
