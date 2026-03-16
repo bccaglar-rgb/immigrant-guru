@@ -8,6 +8,7 @@ import {
   type ISeriesApi,
   LineStyle,
   type LineData,
+  type UTCTimestamp,
 } from "lightweight-charts";
 import { useExchangeTerminalStore } from "../../hooks/useExchangeTerminalStore";
 import type { ExchangeTradeSignal } from "../../types/exchange";
@@ -20,9 +21,24 @@ type MarketTab = "FAVORITES" | "USDM" | "COINM";
 type SortKey = "symbol" | "price" | "change";
 type SortDir = "asc" | "desc";
 
+/** Canonical live candle update from exchange kline stream */
+interface LiveCandleUpdate {
+  interval: string;
+  openTime: number; // unix seconds
+  open: number;
+  high: number;
+  low: number;
+  close: number;
+  volume: number;
+  closed: boolean;
+  ts: number;
+}
+
 interface Props {
   heightClass?: string;
   liveCandles?: CandlestickData[];
+  /** Incremental candle update — applied via series.update() for performance */
+  liveCandleUpdate?: LiveCandleUpdate | null;
   blockedMessage?: string | null;
   onAddExchange?: () => void;
   tradingViewSymbol?: string | null;
@@ -43,6 +59,7 @@ interface Props {
 export const ChartPanel = ({
   heightClass = "h-[370px]",
   liveCandles = [],
+  liveCandleUpdate = null,
   blockedMessage = null,
   onAddExchange,
   tradingViewSymbol = null,
@@ -226,6 +243,7 @@ export const ChartPanel = ({
     };
   }, [blockedMessage]);
 
+  // ── Base candle load: setData() only when historical OHLCV changes ──
   useEffect(() => {
     if (blockedMessage) return;
     if (!seriesRef.current || !chartRef.current) return;
@@ -240,6 +258,26 @@ export const ChartPanel = ({
       seriesRef.current.setData([]);
     }
   }, [blockedMessage, liveCandles]);
+
+  // ── Live candle incremental update: series.update() for real-time kline events ──
+  // This uses series.update() instead of setData() for performance —
+  // no flicker, no full re-render, instant chart refresh (~250ms Binance kline rate).
+  useEffect(() => {
+    if (blockedMessage) return;
+    if (!seriesRef.current) return;
+    if (!liveCandleUpdate || liveCandleUpdate.openTime <= 0 || liveCandleUpdate.close <= 0) return;
+    try {
+      seriesRef.current.update({
+        time: liveCandleUpdate.openTime as UTCTimestamp,
+        open: liveCandleUpdate.open,
+        high: liveCandleUpdate.high,
+        low: liveCandleUpdate.low,
+        close: liveCandleUpdate.close,
+      });
+    } catch {
+      // noop — chart may not be ready yet
+    }
+  }, [blockedMessage, liveCandleUpdate]);
 
   useEffect(() => {
     if (!chartRef.current) return;

@@ -39,8 +39,8 @@ const apiKey = process.env.CG_API_KEY ?? "4f8430d3a7a14b44a16bd10f3a4dd61d";
 const WS_TICK_MS = 800;
 const WS_MAX_CONCURRENCY = 6;
 
-// Throttle candle updates: max 1 per 120ms per symbol:interval to avoid flooding
-const CANDLE_UPDATE_THROTTLE_MS = 120;
+// Out-of-order protection: track last kline openTime per symbol:interval
+// No throttle — kline events are ~250ms from Binance; throttling can lose high/low extremes
 
 const runWithConcurrency = async (jobs: Array<() => Promise<void>>, concurrency: number) => {
   if (!jobs.length) return;
@@ -71,18 +71,19 @@ export const createGateway = (httpServer: HttpServer, opts?: GatewayOpts) => {
   let tickInFlight = false;
 
   // ── Canonical candle update: push from exchange hub kline events ──
-  const lastCandleUpdateAt = new Map<string, number>(); // "symbol:interval" → last broadcast ts
+  // Out-of-order protection: drop kline events older than last known openTime per symbol:interval
+  const lastKlineOpenTime = new Map<string, number>(); // "symbol:interval" → last openTime (unix seconds)
 
   const broadcastCandleUpdate = (
     symbol: string, interval: string,
     openTime: number, open: number, high: number, low: number, close: number, volume: number,
     closed: boolean, ts: number,
   ) => {
-    const now = Date.now();
     const key = `${symbol}:${interval}`;
-    const last = lastCandleUpdateAt.get(key) ?? 0;
-    if (now - last < CANDLE_UPDATE_THROTTLE_MS) return; // throttle
-    lastCandleUpdateAt.set(key, now);
+    // Out-of-order protection: skip events with an older openTime
+    const lastOt = lastKlineOpenTime.get(key) ?? 0;
+    if (openTime < lastOt) return; // stale event from a previous candle
+    lastKlineOpenTime.set(key, openTime);
 
     const body = JSON.stringify({
       type: "candle_update",

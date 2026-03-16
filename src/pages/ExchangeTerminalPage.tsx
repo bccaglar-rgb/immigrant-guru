@@ -385,37 +385,11 @@ export default function ExchangeTerminalPage() {
     (s) => s.candleUpdates[`${routerSymbol}:${apiInterval === "1w" ? "1d" : apiInterval}`],
   );
 
+  // Base candles: historical OHLCV only — NO wsCandle merge here.
+  // ChartPanel will apply wsCandle via series.update() incrementally.
   const liveCandles = useMemo<CandlestickData[]>(
-    () => {
-      const normalized = normalizeCandlesForChart(chartBundle?.ohlcv);
-      if (!normalized.length) return normalized;
-      // If we have a canonical candle_update from Binance kline stream,
-      // update only the matching candle with the canonical OHLCV
-      if (wsCandle && wsCandle.openTime > 0 && wsCandle.close > 0) {
-        const last = normalized[normalized.length - 1];
-        if (last && last.time === wsCandle.openTime) {
-          // Same candle — update with canonical OHLCV from Binance kline stream
-          normalized[normalized.length - 1] = {
-            ...last,
-            open: wsCandle.open,
-            high: wsCandle.high,
-            low: wsCandle.low,
-            close: wsCandle.close,
-          };
-        } else if (wsCandle.openTime > Number(last?.time ?? 0)) {
-          // New candle started — append it
-          normalized.push({
-            time: wsCandle.openTime as UTCTimestamp,
-            open: wsCandle.open,
-            high: wsCandle.high,
-            low: wsCandle.low,
-            close: wsCandle.close,
-          });
-        }
-      }
-      return normalized;
-    },
-    [chartBundle?.ohlcv, wsCandle],
+    () => normalizeCandlesForChart(chartBundle?.ohlcv),
+    [chartBundle?.ohlcv],
   );
 
   useEffect(() => {
@@ -580,6 +554,7 @@ export default function ExchangeTerminalPage() {
                       selectedTimeframe={chartTimeframe}
                       onTimeframeChange={setChartTimeframe}
                       liveCandles={liveCandles}
+                      liveCandleUpdate={wsCandle}
                       liveOhlcv={chartBundle?.ohlcv}
                       indicatorsState={indicators.state}
                       chartSourceLabel={activeFeedLabel}
@@ -631,6 +606,7 @@ export default function ExchangeTerminalPage() {
                   selectedTimeframe={chartTimeframe}
                   onTimeframeChange={setChartTimeframe}
                   liveCandles={liveCandles}
+                  liveCandleUpdate={wsCandle}
                   liveOhlcv={chartBundle?.ohlcv}
                   indicatorsState={indicators.state}
                   chartSourceLabel={activeFeedLabel}
