@@ -116,6 +116,18 @@ export interface NormalizedStatusEvent extends NormalizedEventBase {
   meta?: Record<string, unknown>;
 }
 
+export interface NormalizedKlineEvent extends NormalizedEventBase {
+  type: "kline";
+  interval: string;
+  openTime: number; // unix seconds
+  open: number;
+  high: number;
+  low: number;
+  close: number;
+  volume: number;
+  closed: boolean; // true if candle is final
+}
+
 export type NormalizedEvent =
   | NormalizedTradeEvent
   | NormalizedBookTickerEvent
@@ -123,7 +135,8 @@ export type NormalizedEvent =
   | NormalizedBookDeltaEvent
   | NormalizedTickerEvent
   | NormalizedMarkPriceEvent
-  | NormalizedStatusEvent;
+  | NormalizedStatusEvent
+  | NormalizedKlineEvent;
 
 export interface LiveHubRow {
   exchangeUsed: MarketExchangeId;

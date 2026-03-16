@@ -8,6 +8,7 @@ import type {
   NormalizedBookDeltaEvent,
   NormalizedBookSnapshotEvent,
   NormalizedEvent,
+  NormalizedKlineEvent,
   NormalizedTradeEvent,
 } from "./types.ts";
 import { SequenceSafeOrderbookStore } from "./sequenceSafeOrderbook.ts";
@@ -716,6 +717,7 @@ export class BinanceFuturesMarketAdapter implements IExchangeMarketAdapter {
     const low = toNum(k.l);
     const close = toNum(k.c);
     const volume = toNum(k.v) ?? 0;
+    const closed = Boolean(k.x); // true if candle is final/closed
     if (openTime === null || open === null || high === null || low === null || close === null) return;
     const candle: AdapterCandlePoint = {
       time: Math.floor(openTime / 1000),
@@ -732,6 +734,23 @@ export class BinanceFuturesMarketAdapter implements IExchangeMarketAdapter {
       price: close,
       sourceTs: ts,
     });
+    // Emit canonical kline event for real-time candle push
+    const klineEvent: NormalizedKlineEvent = {
+      type: "kline",
+      exchange: this.exchange,
+      symbol,
+      ts,
+      recvTs: Date.now(),
+      interval,
+      openTime: Math.floor(openTime / 1000),
+      open,
+      high,
+      low,
+      close,
+      volume: Math.max(0, volume),
+      closed,
+    };
+    this.emit(klineEvent);
   }
 
   private onDepthDelta(rec: Record<string, unknown>): void {

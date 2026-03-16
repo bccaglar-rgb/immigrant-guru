@@ -380,29 +380,42 @@ export default function ExchangeTerminalPage() {
     };
   }, [exchangeBlocked, routerSymbol, selectedExchange, selectedExchangeAccount, setAccountData]);
 
-  // Real-time price tick from WS (bypasses REST polling for instant updates)
-  const wsPriceTick = MarketDataRouter.useStore((s) => s.priceTicks[routerSymbol]);
+  // Canonical candle update from Binance kline stream via WS — no price mixing
+  const wsCandle = MarketDataRouter.useStore(
+    (s) => s.candleUpdates[`${routerSymbol}:${apiInterval === "1w" ? "1d" : apiInterval}`],
+  );
 
   const liveCandles = useMemo<CandlestickData[]>(
     () => {
       const normalized = normalizeCandlesForChart(chartBundle?.ohlcv);
-      // Priority: WS price tick (instant) > lastPrice (REST) > midPrice (orderbook)
-      const tick = wsPriceTick?.price ?? NaN;
-      const lp = Number(chartBundle?.orderbook?.lastPrice ?? NaN);
-      const mid = Number(chartBundle?.orderbook?.midPrice ?? NaN);
-      const price = Number.isFinite(tick) && tick > 0 ? tick
-        : Number.isFinite(lp) && lp > 0 ? lp : mid;
-      if (!normalized.length || !Number.isFinite(price) || price <= 0) return normalized;
-      const last = normalized[normalized.length - 1];
-      normalized[normalized.length - 1] = {
-        ...last,
-        high: Math.max(last.high, price),
-        low: Math.min(last.low, price),
-        close: price,
-      };
+      if (!normalized.length) return normalized;
+      // If we have a canonical candle_update from Binance kline stream,
+      // update only the matching candle with the canonical OHLCV
+      if (wsCandle && wsCandle.openTime > 0 && wsCandle.close > 0) {
+        const last = normalized[normalized.length - 1];
+        if (last && last.time === wsCandle.openTime) {
+          // Same candle — update with canonical OHLCV from Binance kline stream
+          normalized[normalized.length - 1] = {
+            ...last,
+            open: wsCandle.open,
+            high: wsCandle.high,
+            low: wsCandle.low,
+            close: wsCandle.close,
+          };
+        } else if (wsCandle.openTime > Number(last?.time ?? 0)) {
+          // New candle started — append it
+          normalized.push({
+            time: wsCandle.openTime as UTCTimestamp,
+            open: wsCandle.open,
+            high: wsCandle.high,
+            low: wsCandle.low,
+            close: wsCandle.close,
+          });
+        }
+      }
       return normalized;
     },
-    [chartBundle?.ohlcv, chartBundle?.orderbook?.midPrice, chartBundle?.orderbook?.lastPrice, wsPriceTick],
+    [chartBundle?.ohlcv, wsCandle],
   );
 
   useEffect(() => {

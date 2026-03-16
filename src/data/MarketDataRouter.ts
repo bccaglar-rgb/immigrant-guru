@@ -16,8 +16,15 @@ interface SubscriptionKey {
   lookback: number;
 }
 
-interface PriceTick {
-  price: number;
+interface CandleUpdate {
+  interval: string;
+  openTime: number; // unix seconds
+  open: number;
+  high: number;
+  low: number;
+  close: number;
+  volume: number;
+  closed: boolean;
   ts: number;
 }
 
@@ -34,13 +41,13 @@ interface RouterState {
   orderbook: Record<string, MarketDatum<{ spreadBps: number; depthUsd: number; imbalance: number }>>;
   trades: Record<string, MarketDatum<{ deltaBtc1m: number; volumeBtc1m: number; speedTpm: number; volumeZ: number }>>;
   derivatives: Record<string, MarketDatum<{ fundingRate: number | null; oiValue: number | null; oiChange1h: number | null; liquidationUsd: number | null }>>;
-  priceTicks: Record<string, PriceTick>;
+  candleUpdates: Record<string, CandleUpdate>; // "SYMBOL:interval" → canonical candle
   lastUpdateAt: number;
   subscriptions: Record<string, SubscriptionKey>;
   publicSourceOverride: SourceId | null;
   setRouterStatus: (patch: Partial<Pick<RouterState, "activeSource" | "sourceChip" | "fallbackActive" | "bannerMessage" | "stale" | "staleAgeSec" | "latencyMs" | "publicSourceOverride">>) => void;
   ingestLivePacket: (sourceId: SourceId, symbol: string, interval: Timeframe, packet: FallbackLivePayload) => void;
-  ingestPriceTick: (symbol: string, price: number, ts: number) => void;
+  ingestCandleUpdate: (symbol: string, update: CandleUpdate) => void;
   subscribe: (sub: SubscriptionKey) => void;
   unsubscribe: (symbol: string, interval: Timeframe) => void;
   clearSourceScopedCaches: () => void;
@@ -120,14 +127,14 @@ const useMarketDataRouterStore = create<RouterState>((set) => ({
   orderbook: {},
   trades: {},
   derivatives: {},
-  priceTicks: {},
+  candleUpdates: {},
   lastUpdateAt: 0,
   subscriptions: {},
   publicSourceOverride: null,
   setRouterStatus: (patch) => set((state) => ({ ...state, ...patch })),
-  ingestPriceTick: (symbol, price, ts) =>
+  ingestCandleUpdate: (symbol, update) =>
     set((state) => ({
-      priceTicks: { ...state.priceTicks, [symbol]: { price, ts } },
+      candleUpdates: { ...state.candleUpdates, [`${symbol}:${update.interval}`]: update },
     })),
   ingestLivePacket: (sourceId, symbol, interval, packet) => {
     let activeSource = useMarketDataRouterStore.getState().activeSource;
@@ -385,12 +392,21 @@ const connectWebSocket = () => {
           const prevSource = store.activeSource;
           const nextSource = evaluateAndSwitchSource();
           if (prevSource !== nextSource) sendWsSubscriptions();
-        } else if (msg.type === "price_tick" && symbol) {
-          // Instant price tick from exchange hub trade events
-          const tickPrice = Number(msg.price);
-          const tickTs = Number(msg.ts ?? Date.now());
-          if (Number.isFinite(tickPrice) && tickPrice > 0) {
-            useMarketDataRouterStore.getState().ingestPriceTick(symbol, tickPrice, tickTs);
+        } else if (msg.type === "candle_update" && symbol) {
+          // Canonical candle update from exchange kline stream
+          const cu = {
+            interval: String(msg.interval ?? ""),
+            openTime: Number(msg.openTime ?? 0),
+            open: Number(msg.open ?? 0),
+            high: Number(msg.high ?? 0),
+            low: Number(msg.low ?? 0),
+            close: Number(msg.close ?? 0),
+            volume: Number(msg.volume ?? 0),
+            closed: Boolean(msg.closed),
+            ts: Number(msg.ts ?? Date.now()),
+          };
+          if (cu.interval && cu.openTime > 0 && cu.close > 0) {
+            useMarketDataRouterStore.getState().ingestCandleUpdate(symbol, cu);
           }
         } else if (msg.type === "market_error") {
           const state = useMarketDataRouterStore.getState();
