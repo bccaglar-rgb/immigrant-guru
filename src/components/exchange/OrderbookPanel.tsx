@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { useExchangeTerminalStore } from "../../hooks/useExchangeTerminalStore";
+import { useDomBids, useDomAsks } from "../../hooks/useDomStore";
 
 interface Props {
   maxHeightClass?: string;
@@ -7,8 +8,45 @@ interface Props {
 }
 
 export const OrderbookPanel = ({ maxHeightClass = "max-h-[690px]", fullHeight = false }: Props) => {
-  const { bids, asks, orderbookStep, orderbookLimit, setOrderbookStep } = useExchangeTerminalStore();
+  const { orderbookStep, orderbookLimit, setOrderbookStep, selectedSymbol } = useExchangeTerminalStore();
   const [viewMode, setViewMode] = useState<"both" | "split" | "ladder">("both");
+
+  // Derive raw symbol (e.g. "BTC/USDT" → "BTCUSDT")
+  const symbol = useMemo(() => selectedSymbol.replace("/", "").toUpperCase(), [selectedSymbol]);
+
+  // Primary: real-time DOM from WS dom_snapshot/dom_delta pipeline
+  const domBids = useDomBids(symbol, orderbookLimit);
+  const domAsks = useDomAsks(symbol, orderbookLimit);
+
+  // Fallback: REST-polled orderbook from useExchangeTerminalStore
+  const fallbackBids = useExchangeTerminalStore((s) => s.bids);
+  const fallbackAsks = useExchangeTerminalStore((s) => s.asks);
+
+  // Convert DOM levels to orderbook display format (with cumulative total)
+  const bids = useMemo(() => {
+    if (domBids.length > 0) {
+      let cumTotal = 0;
+      return domBids.map((level) => {
+        const notional = level.price * level.qty;
+        cumTotal += notional;
+        return { price: level.price, amount: notional, total: cumTotal };
+      });
+    }
+    return fallbackBids;
+  }, [domBids, fallbackBids]);
+
+  const asks = useMemo(() => {
+    if (domAsks.length > 0) {
+      let cumTotal = 0;
+      return domAsks.map((level) => {
+        const notional = level.price * level.qty;
+        cumTotal += notional;
+        return { price: level.price, amount: notional, total: cumTotal };
+      });
+    }
+    return fallbackAsks;
+  }, [domAsks, fallbackAsks]);
+
   const hasData = bids.length > 0 || asks.length > 0;
   const asksDisplay = useMemo(() => [...asks].reverse(), [asks]);
   const topAskPrice = typeof asks[0]?.price === "number" ? asks[0].price.toFixed(2) : "-";

@@ -3,6 +3,9 @@ import type { OhlcvPoint, Timeframe } from "../types";
 import type { ConnectionStatus } from "../types/exchange";
 import { FallbackApiAdapter, type FallbackLivePayload } from "./FallbackApiAdapter";
 import { normalizeExchangeSource, useDataSourceManager, type ExchangeSourceId, type SourceId } from "./DataSourceManager";
+import { useTickStore } from "../hooks/useTickStore";
+import { useDomStore } from "../hooks/useDomStore";
+import { useOrderflowStore } from "../hooks/useOrderflowStore";
 
 export interface MarketDatum<T> {
   sourceId: SourceId;
@@ -407,6 +410,46 @@ const connectWebSocket = () => {
           };
           if (cu.interval && cu.openTime > 0 && cu.close > 0) {
             useMarketDataRouterStore.getState().ingestCandleUpdate(symbol, cu);
+          }
+        } else if (msg.type === "tick_batch" && symbol) {
+          // Pipeline 2: Tick micro-batch from trade events
+          const ticks = Array.isArray(msg.ticks) ? msg.ticks : [];
+          if (ticks.length) useTickStore.getState().ingestBatch(symbol, ticks);
+        } else if (msg.type === "tick_snapshot" && symbol) {
+          // Pipeline 2: Initial tick buffer on subscribe
+          const ticks = Array.isArray(msg.ticks) ? msg.ticks : [];
+          if (ticks.length) useTickStore.getState().ingestSnapshot(symbol, ticks);
+        } else if (msg.type === "dom_snapshot" && symbol) {
+          // Pipeline 3: Full orderbook snapshot
+          const bids = Array.isArray(msg.bids) ? msg.bids : [];
+          const asks = Array.isArray(msg.asks) ? msg.asks : [];
+          const seq = Number(msg.seq ?? 0);
+          useDomStore.getState().applySnapshot(symbol, seq, bids, asks);
+        } else if (msg.type === "dom_delta" && symbol) {
+          // Pipeline 3: Incremental orderbook delta
+          const bids = Array.isArray(msg.bids) ? msg.bids : [];
+          const asks = Array.isArray(msg.asks) ? msg.asks : [];
+          const endSeq = Number(msg.endSeq ?? 0);
+          useDomStore.getState().applyDelta(symbol, endSeq, bids, asks);
+        } else if (msg.type === "orderflow_frame" && symbol) {
+          // Pipeline 4: 1s aggregated orderflow frame
+          const frame = {
+            windowStart: Number(msg.windowStart ?? 0),
+            windowEnd: Number(msg.windowEnd ?? 0),
+            delta: Number(msg.delta ?? 0),
+            cvd: Number(msg.cvd ?? 0),
+            buyVolume: Number(msg.buyVolume ?? 0),
+            sellVolume: Number(msg.sellVolume ?? 0),
+            buyCount: Number(msg.buyCount ?? 0),
+            sellCount: Number(msg.sellCount ?? 0),
+            totalCount: Number(msg.totalCount ?? 0),
+            avgTradeSize: Number(msg.avgTradeSize ?? 0),
+            maxTradeSize: Number(msg.maxTradeSize ?? 0),
+            vwap: Number(msg.vwap ?? 0),
+            aggressionScore: Number(msg.aggressionScore ?? 0),
+          };
+          if (frame.windowStart > 0) {
+            useOrderflowStore.getState().ingestFrame(symbol, frame);
           }
         } else if (msg.type === "market_error") {
           const state = useMarketDataRouterStore.getState();

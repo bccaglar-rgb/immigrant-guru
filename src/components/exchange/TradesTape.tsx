@@ -1,3 +1,5 @@
+import { useMemo } from "react";
+import { useTickStore, type Tick } from "../../hooks/useTickStore";
 import { useExchangeTerminalStore } from "../../hooks/useExchangeTerminalStore";
 
 interface Props {
@@ -5,9 +7,52 @@ interface Props {
   visibleRows?: number;
 }
 
+const formatPrice = (price: number): string => {
+  if (price >= 1000) return price.toFixed(2);
+  if (price >= 1) return price.toFixed(4);
+  return price.toFixed(6);
+};
+
+const formatQty = (qty: number): string => {
+  if (qty >= 100) return qty.toFixed(2);
+  if (qty >= 1) return qty.toFixed(3);
+  return qty.toFixed(4);
+};
+
+const formatTime = (ts: number): string => {
+  const d = new Date(ts);
+  return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}:${String(d.getSeconds()).padStart(2, "0")}`;
+};
+
 export const TradesTape = ({ maxHeightClass = "max-h-[280px]", visibleRows = 5 }: Props) => {
-  const { trades } = useExchangeTerminalStore();
-  const hasTrades = trades.length > 0;
+  const selectedSymbol = useExchangeTerminalStore((s) => s.selectedSymbol);
+  // Derive raw symbol (e.g. "BTC/USDT" → "BTCUSDT")
+  const symbol = useMemo(() => selectedSymbol.replace("/", "").toUpperCase(), [selectedSymbol]);
+
+  // Primary: real-time ticks from WS tick_batch pipeline
+  const ticks = useTickStore((s) => s.ticks[symbol] ?? []);
+
+  // Fallback: REST-polled trades from useExchangeTerminalStore
+  const fallbackTrades = useExchangeTerminalStore((s) => s.trades);
+
+  // Display trades: prefer WS ticks, fallback to REST data
+  const displayTrades = useMemo(() => {
+    if (ticks.length > 0) {
+      // Show most recent first (reversed)
+      const reversed = [...ticks].reverse();
+      return reversed.map((tick: Tick, idx: number) => ({
+        id: tick.tradeId ?? `t-${tick.ts}-${idx}`,
+        price: tick.price,
+        amount: tick.qty,
+        side: tick.side,
+        time: formatTime(tick.ts),
+      }));
+    }
+    // Fallback to REST data
+    return fallbackTrades;
+  }, [ticks, fallbackTrades]);
+
+  const hasTrades = displayTrades.length > 0;
   const rowsHeightPx = Math.max(5, visibleRows) * 22;
 
   return (
@@ -30,10 +75,14 @@ export const TradesTape = ({ maxHeightClass = "max-h-[280px]", visibleRows = 5 }
             <span className="text-right">Time</span>
           </div>
           <div className={`${maxHeightClass} overflow-y-auto px-3 pb-2`} style={{ height: `${rowsHeightPx}px` }}>
-            {trades.map((trade) => (
+            {displayTrades.map((trade) => (
               <div key={trade.id} className="grid grid-cols-3 py-0.5 text-xs">
-                <span className={trade.side === "BUY" ? "text-[#8fc9ab]" : "text-[#d49f9a]"}>{trade.price.toFixed(2)}</span>
-                <span className="text-right text-[#BFC2C7]">{trade.amount.toFixed(3)}</span>
+                <span className={trade.side === "BUY" ? "text-[#8fc9ab]" : "text-[#d49f9a]"}>
+                  {typeof trade.price === "number" ? formatPrice(trade.price) : trade.price}
+                </span>
+                <span className="text-right text-[#BFC2C7]">
+                  {typeof trade.amount === "number" ? formatQty(trade.amount) : trade.amount}
+                </span>
                 <span className="text-right text-[10px] leading-4 text-[#6B6F76]">{trade.time}</span>
               </div>
             ))}
