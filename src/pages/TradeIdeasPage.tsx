@@ -687,7 +687,15 @@ export default function TradeIdeasPage() {
             successRate: s.successRate,
           };
         }
-        setReportStatsByMode(mapped);
+        // Guard: if any mode's totalScan went backwards (cache not ready yet),
+        // keep previous data to avoid 0-flickering on the UI.
+        setReportStatsByMode((prev) => {
+          for (const [mode, s] of Object.entries(mapped)) {
+            const p = prev[mode];
+            if (p && s.totalScan < p.totalScan) return prev;
+          }
+          return mapped;
+        });
       } catch { /* keep existing data */ }
     };
     void fetchReportStats();
