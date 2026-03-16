@@ -51,7 +51,13 @@ type AiReportIdea = {
   decision: string;
 };
 
-const REPORT_MIN_CONSENSUS_QUANT = 70;
+// Per-mode min score thresholds — must match server's REPORT_MIN_SCORE
+const REPORT_MIN_SCORE_QUANT: Record<string, number> = {
+  FLOW: 55,
+  AGGRESSIVE: 60,
+  BALANCED: 65,
+  CAPITAL_GUARD: 68,
+};
 const REPORT_MIN_CONSENSUS_AI = 60;
 const clampPercent = (value: number) => Math.max(0, Math.min(100, Math.round(value)));
 
@@ -144,7 +150,7 @@ export default function TradeIdeasReportPage() {
   const [aiModelFilter, setAiModelFilter] = useState<AiModelFilter>("ALL");
   const [aiReportRows, setAiReportRows] = useState<AiReportIdea[]>([]);
   const [expandedHour, setExpandedHour] = useState<string | null>(null);
-  const reportMinConsensus = isAiReport ? REPORT_MIN_CONSENSUS_AI : REPORT_MIN_CONSENSUS_QUANT;
+  const reportMinConsensus = isAiReport ? REPORT_MIN_CONSENSUS_AI : (REPORT_MIN_SCORE_QUANT[scoringMode] ?? 70);
   const now = Date.now();
 
   // ── Data Fetch (every 10s) ──
@@ -162,24 +168,19 @@ export default function TradeIdeasReportPage() {
           setAiReportRows(rows);
           return;
         }
-        // Quant report: fetch ideas from BOTH users + report stats from unified endpoint
+        // Quant report: fetch system-scanner ideas only (matches report-stats)
         const qs = new URLSearchParams({ limit: "1000", scoring_mode: scoringMode });
-        const [userRes, systemRes, statsRes] = await Promise.all([
-          fetch(`/api/trade-ideas?${qs.toString()}`, { headers: { "x-user-id": "demo-user" } }),
+        const [ideasRes, statsRes] = await Promise.all([
           fetch(`/api/trade-ideas?${qs.toString()}`, { headers: { "x-user-id": "system-scanner" } }),
           fetch("/api/trade-ideas/report-stats"),
         ]);
         if (!mounted) return;
 
         const allRows: ApiTradeIdea[] = [];
-        const seenIds = new Set<string>();
-        for (const res of [userRes, systemRes]) {
-          if (!res.ok) continue;
-          const body = (await res.json()) as { ok?: boolean; items?: ApiTradeIdea[] };
+        if (ideasRes.ok) {
+          const body = (await ideasRes.json()) as { ok?: boolean; items?: ApiTradeIdea[] };
           if (body?.ok && Array.isArray(body.items)) {
-            for (const item of body.items) {
-              if (!seenIds.has(item.id)) { seenIds.add(item.id); allRows.push(item); }
-            }
+            allRows.push(...body.items);
           }
         }
         if (statsRes.ok) {
