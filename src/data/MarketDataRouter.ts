@@ -288,7 +288,11 @@ const evaluateAndSwitchSource = () => {
   const nextSource = override ?? computed;
   const prevSource = currentSource;
   if (prevSource !== nextSource) {
-    useMarketDataRouterStore.getState().clearSourceScopedCaches();
+    // NOTE: Do NOT clear source-scoped caches here.
+    // Clearing candles/orderbook/trades on every source switch causes the
+    // dashboard to flash "Live packet not received" because liveState.ohlcv
+    // becomes undefined for one render cycle before new data arrives.
+    // New data from the switched source will overwrite stale entries naturally.
     reconnectAttempts = 0;
     currentSource = nextSource;
   }
