@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { CandlestickData, UTCTimestamp } from "lightweight-charts";
 import { useLocation, useNavigate } from "react-router-dom";
 import { ChartPanel } from "../components/exchange/ChartPanel";
@@ -298,9 +298,12 @@ export default function ExchangeTerminalPage() {
     };
 
     void run();
+    // REST poll slowed to 5s — real-time data now flows via WS pipelines:
+    //   candles → WS candle_update, ticks → WS tick_batch, book → WS dom_snapshot/delta
+    // REST only needed for: derivatives (funding, OI), ticker fallback, initial candle load.
     const timer = window.setInterval(() => {
       void run();
-    }, 500);
+    }, 5000);
 
     return () => {
       cancelled = true;
@@ -385,12 +388,36 @@ export default function ExchangeTerminalPage() {
     (s) => s.candleUpdates[`${routerSymbol}:${apiInterval === "1w" ? "1d" : apiInterval}`],
   );
 
-  // Base candles: historical OHLCV only — NO wsCandle merge here.
-  // ChartPanel will apply wsCandle via series.update() incrementally.
-  const liveCandles = useMemo<CandlestickData[]>(
-    () => normalizeCandlesForChart(chartBundle?.ohlcv),
-    [chartBundle?.ohlcv],
-  );
+  // ── Stabilized candle base: only updates when bar structure changes ──
+  // Prevents setData() from firing every REST poll cycle.
+  // When only the forming candle's close changes, sig stays the same → no setData.
+  // WS series.update() handles forming candle updates at kline rate (~250ms).
+  const [stableCandles, setStableCandles] = useState<CandlestickData[]>([]);
+  const [stableOhlcv, setStableOhlcv] = useState<Array<{ time: number; close: number; volume: number }>>([]);
+  const candleSigRef = useRef("");
+
+  useEffect(() => {
+    const ohlcv = chartBundle?.ohlcv;
+    const normalized = normalizeCandlesForChart(ohlcv);
+    const len = normalized.length;
+    // Signature: bar count + first/last timestamps — NOT close prices.
+    // Close price changes on every REST poll for the forming candle, but we don't
+    // want to trigger setData for that — WS series.update() handles it.
+    const sig = len > 0
+      ? `${len}:${normalized[0].time}:${normalized[len - 1].time}`
+      : "";
+    if (sig === candleSigRef.current) return;
+    candleSigRef.current = sig;
+    setStableCandles(normalized);
+    if (ohlcv?.length) setStableOhlcv(ohlcv);
+  }, [chartBundle?.ohlcv]);
+
+  // Reset stable candle state when symbol/timeframe changes
+  useEffect(() => {
+    candleSigRef.current = "";
+    setStableCandles([]);
+    setStableOhlcv([]);
+  }, [routerSymbol, apiInterval]);
 
   useEffect(() => {
     if (exchangeBlocked) return;
@@ -553,20 +580,20 @@ export default function ExchangeTerminalPage() {
                       heightClass="h-full"
                       selectedTimeframe={chartTimeframe}
                       onTimeframeChange={setChartTimeframe}
-                      liveCandles={liveCandles}
+                      liveCandles={stableCandles}
                       liveCandleUpdate={wsCandle}
-                      liveOhlcv={chartBundle?.ohlcv}
+                      liveOhlcv={stableOhlcv}
                       indicatorsState={indicators.state}
                       chartSourceLabel={activeFeedLabel}
                       activeSignal={activeSignal}
                       blockedMessage={
                         exchangeBlocked
                           ? "Add exchange"
-                          : !liveCandles.length && (liveError || noDataTimeout)
+                          : !stableCandles.length && (liveError || noDataTimeout)
                             ? "No live data"
                             : null
                       }
-                      tradingViewSymbol={!exchangeBlocked && !liveCandles.length && (liveError || noDataTimeout) ? tradingViewSymbol : null}
+                      tradingViewSymbol={!exchangeBlocked && !stableCandles.length && (liveError || noDataTimeout) ? tradingViewSymbol : null}
                       onAddExchange={exchangeBlocked ? () => navigate("/settings#exchange-panel") : undefined}
                       indicatorsEnabledCount={indicators.enabledCount}
                       setMasterIndicators={indicators.setMaster}
@@ -605,20 +632,20 @@ export default function ExchangeTerminalPage() {
                 <ChartPanel
                   selectedTimeframe={chartTimeframe}
                   onTimeframeChange={setChartTimeframe}
-                  liveCandles={liveCandles}
+                  liveCandles={stableCandles}
                   liveCandleUpdate={wsCandle}
-                  liveOhlcv={chartBundle?.ohlcv}
+                  liveOhlcv={stableOhlcv}
                   indicatorsState={indicators.state}
                   chartSourceLabel={activeFeedLabel}
                   activeSignal={activeSignal}
                   blockedMessage={
                     exchangeBlocked
                       ? "Add exchange"
-                      : !liveCandles.length && (liveError || noDataTimeout)
+                      : !stableCandles.length && (liveError || noDataTimeout)
                         ? "No live data"
                       : null
                   }
-                  tradingViewSymbol={!exchangeBlocked && !liveCandles.length && (liveError || noDataTimeout) ? tradingViewSymbol : null}
+                  tradingViewSymbol={!exchangeBlocked && !stableCandles.length && (liveError || noDataTimeout) ? tradingViewSymbol : null}
                   onAddExchange={exchangeBlocked ? () => navigate("/settings#exchange-panel") : undefined}
                   indicatorsEnabledCount={indicators.enabledCount}
                   setMasterIndicators={indicators.setMaster}

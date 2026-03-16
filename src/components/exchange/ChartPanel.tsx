@@ -88,6 +88,7 @@ export const ChartPanel = ({
   const autoFitPendingRef = useRef(true);
   const livePriceLineRef = useRef<IPriceLine | null>(null);
   const closedCandlesRef = useRef<Set<number>>(new Set());
+  const lastSetDataSigRef = useRef("");
   const coinMenuRef = useRef<HTMLDivElement | null>(null);
   const [coinMenuOpen, setCoinMenuOpen] = useState(false);
   const [coinQuery, setCoinQuery] = useState("");
@@ -97,7 +98,6 @@ export const ChartPanel = ({
   const [sortDir, setSortDir] = useState<SortDir>("asc");
   const { selectedSymbol, tickers, accountMode, setSelectedSymbol } = useExchangeTerminalStore();
   const rawSymbol = useMemo(() => selectedSymbol.replace("/", "").toUpperCase(), [selectedSymbol]);
-  const livePrice = useLivePriceStore((s) => s.bySymbol[rawSymbol]);
   const normalizeSymbolForFilter = (symbol: string) => symbol.toUpperCase().replace(/[^A-Z0-9]/g, "");
   const isUsdmSymbol = (symbol: string) => normalizeSymbolForFilter(symbol).endsWith("USDT");
   const isCoinmSymbol = (symbol: string) => {
@@ -251,10 +251,20 @@ export const ChartPanel = ({
     };
   }, [blockedMessage]);
 
-  // ── Base candle load: setData() only when historical OHLCV changes ──
+  // ── Base candle load: setData() only when bar structure changes ──
+  // Dedup guard: skip if candle count and time boundaries haven't changed.
+  // This prevents accidental setData from any source that creates new array references.
   useEffect(() => {
     if (blockedMessage) return;
     if (!seriesRef.current || !chartRef.current) return;
+
+    const len = liveCandles.length;
+    const sig = len > 0
+      ? `${len}:${liveCandles[0].time}:${liveCandles[len - 1].time}`
+      : "";
+    if (sig === lastSetDataSigRef.current && len > 0) return;
+    lastSetDataSigRef.current = sig;
+
     try {
       seriesRef.current.setData(liveCandles);
       if (liveCandles.length && autoFitPendingRef.current && !hasUserInteractedRef.current) {
@@ -304,42 +314,53 @@ export const ChartPanel = ({
   }, [blockedMessage, liveCandleUpdate]);
 
   // ── Live price line overlay: tick-derived micro price (ghost close) ──
-  // Separate from candle data — this is visual only, does NOT mutate candle series.
-  // Updates at tick rate (~33ms batches) for real-time price tracking on right axis.
-  // Acts as "ghost close" on the forming candle: shows where close would be if candle closed now.
+  // Uses imperative zustand subscribe() to bypass React render cycle entirely.
+  // This prevents ~30 component re-renders/sec from tick updates.
+  // Updates the lightweight-charts price line directly via its API.
   useEffect(() => {
-    if (blockedMessage || !seriesRef.current) {
+    if (blockedMessage) {
       livePriceLineRef.current = null;
       return;
     }
-    if (!livePrice?.price || !Number.isFinite(livePrice.price)) {
-      if (livePriceLineRef.current && seriesRef.current) {
-        try { seriesRef.current.removePriceLine(livePriceLineRef.current); } catch { /* noop */ }
-        livePriceLineRef.current = null;
+
+    const updatePriceLine = (state: { bySymbol: Record<string, { price: number; ts: number; side?: "BUY" | "SELL"; prevPrice?: number }> }) => {
+      const series = seriesRef.current;
+      if (!series) return;
+
+      const lp = state.bySymbol[rawSymbol];
+      if (!lp?.price || !Number.isFinite(lp.price)) {
+        if (livePriceLineRef.current) {
+          try { series.removePriceLine(livePriceLineRef.current); } catch { /* noop */ }
+          livePriceLineRef.current = null;
+        }
+        return;
       }
-      return;
-    }
 
-    // Color based on uptick/downtick from previous tick
-    const color = livePrice.prevPrice != null && livePrice.prevPrice > 0
-      ? (livePrice.price >= livePrice.prevPrice ? "#2bc48a" : "#f6465d")
-      : "#F5C542";
+      const color = lp.prevPrice != null && lp.prevPrice > 0
+        ? (lp.price >= lp.prevPrice ? "#2bc48a" : "#f6465d")
+        : "#F5C542";
 
-    if (livePriceLineRef.current) {
-      // Update existing price line — no create/destroy per tick
-      livePriceLineRef.current.applyOptions({ price: livePrice.price, color });
-    } else {
-      // Create new price line on the candlestick series
-      livePriceLineRef.current = seriesRef.current.createPriceLine({
-        price: livePrice.price,
-        color,
-        lineWidth: 1,
-        lineStyle: LineStyle.Dotted,
-        axisLabelVisible: true,
-        title: "",
-      });
-    }
-  }, [blockedMessage, livePrice]);
+      if (livePriceLineRef.current) {
+        livePriceLineRef.current.applyOptions({ price: lp.price, color });
+      } else {
+        livePriceLineRef.current = series.createPriceLine({
+          price: lp.price,
+          color,
+          lineWidth: 1,
+          lineStyle: LineStyle.Dotted,
+          axisLabelVisible: true,
+          title: "",
+        });
+      }
+    };
+
+    // Apply current state immediately
+    updatePriceLine(useLivePriceStore.getState());
+
+    // Subscribe to future changes — bypasses React render cycle
+    const unsub = useLivePriceStore.subscribe(updatePriceLine);
+    return unsub;
+  }, [blockedMessage, rawSymbol]);
 
   useEffect(() => {
     if (!chartRef.current) return;
@@ -485,6 +506,7 @@ export const ChartPanel = ({
     autoFitPendingRef.current = true;
     closedCandlesRef.current = new Set();
     livePriceLineRef.current = null;
+    lastSetDataSigRef.current = ""; // force setData on next candle load
   }, [selectedSymbol]);
 
   useEffect(() => {
