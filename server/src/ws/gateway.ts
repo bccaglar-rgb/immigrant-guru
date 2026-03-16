@@ -35,7 +35,7 @@ const asExchange = (value: unknown): ExchangeName => {
 };
 const asSourceMode = (value: unknown): SourceMode => (String(value ?? "exchange").toLowerCase() === "fallback" ? "fallback" : "exchange");
 const apiKey = process.env.CG_API_KEY ?? "4f8430d3a7a14b44a16bd10f3a4dd61d";
-const WS_TICK_MS = 3000;
+const WS_TICK_MS = 800;
 const WS_MAX_CONCURRENCY = 6;
 
 const runWithConcurrency = async (jobs: Array<() => Promise<void>>, concurrency: number) => {
