@@ -201,15 +201,26 @@ export const ChartPanel = ({
       height,
       layout: { background: { type: ColorType.Solid, color: "#121316" }, textColor: "#BFC2C7" },
       grid: { vertLines: { color: "rgba(255,255,255,0.035)" }, horzLines: { color: "rgba(255,255,255,0.035)" } },
-      rightPriceScale: { borderColor: "rgba(255,255,255,0.08)" },
-      timeScale: { borderColor: "rgba(255,255,255,0.08)" },
+      rightPriceScale: {
+        borderColor: "rgba(255,255,255,0.08)",
+        autoScale: true,
+        scaleMargins: { top: 0.1, bottom: 0.08 },
+      },
+      timeScale: {
+        borderColor: "rgba(255,255,255,0.08)",
+        rightOffset: 5,
+        barSpacing: 6,
+        minBarSpacing: 2,
+      },
     });
     const series = chart.addCandlestickSeries({
       upColor: "#2bc48a",
       downColor: "#f6465d",
+      borderUpColor: "#2bc48a",
+      borderDownColor: "#f6465d",
       wickUpColor: "#2bc48a",
       wickDownColor: "#f6465d",
-      borderVisible: false,
+      borderVisible: true,
     });
     chartRef.current = chart;
     seriesRef.current = series;
@@ -268,7 +279,18 @@ export const ChartPanel = ({
     try {
       seriesRef.current.setData(liveCandles);
       if (liveCandles.length && autoFitPendingRef.current && !hasUserInteractedRef.current) {
-        chartRef.current.timeScale().fitContent();
+        const ts = chartRef.current.timeScale();
+        // Show last ~100 candles with proper spacing (Binance-style zoom).
+        // fitContent() shows ALL candles which makes 1m charts unreadably compressed.
+        const barsToShow = 100;
+        if (liveCandles.length > barsToShow) {
+          ts.setVisibleLogicalRange({
+            from: liveCandles.length - barsToShow,
+            to: liveCandles.length + 5,
+          });
+        } else {
+          ts.fitContent();
+        }
         autoFitPendingRef.current = false;
       }
     } catch {

@@ -841,7 +841,7 @@ export default function MarketDashboardPage() {
             <section className="flex flex-col gap-4 lg:flex-row">
               <div className="w-full lg:w-3/5">
                 <ChartPanel
-                  key={`chart-${selectedCoin}-${timeframe.primary}-${marketStatus.activeSource ?? "AUTO"}`}
+                  key={`chart-${selectedCoin}-${timeframe.primary}`}
                   selectedCoin={selectedCoin}
                   onCoinChange={(coin) => {
                     const normalized = normalizeBaseCoin(coin);
@@ -929,7 +929,7 @@ export default function MarketDashboardPage() {
               </div>
               <div className="w-full lg:w-2/5">
                 <AiPanel
-                  key={`ai-${selectedCoin}-${timeframe.primary}-${marketStatus.activeSource ?? "AUTO"}`}
+                  key={`ai-${selectedCoin}-${timeframe.primary}`}
                   data={normalizedState.aiPanel}
                   dataHealth={normalizedState.dataHealth}
                   advanced={resolvedAdvanced}

@@ -183,5 +183,5 @@ export const minutesBetween = (fromIso: string, toIso: string): number | null =>
   const from = Date.parse(fromIso);
   const to = Date.parse(toIso);
   if (!Number.isFinite(from) || !Number.isFinite(to) || to < from) return null;
-  return Number(((to - from) / 60000).toFixed(2));
+  return Math.round((to - from) / 60000);
 };

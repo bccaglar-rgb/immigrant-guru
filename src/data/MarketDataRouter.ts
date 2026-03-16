@@ -172,51 +172,82 @@ const useMarketDataRouterStore = create<RouterState>((set) => ({
     const base = candles.length > 24 ? candles[candles.length - 25].close : candles[0]?.close ?? close;
     const change24hPct = base > 0 ? ((close - base) / base) * 100 : 0;
     const volume24h = candles.slice(-96).reduce((sum, c) => sum + c.volume, 0);
-    set((state) => ({
-      lastUpdateAt: ts,
-      stale: false,
-      staleAgeSec: 0,
-      tickers: {
-        ...state.tickers,
-        [symbol]: {
-          sourceId: writeSource,
-          ts,
-          payload: { price: close, change24hPct, volume24h },
+    set((state) => {
+      // ── Candle dedup: reuse existing reference if data unchanged ──
+      // Without this, every WS push creates a new candle array reference which
+      // cascades through useMarketData → useMarketDashboard → full page re-render.
+      const candleKey = subKey(symbol, interval);
+      const existingCandles = state.candles[candleKey]?.payload;
+      const candlesSame =
+        existingCandles &&
+        existingCandles.length === candles.length &&
+        existingCandles.length > 0 &&
+        existingCandles[existingCandles.length - 1].close === candles[candles.length - 1].close &&
+        existingCandles[existingCandles.length - 1].time === candles[candles.length - 1].time &&
+        existingCandles[0].time === candles[0].time;
+      const stableCandles = candlesSame ? existingCandles : candles;
+
+      // ── Orderbook dedup ──
+      const existingOb = state.orderbook[symbol]?.payload;
+      const obSame =
+        existingOb &&
+        packet.orderbook &&
+        existingOb.spreadBps === packet.orderbook.spreadBps &&
+        existingOb.depthUsd === packet.orderbook.depthUsd &&
+        existingOb.imbalance === packet.orderbook.imbalance;
+      const stableOb = obSame ? existingOb : packet.orderbook;
+
+      // ── Trades dedup ──
+      const existingTr = state.trades[symbol]?.payload;
+      const trSame =
+        existingTr &&
+        packet.trades &&
+        existingTr.deltaBtc1m === packet.trades.deltaBtc1m &&
+        existingTr.volumeBtc1m === packet.trades.volumeBtc1m &&
+        existingTr.speedTpm === packet.trades.speedTpm;
+      const stableTr = trSame ? existingTr : packet.trades;
+
+      // ── Derivatives dedup ──
+      const existingDv = state.derivatives[symbol]?.payload;
+      const dvSame =
+        existingDv &&
+        packet.derivatives &&
+        existingDv.fundingRate === packet.derivatives.fundingRate &&
+        existingDv.oiValue === packet.derivatives.oiValue &&
+        existingDv.oiChange1h === packet.derivatives.oiChange1h;
+      const stableDv = dvSame ? existingDv : packet.derivatives;
+
+      // ── Ticker dedup ──
+      const existingTk = state.tickers[symbol]?.payload;
+      const tkSame = existingTk && existingTk.price === close && existingTk.change24hPct === change24hPct;
+      const stableTk = tkSame ? existingTk : { price: close, change24hPct, volume24h };
+
+      return {
+        lastUpdateAt: ts,
+        stale: false,
+        staleAgeSec: 0,
+        tickers: {
+          ...state.tickers,
+          [symbol]: { sourceId: writeSource, ts, payload: stableTk },
         },
-      },
-      candles: {
-        ...state.candles,
-        [subKey(symbol, interval)]: {
-          sourceId: writeSource,
-          ts,
-          payload: candles,
+        candles: {
+          ...state.candles,
+          [candleKey]: { sourceId: writeSource, ts, payload: stableCandles },
         },
-      },
-      orderbook: {
-        ...state.orderbook,
-        [symbol]: {
-          sourceId: writeSource,
-          ts,
-          payload: packet.orderbook,
+        orderbook: {
+          ...state.orderbook,
+          [symbol]: { sourceId: writeSource, ts, payload: stableOb },
         },
-      },
-      trades: {
-        ...state.trades,
-        [symbol]: {
-          sourceId: writeSource,
-          ts,
-          payload: packet.trades,
+        trades: {
+          ...state.trades,
+          [symbol]: { sourceId: writeSource, ts, payload: stableTr },
         },
-      },
-      derivatives: {
-        ...state.derivatives,
-        [symbol]: {
-          sourceId: writeSource,
-          ts,
-          payload: packet.derivatives,
+        derivatives: {
+          ...state.derivatives,
+          [symbol]: { sourceId: writeSource, ts, payload: stableDv },
         },
-      },
-    }));
+      };
+    });
   },
   subscribe: (sub) =>
     set((state) => ({
@@ -261,20 +292,29 @@ const evaluateAndSwitchSource = () => {
     reconnectAttempts = 0;
     currentSource = nextSource;
   }
-  const nextManager = useDataSourceManager.getState();
-  useMarketDataRouterStore.getState().setRouterStatus({
-    activeSource: nextSource,
-    sourceChip:
-      nextSource === "FALLBACK_API"
-        ? "Source: FALLBACK API"
-        : `Source: ${nextSource}`,
-    fallbackActive: nextSource === "FALLBACK_API",
-    bannerMessage:
-      nextSource === "FALLBACK_API"
-        ? "Selected exchange not connected or data stale. Using fallback API."
-        : nextManager.bannerMessage,
-    publicSourceOverride: override,
-  });
+  // Only update router status if values actually changed —
+  // avoids triggering useShallow selectors on every WS message.
+  const state = useMarketDataRouterStore.getState();
+  const nextFallbackActive = nextSource === "FALLBACK_API";
+  const nextChip = nextFallbackActive ? "Source: FALLBACK API" : `Source: ${nextSource}`;
+  const nextBanner = nextFallbackActive
+    ? "Selected exchange not connected or data stale. Using fallback API."
+    : useDataSourceManager.getState().bannerMessage;
+  if (
+    state.activeSource !== nextSource ||
+    state.sourceChip !== nextChip ||
+    state.fallbackActive !== nextFallbackActive ||
+    state.bannerMessage !== nextBanner ||
+    state.publicSourceOverride !== (override ?? null)
+  ) {
+    state.setRouterStatus({
+      activeSource: nextSource,
+      sourceChip: nextChip,
+      fallbackActive: nextFallbackActive,
+      bannerMessage: nextBanner,
+      publicSourceOverride: override,
+    });
+  }
   return nextSource;
 };
 
@@ -573,12 +613,14 @@ const startRouter = () => {
   staleTimer = window.setInterval(() => {
     const state = useMarketDataRouterStore.getState();
     const ageMs = state.lastUpdateAt ? Date.now() - state.lastUpdateAt : 99_999;
-    const stale = ageMs > ROUTER_STALE_THRESHOLD_MS;
-    state.setRouterStatus({
-      stale,
-      staleAgeSec: Math.max(0, Math.floor(ageMs / 1000)),
-    });
-    if (stale && state.activeSource !== "FALLBACK_API") {
+    const nextStale = ageMs > ROUTER_STALE_THRESHOLD_MS;
+    const nextStaleAgeSec = Math.max(0, Math.floor(ageMs / 1000));
+    // Only write to store when stale status or staleAgeSec actually changed —
+    // avoids triggering useShallow selectors (and the full render cascade) every 3s.
+    if (nextStale !== state.stale || nextStaleAgeSec !== state.staleAgeSec) {
+      state.setRouterStatus({ stale: nextStale, staleAgeSec: nextStaleAgeSec });
+    }
+    if (nextStale && state.activeSource !== "FALLBACK_API") {
       useDataSourceManager.getState().setHealth(state.activeSource, { stale: true, reason: "stale >25s" });
       evaluateAndSwitchSource();
       sendWsSubscriptions();

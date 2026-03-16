@@ -1,4 +1,5 @@
 import { useEffect, useMemo } from "react";
+import { useShallow } from "zustand/react/shallow";
 import { useExchangeTerminalStore } from "./useExchangeTerminalStore";
 import { MarketDataRouter } from "../data/MarketDataRouter";
 import { useDataSourceManager } from "../data/DataSourceManager";
@@ -76,20 +77,25 @@ export const useMarketData = ({
     };
   }, [disabled, symbol, interval, lookback]);
 
-  const store = MarketDataRouter.useStore((state) => ({
-    activeSource: state.activeSource,
-    sourceChip: state.sourceChip,
-    fallbackActive: state.fallbackActive,
-    bannerMessage: state.bannerMessage,
-    stale: state.stale,
-    staleAgeSec: state.staleAgeSec,
-    latencyMs: state.latencyMs,
-    ticker: state.tickers[symbol]?.payload,
-    candles: state.candles[`${symbol}:${interval}`]?.payload,
-    orderbook: state.orderbook[symbol]?.payload,
-    trades: state.trades[symbol]?.payload,
-    derivatives: state.derivatives[symbol]?.payload,
-  }));
+  // ── Shallow-equality selector: prevents re-render when field values haven't changed ──
+  // Without useShallow, the object literal `{}` is always a new reference and React
+  // re-renders on every zustand state tick (staleTimer every 3s, every WS push, etc.).
+  const store = MarketDataRouter.useStore(
+    useShallow((state) => ({
+      activeSource: state.activeSource,
+      sourceChip: state.sourceChip,
+      fallbackActive: state.fallbackActive,
+      bannerMessage: state.bannerMessage,
+      stale: state.stale,
+      staleAgeSec: state.staleAgeSec,
+      latencyMs: state.latencyMs,
+      ticker: state.tickers[symbol]?.payload,
+      candles: state.candles[`${symbol}:${interval}`]?.payload,
+      orderbook: state.orderbook[symbol]?.payload,
+      trades: state.trades[symbol]?.payload,
+      derivatives: state.derivatives[symbol]?.payload,
+    })),
+  );
 
   return useMemo(
     () => ({
@@ -100,15 +106,17 @@ export const useMarketData = ({
 };
 
 export const useMarketDataStatus = () =>
-  MarketDataRouter.useStore((state) => ({
-    activeSource: state.activeSource,
-    sourceChip: state.sourceChip,
-    fallbackActive: state.fallbackActive,
-    bannerMessage: state.bannerMessage,
-    stale: state.stale,
-    staleAgeSec: state.staleAgeSec,
-    latencyMs: state.latencyMs,
-  }));
+  MarketDataRouter.useStore(
+    useShallow((state) => ({
+      activeSource: state.activeSource,
+      sourceChip: state.sourceChip,
+      fallbackActive: state.fallbackActive,
+      bannerMessage: state.bannerMessage,
+      stale: state.stale,
+      staleAgeSec: state.staleAgeSec,
+      latencyMs: state.latencyMs,
+    })),
+  );
 
 export const usePageSourceChip = () => {
   const status = useMarketDataStatus();

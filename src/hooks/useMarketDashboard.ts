@@ -123,8 +123,15 @@ export const useMarketDashboard = (
     };
   }, [symbol]);
 
+  // ── liveState: assembled market snapshot for intelligence engine ──
+  // IMPORTANT: staleAgeSec is intentionally NOT a dependency here.
+  // It changes every 3s via the stale timer but carries no data that affects
+  // the intelligence snapshot. Including it caused the entire dashboard to
+  // recompute (buildBitriumIntelligenceSnapshot + normalizeDashboardState +
+  // all TileCards) every 3 seconds — the root cause of the "data flickering".
+  // lastSeen uses a fixed Date.now() that only changes when actual market data changes.
   const liveState = useMemo(() => {
-    const seenAt = Date.now() - market.staleAgeSec * 1000;
+    const seenAt = Date.now();
     const hasRawFeed =
       Boolean(market.candles?.length) ||
       Boolean(market.orderbook) ||
@@ -165,7 +172,6 @@ export const useMarketDashboard = (
     market.candles,
     market.derivatives,
     market.orderbook,
-    market.staleAgeSec,
     market.trades,
     market.latencyMs,
     onChain,
