@@ -652,6 +652,7 @@ export default function TradeIdeasPage() {
   }, [aiScansByModule, effectiveAiModules, isAiTradeIdeasPage, reportBase]);
 
   // Per-mode report stats — fetched from API for consistency with detail report page
+  const [reportTimeRange, setReportTimeRange] = useState<string>("24h");
   const [reportStatsByMode, setReportStatsByMode] = useState<Record<string, {
     totalScan: number; highScoreScan: number; totalIdeas: number; active: number; resolved: number;
     successful: number; failed: number; entryMissed: number; successRate: number;
@@ -661,7 +662,7 @@ export default function TradeIdeasPage() {
     let mounted = true;
     const fetchReportStats = async () => {
       try {
-        const res = await fetch("/api/trade-ideas/report-stats");
+        const res = await fetch(`/api/trade-ideas/report-stats?range=${reportTimeRange}`);
         if (!res.ok || !mounted) return;
         const body = await res.json() as {
           ok?: boolean;
@@ -692,7 +693,7 @@ export default function TradeIdeasPage() {
     void fetchReportStats();
     const timer = window.setInterval(() => void fetchReportStats(), 10_000);
     return () => { mounted = false; window.clearInterval(timer); };
-  }, [isAiTradeIdeasPage]);
+  }, [isAiTradeIdeasPage, reportTimeRange]);
 
   const sourceLabelFromDiagnostics = (sourceKey: string): string => {
     const value = String(sourceKey ?? "").trim().toUpperCase();
@@ -848,13 +849,29 @@ export default function TradeIdeasPage() {
               <div className="rounded-xl border border-white/10 bg-[radial-gradient(circle_at_top_right,rgba(245,197,66,0.08),transparent_45%),linear-gradient(180deg,#101216,#0D0F13)] px-3 py-2.5 shadow-[0_12px_24px_rgba(0,0,0,0.34)]">
                 <div className="flex items-center justify-between gap-2">
                   <p className="text-sm font-semibold text-white">Trade Ideas Report</p>
-                  <button
-                    type="button"
-                    onClick={() => navigate(isAiTradeIdeasPage ? "/ai-trade-ideas/report" : "/trade-ideas/report")}
-                    className="shrink-0 rounded-lg border border-white/10 bg-[#11151c] px-2.5 py-1 text-[11px] text-[#b7bec9] transition hover:text-white"
-                  >
-                    Open detailed report
-                  </button>
+                  <div className="flex items-center gap-1.5">
+                    {!isAiTradeIdeasPage && (["1h", "4h", "24h", "7d"] as const).map((range) => (
+                      <button
+                        key={range}
+                        type="button"
+                        onClick={() => setReportTimeRange(range)}
+                        className={`rounded-md px-2 py-0.5 text-[11px] font-medium transition ${
+                          reportTimeRange === range
+                            ? "bg-[#F5C542]/20 text-[#F5C542] border border-[#F5C542]/40"
+                            : "text-[#6B6F76] hover:text-[#b7bec9] border border-transparent"
+                        }`}
+                      >
+                        {range}
+                      </button>
+                    ))}
+                    <button
+                      type="button"
+                      onClick={() => navigate(isAiTradeIdeasPage ? "/ai-trade-ideas/report" : "/trade-ideas/report")}
+                      className="shrink-0 rounded-lg border border-white/10 bg-[#11151c] px-2.5 py-1 text-[11px] text-[#b7bec9] transition hover:text-white"
+                    >
+                      Open detailed report
+                    </button>
+                  </div>
                 </div>
                 {isAiTradeIdeasPage ? (
                   <div className="mt-2 grid grid-cols-2 gap-1.5 text-[11px] sm:grid-cols-4">
@@ -920,11 +937,11 @@ export default function TradeIdeasPage() {
                     </tbody>
                   </table>
                 )}
-                <p className="mt-1 text-center text-[11px] text-[#8A8F98]">
-                  {isAiTradeIdeasPage
-                    ? "AI report tracks only ideas scoring 60% and above."
-                    : "Since startup · Ideas scoring per mode threshold."}
-                </p>
+                {isAiTradeIdeasPage && (
+                  <p className="mt-1 text-center text-[11px] text-[#8A8F98]">
+                    AI report tracks only ideas scoring 60% and above.
+                  </p>
+                )}
               </div>
 	            </div>
 

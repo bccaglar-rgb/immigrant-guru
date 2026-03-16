@@ -128,12 +128,23 @@ export const registerTradeIdeasRoutes = (app: Express, store: TradeIdeaStore, sy
   });
 
   // ── Report stats — single endpoint returning consistent stats for ALL modes ──
-  app.get("/api/trade-ideas/report-stats", async (_req, res) => {
+  app.get("/api/trade-ideas/report-stats", async (req, res) => {
     const ALL_MODES = ["FLOW", "AGGRESSIVE", "BALANCED", "CAPITAL_GUARD"] as const;
     const cache = systemScanner?.getCache();
     const totalScansByMode = cache?.totalScansByMode ?? {};
     const highScoreByMode = cache?.highScoreByMode ?? {};
     const startedAt = cache?.startedAt ?? 0;
+
+    // Time range filter: 1h, 4h, 24h, 7d (default: no filter = all)
+    const RANGE_MS: Record<string, number> = {
+      "1h": 60 * 60 * 1000,
+      "4h": 4 * 60 * 60 * 1000,
+      "24h": 24 * 60 * 60 * 1000,
+      "7d": 7 * 24 * 60 * 60 * 1000,
+    };
+    const rangeParam = String(req.query?.range ?? "");
+    const rangeMs = RANGE_MS[rangeParam] ?? 0;
+    const cutoffMs = rangeMs > 0 ? Date.now() - rangeMs : 0;
 
     // Report includes ideas above each mode's TRADE threshold
     const REPORT_MIN_SCORE: Record<string, number> = {
@@ -146,7 +157,10 @@ export const registerTradeIdeasRoutes = (app: Express, store: TradeIdeaStore, sy
     // Only count system-scanner ideas in the report — demo-user ideas are excluded
     // so that totalIdeas never exceeds totalScans (both are scanner-scoped).
     const allIdeas = await store.listIdeas({ userId: "system-scanner", limit: 5000 });
-    const sessionIdeas = allIdeas;
+    // Apply time range filter if provided
+    const sessionIdeas = cutoffMs > 0
+      ? allIdeas.filter((i) => Date.parse(i.created_at) >= cutoffMs)
+      : allIdeas;
 
     const statsByMode: Record<string, {
       totalScan: number; highScoreScan: number; totalIdeas: number; active: number; resolved: number;
