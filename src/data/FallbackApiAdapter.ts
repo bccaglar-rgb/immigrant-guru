@@ -21,6 +21,7 @@ export interface FallbackLivePayload {
     topBid?: number | null;
     topAsk?: number | null;
     midPrice?: number | null;
+    lastPrice?: number | null;
   };
   orderbookLevels?: {
     bids: Array<{ price: number; amount: number; total: number }>;

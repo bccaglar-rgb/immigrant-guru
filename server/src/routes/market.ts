@@ -1693,7 +1693,14 @@ const fetchBinanceLive = async (
     .slice(0, safeBookLimit)
     .map((row) => parseBinanceBookRow(row))
     .filter((row): row is [string, string] => Boolean(row));
-  const orderbook = buildOrderbookMetrics(bids, asks);
+  const orderbookBase = buildOrderbookMetrics(bids, asks);
+  // Prefer last trade price over midPrice for accurate "Live Price" display
+  const hubLastPrice = parsedTrades.length > 0
+    ? parsedTrades[parsedTrades.length - 1].price
+    : (hubRow as { lastTradePrice?: number | null } | null)?.lastTradePrice
+      ?? (hubRow as { price?: number } | null)?.price
+      ?? null;
+  const orderbook = { ...orderbookBase, lastPrice: hubLastPrice };
   const bidLevels = normalizeBookLevels(bids, "bid", safeBookLimit, bookStep);
   const askLevels = normalizeBookLevels(asks, "ask", safeBookLimit, bookStep);
 
@@ -1798,19 +1805,20 @@ const fetchBybitLive = async (
 
   const bids = (depthRes.result?.b ?? []).slice(0, Math.max(10, Math.min(100, bookLimit)));
   const asks = (depthRes.result?.a ?? []).slice(0, Math.max(10, Math.min(100, bookLimit)));
-  const orderbook = buildOrderbookMetrics(bids, asks);
+  const orderbookBase = buildOrderbookMetrics(bids, asks);
   const bidLevels = normalizeBookLevels(bids, "bid", bookLimit, bookStep);
   const askLevels = normalizeBookLevels(asks, "ask", bookLimit, bookStep);
 
+  const bybitTradeList = tradesRes.result?.list ?? [];
   const tradesMetrics = buildTradesMetrics(
-    (tradesRes.result?.list ?? []).map((t) => ({
+    bybitTradeList.map((t) => ({
       ts: Number(t.T),
       qty: Number(t.v),
       side: t.S === "Buy" ? 1 : -1,
     })),
   );
   const recentTrades = normalizeTradeTape(
-    (tradesRes.result?.list ?? []).map((t) => ({
+    bybitTradeList.map((t) => ({
       ts: Number(t.T),
       price: Number((t as Record<string, string>).p ?? 0),
       amount: Number(t.v),
@@ -1819,6 +1827,8 @@ const fetchBybitLive = async (
   );
 
   const ticker = tickerRes.result?.list?.[0] ?? {};
+  const bybitLastPrice = Number((ticker as Record<string, string>).lastPrice ?? 0) || null;
+  const orderbook = { ...orderbookBase, lastPrice: bybitLastPrice };
   const liquidationUsd = await fetchLiquidationUsd(exchange, symbol, apiKey);
 
   const payload = {
@@ -1884,25 +1894,28 @@ const fetchOkxLive = async (
   const book = booksRes.data?.[0] ?? {};
   const bids = (book.bids ?? []).slice(0, Math.max(10, Math.min(100, bookLimit)));
   const asks = (book.asks ?? []).slice(0, Math.max(10, Math.min(100, bookLimit)));
-  const orderbook = buildOrderbookMetrics(bids, asks);
+  const orderbookBase = buildOrderbookMetrics(bids, asks);
   const bidLevels = normalizeBookLevels(bids, "bid", bookLimit, bookStep);
   const askLevels = normalizeBookLevels(asks, "ask", bookLimit, bookStep);
 
+  const okxTradeList = tradesRes.data ?? [];
   const tradesMetrics = buildTradesMetrics(
-    (tradesRes.data ?? []).map((t) => ({
+    okxTradeList.map((t) => ({
       ts: Number(t.ts),
       qty: Number(t.sz),
       side: t.side === "buy" ? 1 : -1,
     })),
   );
   const recentTrades = normalizeTradeTape(
-    (tradesRes.data ?? []).map((t) => ({
+    okxTradeList.map((t) => ({
       ts: Number(t.ts),
       price: Number(t.px),
       amount: Number(t.sz),
       side: t.side === "buy" ? "BUY" : "SELL",
     })),
   );
+  const okxLastPrice = okxTradeList.length > 0 ? Number(okxTradeList[0].px) || null : null;
+  const orderbook = { ...orderbookBase, lastPrice: okxLastPrice };
 
   const liquidationUsd = await fetchLiquidationUsd(exchange, symbol, apiKey);
   const funding = Number(fundingRes.data?.[0]?.fundingRate ?? 0);
@@ -2016,7 +2029,7 @@ const fetchGateLive = async (
     .slice(0, safeBookLimit)
     .map((row) => parseGateBookRow(row))
     .filter((row): row is [string, string] => Boolean(row));
-  const orderbook = buildOrderbookMetrics(bidRows, askRows);
+  const orderbookBase = buildOrderbookMetrics(bidRows, askRows);
   const bidLevels = normalizeBookLevels(bidRows, "bid", safeBookLimit, bookStep);
   const askLevels = normalizeBookLevels(askRows, "ask", safeBookLimit, bookStep);
   const parsedTrades = wsTrades
@@ -2043,6 +2056,12 @@ const fetchGateLive = async (
     })),
   );
 
+  const gateLastPrice = parsedTrades.length > 0
+    ? parsedTrades[parsedTrades.length - 1].price
+    : (hubRow as { lastTradePrice?: number | null } | null)?.lastTradePrice
+      ?? (hubRow as { price?: number } | null)?.price
+      ?? null;
+  const orderbook = { ...orderbookBase, lastPrice: gateLastPrice };
   const liquidationUsd = await fetchLiquidationUsd(exchange, normalizedSymbol, apiKey);
   const contractRes = {
     mark_price: hubRow?.markPrice ?? undefined,

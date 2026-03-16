@@ -382,18 +382,21 @@ export default function ExchangeTerminalPage() {
   const liveCandles = useMemo<CandlestickData[]>(
     () => {
       const normalized = normalizeCandlesForChart(chartBundle?.ohlcv);
+      // Prefer lastPrice (actual last traded price) over midPrice (orderbook mid)
+      const lp = Number(chartBundle?.orderbook?.lastPrice ?? NaN);
       const mid = Number(chartBundle?.orderbook?.midPrice ?? NaN);
-      if (!normalized.length || !Number.isFinite(mid) || mid <= 0) return normalized;
+      const price = Number.isFinite(lp) && lp > 0 ? lp : mid;
+      if (!normalized.length || !Number.isFinite(price) || price <= 0) return normalized;
       const last = normalized[normalized.length - 1];
       normalized[normalized.length - 1] = {
         ...last,
-        high: Math.max(last.high, mid),
-        low: Math.min(last.low, mid),
-        close: mid,
+        high: Math.max(last.high, price),
+        low: Math.min(last.low, price),
+        close: price,
       };
       return normalized;
     },
-    [chartBundle?.ohlcv, chartBundle?.orderbook?.midPrice],
+    [chartBundle?.ohlcv, chartBundle?.orderbook?.midPrice, chartBundle?.orderbook?.lastPrice],
   );
 
   useEffect(() => {
