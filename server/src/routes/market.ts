@@ -3786,6 +3786,43 @@ export const registerMarketRoutes = (
         }
       }
 
+      // ── Multi-mode confluence bonus — all modes ──
+      // When OTHER modes also rate the coin highly, the current mode gets a bonus.
+      // Only in borderline zone: [tradeThreshold - 15, tradeThreshold + 5)
+      {
+        const confluenceTradeThreshold: Record<ScoringMode, number> = {
+          FLOW: 55, AGGRESSIVE: 60, BALANCED: 65, CAPITAL_GUARD: 68,
+        };
+        const confluenceWatchThreshold: Record<ScoringMode, number> = {
+          FLOW: 35, AGGRESSIVE: 40, BALANCED: 45, CAPITAL_GUARD: 48,
+        };
+        for (const targetMode of SCORING_MODES) {
+          const tradeTh = confluenceTradeThreshold[targetMode];
+          const watchTh = confluenceWatchThreshold[targetMode];
+          const current = modeBreakdown[targetMode].final;
+          // Borderline zone: [tradeTh - 15, tradeTh + 5)
+          if (current < tradeTh - 15 || current >= tradeTh + 5) continue;
+          // Count how many OTHER modes are at their WATCH threshold or above
+          let agreeingModes = 0;
+          for (const otherMode of SCORING_MODES) {
+            if (otherMode === targetMode) continue;
+            if (Math.round(modeBreakdown[otherMode].final) >= confluenceWatchThreshold[otherMode]) {
+              agreeingModes++;
+            }
+          }
+          const bonus = agreeingModes >= 3 ? 5 : agreeingModes >= 2 ? 3 : 0;
+          if (bonus > 0) {
+            const boosted = clamp(current + bonus, 0, 100);
+            modeBreakdown[targetMode] = {
+              ...modeBreakdown[targetMode],
+              final: Number(boosted.toFixed(2)),
+              decision: Math.round(boosted) >= tradeTh ? "TRADE"
+                : Math.round(boosted) >= watchTh ? "WATCH" : "NO_TRADE",
+            };
+          }
+        }
+      }
+
       const modeScores = Object.fromEntries(
         SCORING_MODES.map((mode) => [mode, Number((modeBreakdown[mode].final / 100).toFixed(4))]),
       ) as Record<ScoringMode, number>;
