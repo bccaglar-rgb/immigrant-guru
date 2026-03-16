@@ -695,6 +695,25 @@ const makeModeBreakdown = (
     cascadeRisk,
     stressLevel,
     entryWindow,
+    // 4-layer institutional model signals
+    orderbookImbalance,
+    oiChangeStrength,
+    fundingBias,
+    fundingRatePct,
+    oiChangePct,
+    spotVsDerivativesPressure,
+    volumeSpike,
+    whaleActivity,
+    exchangeFlow,
+    relativeStrength,
+    liquidationPoolBias,
+    rsiState,
+    atrRegime,
+    liquidityDensity,
+    suddenMoveRisk,
+    impulseReadiness,
+    dxyTrend,
+    nasdaqTrend,
   });
   const gatingFlags = [
     ...(out.gates.safety === "BLOCK" ? ["SAFETY_BLOCK"] : []),
@@ -710,7 +729,7 @@ const makeModeBreakdown = (
     edgeAdj: Number.isFinite(consensusCore.edgeNetR) ? consensusCore.edgeNetR : 0,
     riskAdj: Number.isFinite(consensusCore.riskAdjustment) ? consensusCore.riskAdjustment : 0,
     gatingFlags,
-    decision: Math.round(out.finalScore) >= 68 && out.gates.data === "PASS" && out.gates.safety === "PASS" ? "TRADE" : Math.round(out.finalScore) >= 48 ? "WATCH" : "NO_TRADE",
+    decision: Math.round(out.finalScore) >= 65 && out.gates.data === "PASS" && out.gates.safety === "PASS" ? "TRADE" : Math.round(out.finalScore) >= 55 ? "WATCH" : "NO_TRADE",
   };
 };
 
@@ -3763,13 +3782,13 @@ export const registerMarketRoutes = (
           FLOW: 55,
           AGGRESSIVE: 60,
           BALANCED: 65,
-          CAPITAL_GUARD: 68,
+          CAPITAL_GUARD: 65,
         };
         const modeWatchThreshold: Record<ScoringMode, number> = {
           FLOW: 35,
           AGGRESSIVE: 40,
           BALANCED: 45,
-          CAPITAL_GUARD: 48,
+          CAPITAL_GUARD: 55,
         };
         for (const mode of SCORING_MODES) {
           const boost = srBoostBase * modeMultiplier[mode];
@@ -3791,10 +3810,10 @@ export const registerMarketRoutes = (
       // Only in borderline zone: [tradeThreshold - 15, tradeThreshold + 5)
       {
         const confluenceTradeThreshold: Record<ScoringMode, number> = {
-          FLOW: 55, AGGRESSIVE: 60, BALANCED: 65, CAPITAL_GUARD: 68,
+          FLOW: 55, AGGRESSIVE: 60, BALANCED: 65, CAPITAL_GUARD: 65,
         };
         const confluenceWatchThreshold: Record<ScoringMode, number> = {
-          FLOW: 35, AGGRESSIVE: 40, BALANCED: 45, CAPITAL_GUARD: 48,
+          FLOW: 35, AGGRESSIVE: 40, BALANCED: 45, CAPITAL_GUARD: 55,
         };
         for (const targetMode of SCORING_MODES) {
           const tradeTh = confluenceTradeThreshold[targetMode];
