@@ -1,8 +1,27 @@
 /**
- * BALANCED consensus — independent copy of Capital Guard scoring logic.
- * Same weights, gates, penalties, A+ floor, and uplift.
- * Changes to capitalGuardConsensus.ts will NOT affect this file.
+ * BALANCED consensus — Crypto-optimized 6-component scoring model
+ *
+ * Formula:
+ *   BalancedTradeScore = 0.32*Opp + 0.22*Dir + 0.18*Exec + 0.14*Liq + 0.08*Struct + 0.06*RS - RiskPenalty
+ *
+ * Sub-score guardrails (any failing blocks TRADE):
+ *   Opp >= 70, Dir >= 56, Exec >= 58, Liq >= 60, Structure >= 55
+ *
+ * Decision levels:
+ *   85+    Full conviction TRADE    (sizeHint 1.00)
+ *   78-84  High TRADE               (sizeHint 0.90)
+ *   72-77  Normal TRADE             (sizeHint 0.70)
+ *   64-71  Small size TRADE         (sizeHint 0.40)
+ *   48-63  WATCH                    (sizeHint 0.00)
+ *   <48    NO_TRADE                 (sizeHint 0.00)
+ *
+ * Caps:
+ *   Direction uncertain (Dir < 70) → max 82
+ *   Hard no-trade (stress+cascade+poor depth) → max 48
+ *   Execution combo penalty capped at -4
  */
+
+// ── Type aliases ─────────────────────────────────────────────
 
 export type Regime = "TREND" | "RANGE" | "MIXED" | "UNKNOWN";
 export type TrendStrength = "LOW" | "MID" | "HIGH" | "UNKNOWN";
@@ -22,6 +41,23 @@ export type EntryQuality = "BAD" | "MID" | "GOOD" | "UNKNOWN";
 export type ConflictLevel = "LOW" | "MID" | "HIGH" | "UNKNOWN";
 export type FeedHealthStatus = "healthy" | "degraded" | "down";
 
+// 6-component model signal types
+export type OrderbookImbalance = "BUY" | "SELL" | "NEUTRAL";
+export type OiChangeStrength = "LOW" | "MID" | "HIGH";
+export type FundingBias = "BULLISH" | "BEARISH" | "NEUTRAL" | "EXTREME";
+export type SpotVsDerivativesPressure = "SPOT_DOM" | "DERIV_DOM" | "BALANCED";
+export type BinaryToggle = "ON" | "OFF" | "UNKNOWN";
+export type WhaleActivity = "ACCUMULATION" | "DISTRIBUTION" | "NEUTRAL";
+export type ExchangeFlow = "INFLOW" | "OUTFLOW" | "NEUTRAL";
+export type RelativeStrength = "STRONG" | "WEAK" | "NEUTRAL";
+export type LiquidationPoolBias = "UP" | "DOWN" | "MIXED" | "UNKNOWN";
+export type RsiState = "OVERSOLD" | "OVERBOUGHT" | "NEUTRAL" | "UNKNOWN";
+export type AtrRegime = "LOW" | "MID" | "HIGH" | "UNKNOWN";
+export type LiquidityDensity = "LOW" | "MID" | "HIGH" | "UNKNOWN";
+export type MacroTrend = "UP" | "DOWN" | "FLAT" | "UNKNOWN";
+
+// ── Data health ──────────────────────────────────────────────
+
 export interface BalancedDataHealth {
   staleFeed: boolean;
   missingFields: number;
@@ -36,12 +72,16 @@ export interface BalancedDataHealth {
   };
 }
 
+// ── Input ────────────────────────────────────────────────────
+
 export interface BalancedConsensusInput {
+  // Component scores from AI panel (0-100)
   structureScore?: number;
   liquidityScore?: number;
   positioningScore?: number;
   executionScore?: number;
 
+  // Market structure & trends
   regime?: Regime;
   trendStrength?: TrendStrength;
   emaAlignment?: EmaAlignment;
@@ -49,18 +89,24 @@ export interface BalancedConsensusInput {
   structureAge?: StructureAge;
   marketSpeed?: MarketSpeed;
   compression?: Compression;
+
+  // Orderbook & liquidity risk
   spoofRisk?: TernaryRisk;
   spreadRegime?: SpreadRegime;
   depthQuality?: DepthQuality;
+
+  // Risk factors
   crowdingRisk?: TernaryRisk;
   cascadeRisk?: TernaryRisk;
   stressLevel?: TernaryRisk;
   entryWindow?: EntryWindow;
 
+  // Execution parameters
   pFill?: number;
   capacity?: number;
   slippageLevel?: SlippageLevel;
 
+  // Edge & win rate
   eNetR?: number;
   riskAdjEdgeR?: number;
   pWin?: number;
@@ -72,12 +118,43 @@ export interface BalancedConsensusInput {
   rrPotential?: RrPotential;
   entryQuality?: EntryQuality;
 
+  // Model agreement
   alignedCount?: number;
   totalModels?: number;
   conflictLevel?: ConflictLevel;
 
+  // Data health
   dataHealth: BalancedDataHealth;
+
+  // 6-component model signals
+  orderbookImbalance?: OrderbookImbalance;
+  oiChangeStrength?: OiChangeStrength;
+  fundingBias?: FundingBias;
+  fundingRatePct?: number | null;
+  oiChangePct?: number | null;
+  spotVsDerivativesPressure?: SpotVsDerivativesPressure;
+  volumeSpike?: BinaryToggle;
+  whaleActivity?: WhaleActivity;
+  exchangeFlow?: ExchangeFlow;
+  relativeStrength?: RelativeStrength;
+  liquidationPoolBias?: LiquidationPoolBias;
+  rsiState?: RsiState;
+  atrRegime?: AtrRegime;
+  liquidityDensity?: LiquidityDensity;
+  suddenMoveRisk?: TernaryRisk;
+  impulseReadiness?: TernaryRisk;
+  dxyTrend?: MacroTrend;
+  nasdaqTrend?: MacroTrend;
 }
+
+// ── Component result type ────────────────────────────────────
+
+interface ComponentResult {
+  score: number;
+  breakdown: Record<string, number>;
+}
+
+// ── Output ───────────────────────────────────────────────────
 
 export interface BalancedConsensusOutput {
   mode: "BALANCED";
@@ -116,25 +193,37 @@ export interface BalancedConsensusOutput {
       penaltyRate: number;
     };
     floorsApplied: boolean;
+    layers: {
+      opportunity: ComponentResult;
+      direction: ComponentResult;
+      execution: ComponentResult;
+      liquidity: ComponentResult;
+      structure: ComponentResult;
+      relativeStrength: ComponentResult;
+      riskPenalty: { total: number; breakdown: Record<string, number> };
+      guardrails: {
+        oppPass: boolean;
+        dirPass: boolean;
+        execPass: boolean;
+        liqPass: boolean;
+        structPass: boolean;
+        allPass: boolean;
+      };
+      tradeScore: number;
+    };
   };
 }
+
+// ── Utility functions ────────────────────────────────────────
 
 type ReasonEntry = { impact: number; text: string };
 
 export const clamp = (x: number, min: number, max: number): number => Math.max(min, Math.min(max, x));
-
 export const roundTo2 = (x: number): number => Math.round(x * 100) / 100;
-
 export const score01 = (score: number): number => clamp(score / 100, 0, 1);
-
 export const safeNumber = (value: unknown, fallback: number): number => {
   const n = Number(value);
   return Number.isFinite(n) ? n : fallback;
-};
-
-const mean = (values: number[]): number => {
-  if (!values.length) return 0;
-  return values.reduce((sum, v) => sum + v, 0) / values.length;
 };
 
 const lerpRange = (x: number, x1: number, x2: number, y1: number, y2: number): number => {
@@ -151,125 +240,6 @@ export const normalizeBalancedRiskAdjEdge = (riskAdjEdgeR: number): number => {
   return 1;
 };
 
-const spreadMultiplier = (spreadRegime: SpreadRegime | undefined): number => {
-  if (spreadRegime === "TIGHT") return 1.0;
-  if (spreadRegime === "MID") return 0.95;
-  if (spreadRegime === "WIDE") return 0.86;
-  return 0.93;
-};
-
-const depthMultiplier = (depth: DepthQuality | undefined): number => {
-  if (depth === "GOOD") return 1.0;
-  if (depth === "MID") return 0.94;
-  if (depth === "POOR") return 0.82;
-  return 0.91;
-};
-
-const spoofMultiplier = (spoofRisk: TernaryRisk | undefined): number => {
-  if (spoofRisk === "LOW") return 1.0;
-  if (spoofRisk === "MID") return 0.95;
-  if (spoofRisk === "HIGH") return 0.86;
-  return 0.93;
-};
-
-const slippageMultiplier = (slippage: SlippageLevel | undefined): number => {
-  if (slippage === "LOW") return 1.0;
-  if (slippage === "MED") return 0.95;
-  if (slippage === "HIGH") return 0.88;
-  return 0.93;
-};
-
-const agreementConflictMultiplier = (conflict: ConflictLevel | undefined): number => {
-  if (conflict === "LOW") return 1.0;
-  if (conflict === "MID") return 0.95;
-  if (conflict === "HIGH") return 0.86;
-  return 0.93;
-};
-
-const remStressMultiplier = (stress: TernaryRisk | undefined): number => {
-  if (stress === "LOW") return 1.0;
-  if (stress === "MID") return 0.94;
-  if (stress === "HIGH") return 0.84;
-  return 0.94;
-};
-
-const remCrowdingMultiplier = (crowding: TernaryRisk | undefined): number => {
-  if (crowding === "LOW") return 1.0;
-  if (crowding === "MID") return 0.97;
-  if (crowding === "HIGH") return 0.90;
-  return 0.97;
-};
-
-const remCascadeMultiplier = (cascade: TernaryRisk | undefined): number => {
-  if (cascade === "LOW") return 1.0;
-  if (cascade === "MID") return 0.96;
-  if (cascade === "HIGH") return 0.88;
-  return 0.96;
-};
-
-const entryModifier = (entryWindow: EntryWindow | undefined): number => {
-  if (entryWindow === "OPEN") return 1.0;
-  if (entryWindow === "CLOSED") return 0.9;
-  return 0.95;
-};
-
-const regimeModifier = (
-  regime: Regime | undefined,
-  compression: Compression | undefined,
-  marketSpeed: MarketSpeed | undefined,
-): number => {
-  let modifier = 1.0;
-  if (regime === "RANGE" && compression === "OFF") modifier = 0.95;
-  if (regime === "TREND" && (marketSpeed === "NORMAL" || marketSpeed === "FAST")) modifier = 1.02;
-  return clamp(modifier, 0.9, 1.05);
-};
-
-const computeStructureBoost01 = (
-  regime: Regime | undefined,
-  trendStrength: TrendStrength | undefined,
-  emaAlignment: EmaAlignment | undefined,
-  vwapPosition: VwapPosition | undefined,
-): number => {
-  let boost = 0;
-  if (regime === "TREND" && trendStrength === "HIGH") boost += 0.05;
-  const alignmentKnown = emaAlignment !== "UNKNOWN" && vwapPosition !== "UNKNOWN";
-  const alignedBull = emaAlignment === "BULL" && vwapPosition === "ABOVE";
-  const alignedBear = emaAlignment === "BEAR" && vwapPosition === "BELOW";
-  if (alignmentKnown && (alignedBull || alignedBear)) boost += 0.03;
-  return clamp(boost, 0, 0.1);
-};
-
-const latencyPenaltyRate = (latencyMs: number): number => {
-  void latencyMs;
-  return 0;
-};
-
-const executionWeaknessPenaltyRate = (
-  pFill: number,
-  slippage: SlippageLevel | undefined,
-  spoofRisk: TernaryRisk | undefined,
-): number => {
-  let penalty = 0;
-  if (pFill < 0.35) penalty += 0.1;
-  else if (pFill < 0.5) penalty += 0.06;
-  if (slippage === "HIGH") penalty += 0.08;
-  if (spoofRisk === "HIGH") penalty += 0.06;
-  return penalty;
-};
-
-const degradedFeedsPenaltyRate = (feeds: BalancedDataHealth["feeds"]): number => {
-  const keys: Array<keyof BalancedDataHealth["feeds"]> = ["ohlcv", "orderbook", "oi", "funding", "netflow", "trades"];
-  const degradedCount = keys.filter((key) => feeds[key] === "degraded").length;
-  return Math.min(0.06, degradedCount * 0.02);
-};
-
-const scoreFactorFromFinalScore = (finalScore: number): number => {
-  if (finalScore < 45) return 0;
-  if (finalScore <= 65) return lerpRange(finalScore, 45, 65, 0.3, 0.6);
-  if (finalScore <= 85) return lerpRange(finalScore, 65, 85, 0.6, 0.9);
-  return lerpRange(clamp(finalScore, 85, 100), 85, 100, 0.9, 1.0);
-};
-
 const addReason = (reasons: ReasonEntry[], text: string, impact: number) => {
   reasons.push({ text, impact });
 };
@@ -280,97 +250,366 @@ const finalizeReasons = (reasons: ReasonEntry[]): string[] =>
     .slice(0, 6)
     .map((r) => r.text);
 
+const agreementConflictMultiplier = (conflict: ConflictLevel | undefined): number => {
+  if (conflict === "LOW") return 1.0;
+  if (conflict === "MID") return 0.95;
+  if (conflict === "HIGH") return 0.86;
+  return 0.93;
+};
+
+const FEED_KEYS: Array<keyof BalancedDataHealth["feeds"]> = [
+  "ohlcv", "orderbook", "oi", "funding", "netflow", "trades",
+];
+
+// ── Component 1: Opportunity Score ──────────────────────────
+
+const computeOpportunity = (input: BalancedConsensusInput): ComponentResult => {
+  // 1. Volume Expansion (25%) — volumeSpike + oiChangeStrength
+  const volumeSpikeSub = input.volumeSpike === "ON" ? 80 : input.volumeSpike === "OFF" ? 30 : 40;
+  const oiSub = input.oiChangeStrength === "HIGH" ? 90 : input.oiChangeStrength === "MID" ? 55 : 25;
+  const volumeExpansion = 0.5 * volumeSpikeSub + 0.5 * oiSub;
+
+  // 2. Volatility Setup (20%) — compression + atrRegime + suddenMoveRisk
+  const compressionSub = input.compression === "ON" ? 80 : input.compression === "OFF" ? 35 : 45;
+  const atrSub = input.atrRegime === "HIGH" ? 75 : input.atrRegime === "MID" ? 55 : 30;
+  const suddenSub = input.suddenMoveRisk === "HIGH" ? 70 : input.suddenMoveRisk === "MID" ? 50 : 30;
+  const volatilitySetup = 0.4 * compressionSub + 0.3 * atrSub + 0.3 * suddenSub;
+
+  // 3. Momentum (25%) — marketSpeed + impulseReadiness + trendStrength
+  const speedSub = input.marketSpeed === "FAST" ? 85 : input.marketSpeed === "NORMAL" ? 55 : 25;
+  const impulseSub = input.impulseReadiness === "HIGH" ? 85 : input.impulseReadiness === "MID" ? 50 : 20;
+  const trendSub = input.trendStrength === "HIGH" ? 90 : input.trendStrength === "MID" ? 55 : 20;
+  const momentum = 0.35 * speedSub + 0.30 * impulseSub + 0.35 * trendSub;
+
+  // 4. Liquidity (15%) — liquidityDensity + depthQuality
+  const liqDensSub = input.liquidityDensity === "HIGH" ? 90 : input.liquidityDensity === "MID" ? 55 : 20;
+  const depthSub = input.depthQuality === "GOOD" ? 90 : input.depthQuality === "MID" ? 55 : 15;
+  const liquidity = 0.5 * liqDensSub + 0.5 * depthSub;
+
+  // 5. Spread Quality (15%) — spreadRegime
+  const spreadQuality = input.spreadRegime === "TIGHT" ? 90 : input.spreadRegime === "MID" ? 60 : 20;
+
+  const score = clamp(
+    0.25 * volumeExpansion +
+    0.20 * volatilitySetup +
+    0.25 * momentum +
+    0.15 * liquidity +
+    0.15 * spreadQuality,
+    0, 100,
+  );
+
+  return {
+    score: roundTo2(score),
+    breakdown: {
+      volumeExpansion: roundTo2(volumeExpansion),
+      volatilitySetup: roundTo2(volatilitySetup),
+      momentum: roundTo2(momentum),
+      liquidity: roundTo2(liquidity),
+      spreadQuality: roundTo2(spreadQuality),
+    },
+  };
+};
+
+// ── Component 2: Direction Score ────────────────────────────
+
+const computeDirection = (input: BalancedConsensusInput): ComponentResult => {
+  // 1. Trend Strength (30%) — trendStrength + regime
+  const trendBase = input.trendStrength === "HIGH" ? 95 : input.trendStrength === "MID" ? 70 : 45;
+  const trendStr =
+    input.regime === "TREND" ? trendBase
+    : input.regime === "RANGE" ? 30
+    : 40;
+
+  // 2. Orderflow Imbalance (25%) — orderbookImbalance + oiChangeStrength
+  const imbSub = input.orderbookImbalance === "NEUTRAL" ? 40 : 80;
+  const oiStrSub = input.oiChangeStrength === "HIGH" ? 85 : input.oiChangeStrength === "MID" ? 55 : 25;
+  const orderflow = 0.5 * imbSub + 0.5 * oiStrSub;
+
+  // 3. Funding Bias (15%) — fundingBias + fundingRatePct
+  let fundingSub =
+    input.fundingBias === "EXTREME" ? 30
+    : (input.fundingBias === "BULLISH" || input.fundingBias === "BEARISH") ? 70
+    : 50;
+  const frPct = safeNumber(input.fundingRatePct, 0);
+  if (input.fundingBias === "EXTREME" && Math.abs(frPct) > 0.05) fundingSub -= 10;
+  if ((input.fundingBias === "BULLISH" || input.fundingBias === "BEARISH") && Math.abs(frPct) > 0.03) fundingSub += 10;
+  const funding = clamp(fundingSub, 0, 100);
+
+  // 4. Market Structure (20%) — structureScore from AI panel
+  const structure = clamp(safeNumber(input.structureScore, 50), 0, 100);
+
+  // 5. HTF Alignment (10%) — ema+vwap concordance + dxyTrend + nasdaqTrend
+  const innerAligned =
+    (input.emaAlignment === "BULL" && input.vwapPosition === "ABOVE") ||
+    (input.emaAlignment === "BEAR" && input.vwapPosition === "BELOW");
+  let htfSub = innerAligned ? 40 : 15;
+  if (input.dxyTrend === "DOWN") htfSub += 15;    // weak dollar = risk-on
+  if (input.nasdaqTrend === "UP") htfSub += 15;   // tech rally = crypto follows
+  if (input.dxyTrend === "UP") htfSub -= 10;      // strong dollar = headwind
+  if (input.nasdaqTrend === "DOWN") htfSub -= 10;
+  const htfAlignment = clamp(htfSub, 0, 100);
+
+  const score = clamp(
+    0.30 * trendStr +
+    0.25 * orderflow +
+    0.15 * funding +
+    0.20 * structure +
+    0.10 * htfAlignment,
+    0, 100,
+  );
+
+  return {
+    score: roundTo2(score),
+    breakdown: {
+      trendStrength: roundTo2(trendStr),
+      orderflow: roundTo2(orderflow),
+      funding: roundTo2(funding),
+      structure: roundTo2(structure),
+      htfAlignment: roundTo2(htfAlignment),
+    },
+  };
+};
+
+// ── Component 3: Execution Score ────────────────────────────
+
+const computeExecution = (input: BalancedConsensusInput): ComponentResult => {
+  const pFill = clamp(safeNumber(input.pFill, 0.5), 0, 1);
+  const capVal = clamp(safeNumber(input.capacity, 0.5), 0, 1);
+
+  // 1. Orderbook Depth (25%) — depthQuality
+  const depth = input.depthQuality === "GOOD" ? 90 : input.depthQuality === "MID" ? 55 : 15;
+
+  // 2. Slippage Estimate (25%) — slippageLevel + pFill bonus/penalty
+  let slipSub = input.slippageLevel === "LOW" ? 90 : input.slippageLevel === "MED" ? 55 : 15;
+  if (pFill > 0.8) slipSub += 10;
+  if (pFill < 0.3) slipSub -= 15;
+  const slippage = clamp(slipSub, 0, 100);
+
+  // 3. Spoof Probability (15%) — spoofRisk
+  const spoof = input.spoofRisk === "LOW" ? 90 : input.spoofRisk === "MID" ? 55 : 15;
+
+  // 4. Fill Probability (20%) — pFill + capacity
+  const fill = clamp(pFill * 60 + capVal * 40, 0, 100);
+
+  // 5. Spread Cost (15%) — spreadRegime + costR
+  let spreadSub = input.spreadRegime === "TIGHT" ? 85 : input.spreadRegime === "MID" ? 55 : 15;
+  const costR = safeNumber(input.costR, 0);
+  if (costR > 0.5) spreadSub -= 15;
+  else if (costR > 0.3) spreadSub -= 8;
+  const spreadCost = clamp(spreadSub, 0, 100);
+
+  // Execution combo penalty — max -4 for spoof + slippage + fill triple punishment
+  let comboPenalty = 0;
+  if (input.spoofRisk === "HIGH") comboPenalty -= 1.5;
+  if (input.slippageLevel === "HIGH") comboPenalty -= 1.5;
+  if (pFill < 0.35) comboPenalty -= 1.5;
+  comboPenalty = Math.max(comboPenalty, -4);
+
+  const rawScore = 0.25 * depth + 0.25 * slippage + 0.15 * spoof + 0.20 * fill + 0.15 * spreadCost;
+  const score = clamp(rawScore + comboPenalty, 0, 100);
+
+  return {
+    score: roundTo2(score),
+    breakdown: {
+      depth: roundTo2(depth),
+      slippage: roundTo2(slippage),
+      spoof: roundTo2(spoof),
+      fill: roundTo2(fill),
+      spreadCost: roundTo2(spreadCost),
+      comboPenalty: roundTo2(comboPenalty),
+    },
+  };
+};
+
+// ── Component 4: Liquidity Score ────────────────────────────
+
+const computeLiquidity = (input: BalancedConsensusInput): ComponentResult => {
+  // 1. Liquidity Density (35%)
+  const liqDens = input.liquidityDensity === "HIGH" ? 90 : input.liquidityDensity === "MID" ? 55 : 20;
+
+  // 2. Depth Quality (30%)
+  const depth = input.depthQuality === "GOOD" ? 90 : input.depthQuality === "MID" ? 55 : 15;
+
+  // 3. Spread Quality (20%)
+  const spread = input.spreadRegime === "TIGHT" ? 90 : input.spreadRegime === "MID" ? 60 : 20;
+
+  // 4. Capacity (15%)
+  const cap = clamp(safeNumber(input.capacity, 0.5), 0, 1) * 100;
+
+  const score = clamp(
+    0.35 * liqDens + 0.30 * depth + 0.20 * spread + 0.15 * cap,
+    0, 100,
+  );
+
+  return {
+    score: roundTo2(score),
+    breakdown: {
+      liquidityDensity: roundTo2(liqDens),
+      depthQuality: roundTo2(depth),
+      spreadQuality: roundTo2(spread),
+      capacity: roundTo2(cap),
+    },
+  };
+};
+
+// ── Component 5: Structure Score ────────────────────────────
+
+const computeStructure = (input: BalancedConsensusInput): ComponentResult => {
+  const base = clamp(safeNumber(input.structureScore, 50), 0, 100);
+
+  // Boost for strong trend + alignment
+  let boost = 0;
+  if (input.regime === "TREND" && input.trendStrength === "HIGH") boost += 5;
+  const aligned =
+    (input.emaAlignment === "BULL" && input.vwapPosition === "ABOVE") ||
+    (input.emaAlignment === "BEAR" && input.vwapPosition === "BELOW");
+  if (aligned) boost += 3;
+
+  const score = clamp(base + boost, 0, 100);
+
+  return {
+    score: roundTo2(score),
+    breakdown: {
+      structureBase: roundTo2(base),
+      trendBoost: roundTo2(boost),
+    },
+  };
+};
+
+// ── Component 6: Relative Strength Score ────────────────────
+
+const computeRS = (input: BalancedConsensusInput): ComponentResult => {
+  // 1. Relative Strength (40%)
+  const rsSub = input.relativeStrength === "STRONG" ? 85 : input.relativeStrength === "NEUTRAL" ? 50 : 25;
+
+  // 2. Spot vs Derivatives (30%)
+  const spotSub = input.spotVsDerivativesPressure === "SPOT_DOM" ? 80
+    : input.spotVsDerivativesPressure === "BALANCED" ? 50 : 35;
+
+  // 3. Whale + Exchange Flow (30%)
+  const whaleSub = input.whaleActivity === "ACCUMULATION" ? 85
+    : input.whaleActivity === "NEUTRAL" ? 45 : 25;
+  const flowSub = input.exchangeFlow === "OUTFLOW" ? 80
+    : input.exchangeFlow === "NEUTRAL" ? 45 : 25;
+  const whaleFlow = 0.5 * whaleSub + 0.5 * flowSub;
+
+  const score = clamp(
+    0.40 * rsSub + 0.30 * spotSub + 0.30 * whaleFlow,
+    0, 100,
+  );
+
+  return {
+    score: roundTo2(score),
+    breakdown: {
+      relativeStrength: roundTo2(rsSub),
+      spotDerivatives: roundTo2(spotSub),
+      whaleFlow: roundTo2(whaleFlow),
+    },
+  };
+};
+
+// ── Risk Penalty (lighter than Capital Guard) ───────────────
+
+const computeRiskPenalty = (input: BalancedConsensusInput): { total: number; breakdown: Record<string, number> } => {
+  const breakdown: Record<string, number> = {};
+  let total = 0;
+
+  // 1. Cascade: -3 HIGH, -1 MID
+  const cascadePen = input.cascadeRisk === "HIGH" ? -3 : input.cascadeRisk === "MID" ? -1 : 0;
+  total += cascadePen;
+  breakdown.cascade = cascadePen;
+
+  // 2. Funding spike: -2 EXTREME
+  const fundingPen = input.fundingBias === "EXTREME" ? -2 : 0;
+  total += fundingPen;
+  breakdown.fundingSpike = fundingPen;
+
+  // 3. News/stress: -3 both HIGH, -1.5 either HIGH
+  let newsPen = 0;
+  if (input.suddenMoveRisk === "HIGH" && input.stressLevel === "HIGH") newsPen = -3;
+  else if (input.suddenMoveRisk === "HIGH" || input.stressLevel === "HIGH") newsPen = -1.5;
+  total += newsPen;
+  breakdown.newsStress = newsPen;
+
+  // 4. Whale anomaly: -2 DISTRIBUTION+INFLOW, -1 DISTRIBUTION alone
+  let whalePen = 0;
+  if (input.whaleActivity === "DISTRIBUTION" && input.exchangeFlow === "INFLOW") whalePen = -2;
+  else if (input.whaleActivity === "DISTRIBUTION") whalePen = -1;
+  total += whalePen;
+  breakdown.whaleAnomaly = whalePen;
+
+  return { total: roundTo2(total), breakdown };
+};
+
+// ── Main: computeBalancedConsensus ──────────────────────────
+
 export const computeBalancedConsensus = (
   input: BalancedConsensusInput,
 ): BalancedConsensusOutput => {
   const reasons: ReasonEntry[] = [];
 
-  const structureLayer01 = score01(safeNumber(input.structureScore, 50));
-  const structureBoost01 = computeStructureBoost01(input.regime, input.trendStrength, input.emaAlignment, input.vwapPosition);
-  const structure01 = clamp(structureLayer01 + structureBoost01, 0, 1);
-  const liquidity01 = score01(safeNumber(input.liquidityScore, 50));
-  const positioning01 = score01(safeNumber(input.positioningScore, 50));
-  const executionLayer01 = score01(safeNumber(input.executionScore, 50));
+  // ── 6-Component computation ──
+  const opp = computeOpportunity(input);
+  const dir = computeDirection(input);
+  const exec = computeExecution(input);
+  const liq = computeLiquidity(input);
+  const struct = computeStructure(input);
+  const rs = computeRS(input);
+  const risk = computeRiskPenalty(input);
 
-  const pFill = clamp(safeNumber(input.pFill, 0.5), 0, 1);
-  const capacity = clamp(safeNumber(input.capacity, 0.5), 0, 1);
-  const executionCertainty01 = clamp(
-    mean([pFill, capacity]) *
-      spreadMultiplier(input.spreadRegime) *
-      depthMultiplier(input.depthQuality) *
-      spoofMultiplier(input.spoofRisk) *
-      slippageMultiplier(input.slippageLevel),
-    0,
-    1,
-  );
-  const execution01 = ((Math.max(executionLayer01, executionCertainty01) * 0.5) + (executionCertainty01 * 0.5));
+  // ── BalancedTradeScore = 0.32*Opp + 0.22*Dir + 0.18*Exec + 0.14*Liq + 0.08*Struct + 0.06*RS - RiskPenalty ──
+  const rawTradeScore =
+    0.32 * opp.score +
+    0.22 * dir.score +
+    0.18 * exec.score +
+    0.14 * liq.score +
+    0.08 * struct.score +
+    0.06 * rs.score +
+    risk.total;
+  const baseScore = roundTo2(clamp(rawTradeScore, 0, 100));
 
-  const agreement01 = clamp(
-    safeNumber(input.alignedCount, 0) / Math.max(1, Math.floor(safeNumber(input.totalModels, 1))),
-    0,
-    1,
-  );
-  const agreementScore01 = clamp(agreement01 * agreementConflictMultiplier(input.conflictLevel), 0, 1);
-  const agreementQ = 0.85 + (0.15 * agreementScore01);
+  // ── Sub-score guardrails ──
+  const guardrails = {
+    oppPass: opp.score >= 70,
+    dirPass: dir.score >= 56,
+    execPass: exec.score >= 58,
+    liqPass: liq.score >= 60,
+    structPass: struct.score >= 55,
+    allPass: false as boolean,
+  };
+  guardrails.allPass =
+    guardrails.oppPass && guardrails.dirPass && guardrails.execPass &&
+    guardrails.liqPass && guardrails.structPass;
 
-  let edgeCore = normalizeBalancedRiskAdjEdge(safeNumber(input.riskAdjEdgeR, 0));
-  if (typeof input.pWin === "number") {
-    const pWinGuard = (clamp((input.pWin - 0.5) / 0.3, 0, 1) * 0.6) + 0.4;
-    edgeCore *= pWinGuard;
+  if (!guardrails.oppPass) addReason(reasons, `Guardrail: Opp ${opp.score} < 70`, 85);
+  if (!guardrails.dirPass) addReason(reasons, `Guardrail: Dir ${dir.score} < 56`, 80);
+  if (!guardrails.execPass) addReason(reasons, `Guardrail: Exec ${exec.score} < 58`, 75);
+  if (!guardrails.liqPass) addReason(reasons, `Guardrail: Liq ${liq.score} < 60`, 70);
+  if (!guardrails.structPass) addReason(reasons, `Guardrail: Struct ${struct.score} < 55`, 65);
+
+  // ── Direction uncertain cap — moderate direction caps score at 82 ──
+  let adjustedScore = baseScore;
+  if (dir.score < 70 && adjustedScore > 82) {
+    adjustedScore = 82;
+    addReason(reasons, "Direction uncertain cap (82)", 60);
   }
-  if (typeof input.costR === "number" && input.costR > 0.5) edgeCore *= 0.85;
-  if (typeof input.pStop === "number" && input.pStop > 0.4) edgeCore *= 0.85;
-  const edge01 = clamp(edgeCore, 0, 1);
 
-  // Component weights — same as Capital Guard
-  let base01 =
-    (0.35 * structure01) +
-    (0.25 * edge01) +
-    (0.15 * liquidity01) +
-    (0.15 * positioning01) +
-    (0.10 * execution01);
-  base01 = clamp(base01 * agreementQ, 0, 1);
-  const baseScore = roundTo2(base01 * 100);
-
-  const rem = clamp(
-    remStressMultiplier(input.stressLevel) *
-      remCrowdingMultiplier(input.crowdingRisk) *
-      remCascadeMultiplier(input.cascadeRisk),
-    0.78,
-    1.0,
-  );
-  const em = entryModifier(input.entryWindow);
-  const rm = regimeModifier(input.regime, input.compression, input.marketSpeed);
-
-  const adjusted01 = clamp(base01 * rem * em * rm, 0, 1);
-  const adjustedScore = roundTo2(adjusted01 * 100);
-
-  if (input.stressLevel === "MID" || input.stressLevel === "HIGH") {
-    addReason(reasons, `Modifier: stress ${input.stressLevel}`, input.stressLevel === "HIGH" ? 75 : 45);
+  // ── Hard no-trade conditions ──
+  const hardNoTrade =
+    (input.stressLevel === "HIGH" && input.cascadeRisk === "HIGH" && input.depthQuality === "POOR");
+  if (hardNoTrade && adjustedScore > 48) {
+    adjustedScore = 48;
+    addReason(reasons, "Hard no-trade conditions cap (48)", 95);
   }
-  if (input.entryWindow === "CLOSED") addReason(reasons, "Modifier: entry window closed", 35);
 
-  const latencyPenalty = latencyPenaltyRate(Math.max(0, safeNumber(input.dataHealth?.latencyMs, 0)));
-  const executionWeaknessPenalty = executionWeaknessPenaltyRate(pFill, input.slippageLevel, input.spoofRisk) * 0.35;
-  const entryClosedPenalty = input.entryWindow === "CLOSED" ? 0.05 : 0;
-  const dataDegradedPenalty = degradedFeedsPenaltyRate(input.dataHealth?.feeds ?? {});
+  // ── Reason generation ──
+  if (opp.score < 40) addReason(reasons, `Opp low (${opp.score}): weak opportunity`, 50);
+  if (opp.score >= 75) addReason(reasons, `Opp strong (${opp.score}): opportunity present`, 40);
+  if (dir.score >= 75) addReason(reasons, `Dir strong (${dir.score}): high conviction`, 45);
+  if (exec.score < 40) addReason(reasons, `Exec low (${exec.score}): poor execution`, 55);
+  if (risk.total < -3) addReason(reasons, `Risk penalty (${risk.total}): active risks`, 60);
 
-  const rawPenalty = clamp(
-    latencyPenalty + executionWeaknessPenalty + entryClosedPenalty + dataDegradedPenalty,
-    0,
-    0.4,
-  );
-  const isAPlus = structure01 >= 0.60 && edge01 >= 0.55;
-  const penaltyRate = roundTo2(isAPlus ? rawPenalty * 0.5 : rawPenalty);
-
-  if (latencyPenalty > 0) addReason(reasons, "Penalty: latency high", latencyPenalty * 1000);
-  if (executionWeaknessPenalty > 0) {
-    if (pFill < 0.5) addReason(reasons, "Penalty: low fill probability", 70);
-    if (input.slippageLevel === "HIGH") addReason(reasons, "Penalty: slippage high", 80);
-    if (input.spoofRisk === "HIGH") addReason(reasons, "Penalty: spoof risk high", 60);
-  }
-  if (dataDegradedPenalty > 0) addReason(reasons, "Penalty: degraded feeds", dataDegradedPenalty * 1000);
-
+  // ── Data Gate ──
   const dataGateBlocked =
     input.dataHealth?.feeds?.ohlcv === "down" ||
     safeNumber(input.dataHealth?.missingFields, 0) >= 3 ||
@@ -378,46 +617,84 @@ export const computeBalancedConsensus = (
   const dataGate: "PASS" | "BLOCK" = dataGateBlocked ? "BLOCK" : "PASS";
   if (dataGateBlocked) addReason(reasons, "Data gate blocked", 10_000);
 
+  // ── Safety Gate ──
   const safetyGateBlocked =
     (input.stressLevel === "HIGH" && input.cascadeRisk === "HIGH") ||
     (input.depthQuality === "POOR" && input.spreadRegime === "WIDE" && input.slippageLevel === "HIGH");
   const safetyGate: "PASS" | "BLOCK" = safetyGateBlocked ? "BLOCK" : "PASS";
   if (safetyGateBlocked) addReason(reasons, "Safety block", 9_000);
 
-  // Conservative uplift — only for genuinely safe conditions
-  const safetyUplift =
-    (input.stressLevel === "LOW" ? 3 : input.stressLevel === "MID" ? 1 : 0) +
-    (input.cascadeRisk === "LOW" ? 2 : input.cascadeRisk === "MID" ? 1 : 0) +
-    (input.crowdingRisk === "LOW" ? 2 : 0) +
-    (input.entryWindow === "OPEN" ? 2 : 0) +
-    (input.slippageLevel === "LOW" ? 2 : 0);
+  // ── Penalty rate (backward compat) ──
+  const degradedCount = FEED_KEYS.filter((k) => input.dataHealth?.feeds?.[k] === "degraded").length;
+  const dataDegradedPenalty = Math.min(0.06, degradedCount * 0.02);
+  const executionWeaknessPenalty = exec.score < 40 ? roundTo2(((40 - exec.score) / 100) * 0.35) : 0;
+  const entryClosedPenalty = input.entryWindow === "CLOSED" ? 0.05 : 0;
+  const rawPenalty = clamp(executionWeaknessPenalty + entryClosedPenalty + dataDegradedPenalty, 0, 0.4);
+  const isAPlus = adjustedScore >= 85;
+  const penaltyRate = roundTo2(isAPlus ? rawPenalty * 0.5 : rawPenalty);
 
-  const final01PreFloor = clamp(adjusted01 * (1 - clamp(penaltyRate, 0, 1)), 0, 1);
-  const finalScorePreFloor = roundTo2(final01PreFloor * 100 + safetyUplift + 14);
+  // ── Final score ──
+  let finalScore = roundTo2(clamp(adjustedScore * (1 - clamp(penaltyRate, 0, 1)), 0, 100));
 
+  // A+ floor: high conviction setups keep minimum 78
   let floorsApplied = false;
-  let finalScore = finalScorePreFloor;
   if (isAPlus && dataGate === "PASS" && safetyGate === "PASS") {
-    const floored = Math.max(finalScorePreFloor, 52);
-    floorsApplied = floored > finalScorePreFloor;
+    const floored = Math.max(finalScore, 78);
+    floorsApplied = floored > finalScore;
     finalScore = floored;
-    if (floorsApplied) addReason(reasons, "A+ setup floor applied", 150);
+    if (floorsApplied) addReason(reasons, "A+ floor applied", 150);
   }
 
-  if (safetyGate === "BLOCK") {
-    finalScore = Math.min(adjustedScore, 44);
+  // Gate enforcement
+  if (safetyGate === "BLOCK") finalScore = Math.min(finalScore, 44);
+  if (dataGate === "BLOCK") finalScore = 0;
+
+  // Guardrail cap — sub-score threshold not met → cap below TRADE threshold
+  if (!guardrails.allPass && finalScore >= 64) {
+    finalScore = 63;
+    addReason(reasons, "Guardrail block: sub-score threshold not met", 88);
   }
 
-  if (dataGate === "BLOCK") {
-    finalScore = 0;
-  }
   finalScore = roundTo2(clamp(finalScore, 0, 100));
 
-  const scoreFactor = scoreFactorFromFinalScore(finalScore);
-  let sizeHint = clamp(scoreFactor * rem, 0, 1);
-  if (dataGate === "BLOCK" || safetyGate === "BLOCK") sizeHint = 0;
+  // ── Position Size Scaling (Balanced 4-tier) ──
+  let sizeHint: number;
+  if (dataGate === "BLOCK" || safetyGate === "BLOCK") {
+    sizeHint = 0;
+  } else if (finalScore >= 85) {
+    sizeHint = 1.00;
+  } else if (finalScore >= 78) {
+    sizeHint = 0.90;
+  } else if (finalScore >= 72) {
+    sizeHint = 0.70;
+  } else if (finalScore >= 64) {
+    sizeHint = 0.40;
+  } else {
+    sizeHint = 0;
+  }
   sizeHint = roundTo2(sizeHint);
 
+  // ── Backward-compat diagnostics ──
+  const agreement01 = clamp(
+    safeNumber(input.alignedCount, 0) / Math.max(1, Math.floor(safeNumber(input.totalModels, 1))),
+    0, 1,
+  );
+  const agreementScore01 = clamp(agreement01 * agreementConflictMultiplier(input.conflictLevel), 0, 1);
+  const agreementQ = 0.85 + (0.15 * agreementScore01);
+
+  const remStress = input.stressLevel === "LOW" ? 1.0 : input.stressLevel === "MID" ? 0.94 : input.stressLevel === "HIGH" ? 0.84 : 0.94;
+  const remCrowding = input.crowdingRisk === "LOW" ? 1.0 : input.crowdingRisk === "MID" ? 0.97 : input.crowdingRisk === "HIGH" ? 0.90 : 0.97;
+  const remCascade = input.cascadeRisk === "LOW" ? 1.0 : input.cascadeRisk === "MID" ? 0.96 : input.cascadeRisk === "HIGH" ? 0.88 : 0.96;
+  const rem = clamp(remStress * remCrowding * remCascade, 0.78, 1.0);
+
+  const em = input.entryWindow === "OPEN" ? 1.0 : input.entryWindow === "CLOSED" ? 0.9 : 0.95;
+
+  let rm = 1.0;
+  if (input.regime === "RANGE" && input.compression === "OFF") rm = 0.95;
+  if (input.regime === "TREND" && (input.marketSpeed === "NORMAL" || input.marketSpeed === "FAST")) rm = 1.02;
+  rm = clamp(rm, 0.9, 1.05);
+
+  // ── Build output ──
   return {
     mode: "BALANCED",
     baseScore,
@@ -429,15 +706,15 @@ export const computeBalancedConsensus = (
     reasons: finalizeReasons(reasons),
     diagnostics: {
       componentScores: {
-        structure01: roundTo2(structure01),
-        liquidity01: roundTo2(liquidity01),
-        positioning01: roundTo2(positioning01),
-        execution01: roundTo2(execution01),
-        executionCertainty01: roundTo2(executionCertainty01),
-        edge01: roundTo2(edge01),
+        structure01: roundTo2(struct.score / 100),
+        liquidity01: roundTo2(liq.score / 100),
+        positioning01: roundTo2(dir.score / 100),
+        execution01: roundTo2(exec.score / 100),
+        executionCertainty01: roundTo2(exec.breakdown.fill / 100),
+        edge01: roundTo2((opp.score * 0.5 + dir.score * 0.5) / 100),
         agreement01: roundTo2(agreement01),
         agreementScore01: roundTo2(agreementScore01),
-        base01: roundTo2(base01),
+        base01: roundTo2(baseScore / 100),
         isAPlus,
       },
       modifiers: {
@@ -447,7 +724,7 @@ export const computeBalancedConsensus = (
         regimeModifier: roundTo2(rm),
       },
       penalties: {
-        latencyPenalty: roundTo2(latencyPenalty),
+        latencyPenalty: 0,
         executionWeaknessPenalty: roundTo2(executionWeaknessPenalty),
         entryClosedPenalty: roundTo2(entryClosedPenalty),
         dataDegradedPenalty: roundTo2(dataDegradedPenalty),
@@ -455,6 +732,17 @@ export const computeBalancedConsensus = (
         penaltyRate: roundTo2(penaltyRate),
       },
       floorsApplied,
+      layers: {
+        opportunity: opp,
+        direction: dir,
+        execution: exec,
+        liquidity: liq,
+        structure: struct,
+        relativeStrength: rs,
+        riskPenalty: risk,
+        guardrails,
+        tradeScore: roundTo2(rawTradeScore),
+      },
     },
   };
 };

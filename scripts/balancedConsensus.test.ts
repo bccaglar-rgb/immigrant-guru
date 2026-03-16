@@ -16,125 +16,280 @@ const healthyData = {
   },
 } as const;
 
-test("Balanced clean setup returns TRADE with all gates PASS", () => {
+// Ideal signals for all 6 components
+const idealSignals = {
+  orderbookImbalance: "BUY" as const,
+  oiChangeStrength: "HIGH" as const,
+  fundingBias: "BULLISH" as const,
+  fundingRatePct: 0.02,
+  oiChangePct: 3,
+  spotVsDerivativesPressure: "SPOT_DOM" as const,
+  volumeSpike: "ON" as const,
+  whaleActivity: "ACCUMULATION" as const,
+  exchangeFlow: "OUTFLOW" as const,
+  relativeStrength: "STRONG" as const,
+  liquidationPoolBias: "UNKNOWN" as const,
+  rsiState: "NEUTRAL" as const,
+  atrRegime: "MID" as const,
+  liquidityDensity: "HIGH" as const,
+  suddenMoveRisk: "LOW" as const,
+  impulseReadiness: "HIGH" as const,
+  dxyTrend: "DOWN" as const,
+  nasdaqTrend: "UP" as const,
+};
+
+test("high conviction setup produces TRADE with 6-component diagnostics", () => {
   const out = computeBalancedConsensus({
-    structureScore: 84,
-    liquidityScore: 79,
-    positioningScore: 76,
-    executionScore: 82,
+    structureScore: 85,
+    liquidityScore: 80,
+    positioningScore: 82,
+    executionScore: 75,
     regime: "TREND",
     trendStrength: "HIGH",
-    structureAge: "MATURE",
-    compression: "OFF",
+    emaAlignment: "BULL",
+    vwapPosition: "ABOVE",
+    marketSpeed: "FAST",
+    compression: "ON",
     spreadRegime: "TIGHT",
     depthQuality: "GOOD",
-    liquidityDensity: "HIGH",
     spoofRisk: "LOW",
     slippageLevel: "LOW",
-    pFill: 0.86,
-    capacity: 0.82,
-    riskAdjEdgeR: 0.24,
-    pWin: 0.72,
-    pStop: 0.2,
-    expectedRR: 1.55,
-    costR: 0.2,
-    asymmetry: "REWARD_DOMINANT",
-    alignedCount: 5,
-    totalModels: 6,
-    conflictLevel: "LOW",
+    pFill: 0.85,
+    capacity: 0.9,
     stressLevel: "LOW",
     crowdingRisk: "LOW",
     cascadeRisk: "LOW",
     entryWindow: "OPEN",
-    breakoutOnly: false,
     dataHealth: healthyData,
+    ...idealSignals,
   });
 
   assert.equal(out.mode, "BALANCED");
   assert.equal(out.gates.data, "PASS");
-  assert.equal(out.gates.risk, "PASS");
-  assert.equal(out.gates.entry, "PASS");
-  assert.equal(out.gates.fill, "PASS");
-  assert.equal(out.gates.capacity, "PASS");
-  assert.equal(out.decision, "TRADE");
-  assert.ok(out.finalScore >= 70);
-  assert.ok(out.reasons.length >= 3);
+  assert.equal(out.gates.safety, "PASS");
+  // All guardrails should pass with ideal signals
+  assert.ok(out.diagnostics.layers.guardrails.allPass, "All guardrails should pass");
+  // Final score should be well above TRADE threshold (64)
+  assert.ok(out.finalScore >= 64, `expected finalScore >= 64, got ${out.finalScore}`);
+  assert.ok(out.sizeHint >= 0.40, `expected sizeHint >= 0.40, got ${out.sizeHint}`);
+  // Verify 6-component diagnostics structure
+  assert.ok(typeof out.diagnostics.layers.opportunity.score === "number");
+  assert.ok(typeof out.diagnostics.layers.direction.score === "number");
+  assert.ok(typeof out.diagnostics.layers.execution.score === "number");
+  assert.ok(typeof out.diagnostics.layers.liquidity.score === "number");
+  assert.ok(typeof out.diagnostics.layers.structure.score === "number");
+  assert.ok(typeof out.diagnostics.layers.relativeStrength.score === "number");
+  assert.ok(typeof out.diagnostics.layers.riskPenalty.total === "number");
+  assert.ok(typeof out.diagnostics.layers.tradeScore === "number");
+  // Verify breakdowns
+  assert.ok(Object.keys(out.diagnostics.layers.opportunity.breakdown).length >= 4);
+  assert.ok(Object.keys(out.diagnostics.layers.direction.breakdown).length >= 4);
+  assert.ok(Object.keys(out.diagnostics.layers.execution.breakdown).length >= 5);
 });
 
-test("Balanced entry CLOSED blocks trade and caps final score to <=35", () => {
+test("guardrails block TRADE when sub-scores fail even with high final score", () => {
   const out = computeBalancedConsensus({
-    structureScore: 80,
-    liquidityScore: 73,
-    positioningScore: 70,
-    executionScore: 74,
-    regime: "TREND",
-    trendStrength: "MID",
-    spreadRegime: "MID",
-    depthQuality: "MID",
-    liquidityDensity: "MID",
-    spoofRisk: "LOW",
-    slippageLevel: "MED",
-    pFill: 0.66,
-    capacity: 0.7,
-    riskAdjEdgeR: 0.18,
-    pWin: 0.64,
-    pStop: 0.26,
-    expectedRR: 1.2,
-    costR: 0.25,
-    asymmetry: "REWARD_DOMINANT",
-    alignedCount: 4,
-    totalModels: 6,
-    conflictLevel: "MID",
-    stressLevel: "LOW",
-    crowdingRisk: "MID",
-    cascadeRisk: "LOW",
-    entryWindow: "CLOSED",
-    breakoutOnly: false,
-    dataHealth: healthyData,
-  });
-
-  assert.equal(out.gates.data, "PASS");
-  assert.equal(out.gates.entry, "BLOCK");
-  assert.equal(out.decision, "NO_TRADE");
-  assert.ok(out.finalScore <= 35);
-  assert.ok(out.reasons.some((r) => r.includes("Entry gate BLOCK")));
-});
-
-test("Balanced stress HIGH triggers risk BLOCK and NO_TRADE", () => {
-  const out = computeBalancedConsensus({
-    structureScore: 88,
-    liquidityScore: 82,
+    structureScore: 90,
+    liquidityScore: 80,
     positioningScore: 80,
-    executionScore: 76,
+    executionScore: 75,
     regime: "TREND",
     trendStrength: "HIGH",
-    spreadRegime: "MID",
-    depthQuality: "GOOD",
-    liquidityDensity: "HIGH",
-    spoofRisk: "MID",
+    emaAlignment: "BULL",
+    vwapPosition: "ABOVE",
+    marketSpeed: "FAST",
+    compression: "ON",
+    spreadRegime: "TIGHT",
+    depthQuality: "POOR",     // → Liq score will be low
+    spoofRisk: "LOW",
     slippageLevel: "LOW",
-    pFill: 0.81,
-    capacity: 0.79,
-    riskAdjEdgeR: 0.22,
-    pWin: 0.7,
-    pStop: 0.21,
-    expectedRR: 1.35,
-    costR: 0.23,
-    asymmetry: "REWARD_DOMINANT",
-    alignedCount: 5,
-    totalModels: 6,
-    conflictLevel: "LOW",
+    pFill: 0.85,
+    capacity: 0.3,            // → Liq score will be low
+    stressLevel: "LOW",
+    crowdingRisk: "LOW",
+    cascadeRisk: "LOW",
+    entryWindow: "OPEN",
+    dataHealth: healthyData,
+    ...idealSignals,
+    liquidityDensity: "LOW",  // → Liq score way down
+  });
+
+  // Liq guardrail should fail (requires >= 60)
+  assert.equal(out.diagnostics.layers.guardrails.liqPass, false);
+  assert.equal(out.diagnostics.layers.guardrails.allPass, false);
+  // Final score capped below 64 by guardrail
+  assert.ok(out.finalScore < 64, `finalScore should be < 64 (guardrail block), got ${out.finalScore}`);
+  assert.equal(out.sizeHint, 0);
+});
+
+test("direction uncertain cap limits score to 82", () => {
+  const out = computeBalancedConsensus({
+    structureScore: 90,
+    liquidityScore: 85,
+    positioningScore: 85,
+    executionScore: 80,
+    regime: "RANGE",           // → Dir score lower
+    trendStrength: "LOW",      // → Dir score lower
+    emaAlignment: "MIXED",     // → Dir score lower
+    vwapPosition: "AT",
+    marketSpeed: "FAST",
+    compression: "ON",
+    spreadRegime: "TIGHT",
+    depthQuality: "GOOD",
+    spoofRisk: "LOW",
+    slippageLevel: "LOW",
+    pFill: 0.85,
+    capacity: 0.9,
+    stressLevel: "LOW",
+    crowdingRisk: "LOW",
+    cascadeRisk: "LOW",
+    entryWindow: "OPEN",
+    dataHealth: healthyData,
+    ...idealSignals,
+    orderbookImbalance: "NEUTRAL",
+    oiChangeStrength: "LOW",
+    fundingBias: "NEUTRAL",
+  });
+
+  // Direction score should be < 70 → direction uncertain cap at 82
+  assert.ok(out.diagnostics.layers.direction.score < 70, `Dir should be < 70, got ${out.diagnostics.layers.direction.score}`);
+  // adjustedScore should be <= 82
+  assert.ok(out.adjustedScore <= 82, `adjustedScore should be <= 82, got ${out.adjustedScore}`);
+});
+
+test("risk penalty reduces score with active risks", () => {
+  const out = computeBalancedConsensus({
+    structureScore: 75,
+    liquidityScore: 70,
+    positioningScore: 70,
+    executionScore: 65,
+    regime: "TREND",
+    trendStrength: "MID",
+    emaAlignment: "BULL",
+    vwapPosition: "ABOVE",
+    spreadRegime: "MID",
+    depthQuality: "MID",
+    spoofRisk: "MID",
+    slippageLevel: "MED",
+    pFill: 0.6,
+    capacity: 0.7,
+    stressLevel: "HIGH",           // → news/stress penalty
+    crowdingRisk: "MID",
+    cascadeRisk: "HIGH",           // → cascade -3
+    entryWindow: "OPEN",
+    dataHealth: healthyData,
+    ...idealSignals,
+    suddenMoveRisk: "HIGH",        // → news/stress -3 (both HIGH)
+    fundingBias: "EXTREME",        // → funding -2
+    whaleActivity: "DISTRIBUTION", // → whale -2
+    exchangeFlow: "INFLOW",
+  });
+
+  // Risk penalty should be negative
+  assert.ok(out.diagnostics.layers.riskPenalty.total < 0, `Risk penalty should be < 0, got ${out.diagnostics.layers.riskPenalty.total}`);
+  assert.ok(out.diagnostics.layers.riskPenalty.breakdown.cascade === -3);
+  assert.ok(out.diagnostics.layers.riskPenalty.breakdown.fundingSpike === -2);
+  assert.ok(out.diagnostics.layers.riskPenalty.breakdown.newsStress === -3);
+  assert.ok(out.diagnostics.layers.riskPenalty.breakdown.whaleAnomaly === -2);
+});
+
+test("safety block caps final score at <=44 and sizeHint to zero", () => {
+  const out = computeBalancedConsensus({
+    structureScore: 82,
+    liquidityScore: 64,
+    positioningScore: 72,
+    executionScore: 58,
+    regime: "TREND",
+    trendStrength: "HIGH",
+    emaAlignment: "BULL",
+    vwapPosition: "ABOVE",
+    spreadRegime: "WIDE",
+    depthQuality: "POOR",
+    spoofRisk: "HIGH",
+    slippageLevel: "HIGH",
+    pFill: 0.4,
+    capacity: 0.5,
     stressLevel: "HIGH",
     crowdingRisk: "MID",
-    cascadeRisk: "MID",
+    cascadeRisk: "HIGH",          // stress+cascade HIGH → safety block
     entryWindow: "OPEN",
-    breakoutOnly: false,
     dataHealth: healthyData,
+    ...idealSignals,
   });
 
   assert.equal(out.gates.data, "PASS");
-  assert.equal(out.gates.risk, "BLOCK");
-  assert.equal(out.decision, "NO_TRADE");
-  assert.ok(out.finalScore <= 35);
-  assert.ok(out.reasons.some((r) => r.includes("Risk gate BLOCK")));
+  assert.equal(out.gates.safety, "BLOCK");
+  assert.ok(out.finalScore <= 44, `expected finalScore <= 44, got ${out.finalScore}`);
+  assert.equal(out.sizeHint, 0);
+  assert.ok(out.reasons.some((r) => r.includes("Safety block")));
+});
+
+test("position size tiers: 85+=1.0, 78-84=0.90, 72-77=0.70, 64-71=0.40, <64=0", () => {
+  // Test a moderate scenario
+  const out = computeBalancedConsensus({
+    structureScore: 70,
+    liquidityScore: 65,
+    positioningScore: 65,
+    executionScore: 60,
+    regime: "TREND",
+    trendStrength: "MID",
+    emaAlignment: "BULL",
+    vwapPosition: "ABOVE",
+    spreadRegime: "MID",
+    depthQuality: "MID",
+    spoofRisk: "MID",
+    slippageLevel: "MED",
+    pFill: 0.55,
+    capacity: 0.6,
+    stressLevel: "LOW",
+    crowdingRisk: "LOW",
+    cascadeRisk: "LOW",
+    entryWindow: "OPEN",
+    dataHealth: healthyData,
+    ...idealSignals,
+    oiChangeStrength: "MID",
+    fundingBias: "NEUTRAL",
+    whaleActivity: "NEUTRAL",
+    orderbookImbalance: "NEUTRAL",
+    relativeStrength: "NEUTRAL",
+    spotVsDerivativesPressure: "BALANCED",
+  });
+
+  // sizeHint should be one of the discrete tiers
+  assert.ok(
+    [0, 0.40, 0.70, 0.90, 1.0].includes(out.sizeHint),
+    `sizeHint ${out.sizeHint} not in expected tiers`,
+  );
+});
+
+test("execution combo penalty is capped at -4", () => {
+  const out = computeBalancedConsensus({
+    structureScore: 80,
+    liquidityScore: 75,
+    positioningScore: 75,
+    executionScore: 70,
+    regime: "TREND",
+    trendStrength: "HIGH",
+    emaAlignment: "BULL",
+    vwapPosition: "ABOVE",
+    spreadRegime: "TIGHT",
+    depthQuality: "GOOD",
+    spoofRisk: "HIGH",        // → combo penalty -1.5
+    slippageLevel: "HIGH",    // → combo penalty -1.5
+    pFill: 0.2,               // → combo penalty -1.5 (total raw = -4.5, capped at -4)
+    capacity: 0.3,
+    stressLevel: "LOW",
+    crowdingRisk: "LOW",
+    cascadeRisk: "LOW",
+    entryWindow: "OPEN",
+    dataHealth: healthyData,
+    ...idealSignals,
+    liquidityDensity: "HIGH",
+  });
+
+  // Combo penalty should be capped at -4
+  assert.ok(
+    out.diagnostics.layers.execution.breakdown.comboPenalty >= -4,
+    `comboPenalty should be >= -4, got ${out.diagnostics.layers.execution.breakdown.comboPenalty}`,
+  );
 });

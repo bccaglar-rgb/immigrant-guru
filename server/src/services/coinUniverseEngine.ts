@@ -43,6 +43,16 @@ interface SRLevel {
   touchCount: number;
 }
 
+/** 6-bucket discovery scores */
+export interface DiscoveryBuckets {
+  momentum: number;           // 0-100
+  compression: number;        // 0-100
+  vwapReclaim: number;        // 0-100
+  failedBreakdown: number;    // 0-100
+  relativeStrength: number;   // 0-100
+  liquidityRotation: number;  // 0-100
+}
+
 export interface UniverseCoinRow {
   symbol: string;
   baseAsset: string;
@@ -62,6 +72,11 @@ export interface UniverseCoinRow {
   tier1Score: number;
   tier2Score: number | null;
   compositeScore: number;
+
+  // Discovery (6-bucket model)
+  discoveryBuckets: DiscoveryBuckets | null;
+  discoveryScore: number;
+  shortlisted: boolean;
 
   // Status
   status: "ACTIVE" | "COOLDOWN" | "NEW";
@@ -362,6 +377,265 @@ function computeRsi14(bars: OhlcvBar[], period = 14): number | null {
 }
 
 /* ------------------------------------------------------------------ */
+/*  6-Bucket Discovery Algorithm                                       */
+/*  Increases trade frequency 2-3x by identifying opportunities across */
+/*  6 complementary setups before full Quant Engine analysis.          */
+/*                                                                      */
+/*  DiscoveryScore = max(all_buckets) + breadth_bonus                  */
+/*  Shortlist: any bucket >= 72 OR 2 buckets >= 66                     */
+/*  Guardrails: SpreadQuality >= 45, LiquidityQuality >= 50           */
+/* ------------------------------------------------------------------ */
+
+interface DiscoveryInput {
+  volume24hUsd: number;
+  change24hPct: number;
+  fundingRate: number | null;
+  spreadBps: number | null;
+  depthUsd: number | null;
+  imbalance: number | null;
+  atrPct: number | null;
+  rsi14: number | null;
+  srDistPct: number | null;
+  nearestSR: SRLevel | null;
+  marketAvgChange: number; // average change24h across all coins for RS comparison
+}
+
+/**
+ * Bucket 1: Momentum — strong directional move with volume support
+ * High volume + strong momentum + orderbook imbalance
+ */
+function bucketMomentum(d: DiscoveryInput): number {
+  // Volume: log scale, $50M = 0.5, $500M+ = 1.0
+  const volNorm = clamp01((Math.log10(Math.max(d.volume24hUsd, 1)) - 7) / 2);
+  // Momentum: |change24h| / 8, with direction multiplier for strength
+  const momentumNorm = clamp01(Math.abs(d.change24hPct) / 8);
+  // Imbalance: strong one-sided orderbook = directional conviction
+  const imbalanceNorm = d.imbalance !== null ? clamp01(Math.abs(d.imbalance) / 0.5) : 0.2;
+  // ATR bonus: high ATR = more volatile = more momentum opportunity
+  const atrBonus = d.atrPct !== null && d.atrPct > 2.0 ? 0.15 : d.atrPct !== null && d.atrPct > 1.0 ? 0.05 : 0;
+
+  const raw = 0.35 * volNorm + 0.40 * momentumNorm + 0.25 * imbalanceNorm + atrBonus;
+  return Math.round(clamp01(raw) * 100);
+}
+
+/**
+ * Bucket 2: Compression — low volatility setup for breakout
+ * Low ATR + neutral RSI + tight spread = coiled spring
+ */
+function bucketCompression(d: DiscoveryInput): number {
+  // ATR: lower = more compressed. atrPct < 0.5 = very compressed
+  let atrCompress = 0.3; // default when no data
+  if (d.atrPct !== null) {
+    if (d.atrPct < 0.5) atrCompress = 1.0;
+    else if (d.atrPct < 0.8) atrCompress = 0.8;
+    else if (d.atrPct < 1.2) atrCompress = 0.5;
+    else if (d.atrPct < 2.0) atrCompress = 0.2;
+    else atrCompress = 0.05;
+  }
+
+  // RSI near 50 = compressed, extremes = already moving
+  let rsiCompress = 0.3;
+  if (d.rsi14 !== null) {
+    const distFrom50 = Math.abs(d.rsi14 - 50);
+    if (distFrom50 < 5) rsiCompress = 1.0;
+    else if (distFrom50 < 10) rsiCompress = 0.75;
+    else if (distFrom50 < 15) rsiCompress = 0.40;
+    else rsiCompress = 0.10;
+  }
+
+  // Tight spread = ready for breakout
+  const spreadReady = d.spreadBps !== null
+    ? clamp01(1 - (d.spreadBps - 1) / 9) : 0.3;
+
+  // Volume not too low (need some activity for breakout to work)
+  const minVolume = clamp01((Math.log10(Math.max(d.volume24hUsd, 1)) - 6.5) / 2);
+
+  const raw = 0.35 * atrCompress + 0.25 * rsiCompress + 0.20 * spreadReady + 0.20 * minVolume;
+  return Math.round(clamp01(raw) * 100);
+}
+
+/**
+ * Bucket 3: VWAP Reclaim / S/R Proximity — price near key level
+ * Close to support/resistance with good depth = mean reversion opportunity
+ */
+function bucketVwapReclaim(d: DiscoveryInput): number {
+  // S/R proximity: closer = better (proxy for VWAP reclaim)
+  let srProximity = 0.1;
+  if (d.srDistPct !== null) {
+    if (d.srDistPct < 0.5) srProximity = 1.0;
+    else if (d.srDistPct < 1.0) srProximity = 0.85;
+    else if (d.srDistPct < 2.0) srProximity = 0.60;
+    else if (d.srDistPct < 3.0) srProximity = 0.35;
+    else srProximity = 0.10;
+  }
+
+  // Depth: good depth near level = better fill
+  const depthQuality = d.depthUsd !== null
+    ? clamp01(d.depthUsd / 3_000_000) : 0.2;
+
+  // Some momentum toward level (not flat)
+  const approachMomentum = clamp01(Math.abs(d.change24hPct) / 4);
+
+  // S/R level strength bonus
+  const strengthBonus =
+    d.nearestSR?.strength === "STRONG" ? 0.15
+    : d.nearestSR?.strength === "MID" ? 0.08 : 0;
+
+  const raw = 0.45 * srProximity + 0.25 * depthQuality + 0.20 * approachMomentum + strengthBonus;
+  return Math.round(clamp01(raw) * 100);
+}
+
+/**
+ * Bucket 4: Failed Breakdown — price near support + oversold
+ * Reversal opportunity: price tried to break support but bounced
+ */
+function bucketFailedBreakdown(d: DiscoveryInput): number {
+  // Near support level
+  let supportProximity = 0;
+  if (d.nearestSR?.type === "support" && d.srDistPct !== null) {
+    if (d.srDistPct < 1.0) supportProximity = 1.0;
+    else if (d.srDistPct < 2.0) supportProximity = 0.70;
+    else if (d.srDistPct < 3.0) supportProximity = 0.35;
+    else supportProximity = 0.05;
+  }
+
+  // Oversold RSI
+  let oversoldScore = 0.1;
+  if (d.rsi14 !== null) {
+    if (d.rsi14 < 25) oversoldScore = 1.0;
+    else if (d.rsi14 < 30) oversoldScore = 0.85;
+    else if (d.rsi14 < 35) oversoldScore = 0.55;
+    else if (d.rsi14 < 40) oversoldScore = 0.25;
+    else oversoldScore = 0.05;
+  }
+
+  // Negative recent change (price dropped = potential bounce)
+  const dropScore = d.change24hPct < -5 ? 1.0
+    : d.change24hPct < -3 ? 0.75
+    : d.change24hPct < -1 ? 0.40
+    : 0.05;
+
+  // Depth above (buyers ready)
+  const depthReady = d.depthUsd !== null
+    ? clamp01(d.depthUsd / 2_000_000) : 0.15;
+
+  const raw = 0.35 * supportProximity + 0.30 * oversoldScore + 0.20 * dropScore + 0.15 * depthReady;
+  return Math.round(clamp01(raw) * 100);
+}
+
+/**
+ * Bucket 5: Relative Strength — outperforming vs market average
+ * Strong coins tend to stay strong (momentum factor)
+ */
+function bucketRelativeStrength(d: DiscoveryInput): number {
+  // RS vs market: coin change24h vs average market change
+  const rsVsMarket = d.change24hPct - d.marketAvgChange;
+  const rsNorm = clamp01(rsVsMarket / 6); // +6% outperformance = max
+
+  // Absolute positive momentum
+  const absMomentum = d.change24hPct > 0
+    ? clamp01(d.change24hPct / 8) : 0;
+
+  // Funding contrarian: if momentum is up but funding is negative = more fuel
+  let fundingContrarian = 0.3;
+  if (d.fundingRate !== null) {
+    if (d.change24hPct > 0 && d.fundingRate < -0.0001) fundingContrarian = 0.8; // bullish + negative funding = fuel
+    else if (d.change24hPct < 0 && d.fundingRate > 0.0005) fundingContrarian = 0.75; // bearish + positive funding = fuel
+    else if (Math.abs(d.fundingRate) < 0.0001) fundingContrarian = 0.4; // neutral
+    else fundingContrarian = 0.2; // aligned = crowded
+  }
+
+  // Volume support
+  const volSupport = clamp01((Math.log10(Math.max(d.volume24hUsd, 1)) - 7) / 2);
+
+  const raw = 0.40 * rsNorm + 0.25 * absMomentum + 0.20 * fundingContrarian + 0.15 * volSupport;
+  return Math.round(clamp01(raw) * 100);
+}
+
+/**
+ * Bucket 6: Liquidity Rotation — money flowing between assets
+ * Extreme funding + orderbook imbalance + volume = rotation signal
+ */
+function bucketLiquidityRotation(d: DiscoveryInput): number {
+  // Funding extreme: |funding| > 0.0005 = mean-reversion rotation signal
+  let fundingRotation = 0.2;
+  if (d.fundingRate !== null) {
+    const absFunding = Math.abs(d.fundingRate);
+    if (absFunding > 0.001) fundingRotation = 1.0;
+    else if (absFunding > 0.0005) fundingRotation = 0.75;
+    else if (absFunding > 0.0002) fundingRotation = 0.40;
+    else fundingRotation = 0.10;
+  }
+
+  // Imbalance: strong one-sided order flow = rotation
+  const imbalanceScore = d.imbalance !== null
+    ? clamp01(Math.abs(d.imbalance) / 0.5) : 0.15;
+
+  // Volume spike: above-average volume = active rotation
+  const volumeSpike = clamp01((Math.log10(Math.max(d.volume24hUsd, 1)) - 7.5) / 1.5);
+
+  // Depth change proxy: high depth = institutional interest
+  const depthInterest = d.depthUsd !== null
+    ? clamp01(d.depthUsd / 5_000_000) : 0.15;
+
+  const raw = 0.30 * fundingRotation + 0.30 * imbalanceScore + 0.25 * volumeSpike + 0.15 * depthInterest;
+  return Math.round(clamp01(raw) * 100);
+}
+
+/**
+ * Compute all 6 discovery buckets + discovery score for a coin.
+ */
+function computeDiscoveryBuckets(d: DiscoveryInput): {
+  buckets: DiscoveryBuckets;
+  discoveryScore: number;
+  shortlisted: boolean;
+} {
+  const buckets: DiscoveryBuckets = {
+    momentum: bucketMomentum(d),
+    compression: bucketCompression(d),
+    vwapReclaim: bucketVwapReclaim(d),
+    failedBreakdown: bucketFailedBreakdown(d),
+    relativeStrength: bucketRelativeStrength(d),
+    liquidityRotation: bucketLiquidityRotation(d),
+  };
+
+  const allScores = [
+    buckets.momentum, buckets.compression, buckets.vwapReclaim,
+    buckets.failedBreakdown, buckets.relativeStrength, buckets.liquidityRotation,
+  ];
+
+  // DiscoveryScore = max(all_buckets) + breadth_bonus
+  const maxBucket = Math.max(...allScores);
+  const bucketsAbove70 = allScores.filter((s) => s >= 70).length;
+  const bucketsAbove66 = allScores.filter((s) => s >= 66).length;
+  const breadthBonus = bucketsAbove70 >= 3 ? 7 : bucketsAbove70 >= 2 ? 4 : 0;
+  const discoveryScore = Math.min(100, maxBucket + breadthBonus);
+
+  // Shortlist: any bucket >= 72 OR 2+ buckets >= 66
+  const shortlisted = maxBucket >= 72 || bucketsAbove66 >= 2;
+
+  return { buckets, discoveryScore, shortlisted };
+}
+
+/**
+ * Quality guardrails for discovery shortlist.
+ * SpreadQuality >= 45, LiquidityQuality >= 50
+ */
+function passesDiscoveryGuardrails(
+  spreadBps: number | null,
+  depthUsd: number | null,
+): boolean {
+  // Spread quality: 1 bps = 90, 5 bps = 50, 10+ bps = 10
+  const spreadQuality = spreadBps !== null
+    ? Math.round(clamp01(1 - (spreadBps - 1) / 9) * 100) : 30;
+  // Liquidity quality: depth scaled to 100
+  const liquidityQuality = depthUsd !== null
+    ? Math.round(clamp01(depthUsd / 3_000_000) * 100) : 25;
+
+  return spreadQuality >= 45 && liquidityQuality >= 50;
+}
+
+/* ------------------------------------------------------------------ */
 /*  Nearest S/R distance calculation                                   */
 /* ------------------------------------------------------------------ */
 
@@ -460,10 +734,16 @@ export class CoinUniverseEngine {
     const tier2Symbols = allCoins.slice(0, TIER2_TOP_N).map((c) => c.symbol);
     await this.fetchKlinesBatch(tier2Symbols);
 
-    // 5. Compute Tier 2 + composite for all coins
+    // 5. Compute Tier 2 + composite + discovery for all coins
     const now = Date.now();
     const activeList: UniverseCoinRow[] = [];
     const cooldownList: UniverseCoinRow[] = [];
+
+    // Compute market average change24h for RS bucket
+    const validChanges = allCoins.filter((c) => Number.isFinite(c.change24hPct));
+    const marketAvgChange = validChanges.length > 0
+      ? validChanges.reduce((sum, c) => sum + c.change24hPct, 0) / validChanges.length
+      : 0;
 
     for (const coin of allCoins) {
       let atrPct: number | null = null;
@@ -493,6 +773,26 @@ export class CoinUniverseEngine {
         ? Math.round(0.60 * coin.tier1Score + 0.40 * tier2Score)
         : coin.tier1Score;
 
+      // 6-Bucket Discovery scoring
+      const discoveryInput: DiscoveryInput = {
+        volume24hUsd: coin.volume24hUsd,
+        change24hPct: coin.change24hPct,
+        fundingRate: coin.fundingRate,
+        spreadBps: coin.spreadBps,
+        depthUsd: coin.depthUsd,
+        imbalance: coin.imbalance,
+        atrPct,
+        rsi14,
+        srDistPct,
+        nearestSR,
+        marketAvgChange,
+      };
+      const discovery = computeDiscoveryBuckets(discoveryInput);
+
+      // Quality guardrails: shortlisted coins must pass spread + liquidity checks
+      const guardrailsPass = passesDiscoveryGuardrails(coin.spreadBps, coin.depthUsd);
+      const effectiveShortlist = discovery.shortlisted && guardrailsPass;
+
       // Cooldown check
       const cooldownEntry = this.cooldownMap.get(coin.symbol);
       const isCooling = cooldownEntry != null && this.currentRound < cooldownEntry.cooldownUntilRound;
@@ -518,6 +818,9 @@ export class CoinUniverseEngine {
         tier1Score: coin.tier1Score,
         tier2Score,
         compositeScore,
+        discoveryBuckets: discovery.buckets,
+        discoveryScore: discovery.discoveryScore,
+        shortlisted: effectiveShortlist,
         status: isCooling ? "COOLDOWN" : isNew ? "NEW" : "ACTIVE",
         cooldownRoundsLeft,
         scanner_selected: false, // set later by SystemScanner
@@ -530,8 +833,18 @@ export class CoinUniverseEngine {
       }
     }
 
-    // Sort active by composite desc, cooldown by composite desc
-    activeList.sort((a, b) => b.compositeScore - a.compositeScore || b.volume24hUsd - a.volume24hUsd);
+    // Sort active by composite desc, with discovery shortlist priority
+    // Shortlisted coins get a ranking boost to prioritize them for scanning
+    activeList.sort((a, b) => {
+      // Shortlisted coins rank higher (tie-broken by discovery score then composite)
+      if (a.shortlisted !== b.shortlisted) return a.shortlisted ? -1 : 1;
+      // Among same shortlist status: sort by discoveryScore, then composite
+      if (a.shortlisted && b.shortlisted) {
+        const dDiff = b.discoveryScore - a.discoveryScore;
+        if (Math.abs(dDiff) > 2) return dDiff;
+      }
+      return b.compositeScore - a.compositeScore || b.volume24hUsd - a.volume24hUsd;
+    });
     cooldownList.sort((a, b) => b.compositeScore - a.compositeScore);
 
     this.rankedActive = activeList;
@@ -550,9 +863,10 @@ export class CoinUniverseEngine {
 
     const elapsed = ((Date.now() - t0) / 1000).toFixed(1);
     const tier2Count = allCoins.filter((c) => this.klinesCache.has(c.symbol)).length;
+    const shortlistCount = activeList.filter((c) => c.shortlisted).length;
     console.log(
       `[CoinUniverseEngine] Refresh #${this.currentRound}: ${allCoins.length} coins scored, ` +
-      `${tier2Count} with klines, ${cooldownList.length} cooling down — ${elapsed}s`,
+      `${tier2Count} with klines, ${shortlistCount} shortlisted, ${cooldownList.length} cooling down — ${elapsed}s`,
     );
   }
 

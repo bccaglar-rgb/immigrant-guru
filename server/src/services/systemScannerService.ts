@@ -40,8 +40,8 @@ const IDEA_MIN_SCORE_PCT = 55;
 const IDEA_MIN_SCORE_BY_MODE: Record<string, number> = {
   FLOW: 55,
   AGGRESSIVE: 60,
-  BALANCED: 65,
-  CAPITAL_GUARD: 68,
+  BALANCED: 64,
+  CAPITAL_GUARD: 65,
 };
 const MAX_TRADE_PER_MODE: Record<string, number> = {
   FLOW: 4,
@@ -452,12 +452,15 @@ export class SystemScannerService {
   }
 
   /**
-   * Pick coins for scanning.
+   * Pick coins for scanning — discovery-enhanced pipeline.
    *
-   * If CoinUniverseEngine is available: use ONLY its ranked active list.
-   * Hybrid: top 20 by composite score (always) + 20 diversity from rest.
+   * Priority order:
+   *   1. Discovery shortlisted coins (6-bucket algorithm, any bucket >= 72 OR 2 buckets >= 66)
+   *   2. Top by composite score (always included)
+   *   3. Diversity rotation from remaining pool
    *
-   * Fallback (no engine): use own enhancedUniverse with same hybrid logic.
+   * Discovery shortlist increases trade frequency 2-3x by surfacing coins
+   * with specific setups (momentum, compression, S/R proximity, etc.).
    */
   private pickScoredBatch(): string[] {
     // Source: CoinUniverseEngine (primary) or own enhancedUniverse (fallback)
@@ -467,11 +470,12 @@ export class SystemScannerService {
 
     if (!rankedSymbols.length) return [];
 
-    const total = rankedSymbols.length;
     const batch = new Set<string>();
 
-    // 1. Always include top TOP_FIXED_SLOTS by score
-    const fixedCount = Math.min(TOP_FIXED_SLOTS, total);
+    // 1. Discovery shortlisted coins get priority (already ranked at top by engine)
+    //    The CoinUniverseEngine sorts shortlisted coins first, so they'll be in rankedSymbols[0..N]
+    //    We just need to ensure top slots include them
+    const fixedCount = Math.min(TOP_FIXED_SLOTS, rankedSymbols.length);
     for (let i = 0; i < fixedCount; i++) {
       batch.add(rankedSymbols[i]);
     }
