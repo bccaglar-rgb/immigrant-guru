@@ -309,26 +309,26 @@ export const computeExtremeConsensus = (input: ExtremeConsensusInput): ExtremeCo
     liquidationTargetClear;
 
   let penalties = 0;
-  if (input.spoofRisk === "HIGH") penalties += 8;
+  if (input.spoofRisk === "HIGH") penalties += 4;
   if (input.asymmetryScore === "RISK_DOMINANT") penalties += 6;
   if (input.suddenMoveRisk === "HIGH") penalties += 5;
-  if (input.cascadeRisk === "HIGH") penalties += 7;
-  if (input.slippageLevel === "HIGH") penalties += 8;
+  if (input.cascadeRisk === "HIGH") penalties += 3;
+  if (input.slippageLevel === "HIGH") penalties += 5;
   if (input.spotVsDerivativesPressure === "DERIV_DOM" && input.relativeStrength !== "STRONG") penalties += 4;
   if (!macroNotAgainst) penalties += 8;
   if (manipulationAlarm) penalties += 6;
   if (input.rsiState === "OVERBOUGHT" && directionBias.direction === "LONG") penalties += 3;
   if (input.rsiState === "OVERSOLD" && directionBias.direction === "SHORT") penalties += 3;
 
-  const appliedPenalty = penalties * EXTREME_PENALTY_MULTIPLIER;
+  const appliedPenalty = Math.min(penalties * EXTREME_PENALTY_MULTIPLIER, 10);
   score = clamp(score - appliedPenalty, 0, 100);
 
-  if (directionBias.direction === "NEUTRAL") score = Math.min(score, 78);
-  if (baseAlignedCount === 0) score = Math.min(score, 62);
-  else if (baseAlignedCount < 2) score = Math.min(score, 78);
+  if (directionBias.direction === "NEUTRAL") score = Math.min(score, 85);
+  if (baseAlignedCount === 0) score = Math.min(score, 70);
+  else if (baseAlignedCount < 2) score = Math.min(score, 85);
   if (execution.badCount >= 4) score = Math.min(score, 65);
-  if (strictFilterCount < 5) score = Math.min(score, 78);
-  if (hardNoTrade) score = Math.min(score, 38);
+  if (strictFilterCount < 5) score = Math.min(score, 85);
+  if (hardNoTrade) score = Math.min(score, 48);
 
   const extremeScore = clamp(Number(score.toFixed(2)), 0, 100);
   return {
