@@ -3,7 +3,7 @@ import type { Express, Request } from "express";
 import { TradeIdeaStore } from "../services/tradeIdeaStore.ts";
 import type { TradeIdeaDirection, TradeIdeaRecord, TradeIdeaStatus } from "../services/tradeIdeaTypes.ts";
 import { isScoringMode, normalizeScoringMode, SCORING_MODES } from "../services/scoringMode.ts";
-import type { SystemScannerService } from "../services/systemScannerService.ts";
+import { SystemScannerService } from "../services/systemScannerService.ts";
 
 const readUserId = (req: Request): string => {
   const raw = req.headers["x-user-id"];
@@ -131,8 +131,6 @@ export const registerTradeIdeasRoutes = (app: Express, store: TradeIdeaStore, sy
   app.get("/api/trade-ideas/report-stats", async (req, res) => {
     const ALL_MODES = ["FLOW", "AGGRESSIVE", "BALANCED", "CAPITAL_GUARD"] as const;
     const cache = systemScanner?.getCache();
-    const totalScansByMode = cache?.totalScansByMode ?? {};
-    const highScoreByMode = cache?.highScoreByMode ?? {};
     const startedAt = cache?.startedAt ?? 0;
 
     // Time range filter: 1h, 4h, 24h, 7d (default: no filter = all)
@@ -145,6 +143,18 @@ export const registerTradeIdeasRoutes = (app: Express, store: TradeIdeaStore, sy
     const rangeParam = String(req.query?.range ?? "");
     const rangeMs = RANGE_MS[rangeParam] ?? 0;
     const cutoffMs = rangeMs > 0 ? Date.now() - rangeMs : 0;
+
+    // Read persisted scan counts from disk — survives server restarts
+    const scanRecords = SystemScannerService.readScanCounts();
+    const filteredScanRecords = cutoffMs > 0
+      ? scanRecords.filter((r) => Date.parse(r.ts) >= cutoffMs)
+      : scanRecords;
+    const totalScansByMode: Record<string, number> = {};
+    for (const rec of filteredScanRecords) {
+      for (const [mode, count] of Object.entries(rec.counts)) {
+        totalScansByMode[mode] = (totalScansByMode[mode] ?? 0) + count;
+      }
+    }
 
     // Report includes ideas above each mode's TRADE threshold
     const REPORT_MIN_SCORE: Record<string, number> = {
@@ -185,7 +195,7 @@ export const registerTradeIdeasRoutes = (app: Express, store: TradeIdeaStore, sy
       const resolved = success + failed;
       statsByMode[mode] = {
         totalScan: totalScansByMode[mode] ?? 0,
-        highScoreScan: highScoreByMode[mode] ?? 0,
+        highScoreScan: 0, // TODO: persist high-score counts if needed
         totalIdeas: modeIdeas.length,
         active: activeCount,
         resolved,

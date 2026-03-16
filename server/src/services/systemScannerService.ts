@@ -15,6 +15,8 @@
  */
 
 import { randomUUID } from "node:crypto";
+import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
+import { dirname, resolve } from "node:path";
 import type { TradeIdeaStore } from "./tradeIdeaStore.ts";
 import type { TradeIdeaRecord } from "./tradeIdeaTypes.ts";
 import type { ScoringMode } from "./scoringMode.ts";
@@ -23,6 +25,11 @@ import type { CoinUniverseEngine } from "./coinUniverseEngine.ts";
 
 const ALL_MODES: ScoringMode[] = ["FLOW", "AGGRESSIVE", "BALANCED", "CAPITAL_GUARD"];
 const SYSTEM_USER_ID = "system-scanner";
+
+// Scan counts persistence — survives server restarts
+const SCAN_COUNTS_PATH = resolve(dirname(new URL(import.meta.url).pathname), "../../data/scan_counts.json");
+type ScanCountRecord = { ts: string; counts: Record<string, number> };
+const SCAN_COUNTS_MAX_AGE_MS = 8 * 24 * 60 * 60 * 1000; // keep 8 days
 
 const UNIVERSE_SIZE = 300; // Lock top 300 Binance Futures coins
 const UNIVERSE_REFRESH_MS = 4 * 60 * 60 * 1000; // Refresh universe every 4 hours
@@ -210,6 +217,31 @@ export class SystemScannerService {
         .slice(0, 40)
         .map((c) => ({ symbol: c.symbol, enhancedScore: c.enhancedScore })),
     };
+  }
+
+  /** Read persisted scan counts from disk (for time-range filtered reports) */
+  static readScanCounts(): ScanCountRecord[] {
+    try {
+      const raw = readFileSync(SCAN_COUNTS_PATH, "utf-8");
+      return JSON.parse(raw) as ScanCountRecord[];
+    } catch {
+      return [];
+    }
+  }
+
+  /** Append a scan cycle record to disk and prune old entries */
+  private persistScanCycle(cycleCounts: Record<string, number>): void {
+    try {
+      const records = SystemScannerService.readScanCounts();
+      records.push({ ts: new Date().toISOString(), counts: cycleCounts });
+      // Prune entries older than 8 days
+      const cutoff = Date.now() - SCAN_COUNTS_MAX_AGE_MS;
+      const pruned = records.filter((r) => Date.parse(r.ts) >= cutoff);
+      mkdirSync(dirname(SCAN_COUNTS_PATH), { recursive: true });
+      writeFileSync(SCAN_COUNTS_PATH, JSON.stringify(pruned), "utf-8");
+    } catch (err) {
+      console.error("[SystemScanner] Failed to persist scan counts:", err);
+    }
   }
 
   /** Reset all stats — counters, scan round, cache — fresh start */
@@ -528,10 +560,13 @@ export class SystemScannerService {
     //    Total: 7 per mode = 28
     const assigned = this.assignCoinsToModes(filteredResults, rankedSymbols);
 
-    // 5b. Increment cumulative scan counts per mode
+    // 5b. Increment cumulative scan counts per mode + persist to disk
+    const cycleCounts: Record<string, number> = {};
     for (const r of assigned) {
       this.totalScansByMode[r.mode] = (this.totalScansByMode[r.mode] ?? 0) + 1;
+      cycleCounts[r.mode] = (cycleCounts[r.mode] ?? 0) + 1;
     }
+    this.persistScanCycle(cycleCounts);
 
     // 6. Apply per-mode TRADE cap — keep only top N as TRADE, downgrade rest to WATCH
     const tradeCounts: Record<string, number> = {};
