@@ -1,31 +1,56 @@
-import { lazy, Suspense } from "react";
+import { lazy, Suspense, type ComponentType } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 import { AppShell } from "./components/AppShell";
 
-const MarketDashboardPage = lazy(() => import("./pages/MarketDashboardPage"));
-const ExchangeTerminalPage = lazy(() => import("./pages/ExchangeTerminalPage"));
-const CryptoMarketPage = lazy(() => import("./pages/CryptoMarketPage"));
-const SuperChartsPage = lazy(() => import("./pages/SuperChartsPage"));
-const TradeIdeasPage = lazy(() => import("./pages/TradeIdeasPage"));
-const TradeIdeasReportPage = lazy(() => import("./pages/TradeIdeasReportPage"));
-const GamesPage = lazy(() => import("./pages/GamesPage"));
-const AiTraderLeaderboardPage = lazy(() => import("./pages/AiTraderLeaderboardPage"));
-const AiTraderDashboardPage = lazy(() => import("./pages/AiTraderDashboardPage"));
-const AiTraderStrategyPage = lazy(() => import("./pages/AiTraderStrategyPage"));
-const AiTraderComingSoonPage = lazy(() => import("./pages/AiTraderComingSoonPage"));
-const IndicatorsPage = lazy(() => import("./pages/IndicatorsPage"));
-const IconGalleryPage = lazy(() => import("./pages/IconGalleryPage"));
-const BitriumTokenPage = lazy(() => import("./pages/BitriumTokenPage"));
-const CoinCalculatorPage = lazy(() => import("./pages/CoinCalculatorPage"));
-const TokenCreatorPage = lazy(() => import("./pages/TokenCreatorPage"));
-const CoinUniversePage = lazy(() => import("./pages/CoinUniversePage"));
-const PricingPage = lazy(() => import("./pages/PricingPage"));
-const LoginPage = lazy(() => import("./pages/LoginPage"));
-const SignupPage = lazy(() => import("./pages/SignupPage"));
-const PaymentCheckoutPage = lazy(() => import("./pages/PaymentCheckoutPage"));
-const AdminPaymentsPage = lazy(() => import("./pages/AdminPaymentsPage"));
-const SettingsPage = lazy(() => import("./pages/SettingsPage"));
-const AdminPage = lazy(() => import("./pages/AdminPage"));
+/**
+ * Wraps React.lazy() with an auto-reload fallback.
+ * After a deploy, old JS chunk hashes no longer exist on the server (rsync --delete).
+ * If a dynamic import fails (404), we force a full page reload so the browser
+ * picks up the new index.html with fresh chunk references.
+ * A sessionStorage flag prevents infinite reload loops.
+ */
+function lazyRetry<T extends ComponentType<any>>(importFn: () => Promise<{ default: T }>) {
+  return lazy(async () => {
+    const key = "chunk-retry";
+    try {
+      const module = await importFn();
+      sessionStorage.removeItem(key);
+      return module;
+    } catch {
+      const retried = Number(sessionStorage.getItem(key) ?? 0);
+      if (retried < 1) {
+        sessionStorage.setItem(key, String(retried + 1));
+        window.location.reload();
+      }
+      return { default: (() => null) as unknown as T };
+    }
+  });
+}
+
+const MarketDashboardPage = lazyRetry(() => import("./pages/MarketDashboardPage"));
+const ExchangeTerminalPage = lazyRetry(() => import("./pages/ExchangeTerminalPage"));
+const CryptoMarketPage = lazyRetry(() => import("./pages/CryptoMarketPage"));
+const SuperChartsPage = lazyRetry(() => import("./pages/SuperChartsPage"));
+const TradeIdeasPage = lazyRetry(() => import("./pages/TradeIdeasPage"));
+const TradeIdeasReportPage = lazyRetry(() => import("./pages/TradeIdeasReportPage"));
+const GamesPage = lazyRetry(() => import("./pages/GamesPage"));
+const AiTraderLeaderboardPage = lazyRetry(() => import("./pages/AiTraderLeaderboardPage"));
+const AiTraderDashboardPage = lazyRetry(() => import("./pages/AiTraderDashboardPage"));
+const AiTraderStrategyPage = lazyRetry(() => import("./pages/AiTraderStrategyPage"));
+const AiTraderComingSoonPage = lazyRetry(() => import("./pages/AiTraderComingSoonPage"));
+const IndicatorsPage = lazyRetry(() => import("./pages/IndicatorsPage"));
+const IconGalleryPage = lazyRetry(() => import("./pages/IconGalleryPage"));
+const BitriumTokenPage = lazyRetry(() => import("./pages/BitriumTokenPage"));
+const CoinCalculatorPage = lazyRetry(() => import("./pages/CoinCalculatorPage"));
+const TokenCreatorPage = lazyRetry(() => import("./pages/TokenCreatorPage"));
+const CoinUniversePage = lazyRetry(() => import("./pages/CoinUniversePage"));
+const PricingPage = lazyRetry(() => import("./pages/PricingPage"));
+const LoginPage = lazyRetry(() => import("./pages/LoginPage"));
+const SignupPage = lazyRetry(() => import("./pages/SignupPage"));
+const PaymentCheckoutPage = lazyRetry(() => import("./pages/PaymentCheckoutPage"));
+const AdminPaymentsPage = lazyRetry(() => import("./pages/AdminPaymentsPage"));
+const SettingsPage = lazyRetry(() => import("./pages/SettingsPage"));
+const AdminPage = lazyRetry(() => import("./pages/AdminPage"));
 
 const PageLoader = () => (
   <div className="flex min-h-[60vh] items-center justify-center">
