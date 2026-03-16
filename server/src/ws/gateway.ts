@@ -1,6 +1,7 @@
 import type { Server as HttpServer } from "node:http";
 import { WebSocket, WebSocketServer } from "ws";
 import { fetchMarketLiveBundle } from "../routes/market.ts";
+import type { ExchangeMarketHub } from "../services/marketHub/ExchangeMarketHub.ts";
 
 type Interval = "1m" | "5m" | "15m" | "30m" | "1h" | "4h" | "1d";
 type ExchangeName = "Binance" | "Bybit" | "OKX" | "Gate.io";
@@ -38,6 +39,9 @@ const apiKey = process.env.CG_API_KEY ?? "4f8430d3a7a14b44a16bd10f3a4dd61d";
 const WS_TICK_MS = 800;
 const WS_MAX_CONCURRENCY = 6;
 
+// Throttle price ticks: max 1 per 150ms per symbol to avoid flooding
+const PRICE_TICK_THROTTLE_MS = 150;
+
 const runWithConcurrency = async (jobs: Array<() => Promise<void>>, concurrency: number) => {
   if (!jobs.length) return;
   const max = Math.max(1, Math.min(concurrency, jobs.length));
@@ -57,11 +61,45 @@ const runWithConcurrency = async (jobs: Array<() => Promise<void>>, concurrency:
   await Promise.allSettled(workers);
 };
 
-export const createGateway = (httpServer: HttpServer) => {
+interface GatewayOpts {
+  exchangeMarketHub?: ExchangeMarketHub;
+}
+
+export const createGateway = (httpServer: HttpServer, opts?: GatewayOpts) => {
   const wss = new WebSocketServer({ server: httpServer, path: "/ws" });
   const sockets = new Map<WebSocket, SocketState>();
   let tickInFlight = false;
 
+  // ── Price tick: real-time push from exchange hub trade events ──
+  const lastTickAt = new Map<string, number>(); // symbol → last broadcast ts
+
+  const broadcastPriceTick = (symbol: string, price: number, ts: number) => {
+    const now = Date.now();
+    const last = lastTickAt.get(symbol) ?? 0;
+    if (now - last < PRICE_TICK_THROTTLE_MS) return; // throttle
+    lastTickAt.set(symbol, now);
+
+    // Find all sockets subscribed to this symbol
+    const body = JSON.stringify({ type: "price_tick", symbol, price, ts });
+    for (const [socket, state] of sockets.entries()) {
+      if (socket.readyState !== WebSocket.OPEN) continue;
+      const hasSub = Object.values(state.subs).some((s) => s.symbol === symbol);
+      if (hasSub) {
+        socket.send(body);
+      }
+    }
+  };
+
+  // Listen to exchange hub trade events for instant price push
+  if (opts?.exchangeMarketHub) {
+    opts.exchangeMarketHub.onEvent((event) => {
+      if (event.type === "trade" && event.price > 0) {
+        broadcastPriceTick(event.symbol, event.price, event.ts);
+      }
+    });
+  }
+
+  // ── Full bundle tick (candles, orderbook, derivatives) — every WS_TICK_MS ──
   const tick = async () => {
     const requestRoutes = new Map<string, Array<{ socket: WebSocket; sub: MarketSub }>>();
     for (const [socket, state] of sockets.entries()) {

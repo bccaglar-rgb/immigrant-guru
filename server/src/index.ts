@@ -121,7 +121,7 @@ if (process.env.NODE_ENV === "production") {
 }
 
 const server = http.createServer(app);
-createGateway(server);
+createGateway(server, { exchangeMarketHub });
 
 const host = process.env.HOST ?? "127.0.0.1";
 const port = Number(process.env.PORT ?? 8090);

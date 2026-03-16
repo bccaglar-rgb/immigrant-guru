@@ -16,6 +16,11 @@ interface SubscriptionKey {
   lookback: number;
 }
 
+interface PriceTick {
+  price: number;
+  ts: number;
+}
+
 interface RouterState {
   activeSource: SourceId;
   sourceChip: string;
@@ -29,11 +34,13 @@ interface RouterState {
   orderbook: Record<string, MarketDatum<{ spreadBps: number; depthUsd: number; imbalance: number }>>;
   trades: Record<string, MarketDatum<{ deltaBtc1m: number; volumeBtc1m: number; speedTpm: number; volumeZ: number }>>;
   derivatives: Record<string, MarketDatum<{ fundingRate: number | null; oiValue: number | null; oiChange1h: number | null; liquidationUsd: number | null }>>;
+  priceTicks: Record<string, PriceTick>;
   lastUpdateAt: number;
   subscriptions: Record<string, SubscriptionKey>;
   publicSourceOverride: SourceId | null;
   setRouterStatus: (patch: Partial<Pick<RouterState, "activeSource" | "sourceChip" | "fallbackActive" | "bannerMessage" | "stale" | "staleAgeSec" | "latencyMs" | "publicSourceOverride">>) => void;
   ingestLivePacket: (sourceId: SourceId, symbol: string, interval: Timeframe, packet: FallbackLivePayload) => void;
+  ingestPriceTick: (symbol: string, price: number, ts: number) => void;
   subscribe: (sub: SubscriptionKey) => void;
   unsubscribe: (symbol: string, interval: Timeframe) => void;
   clearSourceScopedCaches: () => void;
@@ -113,10 +120,15 @@ const useMarketDataRouterStore = create<RouterState>((set) => ({
   orderbook: {},
   trades: {},
   derivatives: {},
+  priceTicks: {},
   lastUpdateAt: 0,
   subscriptions: {},
   publicSourceOverride: null,
   setRouterStatus: (patch) => set((state) => ({ ...state, ...patch })),
+  ingestPriceTick: (symbol, price, ts) =>
+    set((state) => ({
+      priceTicks: { ...state.priceTicks, [symbol]: { price, ts } },
+    })),
   ingestLivePacket: (sourceId, symbol, interval, packet) => {
     let activeSource = useMarketDataRouterStore.getState().activeSource;
     const sourceUsed = String(packet.sourceUsed ?? "").toUpperCase();
@@ -373,6 +385,13 @@ const connectWebSocket = () => {
           const prevSource = store.activeSource;
           const nextSource = evaluateAndSwitchSource();
           if (prevSource !== nextSource) sendWsSubscriptions();
+        } else if (msg.type === "price_tick" && symbol) {
+          // Instant price tick from exchange hub trade events
+          const tickPrice = Number(msg.price);
+          const tickTs = Number(msg.ts ?? Date.now());
+          if (Number.isFinite(tickPrice) && tickPrice > 0) {
+            useMarketDataRouterStore.getState().ingestPriceTick(symbol, tickPrice, tickTs);
+          }
         } else if (msg.type === "market_error") {
           const state = useMarketDataRouterStore.getState();
           useDataSourceManager.getState().markError(

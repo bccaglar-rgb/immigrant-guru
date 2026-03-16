@@ -16,6 +16,7 @@ import { useIndicatorsStore } from "../hooks/useIndicatorsStore";
 import { useExchangeConfigs } from "../hooks/useExchangeConfigs";
 import { useExchangeTerminalStore } from "../hooks/useExchangeTerminalStore";
 import { FallbackApiAdapter, type FallbackLivePayload } from "../data/FallbackApiAdapter";
+import { MarketDataRouter } from "../data/MarketDataRouter";
 import { fetchExchangeAccountSnapshot } from "../services/exchangeApi";
 import { parseTradePlan } from "../utils/parseTradePlan";
 import type { ExchangeTradeSignal } from "../types/exchange";
@@ -379,13 +380,18 @@ export default function ExchangeTerminalPage() {
     };
   }, [exchangeBlocked, routerSymbol, selectedExchange, selectedExchangeAccount, setAccountData]);
 
+  // Real-time price tick from WS (bypasses REST polling for instant updates)
+  const wsPriceTick = MarketDataRouter.useStore((s) => s.priceTicks[routerSymbol]);
+
   const liveCandles = useMemo<CandlestickData[]>(
     () => {
       const normalized = normalizeCandlesForChart(chartBundle?.ohlcv);
-      // Prefer lastPrice (actual last traded price) over midPrice (orderbook mid)
+      // Priority: WS price tick (instant) > lastPrice (REST) > midPrice (orderbook)
+      const tick = wsPriceTick?.price ?? NaN;
       const lp = Number(chartBundle?.orderbook?.lastPrice ?? NaN);
       const mid = Number(chartBundle?.orderbook?.midPrice ?? NaN);
-      const price = Number.isFinite(lp) && lp > 0 ? lp : mid;
+      const price = Number.isFinite(tick) && tick > 0 ? tick
+        : Number.isFinite(lp) && lp > 0 ? lp : mid;
       if (!normalized.length || !Number.isFinite(price) || price <= 0) return normalized;
       const last = normalized[normalized.length - 1];
       normalized[normalized.length - 1] = {
@@ -396,7 +402,7 @@ export default function ExchangeTerminalPage() {
       };
       return normalized;
     },
-    [chartBundle?.ohlcv, chartBundle?.orderbook?.midPrice, chartBundle?.orderbook?.lastPrice],
+    [chartBundle?.ohlcv, chartBundle?.orderbook?.midPrice, chartBundle?.orderbook?.lastPrice, wsPriceTick],
   );
 
   useEffect(() => {
