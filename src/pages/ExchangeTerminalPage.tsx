@@ -299,7 +299,7 @@ export default function ExchangeTerminalPage() {
     void run();
     const timer = window.setInterval(() => {
       void run();
-    }, 1000);
+    }, 500);
 
     return () => {
       cancelled = true;
