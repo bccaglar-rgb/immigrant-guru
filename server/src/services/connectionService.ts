@@ -1,5 +1,4 @@
-import { mkdir, readFile, writeFile } from "node:fs/promises";
-import path from "node:path";
+import { pool } from "../db/pool.ts";
 import type { ExchangeName } from "./types";
 
 export interface ConnectionRecord {
@@ -43,103 +42,88 @@ export interface ExchangeConnectionRecord {
   createdAt: string;
 }
 
-interface ConnectionStorageModel {
-  rows: ConnectionRecord[];
-  exchangeRows: ExchangeConnectionRecord[];
-}
+/* ── Row mappers ──────────────────────────────────────────── */
 
-const defaultStorage = (): ConnectionStorageModel => ({
-  rows: [],
-  exchangeRows: [],
+const rowToConnection = (r: Record<string, unknown>): ConnectionRecord => ({
+  id: String(r.id),
+  userId: String(r.user_id),
+  exchange: String(r.exchange) as ExchangeName,
+  accountMode: String(r.account_mode) as "Spot" | "Futures" | "Both",
+  apiKeyMasked: String(r.api_key_masked),
+  encryptedSecret: r.encrypted_secret as ConnectionRecord["encryptedSecret"],
+  encryptedPassphrase: (r.encrypted_passphrase as ConnectionRecord["encryptedPassphrase"]) ?? undefined,
+  enabled: Boolean(r.enabled),
+  testnet: Boolean(r.testnet),
+  createdAt: String(r.created_at),
 });
 
-const normalizeAccountKey = (accountName?: string) =>
-  (accountName?.trim().toLowerCase() || "__main__").replace(/[^a-z0-9_-]+/g, "_");
+const rowToExchangeConnection = (r: Record<string, unknown>): ExchangeConnectionRecord => ({
+  id: String(r.id),
+  userId: String(r.user_id),
+  exchangeId: String(r.exchange_id),
+  exchangeDisplayName: String(r.exchange_display_name),
+  accountName: r.account_name ? String(r.account_name) : undefined,
+  enabled: Boolean(r.enabled),
+  environment: String(r.environment) as "mainnet" | "testnet",
+  credentialsEncrypted: r.credentials_encrypted as ExchangeConnectionRecord["credentialsEncrypted"],
+  status: String(r.status) as ExchangeConnectionStatus,
+  statusReport: r.status_report,
+  discoveryCache: (r.discovery_cache ?? { marketTypes: [], symbolsIndex: {}, sampleSymbols: [], preferredSymbols: [], checkedAt: "" }) as ExchangeConnectionRecord["discoveryCache"],
+  updatedAt: String(r.updated_at),
+  createdAt: String(r.created_at),
+});
+
+/* ── Service ──────────────────────────────────────────────── */
 
 export class ConnectionService {
-  private loaded = false;
-  private writeChain: Promise<void> = Promise.resolve();
-  private readonly rows = new Map<string, ConnectionRecord>();
-  private readonly exchangeRows = new Map<string, ExchangeConnectionRecord>();
-  private readonly filePath: string;
-
-  constructor(filePath = path.join(process.cwd(), "server", "data", "exchange_connections.json")) {
-    this.filePath = filePath;
-  }
-
-  private mapExchangeKey(userId: string, exchangeId: string, accountName?: string) {
-    return `${userId}:${exchangeId}:${normalizeAccountKey(accountName)}`;
-  }
-
-  private async ensureLoaded() {
-    if (this.loaded) return;
-    try {
-      const raw = await readFile(this.filePath, "utf8");
-      const parsed = JSON.parse(raw) as ConnectionStorageModel;
-      if (Array.isArray(parsed?.rows)) {
-        parsed.rows.forEach((row) => {
-          if (!row || typeof row !== "object") return;
-          if (!row.id || !row.userId) return;
-          this.rows.set(row.id, row);
-        });
-      }
-      if (Array.isArray(parsed?.exchangeRows)) {
-        parsed.exchangeRows.forEach((row) => {
-          if (!row || typeof row !== "object") return;
-          if (!row.userId || !row.exchangeId) return;
-          const key = this.mapExchangeKey(row.userId, row.exchangeId, row.accountName);
-          this.exchangeRows.set(key, row);
-        });
-      }
-    } catch {
-      await this.flush();
-    } finally {
-      this.loaded = true;
-    }
-  }
-
-  private async flush() {
-    const dir = path.dirname(this.filePath);
-    await mkdir(dir, { recursive: true });
-    const payload = JSON.stringify(
-      {
-        rows: [...this.rows.values()],
-        exchangeRows: [...this.exchangeRows.values()],
-      } satisfies ConnectionStorageModel,
-      null,
-      2,
-    );
-    this.writeChain = this.writeChain
-      .catch(() => {
-        // Recover write chain after transient fs errors.
-      })
-      .then(async () => {
-        await writeFile(this.filePath, payload, "utf8");
-      });
-    await this.writeChain;
-  }
+  /* ---------- ConnectionRecord (legacy) ---------- */
 
   async listByUser(userId: string): Promise<ConnectionRecord[]> {
-    await this.ensureLoaded();
-    return [...this.rows.values()].filter((v) => v.userId === userId);
+    const { rows } = await pool.query(
+      `SELECT * FROM connection_records WHERE user_id = $1 ORDER BY created_at DESC`,
+      [userId],
+    );
+    return rows.map(rowToConnection);
   }
 
   async save(record: ConnectionRecord): Promise<void> {
-    await this.ensureLoaded();
-    this.rows.set(record.id, record);
-    await this.flush();
+    await pool.query(
+      `INSERT INTO connection_records
+         (id, user_id, exchange, account_mode, api_key_masked, encrypted_secret, encrypted_passphrase, enabled, testnet, created_at)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
+       ON CONFLICT (id) DO UPDATE SET
+         exchange = EXCLUDED.exchange,
+         account_mode = EXCLUDED.account_mode,
+         api_key_masked = EXCLUDED.api_key_masked,
+         encrypted_secret = EXCLUDED.encrypted_secret,
+         encrypted_passphrase = EXCLUDED.encrypted_passphrase,
+         enabled = EXCLUDED.enabled,
+         testnet = EXCLUDED.testnet`,
+      [
+        record.id,
+        record.userId,
+        record.exchange,
+        record.accountMode,
+        record.apiKeyMasked,
+        JSON.stringify(record.encryptedSecret),
+        record.encryptedPassphrase ? JSON.stringify(record.encryptedPassphrase) : null,
+        record.enabled,
+        record.testnet,
+        record.createdAt,
+      ],
+    );
   }
 
   async delete(id: string): Promise<void> {
-    await this.ensureLoaded();
-    this.rows.delete(id);
-    await this.flush();
+    await pool.query(`DELETE FROM connection_records WHERE id = $1`, [id]);
   }
 
   async get(id: string): Promise<ConnectionRecord | undefined> {
-    await this.ensureLoaded();
-    return this.rows.get(id);
+    const { rows } = await pool.query(`SELECT * FROM connection_records WHERE id = $1`, [id]);
+    return rows[0] ? rowToConnection(rows[0]) : undefined;
   }
+
+  /* ---------- ExchangeConnectionRecord ---------- */
 
   async upsertExchangeConnection(input: {
     userId: string;
@@ -163,48 +147,76 @@ export class ConnectionService {
       checkedAt: string;
     };
   }): Promise<void> {
-    await this.ensureLoaded();
-    const key = this.mapExchangeKey(input.userId, input.exchangeId, input.accountName);
-    const prev = this.exchangeRows.get(key);
+    const accountName = input.accountName?.trim() || "Main";
     const now = new Date().toISOString();
-    this.exchangeRows.set(key, {
-      id: prev?.id ?? `${input.exchangeId}-${Math.random().toString(36).slice(2, 8)}`,
-      userId: input.userId,
-      exchangeId: input.exchangeId,
-      exchangeDisplayName: input.exchangeDisplayName,
-      accountName: input.accountName?.trim() || "Main",
-      enabled: input.enabled,
-      environment: input.environment,
-      credentialsEncrypted: input.credentialsEncrypted,
-      status: input.status,
-      statusReport: input.statusReport,
-      discoveryCache: input.discoveryCache,
-      updatedAt: now,
-      createdAt: prev?.createdAt ?? now,
-    });
-    await this.flush();
+    const id = `${input.exchangeId}-${Math.random().toString(36).slice(2, 8)}`;
+
+    await pool.query(
+      `INSERT INTO exchange_connection_records
+         (id, user_id, exchange_id, exchange_display_name, account_name,
+          enabled, environment, credentials_encrypted, status, status_report,
+          discovery_cache, updated_at, created_at)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)
+       ON CONFLICT (user_id, exchange_id, account_name) DO UPDATE SET
+         exchange_display_name = EXCLUDED.exchange_display_name,
+         enabled = EXCLUDED.enabled,
+         environment = EXCLUDED.environment,
+         credentials_encrypted = EXCLUDED.credentials_encrypted,
+         status = EXCLUDED.status,
+         status_report = EXCLUDED.status_report,
+         discovery_cache = EXCLUDED.discovery_cache,
+         updated_at = EXCLUDED.updated_at`,
+      [
+        id,
+        input.userId,
+        input.exchangeId,
+        input.exchangeDisplayName,
+        accountName,
+        input.enabled,
+        input.environment,
+        JSON.stringify(input.credentialsEncrypted),
+        input.status,
+        input.statusReport ? JSON.stringify(input.statusReport) : null,
+        JSON.stringify(input.discoveryCache),
+        now,
+        now,
+      ],
+    );
   }
 
   async listExchangeConnections(userId: string) {
-    await this.ensureLoaded();
-    return [...this.exchangeRows.values()].filter((v) => v.userId === userId);
+    const { rows } = await pool.query(
+      `SELECT * FROM exchange_connection_records WHERE user_id = $1 ORDER BY updated_at DESC`,
+      [userId],
+    );
+    return rows.map(rowToExchangeConnection);
   }
 
   async getExchangeConnection(userId: string, exchangeId: string, accountName?: string) {
-    await this.ensureLoaded();
     if (accountName?.trim()) {
-      const exact = this.exchangeRows.get(this.mapExchangeKey(userId, exchangeId, accountName));
-      if (exact) return exact;
+      const { rows } = await pool.query(
+        `SELECT * FROM exchange_connection_records
+         WHERE user_id = $1 AND exchange_id = $2 AND account_name = $3`,
+        [userId, exchangeId, accountName.trim()],
+      );
+      if (rows[0]) return rowToExchangeConnection(rows[0]);
     }
-    const candidates = [...this.exchangeRows.values()]
-      .filter((row) => row.userId === userId && row.exchangeId === exchangeId)
-      .sort((a, b) => Date.parse(b.updatedAt) - Date.parse(a.updatedAt));
-    return candidates[0];
+    // Fallback: most recently updated for this user+exchange
+    const { rows } = await pool.query(
+      `SELECT * FROM exchange_connection_records
+       WHERE user_id = $1 AND exchange_id = $2
+       ORDER BY updated_at DESC LIMIT 1`,
+      [userId, exchangeId],
+    );
+    return rows[0] ? rowToExchangeConnection(rows[0]) : undefined;
   }
 
   async deleteExchangeConnection(userId: string, exchangeId: string, accountName?: string) {
-    await this.ensureLoaded();
-    this.exchangeRows.delete(this.mapExchangeKey(userId, exchangeId, accountName));
-    await this.flush();
+    const name = accountName?.trim() || "Main";
+    await pool.query(
+      `DELETE FROM exchange_connection_records
+       WHERE user_id = $1 AND exchange_id = $2 AND account_name = $3`,
+      [userId, exchangeId, name],
+    );
   }
 }

@@ -145,7 +145,7 @@ export const registerTradeIdeasRoutes = (app: Express, store: TradeIdeaStore, sy
     const cutoffMs = rangeMs > 0 ? Date.now() - rangeMs : 0;
 
     // Read persisted scan counts from disk — survives server restarts
-    const scanRecords = SystemScannerService.readScanCounts();
+    const scanRecords = await SystemScannerService.readScanCounts();
     const filteredScanRecords = cutoffMs > 0
       ? scanRecords.filter((r) => Date.parse(r.ts) >= cutoffMs)
       : scanRecords;

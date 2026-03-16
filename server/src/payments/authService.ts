@@ -2,6 +2,9 @@ import { createHash, createHmac, pbkdf2Sync, randomBytes, timingSafeEqual } from
 import { decryptSecret, encryptSecret } from "../security/crypto.ts";
 import type { ReferralCodeRecord, Role, SessionRecord, UserRecord } from "./types.ts";
 import { PaymentStore } from "./storage.ts";
+import { redis } from "../db/redis.ts";
+
+const SESSION_CACHE_TTL = 60 * 60; // 1 hour in Redis (session itself has 30-day DB expiry)
 
 const nowIso = () => new Date().toISOString();
 const makeId = (prefix: string) => `${prefix}_${randomBytes(8).toString("hex")}`;
@@ -87,12 +90,12 @@ export class AuthService {
     this.encryptionKey = encryptionKey;
   }
 
-  signup(email: string, password: string, role: Role = "USER") {
+  async signup(email: string, password: string, role: Role = "USER") {
     const normalized = email.trim().toLowerCase();
     if (!normalized || !password || password.length < 8) {
       throw new Error("invalid_email_or_password");
     }
-    const existing = [...this.store.users.values()].find((u) => u.email === normalized);
+    const existing = await this.store.getUserByEmail(normalized);
     if (existing) throw new Error("email_already_exists");
     const now = nowIso();
     const user: UserRecord = {
@@ -104,12 +107,12 @@ export class AuthService {
       createdAt: now,
       updatedAt: now,
     };
-    this.store.users.set(user.id, user);
+    await this.store.setUser(user);
     return user;
   }
 
-  login(email: string, password: string, twoFactorCode?: string) {
-    const user = [...this.store.users.values()].find((u) => u.email === email.trim().toLowerCase());
+  async login(email: string, password: string, twoFactorCode?: string) {
+    const user = await this.store.getUserByEmail(email.trim().toLowerCase());
     if (!user || !verifyPassword(password, user.passwordHash)) throw new Error("invalid_credentials");
 
     if (user.twoFactorEnabled) {
@@ -126,62 +129,89 @@ export class AuthService {
       createdAt: new Date(now).toISOString(),
       expiresAt: new Date(now + 1000 * 60 * 60 * 24 * 30).toISOString(),
     };
-    this.store.sessions.set(session.token, session);
+    await this.store.setSession(session);
+    // Cache session + user in Redis for fast auth lookups
+    try {
+      const cachePayload = JSON.stringify({ session, user: { id: user.id, email: user.email, role: user.role, twoFactorEnabled: user.twoFactorEnabled } });
+      await redis.set(`session:${session.token}`, cachePayload, "EX", SESSION_CACHE_TTL);
+    } catch { /* Redis miss is ok — fallback to DB */ }
     return { session, user };
   }
 
-  getUserFromToken(token: string | undefined) {
+  async getUserFromToken(token: string | undefined) {
     if (!token) return null;
-    const session = this.store.sessions.get(token);
+
+    // 1. Try Redis cache first
+    try {
+      const cached = await redis.get(`session:${token}`);
+      if (cached) {
+        const parsed = JSON.parse(cached) as { session: SessionRecord; user: UserRecord };
+        if (Date.parse(parsed.session.expiresAt) > Date.now()) {
+          return parsed;
+        }
+        // Expired — clean up
+        await redis.del(`session:${token}`);
+      }
+    } catch { /* Redis miss — fall through to DB */ }
+
+    // 2. Fallback to PostgreSQL
+    const session = await this.store.getSession(token);
     if (!session) return null;
     if (Date.parse(session.expiresAt) <= Date.now()) {
-      this.store.sessions.delete(token);
+      await this.store.deleteSession(token);
       return null;
     }
-    const user = this.store.users.get(session.userId);
+    const user = await this.store.getUser(session.userId);
     if (!user) return null;
+
+    // 3. Populate Redis cache for next time
+    try {
+      const cachePayload = JSON.stringify({ session, user: { id: user.id, email: user.email, role: user.role, twoFactorEnabled: user.twoFactorEnabled } });
+      await redis.set(`session:${token}`, cachePayload, "EX", SESSION_CACHE_TTL);
+    } catch { /* ignore */ }
+
     return { session, user };
   }
 
-  setupTwoFactor(userId: string) {
-    const user = this.store.users.get(userId);
+  async setupTwoFactor(userId: string) {
+    const user = await this.store.getUser(userId);
     if (!user) throw new Error("user_not_found");
     const secret = toBase32(randomBytes(20));
     user.twoFactorSecretEnc = encryptSecret(secret, this.encryptionKey);
     user.updatedAt = nowIso();
-    this.store.users.set(user.id, user);
+    await this.store.setUser(user);
     return {
       secret,
       otpauthUrl: `otpauth://totp/Bitrium:${encodeURIComponent(user.email)}?secret=${secret}&issuer=Bitrium`,
     };
   }
 
-  enableTwoFactor(userId: string, token: string) {
-    const user = this.store.users.get(userId);
+  async enableTwoFactor(userId: string, token: string) {
+    const user = await this.store.getUser(userId);
     if (!user || !user.twoFactorSecretEnc) throw new Error("two_factor_not_initialized");
     const secret = decryptSecret(user.twoFactorSecretEnc, this.encryptionKey);
     if (!verifyTotp(secret, token)) throw new Error("invalid_two_factor_code");
     user.twoFactorEnabled = true;
     user.updatedAt = nowIso();
-    this.store.users.set(user.id, user);
+    await this.store.setUser(user);
     return true;
   }
 
-  requestPasswordReset(email: string) {
-    const user = [...this.store.users.values()].find((u) => u.email === email.trim().toLowerCase());
+  async requestPasswordReset(email: string) {
+    const user = await this.store.getUserByEmail(email.trim().toLowerCase());
     if (!user) return { ok: true };
     const rawToken = randomBytes(24).toString("hex");
     user.passwordResetTokenHash = createHash("sha256").update(rawToken).digest("hex");
     user.passwordResetExpiresAt = new Date(Date.now() + 1000 * 60 * 30).toISOString();
     user.updatedAt = nowIso();
-    this.store.users.set(user.id, user);
+    await this.store.setUser(user);
     return { ok: true, resetToken: rawToken };
   }
 
-  resetPassword(resetToken: string, newPassword: string) {
+  async resetPassword(resetToken: string, newPassword: string) {
     if (!newPassword || newPassword.length < 8) throw new Error("weak_password");
     const tokenHash = createHash("sha256").update(resetToken).digest("hex");
-    const user = [...this.store.users.values()].find((u) => u.passwordResetTokenHash === tokenHash);
+    const user = await this.store.getUserByResetTokenHash(tokenHash);
     if (!user) throw new Error("invalid_reset_token");
     if (!user.passwordResetExpiresAt || Date.parse(user.passwordResetExpiresAt) < Date.now()) {
       throw new Error("reset_token_expired");
@@ -190,26 +220,25 @@ export class AuthService {
     user.passwordResetTokenHash = undefined;
     user.passwordResetExpiresAt = undefined;
     user.updatedAt = nowIso();
-    this.store.users.set(user.id, user);
+    await this.store.setUser(user);
     return { ok: true };
   }
 
-  listUsersLite() {
-    return [...this.store.users.values()]
-      .sort((a, b) => a.email.localeCompare(b.email))
-      .map((user) => ({
-        id: user.id,
-        email: user.email,
-        role: user.role,
-        createdAt: user.createdAt,
-      }));
+  async listUsersLite() {
+    const users = await this.store.listUsers();
+    return users.map((user) => ({
+      id: user.id,
+      email: user.email,
+      role: user.role,
+      createdAt: user.createdAt,
+    }));
   }
 
-  listReferralCodes() {
-    return [...this.store.referralCodes.values()].sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt));
+  async listReferralCodes() {
+    return this.store.listReferralCodes();
   }
 
-  createReferralCode(input: {
+  async createReferralCode(input: {
     createdByUserId: string;
     assignedUserId?: string;
     assignedEmail?: string;
@@ -240,20 +269,20 @@ export class AuthService {
       createdAt: nowIsoStr,
       updatedAt: nowIsoStr,
     };
-    this.store.referralCodes.set(record.id, record);
+    await this.store.setReferralCode(record);
     return record;
   }
 
-  setReferralCodeActive(id: string, active: boolean) {
-    const record = this.store.referralCodes.get(id);
+  async setReferralCodeActive(id: string, active: boolean) {
+    const record = await this.store.getReferralCode(id);
     if (!record) throw new Error("referral_not_found");
     record.active = active;
     record.updatedAt = nowIso();
-    this.store.referralCodes.set(record.id, record);
+    await this.store.setReferralCode(record);
     return record;
   }
 
-  deleteReferralCode(id: string) {
-    this.store.referralCodes.delete(id);
+  async deleteReferralCode(id: string) {
+    await this.store.deleteReferralCode(id);
   }
 }

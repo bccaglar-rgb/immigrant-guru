@@ -1,5 +1,4 @@
-import { mkdir, readFile, writeFile } from "node:fs/promises";
-import path from "node:path";
+import { pool } from "../db/pool.ts";
 import type { ExchangeName } from "./types.ts";
 
 type ProviderType = "REST" | "WS" | "BOTH";
@@ -27,20 +26,7 @@ export interface AdminProviderRecord {
   lastTestAt?: string;
 }
 
-interface AdminProviderStorageModel {
-  providers: AdminProviderRecord[];
-  branding?: {
-    logoDataUrl?: string;
-    emblemDataUrl?: string;
-  };
-  updated_at: string;
-}
-
-const defaultStorage = (): AdminProviderStorageModel => ({
-  providers: [],
-  branding: {},
-  updated_at: new Date().toISOString(),
-});
+/* ── Normalization helpers (unchanged from original) ────── */
 
 const sanitizeDataUrl = (value: unknown, maxLen: number): string | undefined => {
   const text = String(value ?? "").trim();
@@ -107,98 +93,81 @@ const normalizeProvider = (raw: unknown): AdminProviderRecord | null => {
   };
 };
 
+/* ── Row mapper ───────────────────────────────────────────── */
+
+const rowToProvider = (r: Record<string, unknown>): AdminProviderRecord | null => {
+  const config = r.config as Record<string, unknown> | null;
+  if (!config) return null;
+  // Merge id + enabled from columns, rest from config JSONB
+  return normalizeProvider({ ...config, id: String(r.id), enabled: Boolean(r.enabled) });
+};
+
+/* ── Store ────────────────────────────────────────────────── */
+
 export class AdminProviderStore {
-  private loaded = false;
-
-  private state: AdminProviderStorageModel = defaultStorage();
-
-  private writeChain: Promise<void> = Promise.resolve();
-
-  private readonly filePath: string;
-
-  constructor(filePath = path.join(process.cwd(), "server", "data", "admin_providers.json")) {
-    this.filePath = filePath;
-  }
-
-  private async ensureLoaded() {
-    if (this.loaded) return;
-    try {
-      const raw = await readFile(this.filePath, "utf8");
-      const parsed = JSON.parse(raw) as Partial<AdminProviderStorageModel>;
-      const providers = Array.isArray(parsed.providers)
-        ? parsed.providers.map((row) => normalizeProvider(row)).filter((row): row is AdminProviderRecord => Boolean(row))
-        : [];
-      this.state = {
-        providers,
-        branding: {
-          logoDataUrl: sanitizeDataUrl((parsed as { branding?: { logoDataUrl?: unknown } }).branding?.logoDataUrl, 450_000),
-          emblemDataUrl: sanitizeDataUrl((parsed as { branding?: { emblemDataUrl?: unknown } }).branding?.emblemDataUrl, 280_000),
-        },
-        updated_at: Number.isFinite(Date.parse(String(parsed.updated_at ?? "")))
-          ? String(parsed.updated_at)
-          : new Date().toISOString(),
-      };
-    } catch {
-      this.state = defaultStorage();
-      await this.flush();
-    } finally {
-      this.loaded = true;
-    }
-  }
-
-  private async flush() {
-    const dir = path.dirname(this.filePath);
-    await mkdir(dir, { recursive: true });
-    this.writeChain = this.writeChain
-      .catch(() => {
-        // recover from prior write errors
-      })
-      .then(async () => {
-        const payload = JSON.stringify(this.state, null, 2);
-        await writeFile(this.filePath, payload, "utf8");
-      });
-    await this.writeChain;
-  }
-
   async getAll(): Promise<AdminProviderRecord[]> {
-    await this.ensureLoaded();
-    return this.state.providers.slice();
+    const { rows } = await pool.query(`SELECT * FROM admin_providers ORDER BY id`);
+    return rows.map(rowToProvider).filter((r): r is AdminProviderRecord => Boolean(r));
   }
 
   async replaceAll(input: unknown): Promise<AdminProviderRecord[]> {
-    await this.ensureLoaded();
-    const rows = Array.isArray(input) ? input : [];
-    const normalized = rows
+    const items = Array.isArray(input) ? input : [];
+    const normalized = items
       .map((row) => normalizeProvider(row))
       .filter((row): row is AdminProviderRecord => Boolean(row));
-    this.state.providers = normalized;
-    this.state.updated_at = new Date().toISOString();
-    await this.flush();
-    return this.state.providers.slice();
+
+    const client = await pool.connect();
+    try {
+      await client.query("BEGIN");
+      await client.query("DELETE FROM admin_providers");
+      for (const p of normalized) {
+        // Store entire record as config JSONB, id and enabled as columns
+        const { id, enabled, ...rest } = p;
+        await client.query(
+          `INSERT INTO admin_providers (id, config, enabled, updated_at)
+           VALUES ($1, $2, $3, now())`,
+          [id, JSON.stringify({ ...rest, id, enabled }), enabled],
+        );
+      }
+      await client.query("COMMIT");
+    } catch (err) {
+      await client.query("ROLLBACK");
+      throw err;
+    } finally {
+      client.release();
+    }
+    return normalized;
   }
 
   async getBranding(): Promise<{ logoDataUrl?: string; emblemDataUrl?: string }> {
-    await this.ensureLoaded();
+    const { rows } = await pool.query(`SELECT * FROM admin_branding WHERE id = 1`);
+    if (!rows[0]) return {};
     return {
-      logoDataUrl: this.state.branding?.logoDataUrl,
-      emblemDataUrl: this.state.branding?.emblemDataUrl,
+      logoDataUrl: rows[0].logo_data_url ? String(rows[0].logo_data_url) : undefined,
+      emblemDataUrl: rows[0].emblem_data_url ? String(rows[0].emblem_data_url) : undefined,
     };
   }
 
   async setBranding(input: unknown): Promise<{ logoDataUrl?: string; emblemDataUrl?: string }> {
-    await this.ensureLoaded();
     const obj = input && typeof input === "object" ? (input as Record<string, unknown>) : {};
     const logoDataUrl = sanitizeDataUrl(obj.logoDataUrl, 450_000);
     const emblemDataUrl = sanitizeDataUrl(obj.emblemDataUrl, 280_000);
-    this.state.branding = { logoDataUrl, emblemDataUrl };
-    this.state.updated_at = new Date().toISOString();
-    await this.flush();
-    return { ...this.state.branding };
+
+    await pool.query(
+      `INSERT INTO admin_branding (id, logo_data_url, emblem_data_url, updated_at)
+       VALUES (1, $1, $2, now())
+       ON CONFLICT (id) DO UPDATE SET
+         logo_data_url = EXCLUDED.logo_data_url,
+         emblem_data_url = EXCLUDED.emblem_data_url,
+         updated_at = now()`,
+      [logoDataUrl ?? null, emblemDataUrl ?? null],
+    );
+    return { logoDataUrl, emblemDataUrl };
   }
 
   async getFallbackPolicy(): Promise<{ defaultExchange: ExchangeName | null; order: ExchangeName[] }> {
-    await this.ensureLoaded();
-    const candidates = this.state.providers
+    const providers = await this.getAll();
+    const candidates = providers
       .filter((row) => row.enabled)
       .filter((row) => row.providerGroup === "EXCHANGE")
       .map((row) => ({
@@ -219,9 +188,6 @@ export class AdminProviderStore {
     const order = [...new Set(sorted.map((item) => item.exchange))];
     const defaultCandidate = candidates.find((item) => item.row.defaultPrimary)?.exchange ?? null;
     const defaultExchange = order[0] ?? defaultCandidate ?? null;
-    return {
-      defaultExchange,
-      order,
-    };
+    return { defaultExchange, order };
   }
 }

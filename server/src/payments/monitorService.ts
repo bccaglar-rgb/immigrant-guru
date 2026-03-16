@@ -35,13 +35,13 @@ export class TronMonitorService {
     if (this.running) return;
     this.running = true;
     try {
-      this.paymentService.expireInvoices();
-      const invoices = [...this.store.invoices.values()].filter((inv) => ["awaiting_payment", "partially_paid"].includes(inv.status));
+      await this.paymentService.expireInvoices();
+      const invoices = await this.store.listPendingInvoices();
       for (const invoice of invoices) {
         try {
           const events = await this.tron.getRecentUsdtTransfersToAddress(invoice.depositAddress);
           for (const evt of events) {
-            this.paymentService.processTransfer(invoice, evt);
+            await this.paymentService.processTransfer(invoice, evt);
           }
         } catch {
           // monitor must continue for other invoices

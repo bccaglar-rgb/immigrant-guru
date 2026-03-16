@@ -10,9 +10,9 @@ const bearer = (header: string | undefined) => {
   return token ?? "";
 };
 
-const requireAuth = (auth: AuthService, req: Request, res: Response) => {
+const requireAuth = async (auth: AuthService, req: Request, res: Response) => {
   const token = bearer(req.headers.authorization);
-  const ctx = auth.getUserFromToken(token);
+  const ctx = await auth.getUserFromToken(token);
   if (!ctx) {
     res.status(401).json({ ok: false, error: "unauthorized" });
     return null;
@@ -20,8 +20,8 @@ const requireAuth = (auth: AuthService, req: Request, res: Response) => {
   return ctx;
 };
 
-const requireAdmin = (auth: AuthService, req: Request, res: Response) => {
-  const ctx = requireAuth(auth, req, res);
+const requireAdmin = async (auth: AuthService, req: Request, res: Response) => {
+  const ctx = await requireAuth(auth, req, res);
   if (!ctx) return null;
   if (ctx.user.role !== "ADMIN") {
     res.status(403).json({ ok: false, error: "forbidden" });
@@ -31,16 +31,16 @@ const requireAdmin = (auth: AuthService, req: Request, res: Response) => {
 };
 
 export const registerPaymentsRoutes = (app: Express, auth: AuthService, payments: PaymentService) => {
-  app.get("/api/payments/plans", (_req, res) => {
-    res.json({ ok: true, plans: payments.listPlans() });
+  app.get("/api/payments/plans", async (_req, res) => {
+    res.json({ ok: true, plans: await payments.listPlans() });
   });
 
-  app.post("/api/payments/invoices", (req, res) => {
-    const ctx = requireAuth(auth, req, res);
+  app.post("/api/payments/invoices", async (req, res) => {
+    const ctx = await requireAuth(auth, req, res);
     if (!ctx) return;
     try {
       const { planId } = req.body ?? {};
-      const invoice = payments.createInvoice(ctx.user, String(planId ?? ""));
+      const invoice = await payments.createInvoice(ctx.user, String(planId ?? ""));
       const qrPayload = `tron:${invoice.depositAddress}?amount=${invoice.expectedAmountUsdt}&token=${PAYMENT_CONFIG.usdtContractAddress}`;
       return res.json({ ok: true, invoice, qrPayload });
     } catch (err: any) {
@@ -48,34 +48,34 @@ export const registerPaymentsRoutes = (app: Express, auth: AuthService, payments
     }
   });
 
-  app.get("/api/payments/invoices/:invoiceId", (req, res) => {
-    const ctx = requireAuth(auth, req, res);
+  app.get("/api/payments/invoices/:invoiceId", async (req, res) => {
+    const ctx = await requireAuth(auth, req, res);
     if (!ctx) return;
-    const invoice = payments.getInvoice(req.params.invoiceId);
+    const invoice = await payments.getInvoice(req.params.invoiceId);
     if (!invoice || invoice.userId !== ctx.user.id) {
       return res.status(404).json({ ok: false, error: "invoice_not_found" });
     }
     return res.json({ ok: true, invoice });
   });
 
-  app.get("/api/payments/subscriptions/me", (req, res) => {
-    const ctx = requireAuth(auth, req, res);
+  app.get("/api/payments/subscriptions/me", async (req, res) => {
+    const ctx = await requireAuth(auth, req, res);
     if (!ctx) return;
-    return res.json({ ok: true, subscriptions: payments.listSubscriptions(ctx.user.id) });
+    return res.json({ ok: true, subscriptions: await payments.listSubscriptions(ctx.user.id) });
   });
 
-  app.get("/api/admin/plans", (req, res) => {
-    const ctx = requireAdmin(auth, req, res);
+  app.get("/api/admin/plans", async (req, res) => {
+    const ctx = await requireAdmin(auth, req, res);
     if (!ctx) return;
-    return res.json({ ok: true, plans: payments.listPlans() });
+    return res.json({ ok: true, plans: await payments.listPlans() });
   });
 
-  app.post("/api/admin/plans", (req, res) => {
-    const ctx = requireAdmin(auth, req, res);
+  app.post("/api/admin/plans", async (req, res) => {
+    const ctx = await requireAdmin(auth, req, res);
     if (!ctx) return;
     try {
       const { id, name, priceUsdt, durationDays, features, enabled } = req.body ?? {};
-      const plan = payments.upsertPlan({
+      const plan = await payments.upsertPlan({
         id: id ? String(id) : undefined,
         name: String(name ?? ""),
         priceUsdt: Number(priceUsdt ?? 0),
@@ -89,53 +89,57 @@ export const registerPaymentsRoutes = (app: Express, auth: AuthService, payments
     }
   });
 
-  app.delete("/api/admin/plans/:id", (req, res) => {
-    const ctx = requireAdmin(auth, req, res);
+  app.delete("/api/admin/plans/:id", async (req, res) => {
+    const ctx = await requireAdmin(auth, req, res);
     if (!ctx) return;
-    payments.deletePlan(req.params.id);
+    await payments.deletePlan(req.params.id);
     return res.json({ ok: true });
   });
 
-  app.get("/api/admin/invoices", (req, res) => {
-    const ctx = requireAdmin(auth, req, res);
+  app.get("/api/admin/invoices", async (req, res) => {
+    const ctx = await requireAdmin(auth, req, res);
     if (!ctx) return;
-    return res.json({ ok: true, invoices: payments.listInvoices(), subscriptions: payments.listSubscriptions() });
+    const [invoices, subscriptions] = await Promise.all([
+      payments.listInvoices(),
+      payments.listSubscriptions(),
+    ]);
+    return res.json({ ok: true, invoices, subscriptions });
   });
 
-  app.post("/api/admin/invoices/:invoiceId/mark-paid", (req, res) => {
-    const ctx = requireAdmin(auth, req, res);
+  app.post("/api/admin/invoices/:invoiceId/mark-paid", async (req, res) => {
+    const ctx = await requireAdmin(auth, req, res);
     if (!ctx) return;
     try {
       const { txHash, amountUsdt, reason } = req.body ?? {};
-      const invoice = payments.manualMarkPaid(req.params.invoiceId, String(txHash ?? "manual"), Number(amountUsdt ?? 0), String(reason ?? "manual_override"));
+      const invoice = await payments.manualMarkPaid(req.params.invoiceId, String(txHash ?? "manual"), Number(amountUsdt ?? 0), String(reason ?? "manual_override"));
       return res.json({ ok: true, invoice });
     } catch (err: any) {
       return res.status(400).json({ ok: false, error: err?.message ?? "manual_mark_paid_failed" });
     }
   });
 
-  app.post("/api/admin/subscriptions/:subscriptionId/extend", (req, res) => {
-    const ctx = requireAdmin(auth, req, res);
+  app.post("/api/admin/subscriptions/:subscriptionId/extend", async (req, res) => {
+    const ctx = await requireAdmin(auth, req, res);
     if (!ctx) return;
     try {
       const { days } = req.body ?? {};
-      const sub = payments.extendSubscription(req.params.subscriptionId, Number(days ?? 0));
+      const sub = await payments.extendSubscription(req.params.subscriptionId, Number(days ?? 0));
       return res.json({ ok: true, subscription: sub });
     } catch (err: any) {
       return res.status(400).json({ ok: false, error: err?.message ?? "subscription_extend_failed" });
     }
   });
 
-  app.get("/api/admin/members/overview", (req, res) => {
-    const ctx = requireAdmin(auth, req, res);
+  app.get("/api/admin/members/overview", async (req, res) => {
+    const ctx = await requireAdmin(auth, req, res);
     if (!ctx) return;
 
     const now = Date.now();
-    const users = auth.listUsersLite().filter((u) => u.role === "USER");
-    const subscriptions = payments.listSubscriptions();
-    const paidInvoices = payments
-      .listInvoices()
-      .filter((inv) => inv.invoiceType === "PLAN" && inv.status === "paid");
+    const allUsers = await auth.listUsersLite();
+    const users = allUsers.filter((u) => u.role === "USER");
+    const subscriptions = await payments.listSubscriptions();
+    const allInvoices = await payments.listInvoices();
+    const paidInvoices = allInvoices.filter((inv) => inv.invoiceType === "PLAN" && inv.status === "paid");
 
     const rows = users.map((user) => {
       const userSubs = subscriptions

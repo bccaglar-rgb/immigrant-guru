@@ -32,24 +32,43 @@ jobs:
 
       - name: Deploy to server
         run: |
-          # Upload frontend build
+          # Upload frontend build (Nginx serves from /var/www/bitrium/dist/)
           rsync -avz --delete dist/ root@${{ secrets.DROPLET_IP }}:/var/www/bitrium/dist/
 
-          # Upload server code
-          rsync -avz --delete server/ root@${{ secrets.DROPLET_IP }}:/var/www/bitrium/server/
+          # Upload server code (exclude data/ — now lives in PostgreSQL)
+          rsync -avz --delete --exclude='data/' server/ root@${{ secrets.DROPLET_IP }}:/var/www/bitrium/server/
 
           # Upload shared src (server imports from src/)
           rsync -avz --delete src/ root@${{ secrets.DROPLET_IP }}:/var/www/bitrium/src/
 
           # Upload config files
-          rsync -avz package.json package-lock.json tsconfig.json root@${{ secrets.DROPLET_IP }}:/var/www/bitrium/
+          rsync -avz package.json package-lock.json tsconfig.json ecosystem.config.cjs root@${{ secrets.DROPLET_IP }}:/var/www/bitrium/
 
-          # Install server deps & restart
+          # Upload deploy configs
+          rsync -avz deploy/ root@${{ secrets.DROPLET_IP }}:/var/www/bitrium/deploy/
+
+          # Install deps, run DB migrations if needed, zero-downtime reload
           ssh root@${{ secrets.DROPLET_IP }} << 'EOF'
             cd /var/www/bitrium
+
+            # Install production dependencies
             npm ci --omit=dev
-            # Clear trade data to prevent stale data surviving across deploys
-            rm -f server/data/trade_ideas.json server/data/scan_counts.json
-            pm2 restart bitrium-server || pm2 start server/src/index.ts --name bitrium-server --interpreter "node" -- --experimental-strip-types
+
+            # Run schema migration (idempotent — CREATE IF NOT EXISTS)
+            PGPASSWORD="${DB_PASSWORD}" psql -U bitrium_app -d bitrium_db -f server/src/db/schema.sql || true
+
+            # Zero-downtime reload: PM2 restarts workers one by one
+            pm2 reload ecosystem.config.cjs || pm2 start ecosystem.config.cjs
             pm2 save
+
+            # Health check — wait for backend to be ready
+            for i in $(seq 1 10); do
+              if curl -sf http://127.0.0.1:8090/api/health > /dev/null 2>&1; then
+                echo "Health check passed"
+                exit 0
+              fi
+              echo "Waiting for backend... ($i/10)"
+              sleep 2
+            done
+            echo "WARNING: Health check did not pass within 20s"
           EOF

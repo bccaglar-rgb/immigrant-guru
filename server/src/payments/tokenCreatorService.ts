@@ -35,7 +35,7 @@ export class TokenCreatorService {
     return this.store.tokenCreatorFeeConfig;
   }
 
-  updateFeeConfig(input: Partial<TokenCreatorFeeConfig>): TokenCreatorFeeConfig {
+  async updateFeeConfig(input: Partial<TokenCreatorFeeConfig>): Promise<TokenCreatorFeeConfig> {
     const prev = this.store.tokenCreatorFeeConfig;
     const next: TokenCreatorFeeConfig = {
       ...prev,
@@ -46,7 +46,7 @@ export class TokenCreatorService {
       featurePrices: { ...prev.featurePrices, ...(input.featurePrices ?? {}) },
       updatedAt: nowIso(),
     };
-    this.store.tokenCreatorFeeConfig = next;
+    await this.store.saveFeeConfig(next);
     return next;
   }
 
@@ -77,7 +77,7 @@ export class TokenCreatorService {
     return { subtotalUsdt, networkReserveUsdt, totalUsdt, breakdown };
   }
 
-  createOrder(user: UserRecord, input: TokenCreatorDraftInput) {
+  async createOrder(user: UserRecord, input: TokenCreatorDraftInput) {
     if (!input.name.trim()) throw new Error("token_name_required");
     if (!input.symbol.trim()) throw new Error("token_symbol_required");
     const quote = this.calculateQuote(input);
@@ -110,8 +110,8 @@ export class TokenCreatorService {
       updatedAt: now,
     };
 
-    this.store.tokenCreatorOrders.set(order.id, order);
-    const invoice = this.payments.createTokenCreatorInvoice({
+    await this.store.setTokenCreatorOrder(order);
+    const invoice = await this.payments.createTokenCreatorInvoice({
       user,
       orderId: order.id,
       amountUsdt: quote.totalUsdt,
@@ -121,14 +121,12 @@ export class TokenCreatorService {
     order.invoiceId = invoice.id;
     order.status = "awaiting_payment";
     order.updatedAt = nowIso();
-    this.store.tokenCreatorOrders.set(order.id, order);
+    await this.store.setTokenCreatorOrder(order);
 
     return { order, invoice, quote };
   }
 
-  listOrders(userId?: string) {
-    const rows = [...this.store.tokenCreatorOrders.values()].sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt));
-    return userId ? rows.filter((o) => o.userId === userId) : rows;
+  async listOrders(userId?: string) {
+    return this.store.listTokenCreatorOrders(userId);
   }
 }
-

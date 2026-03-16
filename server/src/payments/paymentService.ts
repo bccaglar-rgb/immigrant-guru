@@ -27,21 +27,21 @@ export class PaymentService {
     this.store = store;
   }
 
-  listPlans() {
-    return [...this.store.plans.values()].sort((a, b) => a.priceUsdt - b.priceUsdt);
+  async listPlans() {
+    return this.store.listPlans();
   }
 
-  upsertPlan(input: {
+  async upsertPlan(input: {
     id?: string;
     name: string;
     priceUsdt: number;
     durationDays: number;
     features: string[];
     enabled: boolean;
-  }): PlanRecord {
+  }): Promise<PlanRecord> {
     const now = nowIso();
     const id = input.id ?? makeId("plan");
-    const prev = this.store.plans.get(id);
+    const prev = await this.store.getPlan(id);
     const row: PlanRecord = {
       id,
       name: input.name.trim(),
@@ -52,21 +52,21 @@ export class PaymentService {
       createdAt: prev?.createdAt ?? now,
       updatedAt: now,
     };
-    this.store.plans.set(id, row);
+    await this.store.setPlan(row);
     return row;
   }
 
-  deletePlan(id: string) {
-    this.store.plans.delete(id);
+  async deletePlan(id: string) {
+    await this.store.deletePlan(id);
   }
 
-  createInvoice(user: UserRecord, planId: string): InvoiceRecord {
-    const plan = this.store.plans.get(planId);
+  async createInvoice(user: UserRecord, planId: string): Promise<InvoiceRecord> {
+    const plan = await this.store.getPlan(planId);
     if (!plan || !plan.enabled) throw new Error("plan_not_available");
 
     const now = Date.now();
     const id = makeId("inv");
-    const addressIndex = ++this.store.addressCursor;
+    const addressIndex = await this.store.nextAddressIndex();
     const depositAddress = deriveInvoiceAddress(PAYMENT_CONFIG.hd.xpub, id, addressIndex);
     const invoice: InvoiceRecord = {
       id,
@@ -85,19 +85,19 @@ export class PaymentService {
       createdAt: new Date(now).toISOString(),
       updatedAt: new Date(now).toISOString(),
     };
-    this.store.invoices.set(invoice.id, invoice);
+    await this.store.setInvoice(invoice);
     return invoice;
   }
 
-  createTokenCreatorInvoice(input: {
+  async createTokenCreatorInvoice(input: {
     user: UserRecord;
     orderId: string;
     amountUsdt: number;
     tokenSymbol: string;
-  }): InvoiceRecord {
+  }): Promise<InvoiceRecord> {
     const now = Date.now();
     const id = makeId("inv");
-    const addressIndex = ++this.store.addressCursor;
+    const addressIndex = await this.store.nextAddressIndex();
     const depositAddress = deriveInvoiceAddress(PAYMENT_CONFIG.hd.xpub, id, addressIndex);
     const invoice: InvoiceRecord = {
       id,
@@ -116,31 +116,29 @@ export class PaymentService {
       createdAt: new Date(now).toISOString(),
       updatedAt: new Date(now).toISOString(),
     };
-    this.store.invoices.set(invoice.id, invoice);
+    await this.store.setInvoice(invoice);
     return invoice;
   }
 
-  getInvoice(invoiceId: string) {
-    return this.store.invoices.get(invoiceId) ?? null;
+  async getInvoice(invoiceId: string) {
+    return this.store.getInvoice(invoiceId);
   }
 
-  listInvoices() {
-    return [...this.store.invoices.values()].sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt));
+  async listInvoices() {
+    return this.store.listInvoices();
   }
 
-  listSubscriptions(userId?: string) {
-    const all = [...this.store.subscriptions.values()];
-    return userId ? all.filter((s) => s.userId === userId) : all;
+  async listSubscriptions(userId?: string) {
+    return this.store.listSubscriptions(userId);
   }
 
-  listTokenCreatorOrders(userId?: string): TokenCreatorOrderRecord[] {
-    const rows = [...this.store.tokenCreatorOrders.values()].sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt));
-    return userId ? rows.filter((r) => r.userId === userId) : rows;
+  async listTokenCreatorOrders(userId?: string): Promise<TokenCreatorOrderRecord[]> {
+    return this.store.listTokenCreatorOrders(userId);
   }
 
-  processTransfer(invoice: InvoiceRecord, transfer: TronTransferEvent): { applied: boolean; reason?: string } {
+  async processTransfer(invoice: InvoiceRecord, transfer: TronTransferEvent): Promise<{ applied: boolean; reason?: string }> {
     const eventKey = `${transfer.txHash}:${transfer.logIndex ?? 0}:${invoice.id}`;
-    if (this.store.processedEventKeys.has(eventKey)) return { applied: false, reason: "already_processed" };
+    if (await this.store.hasProcessedEventKey(eventKey)) return { applied: false, reason: "already_processed" };
 
     if (transfer.contractAddress !== PAYMENT_CONFIG.usdtContractAddress) {
       return { applied: false, reason: "invalid_contract" };
@@ -171,7 +169,7 @@ export class PaymentService {
       invoice.status = "paid";
       invoice.paidAt = now;
       invoice.paymentTxHash = transfer.txHash;
-      this.handleInvoicePaid(invoice, transfer.txHash, invoice.paidAmountUsdt, now);
+      await this.handleInvoicePaid(invoice, transfer.txHash, invoice.paidAmountUsdt, now);
     } else if (invoice.paidAmountUsdt >= invoice.expectedAmountUsdt * PAYMENT_CONFIG.minPartialPaymentRatio) {
       invoice.status = "partially_paid";
     }
@@ -190,26 +188,28 @@ export class PaymentService {
       processedAt: now,
     };
 
-    this.store.paymentEvents.set(event.id, event);
-    this.store.processedEventKeys.add(eventKey);
-    this.store.invoices.set(invoice.id, invoice);
+    await this.store.setPaymentEvent(event);
+    await this.store.addProcessedEventKey(eventKey);
+    await this.store.setInvoice(invoice);
 
     return { applied: true };
   }
 
-  expireInvoices() {
+  async expireInvoices() {
     const now = Date.now();
-    for (const invoice of this.store.invoices.values()) {
+    const invoices = await this.store.listPendingInvoices();
+    for (const invoice of invoices) {
       if (["paid", "expired", "failed"].includes(invoice.status)) continue;
       if (Date.parse(invoice.expiresAt) <= now) {
         invoice.status = invoice.paidAmountUsdt > 0 ? "failed" : "expired";
         invoice.updatedAt = nowIso();
+        await this.store.setInvoice(invoice);
       }
     }
   }
 
-  manualMarkPaid(invoiceId: string, txHash: string, amountUsdt: number, reason: string) {
-    const invoice = this.store.invoices.get(invoiceId);
+  async manualMarkPaid(invoiceId: string, txHash: string, amountUsdt: number, reason: string) {
+    const invoice = await this.store.getInvoice(invoiceId);
     if (!invoice) throw new Error("invoice_not_found");
     const now = nowIso();
     invoice.status = "paid";
@@ -217,7 +217,7 @@ export class PaymentService {
     invoice.paymentTxHash = txHash;
     invoice.paidAt = now;
     invoice.updatedAt = now;
-    this.handleInvoicePaid(invoice, txHash, amountUsdt, now);
+    await this.handleInvoicePaid(invoice, txHash, amountUsdt, now);
 
     const event: PaymentEventRecord = {
       id: makeId("payevt"),
@@ -232,27 +232,29 @@ export class PaymentService {
       success: true,
       processedAt: now,
     };
-    this.store.paymentEvents.set(event.id, event);
-    this.store.processedEventKeys.add(createHash("sha256").update(`${invoiceId}:${txHash}:${reason}`).digest("hex"));
+    await this.store.setPaymentEvent(event);
+    await this.store.addProcessedEventKey(createHash("sha256").update(`${invoiceId}:${txHash}:${reason}`).digest("hex"));
+    await this.store.setInvoice(invoice);
     return invoice;
   }
 
-  extendSubscription(subscriptionId: string, extraDays: number) {
-    const sub = this.store.subscriptions.get(subscriptionId);
+  async extendSubscription(subscriptionId: string, extraDays: number) {
+    const sub = await this.store.getSubscription(subscriptionId);
     if (!sub) throw new Error("subscription_not_found");
     sub.endAt = addDays(sub.endAt, extraDays);
     sub.updatedAt = nowIso();
-    this.store.subscriptions.set(sub.id, sub);
+    await this.store.setSubscription(sub);
     return sub;
   }
 
-  private activateSubscription(invoice: InvoiceRecord, txHash: string, paidAmountUsdt: number, paidAt: string) {
+  private async activateSubscription(invoice: InvoiceRecord, txHash: string, paidAmountUsdt: number, paidAt: string) {
     if (!invoice.planId) return;
-    const plan = this.store.plans.get(invoice.planId);
+    const plan = await this.store.getPlan(invoice.planId);
     if (!plan) return;
 
-    const active = [...this.store.subscriptions.values()]
-      .filter((s) => s.userId === invoice.userId && s.status === "active")
+    const allSubs = await this.store.listSubscriptions(invoice.userId);
+    const active = allSubs
+      .filter((s) => s.status === "active")
       .sort((a, b) => Date.parse(b.endAt) - Date.parse(a.endAt))[0];
 
     const startAt = active && Date.parse(active.endAt) > Date.now() ? active.endAt : paidAt;
@@ -278,23 +280,23 @@ export class PaymentService {
       updatedAt: nowIso(),
     };
 
-    this.store.subscriptions.set(sub.id, sub);
+    await this.store.setSubscription(sub);
   }
 
-  private markTokenCreatorOrderPaid(orderId: string, txHash: string) {
-    const order = this.store.tokenCreatorOrders.get(orderId);
+  private async markTokenCreatorOrderPaid(orderId: string, txHash: string) {
+    const order = await this.store.getTokenCreatorOrder(orderId);
     if (!order) return;
     order.status = "paid";
     order.paymentTxHash = txHash;
     order.updatedAt = nowIso();
-    this.store.tokenCreatorOrders.set(order.id, order);
+    await this.store.setTokenCreatorOrder(order);
   }
 
-  private handleInvoicePaid(invoice: InvoiceRecord, txHash: string, paidAmountUsdt: number, paidAt: string) {
+  private async handleInvoicePaid(invoice: InvoiceRecord, txHash: string, paidAmountUsdt: number, paidAt: string) {
     if (invoice.invoiceType === "TOKEN_CREATOR" && invoice.externalRef) {
-      this.markTokenCreatorOrderPaid(invoice.externalRef, txHash);
+      await this.markTokenCreatorOrderPaid(invoice.externalRef, txHash);
       return;
     }
-    this.activateSubscription(invoice, txHash, paidAmountUsdt, paidAt);
+    await this.activateSubscription(invoice, txHash, paidAmountUsdt, paidAt);
   }
 }

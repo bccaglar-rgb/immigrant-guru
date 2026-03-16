@@ -9,9 +9,9 @@ const bearer = (header: string | undefined) => {
   return token ?? "";
 };
 
-const requireAuth = (auth: AuthService, req: Request, res: Response) => {
+const requireAuth = async (auth: AuthService, req: Request, res: Response) => {
   const token = bearer(req.headers.authorization);
-  const ctx = auth.getUserFromToken(token);
+  const ctx = await auth.getUserFromToken(token);
   if (!ctx) {
     res.status(401).json({ ok: false, error: "unauthorized" });
     return null;
@@ -19,8 +19,8 @@ const requireAuth = (auth: AuthService, req: Request, res: Response) => {
   return ctx;
 };
 
-const requireAdmin = (auth: AuthService, req: Request, res: Response) => {
-  const ctx = requireAuth(auth, req, res);
+const requireAdmin = async (auth: AuthService, req: Request, res: Response) => {
+  const ctx = await requireAuth(auth, req, res);
   if (!ctx) return null;
   if (ctx.user.role !== "ADMIN") {
     res.status(403).json({ ok: false, error: "forbidden" });
@@ -43,38 +43,37 @@ export const registerTokenCreatorRoutes = (app: Express, auth: AuthService, toke
     }
   });
 
-  app.post("/api/token-creator/orders", (req, res) => {
-    const ctx = requireAuth(auth, req, res);
+  app.post("/api/token-creator/orders", async (req, res) => {
+    const ctx = await requireAuth(auth, req, res);
     if (!ctx) return;
     try {
-      const created = tokenCreator.createOrder(ctx.user, req.body ?? {});
+      const created = await tokenCreator.createOrder(ctx.user, req.body ?? {});
       res.json({ ok: true, ...created });
     } catch (err: any) {
       res.status(400).json({ ok: false, error: err?.message ?? "order_create_failed" });
     }
   });
 
-  app.get("/api/token-creator/orders/me", (req, res) => {
-    const ctx = requireAuth(auth, req, res);
+  app.get("/api/token-creator/orders/me", async (req, res) => {
+    const ctx = await requireAuth(auth, req, res);
     if (!ctx) return;
-    res.json({ ok: true, orders: tokenCreator.listOrders(ctx.user.id) });
+    res.json({ ok: true, orders: await tokenCreator.listOrders(ctx.user.id) });
   });
 
-  app.get("/api/admin/token-creator/orders", (req, res) => {
-    const ctx = requireAdmin(auth, req, res);
+  app.get("/api/admin/token-creator/orders", async (req, res) => {
+    const ctx = await requireAdmin(auth, req, res);
     if (!ctx) return;
-    res.json({ ok: true, orders: tokenCreator.listOrders() });
+    res.json({ ok: true, orders: await tokenCreator.listOrders() });
   });
 
-  app.post("/api/admin/token-creator/config", (req, res) => {
-    const ctx = requireAdmin(auth, req, res);
+  app.post("/api/admin/token-creator/config", async (req, res) => {
+    const ctx = await requireAdmin(auth, req, res);
     if (!ctx) return;
     try {
-      const config = tokenCreator.updateFeeConfig(req.body ?? {});
+      const config = await tokenCreator.updateFeeConfig(req.body ?? {});
       res.json({ ok: true, config });
     } catch (err: any) {
       res.status(400).json({ ok: false, error: err?.message ?? "config_update_failed" });
     }
   });
 };
-

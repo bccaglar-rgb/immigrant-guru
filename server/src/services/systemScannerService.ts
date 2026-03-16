@@ -15,8 +15,7 @@
  */
 
 import { randomUUID } from "node:crypto";
-import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
-import { dirname, resolve } from "node:path";
+import { pool } from "../db/pool.ts";
 import type { TradeIdeaStore } from "./tradeIdeaStore.ts";
 import type { TradeIdeaRecord } from "./tradeIdeaTypes.ts";
 import type { ScoringMode } from "./scoringMode.ts";
@@ -26,8 +25,6 @@ import type { CoinUniverseEngine } from "./coinUniverseEngine.ts";
 const ALL_MODES: ScoringMode[] = ["FLOW", "AGGRESSIVE", "BALANCED", "CAPITAL_GUARD"];
 const SYSTEM_USER_ID = "system-scanner";
 
-// Scan counts persistence — survives server restarts
-const SCAN_COUNTS_PATH = resolve(dirname(new URL(import.meta.url).pathname), "../../data/scan_counts.json");
 type ScanCountRecord = { ts: string; counts: Record<string, number> };
 const SCAN_COUNTS_MAX_AGE_MS = 8 * 24 * 60 * 60 * 1000; // keep 8 days
 
@@ -219,29 +216,33 @@ export class SystemScannerService {
     };
   }
 
-  /** Read persisted scan counts from disk (for time-range filtered reports) */
-  static readScanCounts(): ScanCountRecord[] {
+  /** Read persisted scan counts from PostgreSQL (for time-range filtered reports) */
+  static async readScanCounts(): Promise<ScanCountRecord[]> {
     try {
-      const raw = readFileSync(SCAN_COUNTS_PATH, "utf-8");
-      return JSON.parse(raw) as ScanCountRecord[];
+      const cutoff = new Date(Date.now() - SCAN_COUNTS_MAX_AGE_MS).toISOString();
+      const { rows } = await pool.query(
+        `SELECT ts, counts FROM scan_counts WHERE ts >= $1 ORDER BY ts`,
+        [cutoff],
+      );
+      return rows.map((r) => ({ ts: String(r.ts), counts: r.counts as Record<string, number> }));
     } catch {
       return [];
     }
   }
 
-  /** Append a scan cycle record to disk and prune old entries */
+  /** Append a scan cycle record to PostgreSQL and prune old entries */
   private persistScanCycle(cycleCounts: Record<string, number>): void {
-    try {
-      const records = SystemScannerService.readScanCounts();
-      records.push({ ts: new Date().toISOString(), counts: cycleCounts });
-      // Prune entries older than 8 days
-      const cutoff = Date.now() - SCAN_COUNTS_MAX_AGE_MS;
-      const pruned = records.filter((r) => Date.parse(r.ts) >= cutoff);
-      mkdirSync(dirname(SCAN_COUNTS_PATH), { recursive: true });
-      writeFileSync(SCAN_COUNTS_PATH, JSON.stringify(pruned), "utf-8");
-    } catch (err) {
+    const now = new Date().toISOString();
+    const cutoff = new Date(Date.now() - SCAN_COUNTS_MAX_AGE_MS).toISOString();
+    // Fire-and-forget — don't block the scan loop
+    pool.query(
+      `INSERT INTO scan_counts (ts, counts) VALUES ($1, $2)`,
+      [now, JSON.stringify(cycleCounts)],
+    ).then(() =>
+      pool.query(`DELETE FROM scan_counts WHERE ts < $1`, [cutoff]),
+    ).catch((err) => {
       console.error("[SystemScanner] Failed to persist scan counts:", err);
-    }
+    });
   }
 
   /** Reset all stats — counters, scan round, cache — fresh start */

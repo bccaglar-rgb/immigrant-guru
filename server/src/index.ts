@@ -3,6 +3,8 @@ import http from "node:http";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { randomBytes } from "node:crypto";
+import { ensureDbConnection } from "./db/pool.ts";
+import { ensureRedisConnection } from "./db/redis.ts";
 import { registerConnectionRoutes } from "./routes/connections.ts";
 import { registerExchangeRoutes } from "./routes/exchanges.ts";
 import { registerMarketRoutes } from "./routes/market.ts";
@@ -38,10 +40,15 @@ import { TokenCreatorService } from "./payments/tokenCreatorService.ts";
 import { SystemScannerService } from "./services/systemScannerService.ts";
 import { CoinUniverseEngine } from "./services/coinUniverseEngine.ts";
 
+// PM2 cluster mode: Worker 0 = primary (runs singleton services + HTTP)
+// Worker 1, 2 = HTTP-only
+const WORKER_ID = Number(process.env.NODE_APP_INSTANCE ?? "0");
+const IS_PRIMARY = WORKER_ID === 0;
+
 const app = express();
 app.use(express.json());
 app.get("/api/health", (_req, res) => {
-  res.json({ ok: true, service: "exchange-backend" });
+  res.json({ ok: true, service: "exchange-backend", worker: WORKER_ID, primary: IS_PRIMARY });
 });
 
 const audit = new AuditLogService();
@@ -72,12 +79,17 @@ const systemScanner = new SystemScannerService({
   coinUniverseEngine,
 });
 
-// bootstrap admin user (dev)
-if (!process.env.DISABLE_DEV_ADMIN) {
-  try {
-    authService.signup(process.env.ADMIN_EMAIL ?? "admin@bitrium.local", process.env.ADMIN_PASSWORD ?? "Admin12345!", "ADMIN");
-  } catch {
-    // already exists
+// bootstrap: DB connection + payment store + admin user
+async function bootstrap() {
+  await ensureDbConnection();
+  await ensureRedisConnection();
+  await paymentStore.bootstrap();
+  if (!process.env.DISABLE_DEV_ADMIN) {
+    try {
+      await authService.signup(process.env.ADMIN_EMAIL ?? "admin@bitrium.local", process.env.ADMIN_PASSWORD ?? "Admin12345!", "ADMIN");
+    } catch {
+      // already exists
+    }
   }
 }
 
@@ -114,14 +126,26 @@ createGateway(server);
 const host = process.env.HOST ?? "127.0.0.1";
 const port = Number(process.env.PORT ?? 8090);
 
-server.listen(port, host, () => {
-  binanceFuturesHub.start();
-  exchangeMarketHub.start();
-  exchangeCore.start();
-  traderHubEngine.start();
-  tronMonitor.start();
-  tradeIdeaTracker.start();
-  systemScanner.start();
-  // eslint-disable-next-line no-console
-  console.log(`Exchange terminal backend on http://${host}:${port}`);
-});
+bootstrap()
+  .then(() => {
+    server.listen(port, host, () => {
+      if (IS_PRIMARY) {
+        // Singleton services — only Worker 0
+        binanceFuturesHub.start();
+        exchangeMarketHub.start();
+        exchangeCore.start();
+        traderHubEngine.start();
+        tronMonitor.start();
+        tradeIdeaTracker.start();
+        systemScanner.start();
+        console.log(`[Worker ${WORKER_ID}] PRIMARY — singleton services started`);
+      } else {
+        console.log(`[Worker ${WORKER_ID}] HTTP-only worker`);
+      }
+      console.log(`[Worker ${WORKER_ID}] Exchange terminal backend on http://${host}:${port}`);
+    });
+  })
+  .catch((err) => {
+    console.error(`[Worker ${WORKER_ID}] [FATAL] Bootstrap failed:`, err);
+    process.exit(1);
+  });

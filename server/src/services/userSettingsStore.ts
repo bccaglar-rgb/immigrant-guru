@@ -1,5 +1,4 @@
-import { mkdir, readFile, writeFile } from "node:fs/promises";
-import path from "node:path";
+import { pool } from "../db/pool.ts";
 import { normalizeScoringMode, type ScoringMode } from "./scoringMode.ts";
 
 export interface UserSettingsRecord {
@@ -18,10 +17,6 @@ export interface UserFlowModeSettings {
   signalInputs: Record<string, boolean>;
   signalInputWeights: Record<string, number>;
   riskChecks: Record<string, boolean>;
-}
-
-interface UserSettingsStorageModel {
-  users: UserSettingsRecord[];
 }
 
 const DEFAULT_SCORING_MODE: ScoringMode = "FLOW";
@@ -61,99 +56,72 @@ const normalizeFlowModeSettings = (raw: unknown): UserFlowModeSettings | undefin
   };
 };
 
-const defaultStorage = (): UserSettingsStorageModel => ({
-  users: [],
+/* ── Row mapper ───────────────────────────────────────────── */
+
+const rowToSettings = (r: Record<string, unknown>): UserSettingsRecord => ({
+  user_id: String(r.user_id),
+  scoring_mode: normalizeScoringMode(r.scoring_mode),
+  flow_mode: normalizeFlowModeSettings(r.flow_mode),
+  created_at: String(r.created_at),
+  updated_at: String(r.updated_at),
 });
 
+/* ── Store ────────────────────────────────────────────────── */
+
 export class UserSettingsStore {
-  private loaded = false;
-
-  private state: UserSettingsStorageModel = defaultStorage();
-
-  private writeChain: Promise<void> = Promise.resolve();
-
-  private readonly filePath: string;
-
-  constructor(filePath = path.join(process.cwd(), "server", "data", "user_settings.json")) {
-    this.filePath = filePath;
-  }
-
-  private async ensureLoaded() {
-    if (this.loaded) return;
-    try {
-      const raw = await readFile(this.filePath, "utf8");
-      const parsed = JSON.parse(raw) as UserSettingsStorageModel;
-      this.state = {
-        users: Array.isArray(parsed?.users)
-          ? parsed.users
-            .map((row) => {
-              if (!row || typeof row !== "object") return null;
-              const userId = String((row as { user_id?: unknown }).user_id ?? "").trim();
-              if (!userId) return null;
-              const createdAtRaw = String((row as { created_at?: unknown }).created_at ?? "");
-              const updatedAtRaw = String((row as { updated_at?: unknown }).updated_at ?? "");
-              const nowIso = new Date().toISOString();
-              return {
-                user_id: userId,
-                scoring_mode: normalizeScoringMode((row as { scoring_mode?: unknown }).scoring_mode),
-                flow_mode: normalizeFlowModeSettings((row as { flow_mode?: unknown }).flow_mode),
-                created_at: Number.isFinite(Date.parse(createdAtRaw)) ? createdAtRaw : nowIso,
-                updated_at: Number.isFinite(Date.parse(updatedAtRaw)) ? updatedAtRaw : nowIso,
-              };
-            })
-            .filter((row): row is UserSettingsRecord => Boolean(row))
-          : [],
-      };
-    } catch {
-      this.state = defaultStorage();
-      await this.flush();
-    } finally {
-      this.loaded = true;
-    }
-  }
-
-  private async flush() {
-    const dir = path.dirname(this.filePath);
-    await mkdir(dir, { recursive: true });
-    const payload = JSON.stringify(this.state, null, 2);
-    this.writeChain = this.writeChain.then(async () => {
-      await writeFile(this.filePath, payload, "utf8");
-    });
-    await this.writeChain;
-  }
-
   async get(userId: string): Promise<UserSettingsRecord> {
-    await this.ensureLoaded();
     const normalized = userId.trim() || "demo-user";
-    const existing = this.state.users.find((row) => row.user_id === normalized);
-    if (existing) return existing;
+    const { rows } = await pool.query(
+      `SELECT * FROM user_settings WHERE user_id = $1`,
+      [normalized],
+    );
+    if (rows[0]) return rowToSettings(rows[0]);
 
+    // Auto-create default settings
     const nowIso = new Date().toISOString();
-    const created: UserSettingsRecord = {
+    await pool.query(
+      `INSERT INTO user_settings (user_id, scoring_mode, created_at, updated_at)
+       VALUES ($1, $2, $3, $4)
+       ON CONFLICT (user_id) DO NOTHING`,
+      [normalized, DEFAULT_SCORING_MODE, nowIso, nowIso],
+    );
+    // Re-read (ON CONFLICT DO NOTHING means we return whatever exists)
+    const { rows: rows2 } = await pool.query(
+      `SELECT * FROM user_settings WHERE user_id = $1`,
+      [normalized],
+    );
+    if (rows2[0]) return rowToSettings(rows2[0]);
+
+    // Shouldn't happen, but satisfy TS
+    return {
       user_id: normalized,
       scoring_mode: DEFAULT_SCORING_MODE,
       created_at: nowIso,
       updated_at: nowIso,
     };
-    this.state.users.push(created);
-    await this.flush();
-    return created;
   }
 
   async update(userId: string, patch: Partial<Pick<UserSettingsRecord, "scoring_mode" | "flow_mode">>): Promise<UserSettingsRecord> {
-    await this.ensureLoaded();
     const normalized = userId.trim() || "demo-user";
+    // Ensure row exists first
     const current = await this.get(normalized);
-    const next: UserSettingsRecord = {
-      ...current,
-      scoring_mode: patch.scoring_mode ? normalizeScoringMode(patch.scoring_mode) : current.scoring_mode,
-      flow_mode: patch.flow_mode ? normalizeFlowModeSettings(patch.flow_mode) : current.flow_mode,
-      updated_at: new Date().toISOString(),
+    const nextMode = patch.scoring_mode ? normalizeScoringMode(patch.scoring_mode) : current.scoring_mode;
+    const nextFlow = patch.flow_mode ? normalizeFlowModeSettings(patch.flow_mode) : current.flow_mode;
+    const nowIso = new Date().toISOString();
+
+    await pool.query(
+      `UPDATE user_settings
+       SET scoring_mode = $1, flow_mode = $2, updated_at = $3
+       WHERE user_id = $4`,
+      [nextMode, nextFlow ? JSON.stringify(nextFlow) : null, nowIso, normalized],
+    );
+
+    return {
+      user_id: normalized,
+      scoring_mode: nextMode,
+      flow_mode: nextFlow,
+      created_at: current.created_at,
+      updated_at: nowIso,
     };
-    const idx = this.state.users.findIndex((row) => row.user_id === normalized);
-    if (idx >= 0) this.state.users[idx] = next;
-    else this.state.users.push(next);
-    await this.flush();
-    return next;
   }
 }
