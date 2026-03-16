@@ -575,10 +575,13 @@ const makeModeBreakdown = (
       atrRegime,
       rsiState,
     });
+    // Flow decision: phase-based for TRADE, threshold-based for WATCH (≥35%)
+    // Aligns with S/R boost path's modeWatchThreshold.FLOW = 35
+    const flowScore = Math.round(out.extremeScore);
     const decision: ModeBreakdown["decision"] =
-      out.phase === "TRADE" || out.phase === "SQUEEZE_EVENT"
+      (out.phase === "TRADE" || out.phase === "SQUEEZE_EVENT") && flowScore >= 55
         ? "TRADE"
-        : out.phase === "WAIT" || out.phase === "SPECULATIVE"
+        : flowScore >= 35
           ? "WATCH"
           : "NO_TRADE";
     return {
