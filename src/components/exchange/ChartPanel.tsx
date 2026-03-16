@@ -11,6 +11,7 @@ import {
   type UTCTimestamp,
 } from "lightweight-charts";
 import { useExchangeTerminalStore } from "../../hooks/useExchangeTerminalStore";
+import { useLivePriceStore } from "../../hooks/useLivePriceStore";
 import type { ExchangeTradeSignal } from "../../types/exchange";
 import type { IndicatorGroupKey, IndicatorKey, IndicatorsState } from "../../types";
 import { IndicatorsDropdown } from "./IndicatorsDropdown";
@@ -85,6 +86,8 @@ export const ChartPanel = ({
   const overlaySeriesRef = useRef<ISeriesApi<"Line">[]>([]);
   const hasUserInteractedRef = useRef(false);
   const autoFitPendingRef = useRef(true);
+  const livePriceLineRef = useRef<IPriceLine | null>(null);
+  const closedCandlesRef = useRef<Set<number>>(new Set());
   const coinMenuRef = useRef<HTMLDivElement | null>(null);
   const [coinMenuOpen, setCoinMenuOpen] = useState(false);
   const [coinQuery, setCoinQuery] = useState("");
@@ -93,6 +96,8 @@ export const ChartPanel = ({
   const [sortKey, setSortKey] = useState<SortKey>("symbol");
   const [sortDir, setSortDir] = useState<SortDir>("asc");
   const { selectedSymbol, tickers, accountMode, setSelectedSymbol } = useExchangeTerminalStore();
+  const rawSymbol = useMemo(() => selectedSymbol.replace("/", "").toUpperCase(), [selectedSymbol]);
+  const livePrice = useLivePriceStore((s) => s.bySymbol[rawSymbol]);
   const normalizeSymbolForFilter = (symbol: string) => symbol.toUpperCase().replace(/[^A-Z0-9]/g, "");
   const isUsdmSymbol = (symbol: string) => normalizeSymbolForFilter(symbol).endsWith("USDT");
   const isCoinmSymbol = (symbol: string) => {
@@ -176,6 +181,7 @@ export const ChartPanel = ({
         chartRef.current.remove();
         chartRef.current = null;
         seriesRef.current = null;
+        livePriceLineRef.current = null;
       }
       if (resizeObserverRef.current) {
         resizeObserverRef.current.disconnect();
@@ -183,6 +189,7 @@ export const ChartPanel = ({
       }
       hasUserInteractedRef.current = false;
       autoFitPendingRef.current = true;
+      closedCandlesRef.current = new Set();
       return;
     }
     if (!ref.current || chartRef.current) return;
@@ -239,6 +246,7 @@ export const ChartPanel = ({
         chartRef.current.remove();
         chartRef.current = null;
         seriesRef.current = null;
+        livePriceLineRef.current = null;
       }
     };
   }, [blockedMessage]);
@@ -262,13 +270,19 @@ export const ChartPanel = ({
   // ── Live candle incremental update: series.update() for real-time kline events ──
   // This uses series.update() instead of setData() for performance —
   // no flicker, no full re-render, instant chart refresh (~250ms Binance kline rate).
+  // Closed candle immutable guard: once a candle is marked closed, it is never updated again.
   useEffect(() => {
     if (blockedMessage) return;
     if (!seriesRef.current) return;
     if (!liveCandleUpdate || liveCandleUpdate.openTime <= 0 || liveCandleUpdate.close <= 0) return;
+
+    const ot = liveCandleUpdate.openTime;
+    // Immutable guard: skip updates for candles already marked as closed
+    if (closedCandlesRef.current.has(ot)) return;
+
     try {
       seriesRef.current.update({
-        time: liveCandleUpdate.openTime as UTCTimestamp,
+        time: ot as UTCTimestamp,
         open: liveCandleUpdate.open,
         high: liveCandleUpdate.high,
         low: liveCandleUpdate.low,
@@ -277,7 +291,55 @@ export const ChartPanel = ({
     } catch {
       // noop — chart may not be ready yet
     }
+
+    // Mark candle as immutable once closed
+    if (liveCandleUpdate.closed) {
+      closedCandlesRef.current.add(ot);
+      // Prune set to avoid unbounded growth: keep only last 5 entries
+      if (closedCandlesRef.current.size > 10) {
+        const entries = [...closedCandlesRef.current].sort((a, b) => a - b);
+        closedCandlesRef.current = new Set(entries.slice(-5));
+      }
+    }
   }, [blockedMessage, liveCandleUpdate]);
+
+  // ── Live price line overlay: tick-derived micro price (ghost close) ──
+  // Separate from candle data — this is visual only, does NOT mutate candle series.
+  // Updates at tick rate (~33ms batches) for real-time price tracking on right axis.
+  // Acts as "ghost close" on the forming candle: shows where close would be if candle closed now.
+  useEffect(() => {
+    if (blockedMessage || !seriesRef.current) {
+      livePriceLineRef.current = null;
+      return;
+    }
+    if (!livePrice?.price || !Number.isFinite(livePrice.price)) {
+      if (livePriceLineRef.current && seriesRef.current) {
+        try { seriesRef.current.removePriceLine(livePriceLineRef.current); } catch { /* noop */ }
+        livePriceLineRef.current = null;
+      }
+      return;
+    }
+
+    // Color based on uptick/downtick from previous tick
+    const color = livePrice.prevPrice != null && livePrice.prevPrice > 0
+      ? (livePrice.price >= livePrice.prevPrice ? "#2bc48a" : "#f6465d")
+      : "#F5C542";
+
+    if (livePriceLineRef.current) {
+      // Update existing price line — no create/destroy per tick
+      livePriceLineRef.current.applyOptions({ price: livePrice.price, color });
+    } else {
+      // Create new price line on the candlestick series
+      livePriceLineRef.current = seriesRef.current.createPriceLine({
+        price: livePrice.price,
+        color,
+        lineWidth: 1,
+        lineStyle: LineStyle.Dotted,
+        axisLabelVisible: true,
+        title: "",
+      });
+    }
+  }, [blockedMessage, livePrice]);
 
   useEffect(() => {
     if (!chartRef.current) return;
@@ -418,9 +480,11 @@ export const ChartPanel = ({
   }, [activeSignal]);
 
   useEffect(() => {
-    // On symbol change, allow one initial autofit again.
+    // On symbol change, allow one initial autofit again and reset pipeline state.
     hasUserInteractedRef.current = false;
     autoFitPendingRef.current = true;
+    closedCandlesRef.current = new Set();
+    livePriceLineRef.current = null;
   }, [selectedSymbol]);
 
   useEffect(() => {

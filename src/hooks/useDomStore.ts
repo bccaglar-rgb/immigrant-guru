@@ -86,26 +86,38 @@ export const useDomStore = create<DomStoreState>((set) => ({
     }),
 }));
 
+// Shallow equality for DomLevel arrays — prevents unnecessary React re-renders
+// when the underlying Map content has not actually changed.
+const EMPTY_LEVELS: DomLevel[] = [];
+const shallowDomLevels = (a: DomLevel[], b: DomLevel[]): boolean => {
+  if (a === b) return true;
+  if (a.length !== b.length) return false;
+  for (let i = 0; i < a.length; i++) {
+    if (a[i].price !== b[i].price || a[i].qty !== b[i].qty) return false;
+  }
+  return true;
+};
+
 /** Sorted bid levels (descending by price) — use as a React selector hook */
 export const useDomBids = (symbol: string, limit = 20): DomLevel[] => {
   return useDomStore((s) => {
     const book = s.books[symbol];
-    if (!book || !book.ready) return [];
+    if (!book || !book.ready) return EMPTY_LEVELS;
     return [...book.bids.entries()]
       .sort((a, b) => b[0] - a[0])
       .slice(0, limit)
       .map(([price, qty]) => ({ price, qty }));
-  });
+  }, shallowDomLevels);
 };
 
 /** Sorted ask levels (ascending by price) — use as a React selector hook */
 export const useDomAsks = (symbol: string, limit = 20): DomLevel[] => {
   return useDomStore((s) => {
     const book = s.books[symbol];
-    if (!book || !book.ready) return [];
+    if (!book || !book.ready) return EMPTY_LEVELS;
     return [...book.asks.entries()]
       .sort((a, b) => a[0] - b[0])
       .slice(0, limit)
       .map(([price, qty]) => ({ price, qty }));
-  });
+  }, shallowDomLevels);
 };

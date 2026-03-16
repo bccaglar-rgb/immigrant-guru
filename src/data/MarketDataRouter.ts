@@ -6,6 +6,7 @@ import { normalizeExchangeSource, useDataSourceManager, type ExchangeSourceId, t
 import { useTickStore } from "../hooks/useTickStore";
 import { useDomStore } from "../hooks/useDomStore";
 import { useOrderflowStore } from "../hooks/useOrderflowStore";
+import { useLivePriceStore } from "../hooks/useLivePriceStore";
 
 export interface MarketDatum<T> {
   sourceId: SourceId;
@@ -350,6 +351,11 @@ const connectWebSocket = () => {
     ws.onopen = () => {
       wsConnected = true;
       reconnectAttempts = 0;
+      // Clear stale pipeline data on reconnect — fresh snapshots will repopulate on subscribe
+      useTickStore.getState().clear();
+      useDomStore.getState().clear();
+      useOrderflowStore.getState().clear();
+      useLivePriceStore.getState().clear();
       sendWsSubscriptions();
     };
     ws.onmessage = (event) => {
@@ -414,11 +420,35 @@ const connectWebSocket = () => {
         } else if (msg.type === "tick_batch" && symbol) {
           // Pipeline 2: Tick micro-batch from trade events
           const ticks = Array.isArray(msg.ticks) ? msg.ticks : [];
-          if (ticks.length) useTickStore.getState().ingestBatch(symbol, ticks);
+          if (ticks.length) {
+            useTickStore.getState().ingestBatch(symbol, ticks);
+            // Feed last tick into live price store for chart overlay
+            const last = ticks[ticks.length - 1] as Record<string, unknown> | undefined;
+            if (last && typeof last.price === "number" && last.price > 0) {
+              useLivePriceStore.getState().setLivePrice(
+                symbol,
+                last.price,
+                Number(last.ts ?? Date.now()),
+                last.side === "BUY" || last.side === "SELL" ? last.side : undefined,
+              );
+            }
+          }
         } else if (msg.type === "tick_snapshot" && symbol) {
           // Pipeline 2: Initial tick buffer on subscribe
           const ticks = Array.isArray(msg.ticks) ? msg.ticks : [];
-          if (ticks.length) useTickStore.getState().ingestSnapshot(symbol, ticks);
+          if (ticks.length) {
+            useTickStore.getState().ingestSnapshot(symbol, ticks);
+            // Seed live price from last tick in snapshot
+            const last = ticks[ticks.length - 1] as Record<string, unknown> | undefined;
+            if (last && typeof last.price === "number" && last.price > 0) {
+              useLivePriceStore.getState().setLivePrice(
+                symbol,
+                last.price,
+                Number(last.ts ?? Date.now()),
+                last.side === "BUY" || last.side === "SELL" ? last.side : undefined,
+              );
+            }
+          }
         } else if (msg.type === "dom_snapshot" && symbol) {
           // Pipeline 3: Full orderbook snapshot
           const bids = Array.isArray(msg.bids) ? msg.bids : [];
