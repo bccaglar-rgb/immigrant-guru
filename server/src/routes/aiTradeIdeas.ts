@@ -1918,6 +1918,11 @@ export const registerAiTradeIdeasRoutes = (
       const rangeMs = RANGE_MS[rangeParam] ?? 0;
       const cutoffMs = rangeMs > 0 ? Date.now() - rangeMs : 0;
 
+      // Read scan state (primary has it in-memory, non-primary reads from Redis)
+      const scanState = (deps.isPrimary === false && !sharedAiState.updatedAt)
+        ? (await readAiStateFromRedis()) ?? sharedAiState
+        : sharedAiState;
+
       const statsByModule: Record<string, {
         totalScan: number; totalIdeas: number; active: number; resolved: number;
         success: number; failed: number; entryMissed: number; successRate: number;
@@ -1939,8 +1944,7 @@ export const registerAiTradeIdeasRoutes = (
         const failed = activatedIdeas.filter((i) => i.result === "FAIL").length;
         const resolved = success + failed;
 
-        // totalScan = count of scans in current sharedAiState for this module
-        const scanCount = (sharedAiState.scansByModule[moduleId] ?? []).length;
+        const scanCount = (scanState.scansByModule[moduleId] ?? []).length;
 
         statsByModule[moduleId] = {
           totalScan: scanCount,
