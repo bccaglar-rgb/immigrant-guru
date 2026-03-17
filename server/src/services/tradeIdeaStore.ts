@@ -270,11 +270,16 @@ export class TradeIdeaStore {
   }
 
   async clearAll() {
+    // Only clears system-scanner (Quant) ideas — AI ideas (ai-* user_ids) are preserved
     const client = await pool.connect();
     try {
       await client.query("BEGIN");
-      await client.query("DELETE FROM trade_idea_events");
-      const { rowCount: deletedIdeas } = await client.query("DELETE FROM trade_ideas");
+      await client.query(
+        "DELETE FROM trade_idea_events WHERE idea_id IN (SELECT id FROM trade_ideas WHERE user_id = 'system-scanner')",
+      );
+      const { rowCount: deletedIdeas } = await client.query(
+        "DELETE FROM trade_ideas WHERE user_id = 'system-scanner'",
+      );
       await client.query("COMMIT");
       return { deletedIdeas: deletedIdeas ?? 0, deletedEvents: 0 };
     } catch (e) {
