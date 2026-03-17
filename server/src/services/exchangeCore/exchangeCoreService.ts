@@ -16,6 +16,7 @@ import type { ConnectionService, ExchangeConnectionRecord } from "../connectionS
 import type { TraderExchange } from "../traderHub/types.ts";
 import type { CoreEvent, CoreIntentRecord, ExchangeCoreMetrics } from "./types.ts";
 import { ExchangeRateLimiter } from "./exchangeRateLimiter.ts";
+import { circuitBreakers } from "./circuitBreaker.ts";
 
 const nowIso = () => new Date().toISOString();
 
@@ -417,8 +418,23 @@ export class ExchangeCoreService {
   // ── Order Execution ──────────────────────────────────────────
 
   private async processIntent(row: CoreIntentRecord) {
-    // 1. Rate limit check
-    const allowed = await this.rateLimiter.tryAcquire(row.venue, 5); // order = ~5 weight
+    // 1. Circuit breaker check (OPEN → reject immediately, don't waste the request)
+    const cb = circuitBreakers[row.venue as keyof typeof circuitBreakers];
+    if (cb && !await cb.canRequest()) {
+      row.state = "ERROR";
+      row.rejectCode = "CIRCUIT_OPEN";
+      row.rejectReason = `${toExchangeDisplay(row.venue)} circuit breaker is OPEN. Will retry after cooldown.`;
+      row.updatedAt = nowIso();
+      await this.updateIntentState(row.id, "ERROR", {
+        rejectCode: "CIRCUIT_OPEN",
+        rejectReason: row.rejectReason,
+      });
+      this.emitEvent(row, "error", { stage: "circuit_breaker", message: row.rejectReason });
+      return;
+    }
+
+    // 2. Rate limit check
+    const allowed = await this.rateLimiter.tryAcquire(row.venue as "BINANCE" | "GATEIO", 5);
     if (!allowed) {
       row.state = "ERROR";
       row.rejectCode = "RATE_LIMITED";
@@ -435,7 +451,7 @@ export class ExchangeCoreService {
       return;
     }
 
-    // 2. Decrypt credentials
+    // 3. Decrypt credentials
     const creds = await this.decryptCredentials(row.userId, row.exchangeAccountId);
     if (!creds) {
       row.state = "ERROR";
@@ -475,8 +491,12 @@ export class ExchangeCoreService {
       } else {
         throw new Error(`Unsupported venue: ${row.venue}`);
       }
+      // Record success to circuit breaker
+      if (cb) await cb.recordSuccess().catch(() => {});
     } catch (err: any) {
       const msg = err?.message ?? "exchange_api_failed";
+      // Record failure to circuit breaker
+      if (cb) await cb.recordFailure().catch(() => {});
       row.state = "ERROR";
       row.rejectCode = "EXCHANGE_ERROR";
       row.rejectReason = msg;

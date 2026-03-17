@@ -5,6 +5,7 @@ import { TradeIdeaStore } from "./tradeIdeaStore.ts";
 import { SCORING_MODES } from "./scoringMode.ts";
 import type { ScoringMode } from "./scoringMode.ts";
 import { optimizeRR } from "./rrOptimizer.ts";
+import { subscribeToTick } from "./tickOrchestrator.ts";
 
 // ---------------------------------------------------------------------------
 // Config path
@@ -55,6 +56,7 @@ export class AdaptiveRRService {
   private config: RRConfig = defaultConfig();
   private store = new TradeIdeaStore();
   private timer: ReturnType<typeof setInterval> | null = null;
+  private unsubTick: (() => void) | null = null;
 
   constructor() {
     this.loadConfig();
@@ -72,7 +74,7 @@ export class AdaptiveRRService {
     return { ...this.config };
   }
 
-  /** Start the daily optimizer. Call once on server startup. */
+  /** Start the daily optimizer. Call once on server startup (IS_PRIMARY only). */
   start(): void {
     // Warm-up: run after 30s so the DB is fully ready
     setTimeout(() => {
@@ -81,7 +83,15 @@ export class AdaptiveRRService {
       );
     }, 30_000);
 
-    // Daily re-run
+    // Subscribe to Global Tick Orchestrator (tick:24h)
+    // Falls back to local setInterval if orchestrator not yet running
+    this.unsubTick = subscribeToTick(["tick:24h"], () => {
+      this.runOptimizer().catch((err) =>
+        console.error("[AdaptiveRR] tick:24h optimizer error:", err),
+      );
+    });
+
+    // Fallback local timer (safeguard if Redis pub/sub is unavailable)
     this.timer = setInterval(
       () => {
         this.runOptimizer().catch((err) =>
@@ -93,6 +103,7 @@ export class AdaptiveRRService {
   }
 
   stop(): void {
+    if (this.unsubTick) { this.unsubTick(); this.unsubTick = null; }
     if (this.timer) {
       clearInterval(this.timer);
       this.timer = null;

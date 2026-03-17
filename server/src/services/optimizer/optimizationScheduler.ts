@@ -4,6 +4,7 @@ import { groupTradesByModeAndSegment, groupTradesByMode } from "./segmentAnalyze
 import { optimizeModeGlobal, optimizeModeSegments } from "./moduleOptimizer.ts";
 import { ccManager } from "./championChallengerManager.ts";
 import type { SegmentKey } from "./types.ts";
+import { subscribeToTick } from "../tickOrchestrator.ts";
 
 const DAILY_MS = 24 * 60 * 60 * 1000;
 const WARMUP_MS = 45_000; // 45s to let DB fully warm up
@@ -11,6 +12,7 @@ const WARMUP_MS = 45_000; // 45s to let DB fully warm up
 export class OptimizationScheduler {
   private store = new TradeIdeaStore();
   private timer: ReturnType<typeof setInterval> | null = null;
+  private unsubTick: (() => void) | null = null;
   private started = false;
 
   start(): void {
@@ -23,12 +25,19 @@ export class OptimizationScheduler {
       this.run().catch((err) => console.error("[Optimizer] Warm-up run failed:", err));
     }, WARMUP_MS);
 
+    // Subscribe to Global Tick Orchestrator (tick:24h)
+    this.unsubTick = subscribeToTick(["tick:24h"], () => {
+      this.run().catch((err) => console.error("[Optimizer] tick:24h run failed:", err));
+    });
+
+    // Fallback local timer (safeguard if Redis pub/sub is unavailable)
     this.timer = setInterval(() => {
       this.run().catch((err) => console.error("[Optimizer] Daily run failed:", err));
     }, DAILY_MS);
   }
 
   stop(): void {
+    if (this.unsubTick) { this.unsubTick(); this.unsubTick = null; }
     if (this.timer) { clearInterval(this.timer); this.timer = null; }
     this.started = false;
   }
