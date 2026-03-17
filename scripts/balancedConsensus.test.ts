@@ -16,7 +16,7 @@ const healthyData = {
   },
 } as const;
 
-// Ideal signals for all 6 components
+// Ideal signals for all components
 const idealSignals = {
   orderbookImbalance: "BUY" as const,
   oiChangeStrength: "HIGH" as const,
@@ -38,7 +38,7 @@ const idealSignals = {
   nasdaqTrend: "UP" as const,
 };
 
-test("high conviction setup produces TRADE with 6-component diagnostics", () => {
+test("high conviction setup produces TRADE with Adaptive Alpha diagnostics", () => {
   const out = computeBalancedConsensus({
     structureScore: 85,
     liquidityScore: 80,
@@ -48,6 +48,7 @@ test("high conviction setup produces TRADE with 6-component diagnostics", () => 
     trendStrength: "HIGH",
     emaAlignment: "BULL",
     vwapPosition: "ABOVE",
+    structureAge: "EARLY",
     marketSpeed: "FAST",
     compression: "ON",
     spreadRegime: "TIGHT",
@@ -60,6 +61,8 @@ test("high conviction setup produces TRADE with 6-component diagnostics", () => 
     crowdingRisk: "LOW",
     cascadeRisk: "LOW",
     entryWindow: "OPEN",
+    alignedCount: 5,
+    totalModels: 6,
     dataHealth: healthyData,
     ...idealSignals,
   });
@@ -72,19 +75,160 @@ test("high conviction setup produces TRADE with 6-component diagnostics", () => 
   // Final score should be well above TRADE threshold (64)
   assert.ok(out.finalScore >= 64, `expected finalScore >= 64, got ${out.finalScore}`);
   assert.ok(out.sizeHint >= 0.40, `expected sizeHint >= 0.40, got ${out.sizeHint}`);
-  // Verify 6-component diagnostics structure
-  assert.ok(typeof out.diagnostics.layers.opportunity.score === "number");
-  assert.ok(typeof out.diagnostics.layers.direction.score === "number");
-  assert.ok(typeof out.diagnostics.layers.execution.score === "number");
-  assert.ok(typeof out.diagnostics.layers.liquidity.score === "number");
+  // Verify new component diagnostics structure
   assert.ok(typeof out.diagnostics.layers.structure.score === "number");
-  assert.ok(typeof out.diagnostics.layers.relativeStrength.score === "number");
+  assert.ok(typeof out.diagnostics.layers.liquidity.score === "number");
+  assert.ok(typeof out.diagnostics.layers.positioning.score === "number");
+  assert.ok(typeof out.diagnostics.layers.execution.score === "number");
+  assert.ok(typeof out.diagnostics.layers.volatility.score === "number");
+  assert.ok(typeof out.diagnostics.layers.confirmation.score === "number");
   assert.ok(typeof out.diagnostics.layers.riskPenalty.total === "number");
   assert.ok(typeof out.diagnostics.layers.tradeScore === "number");
+  // Backward-compat aliases exist
+  assert.ok(typeof out.diagnostics.layers.opportunity.score === "number");
+  assert.ok(typeof out.diagnostics.layers.direction.score === "number");
+  assert.ok(typeof out.diagnostics.layers.relativeStrength.score === "number");
   // Verify breakdowns
-  assert.ok(Object.keys(out.diagnostics.layers.opportunity.breakdown).length >= 4);
-  assert.ok(Object.keys(out.diagnostics.layers.direction.breakdown).length >= 4);
+  assert.ok(Object.keys(out.diagnostics.layers.structure.breakdown).length >= 4);
+  assert.ok(Object.keys(out.diagnostics.layers.positioning.breakdown).length >= 4);
   assert.ok(Object.keys(out.diagnostics.layers.execution.breakdown).length >= 5);
+  // Playbook and new outputs
+  assert.ok(typeof out.playbook === "string");
+  assert.ok(typeof out.candidateScore === "number");
+  assert.ok(typeof out.rankScore === "number");
+});
+
+test("playbook detects TREND_PULLBACK for trending market", () => {
+  const out = computeBalancedConsensus({
+    structureScore: 80,
+    liquidityScore: 75,
+    positioningScore: 78,
+    executionScore: 70,
+    regime: "TREND",
+    trendStrength: "HIGH",
+    emaAlignment: "BULL",
+    vwapPosition: "ABOVE",
+    structureAge: "EARLY",
+    marketSpeed: "FAST",
+    compression: "OFF",
+    spreadRegime: "TIGHT",
+    depthQuality: "GOOD",
+    spoofRisk: "LOW",
+    slippageLevel: "LOW",
+    pFill: 0.80,
+    capacity: 0.8,
+    stressLevel: "LOW",
+    crowdingRisk: "LOW",
+    cascadeRisk: "LOW",
+    entryWindow: "OPEN",
+    alignedCount: 4,
+    totalModels: 6,
+    dataHealth: healthyData,
+    ...idealSignals,
+    orderbookImbalance: "BUY",
+  });
+
+  assert.equal(out.playbook, "TREND_PULLBACK");
+  assert.ok(out.diagnostics.layers.playbookBoost === 3, `expected playbookBoost 3, got ${out.diagnostics.layers.playbookBoost}`);
+});
+
+test("playbook detects RANGE_ROTATION for sideways market", () => {
+  const out = computeBalancedConsensus({
+    structureScore: 70,
+    liquidityScore: 65,
+    positioningScore: 65,
+    executionScore: 60,
+    regime: "RANGE",
+    trendStrength: "LOW",
+    emaAlignment: "MIXED",
+    vwapPosition: "AT",
+    marketSpeed: "SLOW",
+    compression: "OFF",
+    spreadRegime: "MID",
+    depthQuality: "MID",
+    spoofRisk: "LOW",
+    slippageLevel: "MED",
+    pFill: 0.6,
+    capacity: 0.6,
+    stressLevel: "LOW",
+    crowdingRisk: "LOW",
+    cascadeRisk: "LOW",
+    entryWindow: "OPEN",
+    dataHealth: healthyData,
+    ...idealSignals,
+    rangePosition: "UPPER",
+    fakeBreakoutProb: "LOW",
+  });
+
+  assert.equal(out.playbook, "RANGE_ROTATION");
+  assert.ok(out.diagnostics.layers.playbookBoost === 2);
+});
+
+test("no-trade rule blocks when 2+ danger signals", () => {
+  const out = computeBalancedConsensus({
+    structureScore: 80,
+    liquidityScore: 75,
+    positioningScore: 75,
+    executionScore: 70,
+    regime: "TREND",
+    trendStrength: "HIGH",
+    emaAlignment: "BULL",
+    vwapPosition: "ABOVE",
+    marketSpeed: "FAST",
+    compression: "OFF",
+    spreadRegime: "TIGHT",
+    depthQuality: "GOOD",
+    spoofRisk: "HIGH",          // → trapProbabilityHigh = true
+    slippageLevel: "HIGH",
+    pFill: 0.7,
+    capacity: 0.7,
+    stressLevel: "LOW",
+    crowdingRisk: "LOW",
+    cascadeRisk: "LOW",
+    entryWindow: "CLOSED",      // → executionCertaintyLow = true (CLOSED + HIGH slippage)
+    dataHealth: healthyData,
+    ...idealSignals,
+    suddenMoveRisk: "HIGH",     // → newsRiskOn = true
+    conflictLevel: "HIGH",      // → signalConflictHigh = true
+  });
+
+  // No-trade rule should be blocked (4 danger signals)
+  assert.ok(out.diagnostics.layers.noTradeRule.blocked, "No-trade rule should be blocked");
+  assert.ok(out.diagnostics.layers.noTradeRule.dangerCount >= 2, `expected >= 2 danger signals, got ${out.diagnostics.layers.noTradeRule.dangerCount}`);
+  assert.ok(out.finalScore <= 48, `expected finalScore <= 48, got ${out.finalScore}`);
+});
+
+test("model agreement gate caps score when agreement < 50%", () => {
+  const out = computeBalancedConsensus({
+    structureScore: 85,
+    liquidityScore: 80,
+    positioningScore: 80,
+    executionScore: 75,
+    regime: "TREND",
+    trendStrength: "HIGH",
+    emaAlignment: "BULL",
+    vwapPosition: "ABOVE",
+    structureAge: "EARLY",
+    marketSpeed: "FAST",
+    compression: "ON",
+    spreadRegime: "TIGHT",
+    depthQuality: "GOOD",
+    spoofRisk: "LOW",
+    slippageLevel: "LOW",
+    pFill: 0.85,
+    capacity: 0.9,
+    stressLevel: "LOW",
+    crowdingRisk: "LOW",
+    cascadeRisk: "LOW",
+    entryWindow: "OPEN",
+    alignedCount: 2,      // < 3/6 = below 50%
+    totalModels: 6,
+    dataHealth: healthyData,
+    ...idealSignals,
+  });
+
+  // Score should be capped at 64 due to model agreement
+  assert.ok(out.adjustedScore <= 64, `adjustedScore should be <= 64 (model agreement cap), got ${out.adjustedScore}`);
 });
 
 test("guardrails block TRADE when sub-scores fail even with high final score", () => {
@@ -114,23 +258,20 @@ test("guardrails block TRADE when sub-scores fail even with high final score", (
     liquidityDensity: "LOW",  // → Liq score way down
   });
 
-  // Liq guardrail should fail (requires >= 60)
+  // Liq guardrail should fail (requires >= 38)
   assert.equal(out.diagnostics.layers.guardrails.liqPass, false);
   assert.equal(out.diagnostics.layers.guardrails.allPass, false);
-  // Final score capped below 64 by guardrail
-  assert.ok(out.finalScore < 64, `finalScore should be < 64 (guardrail block), got ${out.finalScore}`);
-  assert.equal(out.sizeHint, 0);
 });
 
-test("direction uncertain cap limits score to 82", () => {
+test("positioning uncertain cap limits score to 82", () => {
   const out = computeBalancedConsensus({
     structureScore: 90,
     liquidityScore: 85,
     positioningScore: 85,
     executionScore: 80,
-    regime: "RANGE",           // → Dir score lower
-    trendStrength: "LOW",      // → Dir score lower
-    emaAlignment: "MIXED",     // → Dir score lower
+    regime: "RANGE",           // → Pos score lower (weak orderflow)
+    trendStrength: "LOW",
+    emaAlignment: "MIXED",
     vwapPosition: "AT",
     marketSpeed: "FAST",
     compression: "ON",
@@ -148,12 +289,14 @@ test("direction uncertain cap limits score to 82", () => {
     ...idealSignals,
     orderbookImbalance: "NEUTRAL",
     oiChangeStrength: "LOW",
+    oiChangePct: 0.2,
     fundingBias: "NEUTRAL",
+    whaleActivity: "NEUTRAL",
+    exchangeFlow: "NEUTRAL",
   });
 
-  // Direction score should be < 70 → direction uncertain cap at 82
-  assert.ok(out.diagnostics.layers.direction.score < 70, `Dir should be < 70, got ${out.diagnostics.layers.direction.score}`);
-  // adjustedScore should be <= 82
+  // Positioning score should be < 55 → positioning uncertain cap at 82
+  assert.ok(out.diagnostics.layers.positioning.score < 55, `Pos should be < 55, got ${out.diagnostics.layers.positioning.score}`);
   assert.ok(out.adjustedScore <= 82, `adjustedScore should be <= 82, got ${out.adjustedScore}`);
 });
 

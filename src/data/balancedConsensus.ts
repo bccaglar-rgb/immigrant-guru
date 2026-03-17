@@ -1,23 +1,38 @@
 /**
- * BALANCED consensus — Crypto-optimized 6-component scoring model
+ * BALANCED consensus — Adaptive Crypto Alpha Mode
+ *
+ * 3 Priority Playbooks:
+ *   1. Trend Pullback Continuation (main motor — trend regime)
+ *   2. Liquidity Sweep Reversal (sweep detection)
+ *   3. Range Rotation (sideways markets)
+ *   + Breakout (conditional — all criteria must pass)
  *
  * Formula:
- *   BalancedTradeScore = 0.32*Opp + 0.22*Dir + 0.18*Exec + 0.14*Liq + 0.08*Struct + 0.06*RS - RiskPenalty
+ *   CandidateScore = 0.26*Structure + 0.22*Liquidity + 0.18*Positioning
+ *                  + 0.16*Execution + 0.10*Volatility + 0.08*Confirmation
+ *   FinalTradeScore = CandidateScore + RiskPenalty + PlaybookBoost
+ *   RankScore = (FTS×0.55) + (RR_Potential×0.20) + (ExecCertainty×0.15) + (ModelAgreement×0.10)
  *
- * Sub-score guardrails (any failing blocks TRADE):
- *   Opp >= 70, Dir >= 56, Exec >= 58, Liq >= 60, Structure >= 55
+ * No-Trade Rule — block if 2+ of:
+ *   Signal Conflict HIGH, Trap Probability HIGH, News Risk ON,
+ *   Fake Breakout HIGH, Execution Certainty LOW
+ *
+ * Sub-score guardrails (any failing applies -8 penalty):
+ *   Struct >= 40, Liq >= 38, Pos >= 35, Exec >= 35, Vol >= 30, Conf >= 25
  *
  * Decision levels:
  *   85+    Full conviction TRADE    (sizeHint 1.00)
  *   78-84  High TRADE               (sizeHint 0.90)
  *   72-77  Normal TRADE             (sizeHint 0.70)
  *   64-71  Small size TRADE         (sizeHint 0.40)
- *   48-63  WATCH                    (sizeHint 0.00)
- *   <48    NO_TRADE                 (sizeHint 0.00)
+ *   56-63  WATCH                    (sizeHint 0.00)
+ *   <56    NO_TRADE                 (sizeHint 0.00)
  *
  * Caps:
- *   Direction uncertain (Dir < 70) → max 82
+ *   Positioning uncertain (Pos < 55) → max 82
  *   Hard no-trade (stress+cascade+poor depth) → max 48
+ *   No-trade rule (2+ danger signals) → max 48
+ *   Model agreement < 3/6 → max 64
  *   Execution combo penalty capped at -4
  */
 
@@ -55,6 +70,9 @@ export type RsiState = "OVERSOLD" | "OVERBOUGHT" | "NEUTRAL" | "UNKNOWN";
 export type AtrRegime = "LOW" | "MID" | "HIGH" | "UNKNOWN";
 export type LiquidityDensity = "LOW" | "MID" | "HIGH" | "UNKNOWN";
 export type MacroTrend = "UP" | "DOWN" | "FLAT" | "UNKNOWN";
+
+// Playbook type
+export type PlaybookType = "TREND_PULLBACK" | "LIQUIDITY_SWEEP" | "RANGE_ROTATION" | "BREAKOUT" | "GENERAL";
 
 // ── Data health ──────────────────────────────────────────────
 
@@ -145,6 +163,15 @@ export interface BalancedConsensusInput {
   impulseReadiness?: TernaryRisk;
   dxyTrend?: MacroTrend;
   nasdaqTrend?: MacroTrend;
+
+  // Playbook detection & no-trade rule signals
+  signalConflict?: ConflictLevel;
+  trapProbability?: TernaryRisk;
+  fakeBreakoutProb?: TernaryRisk;
+  rangePosition?: string;
+  stopClusterProb?: TernaryRisk;
+  aggressorFlow?: string;
+  breakoutRisk?: TernaryRisk;
 }
 
 // ── Component result type ────────────────────────────────────
@@ -158,6 +185,9 @@ interface ComponentResult {
 
 export interface BalancedConsensusOutput {
   mode: "BALANCED";
+  playbook: PlaybookType;
+  candidateScore: number;
+  rankScore: number;
   baseScore: number;
   adjustedScore: number;
   penaltyRate: number;
@@ -194,22 +224,38 @@ export interface BalancedConsensusOutput {
     };
     floorsApplied: boolean;
     layers: {
+      // New component names
+      structure: ComponentResult;
+      liquidity: ComponentResult;
+      positioning: ComponentResult;
+      execution: ComponentResult;
+      volatility: ComponentResult;
+      confirmation: ComponentResult;
+      // Backward-compat aliases
       opportunity: ComponentResult;
       direction: ComponentResult;
-      execution: ComponentResult;
-      liquidity: ComponentResult;
-      structure: ComponentResult;
       relativeStrength: ComponentResult;
       riskPenalty: { total: number; breakdown: Record<string, number> };
       guardrails: {
+        structPass: boolean;
+        liqPass: boolean;
+        posPass: boolean;
+        execPass: boolean;
+        volPass: boolean;
+        confPass: boolean;
+        // Backward-compat aliases
         oppPass: boolean;
         dirPass: boolean;
-        execPass: boolean;
-        liqPass: boolean;
-        structPass: boolean;
         allPass: boolean;
       };
+      noTradeRule: {
+        blocked: boolean;
+        dangerCount: number;
+        signals: Record<string, boolean>;
+      };
       tradeScore: number;
+      playbook: PlaybookType;
+      playbookBoost: number;
     };
   };
 }
@@ -226,17 +272,11 @@ export const safeNumber = (value: unknown, fallback: number): number => {
   return Number.isFinite(n) ? n : fallback;
 };
 
-const lerpRange = (x: number, x1: number, x2: number, y1: number, y2: number): number => {
-  if (x2 <= x1) return y2;
-  const t = clamp((x - x1) / (x2 - x1), 0, 1);
-  return y1 + (y2 - y1) * t;
-};
-
 export const normalizeBalancedRiskAdjEdge = (riskAdjEdgeR: number): number => {
   if (riskAdjEdgeR <= 0) return 0;
-  if (riskAdjEdgeR <= 0.1) return lerpRange(riskAdjEdgeR, 0, 0.1, 0, 0.4);
-  if (riskAdjEdgeR <= 0.2) return lerpRange(riskAdjEdgeR, 0.1, 0.2, 0.4, 0.7);
-  if (riskAdjEdgeR <= 0.35) return lerpRange(riskAdjEdgeR, 0.2, 0.35, 0.7, 1);
+  if (riskAdjEdgeR <= 0.1) return riskAdjEdgeR / 0.1 * 0.4;
+  if (riskAdjEdgeR <= 0.2) return 0.4 + (riskAdjEdgeR - 0.1) / 0.1 * 0.3;
+  if (riskAdjEdgeR <= 0.35) return 0.7 + (riskAdjEdgeR - 0.2) / 0.15 * 0.3;
   return 1;
 };
 
@@ -261,71 +301,100 @@ const FEED_KEYS: Array<keyof BalancedDataHealth["feeds"]> = [
   "ohlcv", "orderbook", "oi", "funding", "netflow", "trades",
 ];
 
-// ── Component 1: Opportunity Score ──────────────────────────
+// ── Component 1: Structure Score (26%) ──────────────────────
 
-const computeOpportunity = (input: BalancedConsensusInput): ComponentResult => {
-  // 1. Volume Expansion (25%) — volumeSpike + oiChangeStrength
-  const volumeSpikeSub = input.volumeSpike === "ON" ? 80 : input.volumeSpike === "OFF" ? 30 : 40;
-  const oiSub = input.oiChangeStrength === "HIGH" ? 90 : input.oiChangeStrength === "MID" ? 55 : 25;
-  const volumeExpansion = 0.5 * volumeSpikeSub + 0.5 * oiSub;
+const computeStructure = (input: BalancedConsensusInput): ComponentResult => {
+  // 1. Structure Base Score from AI panel (35%)
+  const base = clamp(safeNumber(input.structureScore, 50), 0, 100);
 
-  // 2. Volatility Setup (20%) — compression + atrRegime + suddenMoveRisk
-  const compressionSub = input.compression === "ON" ? 80 : input.compression === "OFF" ? 35 : 45;
-  const atrSub = input.atrRegime === "HIGH" ? 75 : input.atrRegime === "MID" ? 55 : 30;
-  const suddenSub = input.suddenMoveRisk === "HIGH" ? 70 : input.suddenMoveRisk === "MID" ? 50 : 30;
-  const volatilitySetup = 0.4 * compressionSub + 0.3 * atrSub + 0.3 * suddenSub;
+  // 2. Regime Quality (20%) — TREND regimes score highest
+  const regimeSub = input.regime === "TREND" ? 85
+    : input.regime === "RANGE" ? 55
+    : input.regime === "MIXED" ? 45 : 35;
 
-  // 3. Momentum (25%) — marketSpeed + impulseReadiness + trendStrength
-  const speedSub = input.marketSpeed === "FAST" ? 85 : input.marketSpeed === "NORMAL" ? 55 : 25;
-  const impulseSub = input.impulseReadiness === "HIGH" ? 85 : input.impulseReadiness === "MID" ? 50 : 20;
-  const trendSub = input.trendStrength === "HIGH" ? 90 : input.trendStrength === "MID" ? 55 : 20;
-  const momentum = 0.35 * speedSub + 0.30 * impulseSub + 0.35 * trendSub;
+  // 3. Trend Strength (15%)
+  const trendSub = input.trendStrength === "HIGH" ? 90
+    : input.trendStrength === "MID" ? 60 : 25;
 
-  // 4. Liquidity (15%) — liquidityDensity + depthQuality
-  const liqDensSub = input.liquidityDensity === "HIGH" ? 90 : input.liquidityDensity === "MID" ? 55 : 20;
-  const depthSub = input.depthQuality === "GOOD" ? 90 : input.depthQuality === "MID" ? 55 : 15;
-  const liquidity = 0.5 * liqDensSub + 0.5 * depthSub;
+  // 4. EMA + VWAP Alignment (15%)
+  const fullAligned =
+    (input.emaAlignment === "BULL" && input.vwapPosition === "ABOVE") ||
+    (input.emaAlignment === "BEAR" && input.vwapPosition === "BELOW");
+  const semiAligned =
+    input.emaAlignment === "BULL" || input.emaAlignment === "BEAR" ||
+    input.vwapPosition === "ABOVE" || input.vwapPosition === "BELOW";
+  const alignmentSub = fullAligned ? 90 : semiAligned ? 55 : 25;
 
-  // 5. Spread Quality (15%) — spreadRegime
-  const spreadQuality = input.spreadRegime === "TIGHT" ? 90 : input.spreadRegime === "MID" ? 60 : 20;
+  // 5. Structure Age (15%) — EARLY structures have more potential
+  const ageSub = input.structureAge === "EARLY" ? 80
+    : input.structureAge === "MATURE" ? 50 : 40;
 
   const score = clamp(
-    0.25 * volumeExpansion +
-    0.20 * volatilitySetup +
-    0.25 * momentum +
-    0.15 * liquidity +
-    0.15 * spreadQuality,
+    0.35 * base + 0.20 * regimeSub + 0.15 * trendSub + 0.15 * alignmentSub + 0.15 * ageSub,
     0, 100,
   );
 
   return {
     score: roundTo2(score),
     breakdown: {
-      volumeExpansion: roundTo2(volumeExpansion),
-      volatilitySetup: roundTo2(volatilitySetup),
-      momentum: roundTo2(momentum),
-      liquidity: roundTo2(liquidity),
-      spreadQuality: roundTo2(spreadQuality),
+      structureBase: roundTo2(base),
+      regimeQuality: roundTo2(regimeSub),
+      trendStrength: roundTo2(trendSub),
+      alignment: roundTo2(alignmentSub),
+      structureAge: roundTo2(ageSub),
     },
   };
 };
 
-// ── Component 2: Direction Score ────────────────────────────
+// ── Component 2: Liquidity Score (22%) ──────────────────────
 
-const computeDirection = (input: BalancedConsensusInput): ComponentResult => {
-  // 1. Trend Strength (30%) — trendStrength + regime
-  const trendBase = input.trendStrength === "HIGH" ? 95 : input.trendStrength === "MID" ? 70 : 45;
-  const trendStr =
-    input.regime === "TREND" ? trendBase
-    : input.regime === "RANGE" ? 30
-    : 40;
+const computeLiquidity = (input: BalancedConsensusInput): ComponentResult => {
+  // 1. Liquidity Density (30%)
+  const liqDens = input.liquidityDensity === "HIGH" ? 90 : input.liquidityDensity === "MID" ? 55 : 20;
 
-  // 2. Orderflow Imbalance (25%) — orderbookImbalance + oiChangeStrength
+  // 2. Depth Quality (25%)
+  const depth = input.depthQuality === "GOOD" ? 90 : input.depthQuality === "MID" ? 55 : 15;
+
+  // 3. Spread Quality (20%)
+  const spread = input.spreadRegime === "TIGHT" ? 90 : input.spreadRegime === "MID" ? 60 : 20;
+
+  // 4. Capacity (15%)
+  const cap = clamp(safeNumber(input.capacity, 0.5), 0, 1) * 100;
+
+  // 5. Liquidation Pool Clarity (10%)
+  const liqPool = input.liquidationPoolBias === "UP" || input.liquidationPoolBias === "DOWN" ? 80
+    : input.liquidationPoolBias === "MIXED" ? 45 : 50;
+
+  const score = clamp(
+    0.30 * liqDens + 0.25 * depth + 0.20 * spread + 0.15 * cap + 0.10 * liqPool,
+    0, 100,
+  );
+
+  return {
+    score: roundTo2(score),
+    breakdown: {
+      liquidityDensity: roundTo2(liqDens),
+      depthQuality: roundTo2(depth),
+      spreadQuality: roundTo2(spread),
+      capacity: roundTo2(cap),
+      liquidationPool: roundTo2(liqPool),
+    },
+  };
+};
+
+// ── Component 3: Positioning Score (18%) ─────────────────────
+
+const computePositioning = (input: BalancedConsensusInput): ComponentResult => {
+  // 1. Orderbook Imbalance + OI Strength (25%)
   const imbSub = input.orderbookImbalance === "NEUTRAL" ? 40 : 80;
   const oiStrSub = input.oiChangeStrength === "HIGH" ? 85 : input.oiChangeStrength === "MID" ? 55 : 25;
   const orderflow = 0.5 * imbSub + 0.5 * oiStrSub;
 
-  // 3. Funding Bias (15%) — fundingBias + fundingRatePct
+  // 2. OI Change Direction (20%)
+  const oiChangePct = safeNumber(input.oiChangePct, 0);
+  const oiDirectionSub = Math.abs(oiChangePct) > 3 ? 80 : Math.abs(oiChangePct) > 1 ? 55 : 30;
+
+  // 3. Funding Bias (20%)
   let fundingSub =
     input.fundingBias === "EXTREME" ? 30
     : (input.fundingBias === "BULLISH" || input.fundingBias === "BEARISH") ? 70
@@ -335,42 +404,32 @@ const computeDirection = (input: BalancedConsensusInput): ComponentResult => {
   if ((input.fundingBias === "BULLISH" || input.fundingBias === "BEARISH") && Math.abs(frPct) > 0.03) fundingSub += 10;
   const funding = clamp(fundingSub, 0, 100);
 
-  // 4. Market Structure (20%) — structureScore from AI panel
-  const structure = clamp(safeNumber(input.structureScore, 50), 0, 100);
+  // 4. Whale Activity (20%)
+  const whaleSub = input.whaleActivity === "ACCUMULATION" ? 85
+    : input.whaleActivity === "NEUTRAL" ? 45 : 25;
 
-  // 5. HTF Alignment (10%) — ema+vwap concordance + dxyTrend + nasdaqTrend
-  const innerAligned =
-    (input.emaAlignment === "BULL" && input.vwapPosition === "ABOVE") ||
-    (input.emaAlignment === "BEAR" && input.vwapPosition === "BELOW");
-  let htfSub = innerAligned ? 40 : 15;
-  if (input.dxyTrend === "DOWN") htfSub += 15;    // weak dollar = risk-on
-  if (input.nasdaqTrend === "UP") htfSub += 15;   // tech rally = crypto follows
-  if (input.dxyTrend === "UP") htfSub -= 10;      // strong dollar = headwind
-  if (input.nasdaqTrend === "DOWN") htfSub -= 10;
-  const htfAlignment = clamp(htfSub, 0, 100);
+  // 5. Exchange Flow (15%)
+  const flowSub = input.exchangeFlow === "OUTFLOW" ? 80
+    : input.exchangeFlow === "NEUTRAL" ? 45 : 25;
 
   const score = clamp(
-    0.30 * trendStr +
-    0.25 * orderflow +
-    0.15 * funding +
-    0.20 * structure +
-    0.10 * htfAlignment,
+    0.25 * orderflow + 0.20 * oiDirectionSub + 0.20 * funding + 0.20 * whaleSub + 0.15 * flowSub,
     0, 100,
   );
 
   return {
     score: roundTo2(score),
     breakdown: {
-      trendStrength: roundTo2(trendStr),
       orderflow: roundTo2(orderflow),
+      oiDirection: roundTo2(oiDirectionSub),
       funding: roundTo2(funding),
-      structure: roundTo2(structure),
-      htfAlignment: roundTo2(htfAlignment),
+      whaleActivity: roundTo2(whaleSub),
+      exchangeFlow: roundTo2(flowSub),
     },
   };
 };
 
-// ── Component 3: Execution Score ────────────────────────────
+// ── Component 4: Execution Score (16%) ──────────────────────
 
 const computeExecution = (input: BalancedConsensusInput): ComponentResult => {
   const pFill = clamp(safeNumber(input.pFill, 0.5), 0, 1);
@@ -421,89 +480,75 @@ const computeExecution = (input: BalancedConsensusInput): ComponentResult => {
   };
 };
 
-// ── Component 4: Liquidity Score ────────────────────────────
+// ── Component 5: Volatility Score (10%) ─────────────────────
 
-const computeLiquidity = (input: BalancedConsensusInput): ComponentResult => {
-  // 1. Liquidity Density (35%)
-  const liqDens = input.liquidityDensity === "HIGH" ? 90 : input.liquidityDensity === "MID" ? 55 : 20;
+const computeVolatility = (input: BalancedConsensusInput): ComponentResult => {
+  // 1. ATR Regime (30%) — base volatility level
+  const atrSub = input.atrRegime === "HIGH" ? 75 : input.atrRegime === "MID" ? 60 : 30;
 
-  // 2. Depth Quality (30%)
-  const depth = input.depthQuality === "GOOD" ? 90 : input.depthQuality === "MID" ? 55 : 15;
+  // 2. Compression (25%) — coiling = future vol
+  const compressionSub = input.compression === "ON" ? 85 : input.compression === "OFF" ? 35 : 45;
 
-  // 3. Spread Quality (20%)
-  const spread = input.spreadRegime === "TIGHT" ? 90 : input.spreadRegime === "MID" ? 60 : 20;
+  // 3. Sudden Move Risk (20%) — event risk
+  const suddenSub = input.suddenMoveRisk === "HIGH" ? 70 : input.suddenMoveRisk === "MID" ? 50 : 30;
 
-  // 4. Capacity (15%)
-  const cap = clamp(safeNumber(input.capacity, 0.5), 0, 1) * 100;
+  // 4. Market Speed (15%) — pace of price action
+  const speedSub = input.marketSpeed === "FAST" ? 80 : input.marketSpeed === "NORMAL" ? 55 : 25;
+
+  // 5. Impulse Readiness (10%) — readiness for move
+  const impulseSub = input.impulseReadiness === "HIGH" ? 80 : input.impulseReadiness === "MID" ? 50 : 25;
 
   const score = clamp(
-    0.35 * liqDens + 0.30 * depth + 0.20 * spread + 0.15 * cap,
+    0.30 * atrSub + 0.25 * compressionSub + 0.20 * suddenSub + 0.15 * speedSub + 0.10 * impulseSub,
     0, 100,
   );
 
   return {
     score: roundTo2(score),
     breakdown: {
-      liquidityDensity: roundTo2(liqDens),
-      depthQuality: roundTo2(depth),
-      spreadQuality: roundTo2(spread),
-      capacity: roundTo2(cap),
+      atrRegime: roundTo2(atrSub),
+      compression: roundTo2(compressionSub),
+      suddenMoveRisk: roundTo2(suddenSub),
+      marketSpeed: roundTo2(speedSub),
+      impulseReadiness: roundTo2(impulseSub),
     },
   };
 };
 
-// ── Component 5: Structure Score ────────────────────────────
+// ── Component 6: Confirmation Score (8%) ────────────────────
 
-const computeStructure = (input: BalancedConsensusInput): ComponentResult => {
-  const base = clamp(safeNumber(input.structureScore, 50), 0, 100);
+const computeConfirmation = (input: BalancedConsensusInput): ComponentResult => {
+  // 1. Model Agreement (40%) — aligned models / total models
+  const aligned = safeNumber(input.alignedCount, 0);
+  const total = Math.max(1, Math.floor(safeNumber(input.totalModels, 1)));
+  const agreementRatio = clamp(aligned / total, 0, 1);
+  const agreementSub = agreementRatio * 100;
 
-  // Boost for strong trend + alignment
-  let boost = 0;
-  if (input.regime === "TREND" && input.trendStrength === "HIGH") boost += 5;
-  const aligned =
-    (input.emaAlignment === "BULL" && input.vwapPosition === "ABOVE") ||
-    (input.emaAlignment === "BEAR" && input.vwapPosition === "BELOW");
-  if (aligned) boost += 3;
+  // 2. Conflict Level (20%)
+  const effectiveConflict = input.signalConflict ?? input.conflictLevel;
+  const conflictSub = effectiveConflict === "LOW" ? 85
+    : effectiveConflict === "MID" ? 55 : effectiveConflict === "HIGH" ? 20 : 50;
 
-  const score = clamp(base + boost, 0, 100);
+  // 3. Relative Strength (20%)
+  const rsSub = input.relativeStrength === "STRONG" ? 85
+    : input.relativeStrength === "NEUTRAL" ? 50 : 25;
 
-  return {
-    score: roundTo2(score),
-    breakdown: {
-      structureBase: roundTo2(base),
-      trendBoost: roundTo2(boost),
-    },
-  };
-};
-
-// ── Component 6: Relative Strength Score ────────────────────
-
-const computeRS = (input: BalancedConsensusInput): ComponentResult => {
-  // 1. Relative Strength (40%)
-  const rsSub = input.relativeStrength === "STRONG" ? 85 : input.relativeStrength === "NEUTRAL" ? 50 : 25;
-
-  // 2. Spot vs Derivatives (30%)
+  // 4. Spot vs Derivatives Confirmation (20%)
   const spotSub = input.spotVsDerivativesPressure === "SPOT_DOM" ? 80
     : input.spotVsDerivativesPressure === "BALANCED" ? 50 : 35;
 
-  // 3. Whale + Exchange Flow (30%)
-  const whaleSub = input.whaleActivity === "ACCUMULATION" ? 85
-    : input.whaleActivity === "NEUTRAL" ? 45 : 25;
-  const flowSub = input.exchangeFlow === "OUTFLOW" ? 80
-    : input.exchangeFlow === "NEUTRAL" ? 45 : 25;
-  const whaleFlow = 0.5 * whaleSub + 0.5 * flowSub;
-
   const score = clamp(
-    0.40 * rsSub + 0.30 * spotSub + 0.30 * whaleFlow,
+    0.40 * agreementSub + 0.20 * conflictSub + 0.20 * rsSub + 0.20 * spotSub,
     0, 100,
   );
 
   return {
     score: roundTo2(score),
     breakdown: {
+      modelAgreement: roundTo2(agreementSub),
+      conflictLevel: roundTo2(conflictSub),
       relativeStrength: roundTo2(rsSub),
-      spotDerivatives: roundTo2(spotSub),
-      whaleFlow: roundTo2(whaleFlow),
+      spotConfirmation: roundTo2(spotSub),
     },
   };
 };
@@ -541,6 +586,95 @@ const computeRiskPenalty = (input: BalancedConsensusInput): { total: number; bre
   return { total: roundTo2(total), breakdown };
 };
 
+// ── Playbook Detection ──────────────────────────────────────
+
+const detectPlaybook = (input: BalancedConsensusInput): { playbook: PlaybookType; boost: number } => {
+  // Priority 1: TREND_PULLBACK — main motor for trending markets
+  const trendAligned =
+    (input.emaAlignment === "BULL" && input.vwapPosition === "ABOVE") ||
+    (input.emaAlignment === "BEAR" && input.vwapPosition === "BELOW");
+  const trendClear =
+    input.regime === "TREND" &&
+    (input.trendStrength === "HIGH" || input.trendStrength === "MID") &&
+    trendAligned &&
+    input.orderbookImbalance !== "NEUTRAL";
+  if (trendClear) {
+    return { playbook: "TREND_PULLBACK", boost: 3 };
+  }
+
+  // Priority 2: LIQUIDITY_SWEEP — sweep reversal detection
+  const sweepDetected =
+    (input.stopClusterProb === "HIGH") &&
+    (input.suddenMoveRisk === "HIGH" || input.suddenMoveRisk === "MID") &&
+    (input.aggressorFlow === "BUY" || input.aggressorFlow === "BUY_DOMINANT" ||
+     input.aggressorFlow === "SELL" || input.aggressorFlow === "SELL_DOMINANT");
+  if (sweepDetected) {
+    return { playbook: "LIQUIDITY_SWEEP", boost: 3 };
+  }
+
+  // Priority 3: RANGE_ROTATION — sideways market plays
+  const rangePos = input.rangePosition ?? "";
+  const atRangeExtreme =
+    rangePos === "UPPER" || rangePos === "LOWER" ||
+    rangePos === "PREMIUM" || rangePos === "DISCOUNT" ||
+    rangePos === "TOP" || rangePos === "BOTTOM";
+  const rangeConditions =
+    input.regime === "RANGE" &&
+    atRangeExtreme &&
+    input.fakeBreakoutProb !== "HIGH";
+  if (rangeConditions) {
+    return { playbook: "RANGE_ROTATION", boost: 2 };
+  }
+
+  // Priority 4: BREAKOUT — only when ALL conditions met
+  const breakoutAllMet =
+    input.compression === "ON" &&
+    (input.fakeBreakoutProb === "LOW" || input.fakeBreakoutProb === undefined) &&
+    input.volumeSpike === "ON" &&
+    input.orderbookImbalance !== "NEUTRAL";
+  if (breakoutAllMet) {
+    return { playbook: "BREAKOUT", boost: 4 };
+  }
+
+  return { playbook: "GENERAL", boost: 0 };
+};
+
+// ── No-Trade Rule ───────────────────────────────────────────
+
+const checkNoTradeRule = (input: BalancedConsensusInput): { blocked: boolean; dangerCount: number; signals: Record<string, boolean> } => {
+  const signals: Record<string, boolean> = {};
+
+  // 1. Signal Conflict = HIGH
+  signals.signalConflictHigh =
+    input.signalConflict === "HIGH" || input.conflictLevel === "HIGH";
+
+  // 2. Trap Probability = HIGH
+  signals.trapProbabilityHigh =
+    input.trapProbability === "HIGH" ||
+    input.cascadeRisk === "HIGH" ||
+    input.spoofRisk === "HIGH";
+
+  // 3. News Risk = ON (sudden move risk HIGH)
+  signals.newsRiskOn = input.suddenMoveRisk === "HIGH";
+
+  // 4. Fake Breakout Probability = HIGH
+  signals.fakeBreakoutHigh =
+    input.fakeBreakoutProb === "HIGH" ||
+    (input.compression === "OFF" && input.structureAge !== "EARLY" && input.structureAge !== undefined);
+
+  // 5. Execution Certainty = LOW
+  signals.executionCertaintyLow =
+    input.entryWindow === "CLOSED" && input.slippageLevel === "HIGH";
+
+  const dangerCount = Object.values(signals).filter(Boolean).length;
+
+  return {
+    blocked: dangerCount >= 2,
+    dangerCount,
+    signals,
+  };
+};
+
 // ── Main: computeBalancedConsensus ──────────────────────────
 
 export const computeBalancedConsensus = (
@@ -548,50 +682,78 @@ export const computeBalancedConsensus = (
 ): BalancedConsensusOutput => {
   const reasons: ReasonEntry[] = [];
 
-  // ── 6-Component computation ──
-  const opp = computeOpportunity(input);
-  const dir = computeDirection(input);
-  const exec = computeExecution(input);
-  const liq = computeLiquidity(input);
-  const struct = computeStructure(input);
-  const rs = computeRS(input);
+  // ── 6-Component computation (Adaptive Crypto Alpha weights) ──
+  const struct = computeStructure(input);       // 26%
+  const liq = computeLiquidity(input);           // 22%
+  const pos = computePositioning(input);         // 18%
+  const exec = computeExecution(input);          // 16%
+  const vol = computeVolatility(input);          // 10%
+  const conf = computeConfirmation(input);       // 8%
   const risk = computeRiskPenalty(input);
 
-  // ── BalancedTradeScore = 0.32*Opp + 0.22*Dir + 0.18*Exec + 0.14*Liq + 0.08*Struct + 0.06*RS - RiskPenalty ──
-  const rawTradeScore =
-    0.32 * opp.score +
-    0.22 * dir.score +
-    0.18 * exec.score +
-    0.14 * liq.score +
-    0.08 * struct.score +
-    0.06 * rs.score +
-    risk.total;
+  // ── Candidate Score (CS) ──
+  const rawCandidateScore =
+    0.26 * struct.score +
+    0.22 * liq.score +
+    0.18 * pos.score +
+    0.16 * exec.score +
+    0.10 * vol.score +
+    0.08 * conf.score;
+  const candidateScore = roundTo2(clamp(rawCandidateScore, 0, 100));
+
+  // ── Final Trade Score (FTS) = CS + RiskPenalty ──
+  const rawTradeScore = rawCandidateScore + risk.total;
   const baseScore = roundTo2(clamp(rawTradeScore, 0, 100));
 
-  // ── Sub-score guardrails (relaxed — slightly tighter than AGG) ──
+  // ── Playbook Detection & Boost ──
+  const { playbook, boost: playbookBoost } = detectPlaybook(input);
+  let adjustedScore = baseScore + playbookBoost;
+  if (playbookBoost > 0) {
+    addReason(reasons, `Playbook ${playbook} boost +${playbookBoost}`, 40);
+  }
+
+  // ── No-Trade Rule: block if 2+ danger signals ──
+  const noTradeRule = checkNoTradeRule(input);
+  if (noTradeRule.blocked) {
+    adjustedScore = Math.min(adjustedScore, 48);
+    addReason(reasons, `No-trade rule: ${noTradeRule.dangerCount} danger signals`, 95);
+  }
+
+  // ── Sub-score guardrails (aligned with new weights) ──
   const guardrails = {
-    oppPass: opp.score >= 45,
-    dirPass: dir.score >= 35,
-    execPass: exec.score >= 35,
+    structPass: struct.score >= 40,
     liqPass: liq.score >= 38,
-    structPass: struct.score >= 30,
+    posPass: pos.score >= 35,
+    execPass: exec.score >= 35,
+    volPass: vol.score >= 30,
+    confPass: conf.score >= 25,
+    // Backward-compat aliases
+    oppPass: vol.score >= 30,
+    dirPass: pos.score >= 35,
     allPass: false as boolean,
   };
   guardrails.allPass =
-    guardrails.oppPass && guardrails.dirPass && guardrails.execPass &&
-    guardrails.liqPass && guardrails.structPass;
+    guardrails.structPass && guardrails.liqPass && guardrails.posPass &&
+    guardrails.execPass && guardrails.volPass && guardrails.confPass;
 
-  if (!guardrails.oppPass) addReason(reasons, `Guardrail: Opp ${opp.score} < 45`, 85);
-  if (!guardrails.dirPass) addReason(reasons, `Guardrail: Dir ${dir.score} < 35`, 80);
-  if (!guardrails.execPass) addReason(reasons, `Guardrail: Exec ${exec.score} < 35`, 75);
-  if (!guardrails.liqPass) addReason(reasons, `Guardrail: Liq ${liq.score} < 38`, 70);
-  if (!guardrails.structPass) addReason(reasons, `Guardrail: Struct ${struct.score} < 30`, 65);
+  if (!guardrails.structPass) addReason(reasons, `Guardrail: Struct ${struct.score} < 40`, 85);
+  if (!guardrails.liqPass) addReason(reasons, `Guardrail: Liq ${liq.score} < 38`, 80);
+  if (!guardrails.posPass) addReason(reasons, `Guardrail: Pos ${pos.score} < 35`, 75);
+  if (!guardrails.execPass) addReason(reasons, `Guardrail: Exec ${exec.score} < 35`, 70);
+  if (!guardrails.volPass) addReason(reasons, `Guardrail: Vol ${vol.score} < 30`, 65);
+  if (!guardrails.confPass) addReason(reasons, `Guardrail: Conf ${conf.score} < 25`, 60);
 
-  // ── Direction uncertain cap — moderate direction caps score at 82 ──
-  let adjustedScore = baseScore;
-  if (dir.score < 70 && adjustedScore > 82) {
+  // ── Model Agreement gate: need >= 3/6 (50% agreement) ──
+  const modelAgreementRatio = safeNumber(input.alignedCount, 0) / Math.max(1, Math.floor(safeNumber(input.totalModels, 6)));
+  if (modelAgreementRatio < 0.5 && adjustedScore > 64) {
+    adjustedScore = Math.min(adjustedScore, 64);
+    addReason(reasons, "Model agreement below 3/6 threshold", 70);
+  }
+
+  // ── Positioning uncertain cap — weak positioning caps score at 82 ──
+  if (pos.score < 55 && adjustedScore > 82) {
     adjustedScore = 82;
-    addReason(reasons, "Direction uncertain cap (82)", 60);
+    addReason(reasons, "Positioning uncertain cap (82)", 60);
   }
 
   // ── Hard no-trade conditions ──
@@ -603,9 +765,9 @@ export const computeBalancedConsensus = (
   }
 
   // ── Reason generation ──
-  if (opp.score < 40) addReason(reasons, `Opp low (${opp.score}): weak opportunity`, 50);
-  if (opp.score >= 75) addReason(reasons, `Opp strong (${opp.score}): opportunity present`, 40);
-  if (dir.score >= 75) addReason(reasons, `Dir strong (${dir.score}): high conviction`, 45);
+  if (struct.score < 40) addReason(reasons, `Struct low (${struct.score}): weak structure`, 50);
+  if (struct.score >= 75) addReason(reasons, `Struct strong (${struct.score}): solid structure`, 40);
+  if (pos.score >= 70) addReason(reasons, `Pos strong (${pos.score}): clear positioning`, 45);
   if (exec.score < 40) addReason(reasons, `Exec low (${exec.score}): poor execution`, 55);
   if (risk.total < -3) addReason(reasons, `Risk penalty (${risk.total}): active risks`, 60);
 
@@ -673,6 +835,17 @@ export const computeBalancedConsensus = (
   }
   sizeHint = roundTo2(sizeHint);
 
+  // ── Rank Score (for prioritization) ──
+  const execCertainty01 = clamp(exec.breakdown.fill / 100, 0, 1);
+  const rrPotentialScore = input.rrPotential === "HIGH" ? 0.9 : input.rrPotential === "MID" ? 0.6 : 0.3;
+  const agreementForRank = clamp(conf.breakdown.modelAgreement / 100, 0, 1);
+  const rankScore = roundTo2(
+    ((finalScore / 100) * 0.55 +
+    rrPotentialScore * 0.20 +
+    execCertainty01 * 0.15 +
+    agreementForRank * 0.10) * 100,
+  );
+
   // ── Backward-compat diagnostics ──
   const agreement01 = clamp(
     safeNumber(input.alignedCount, 0) / Math.max(1, Math.floor(safeNumber(input.totalModels, 1))),
@@ -696,6 +869,9 @@ export const computeBalancedConsensus = (
   // ── Build output ──
   return {
     mode: "BALANCED",
+    playbook,
+    candidateScore,
+    rankScore,
     baseScore,
     adjustedScore,
     penaltyRate,
@@ -707,10 +883,10 @@ export const computeBalancedConsensus = (
       componentScores: {
         structure01: roundTo2(struct.score / 100),
         liquidity01: roundTo2(liq.score / 100),
-        positioning01: roundTo2(dir.score / 100),
+        positioning01: roundTo2(pos.score / 100),
         execution01: roundTo2(exec.score / 100),
         executionCertainty01: roundTo2(exec.breakdown.fill / 100),
-        edge01: roundTo2((opp.score * 0.5 + dir.score * 0.5) / 100),
+        edge01: roundTo2((struct.score * 0.5 + pos.score * 0.5) / 100),
         agreement01: roundTo2(agreement01),
         agreementScore01: roundTo2(agreementScore01),
         base01: roundTo2(baseScore / 100),
@@ -732,15 +908,23 @@ export const computeBalancedConsensus = (
       },
       floorsApplied,
       layers: {
-        opportunity: opp,
-        direction: dir,
-        execution: exec,
-        liquidity: liq,
+        // New component names
         structure: struct,
-        relativeStrength: rs,
+        liquidity: liq,
+        positioning: pos,
+        execution: exec,
+        volatility: vol,
+        confirmation: conf,
+        // Backward-compat aliases
+        opportunity: vol,
+        direction: pos,
+        relativeStrength: conf,
         riskPenalty: risk,
         guardrails,
+        noTradeRule,
         tradeScore: roundTo2(rawTradeScore),
+        playbook,
+        playbookBoost,
       },
     },
   };

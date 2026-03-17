@@ -44,13 +44,13 @@ const IDEA_MIN_SCORE_PCT = 55;
 const IDEA_MIN_SCORE_BY_MODE: Record<string, number> = {
   FLOW: 58,
   AGGRESSIVE: 66,
-  BALANCED: 60,
+  BALANCED: 56,
   CAPITAL_GUARD: 55,
 };
 const MAX_TRADE_PER_MODE: Record<string, number> = {
   FLOW: 4,
   AGGRESSIVE: 4,
-  BALANCED: 6,
+  BALANCED: 8,
   CAPITAL_GUARD: 6,
 };
 

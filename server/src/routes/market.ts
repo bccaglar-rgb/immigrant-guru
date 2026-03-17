@@ -680,6 +680,14 @@ const makeModeBreakdown = (
       impulseReadiness,
       dxyTrend,
       nasdaqTrend,
+      // Playbook detection & no-trade rule signals
+      signalConflict: mapTriRisk(String(panel.conflictLevel ?? "UNKNOWN")),
+      trapProbability: mapTriRisk(snapshotTileState(snapshot, "trap-probability")),
+      fakeBreakoutProb,
+      rangePosition: snapshotTileState(snapshot, "range-position"),
+      stopClusterProb: mapTriRisk(snapshotTileState(snapshot, "stop-cluster-probability")),
+      aggressorFlow: snapshotTileState(snapshot, "aggressor-flow"),
+      breakoutRisk,
     });
     const gatingFlags = [
       ...(out.gates.safety === "BLOCK" ? ["SAFETY_BLOCK"] : []),
@@ -695,7 +703,7 @@ const makeModeBreakdown = (
       edgeAdj: Number.isFinite(consensusCore.edgeNetR) ? consensusCore.edgeNetR : 0,
       riskAdj: Number.isFinite(consensusCore.riskAdjustment) ? consensusCore.riskAdjustment : 0,
       gatingFlags,
-      decision: Math.round(out.finalScore) >= 58 && out.gates.data === "PASS" && out.gates.safety === "PASS" ? "TRADE" : Math.round(out.finalScore) >= 40 ? "WATCH" : "NO_TRADE",
+      decision: Math.round(out.finalScore) >= 56 && out.gates.data === "PASS" && out.gates.safety === "PASS" ? "TRADE" : Math.round(out.finalScore) >= 40 ? "WATCH" : "NO_TRADE",
     };
   }
 
@@ -3940,7 +3948,7 @@ export const registerMarketRoutes = (
         const modeTradeThreshold: Record<ScoringMode, number> = {
           FLOW: 55,
           AGGRESSIVE: 60,
-          BALANCED: 58,
+          BALANCED: 56,
           CAPITAL_GUARD: 52,
         };
         const modeWatchThreshold: Record<ScoringMode, number> = {
@@ -3969,7 +3977,7 @@ export const registerMarketRoutes = (
       // Only in borderline zone: [tradeThreshold - 15, tradeThreshold + 5)
       {
         const confluenceTradeThreshold: Record<ScoringMode, number> = {
-          FLOW: 55, AGGRESSIVE: 60, BALANCED: 58, CAPITAL_GUARD: 52,
+          FLOW: 55, AGGRESSIVE: 60, BALANCED: 56, CAPITAL_GUARD: 52,
         };
         const confluenceWatchThreshold: Record<ScoringMode, number> = {
           FLOW: 35, AGGRESSIVE: 40, BALANCED: 40, CAPITAL_GUARD: 35,
