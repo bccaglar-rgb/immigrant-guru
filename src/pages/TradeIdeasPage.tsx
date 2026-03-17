@@ -997,7 +997,7 @@ export default function TradeIdeasPage() {
                 )}
                 {isAiTradeIdeasPage && (
                   <p className="mt-1 text-center text-[11px] text-[#8A8F98]">
-                    AI report tracks only ideas scoring 60% and above.
+                    AI report tracks ideas scoring 45% and above.
                   </p>
                 )}
               </div>

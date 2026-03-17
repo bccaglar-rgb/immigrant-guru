@@ -52,7 +52,7 @@ const buildSystemPrompt = (moduleId?: AiModuleId) => {
     "10. Return confidence from 0 to 100.",
     "11. Write a concise comment in Turkish (max 30 words) explaining why you would or would not enter this trade for the scanned coin.",
     "12. Return only valid JSON and no extra text.",
-    "13. Decision thresholds: 78 to 100 = TRADE, 62 to 77 = WATCH, 0 to 61 = NO_TRADE.",
+    "13. Decision thresholds: 65 to 100 = TRADE, 45 to 64 = WATCH, 0 to 44 = NO_TRADE.",
   ];
   if (moduleId === "QWEN2") {
     base.push(
@@ -118,11 +118,11 @@ const resolveProviderEndpoint = (provider: AiProviderRecord): string => {
 const AI_SCAN_INTERVAL_MS = 60_000;
 const AI_SCAN_COINS_PER_MODULE = 2;
 const AI_SCAN_ROW_LIMIT = 80;
-const AI_MIN_CONSENSUS = 60;
+const AI_MIN_CONSENSUS = 48;
 const AI_MODE_BUFFER: Record<string, number> = {
   AGGRESSIVE: 0,
-  BALANCED: 5,
-  CAPITAL_GUARD: 10,
+  BALANCED: 2,
+  CAPITAL_GUARD: 5,
   FLOW: 0,
 };
 const AI_TRADE_FILL_MIN = 0.30;
@@ -958,7 +958,8 @@ const toScanRow = (
   const gateReason = String(parsed?.gates?.trade?.reason ?? "").toUpperCase();
   const reason = (gateReason || gateState || decision || (response.ok ? "PASS" : response.error ?? "ERROR")).toUpperCase();
   const rawSide = String(
-    parsed?.bias?.side ??
+    parsed?.direction ??
+      parsed?.bias?.side ??
       parsed?.bias ??
       (Number(compact?.ag?.b ?? 0) > 0 ? "LONG" : Number(compact?.ag?.b ?? 0) < 0 ? "SHORT" : ""),
   ).toUpperCase();
@@ -972,7 +973,9 @@ const toScanRow = (
           : decision === "NO_TRADE" || gateState === "BLOCK"
             ? "NO_TRADE"
             : "UNKNOWN";
-  const compactEntryOpen = Number(compact?.ex?.en ?? 0) === 1;
+  const compactEntryOpen =
+    Number(compact?.ex?.en ?? 0) === 1 ||
+    String(compact?.entry_window ?? compact?.core?.et ?? "").toUpperCase() === "OPEN";
   const compactSlippage = mapSlippage(compact?.ex?.sl);
   const compactFill = clamp(num(compact?.ex?.pf, 0), 0, 1);
   const compactCapacity = clamp(num(compact?.ex?.cpct, 0), 0, 1);
@@ -1152,9 +1155,12 @@ const toScanRow = (
     compactFill >= AI_TRADE_FILL_MIN &&
     riskAdjEdgeR >= AI_TRADE_EDGE_MIN &&
     compactSlippage !== "HIGH";
+  const parsedEntryWindow = String(parsed?.execution?.entry_window ?? "").toUpperCase();
   const normalizedEntryOpen =
-    String(parsed?.execution?.entry_window ?? "").toUpperCase() === "OPEN" ||
-    (String(parsed?.execution?.entry_window ?? "").trim() === "" && compactEntryOpen);
+    parsedEntryWindow === "OPEN" ||
+    (parsedEntryWindow === "" && compactEntryOpen) ||
+    // If AI explicitly returned TRADE or WATCH decision, trust it — don't gate on entry_window
+    (parsedEntryWindow === "" && (decision === "TRADE" || decision === "WATCH"));
   let normalizedDecision: "TRADE" | "WATCH" | "NO_TRADE" | "WAIT";
   if (!normalizedEntryOpen) {
     normalizedDecision = "WAIT";
@@ -1167,13 +1173,15 @@ const toScanRow = (
   }
 
   const normalizedSide: AiScanSide =
-    side === "UNKNOWN"
-      ? (normalizedDecision === "WATCH" || normalizedDecision === "WAIT"
-          ? "WAIT"
-          : normalizedDecision === "TRADE"
+    side === "LONG" || side === "SHORT"
+      ? side
+      : side === "UNKNOWN"
+        ? (normalizedDecision === "TRADE" || normalizedDecision === "WATCH"
             ? mapBias(compact?.ag?.b, "SHORT")
-            : "NO_TRADE")
-      : side;
+            : normalizedDecision === "WAIT"
+              ? "WAIT"
+              : "NO_TRADE")
+        : side;
 
   return {
     module: moduleId,
@@ -1525,7 +1533,7 @@ const AI_MODULE_LABELS: Record<AiModuleId, string> = { CHATGPT: "ChatGPT", QWEN:
 
 /** Convert an AI scan row with TRADE decision into a TradeIdeaRecord for DB tracking */
 const aiScanToTradeIdea = (row: AiScanRow, moduleId: AiModuleId, nowIso: string): TradeIdeaRecord | null => {
-  if (row.decision !== "TRADE") return null;
+  if (row.decision !== "TRADE" && row.decision !== "WATCH") return null;
   if (row.side !== "LONG" && row.side !== "SHORT") return null;
   const zone = row.entry?.zone;
   const sl = row.entry?.sl ?? (row.entry?.stop != null ? [row.entry.stop] : []);
@@ -1726,10 +1734,10 @@ export const registerAiTradeIdeasRoutes = (
           rows.push(toScanRow(moduleId, symbol, response, compactFallback));
         }
 
-        // ── Persist TRADE decisions to trade_ideas DB for outcome tracking ──
+        // ── Persist TRADE and WATCH decisions to trade_ideas DB for outcome tracking ──
         if (deps.tradeIdeaStore) {
           for (const row of rows) {
-            if (row.decision !== "TRADE" || row.scorePct < 60) continue;
+            if ((row.decision !== "TRADE" && row.decision !== "WATCH") || row.scorePct < 45) continue;
             try {
               const userId = aiModuleUserId(moduleId);
               const existing = await deps.tradeIdeaStore.findOpenIdea(userId, row.symbol);
