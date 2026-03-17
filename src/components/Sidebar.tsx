@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { NavLink, useLocation } from "react-router-dom";
-import { readAdminConfigFromStorage } from "../hooks/useAdminConfig";
+import { readAdminConfigFromStorage, ADMIN_CONFIG_STORAGE_KEY } from "../hooks/useAdminConfig";
 import { NavItem } from "./NavItem";
 import { SidebarHeader } from "./SidebarHeader";
 
@@ -169,6 +169,35 @@ export const Sidebar = ({
       window.removeEventListener("storage", sync);
       window.removeEventListener("admin-config-updated", sync);
     };
+  }, []);
+
+  // Fetch branding from server on mount so all visitors see the logo
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch("/api/admin/providers/config");
+        if (!res.ok || cancelled) return;
+        const data = await res.json();
+        const logo = data?.branding?.logoDataUrl;
+        const emblem = data?.branding?.emblemDataUrl;
+        if (!logo && !emblem) return;
+        if (cancelled) return;
+        // Persist to localStorage so it's available on next load
+        try {
+          window.localStorage.setItem("admin-config-branding-v1", JSON.stringify({ logoDataUrl: logo, emblemDataUrl: emblem }));
+          // Also update the main config storage branding
+          const existing = readAdminConfigFromStorage();
+          existing.branding = { logoDataUrl: logo ?? existing.branding.logoDataUrl, emblemDataUrl: emblem ?? existing.branding.emblemDataUrl };
+          window.localStorage.setItem(ADMIN_CONFIG_STORAGE_KEY, JSON.stringify(existing));
+        } catch { /* storage full — still update in-memory */ }
+        setBranding((prev) => ({
+          logoDataUrl: logo ?? prev.logoDataUrl,
+          emblemDataUrl: emblem ?? prev.emblemDataUrl,
+        }));
+      } catch { /* server unreachable */ }
+    })();
+    return () => { cancelled = true; };
   }, []);
 
   useEffect(() => {

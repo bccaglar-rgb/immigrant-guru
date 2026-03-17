@@ -10,5 +10,11 @@
     </linearGradient>
   </defs>
   <rect width="512" height="512" rx="96" fill="url(#bg)"/>
-  <text x="256" y="340" text-anchor="middle" font-family="system-ui,-apple-system,sans-serif" font-weight="800" font-size="320" fill="url(#gold)">B</text>
+  <!-- "B" as vector path — renders identically on all platforms -->
+  <path fill="url(#gold)" d="
+    M168 108 h120 q40 0 66 22 q26 22 26 58 q0 30 -16 48 q-14 16 -38 22 v2
+    q30 6 48 28 q18 22 18 54 q0 42 -30 66 q-30 24 -78 24 H168 Z
+    M220 244 h60 q24 0 38 -14 q14 -14 14 -36 q0 -22 -14 -36 q-14 -14 -38 -14 h-60 Z
+    M220 384 h68 q28 0 44 -16 q16 -16 16 -40 q0 -24 -16 -40 q-16 -16 -44 -16 h-68 Z
+  "/>
 </svg>
