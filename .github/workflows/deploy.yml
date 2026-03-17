@@ -51,6 +51,10 @@ jobs:
           # Upload deploy configs
           rsync -avz deploy/ root@${{ secrets.DROPLET_IP }}:/var/www/bitrium/deploy/
 
+          # Debug: verify files on server after rsync
+          echo "=== Verifying dist on server ==="
+          ssh root@${{ secrets.DROPLET_IP }} "ls -la /var/www/bitrium/dist/assets/index-*.js /var/www/bitrium/dist/assets/Pricing*.js /var/www/bitrium/dist/index.html 2>/dev/null; echo '---'; cat /var/www/bitrium/dist/index.html | grep -o 'index-[^\"]*\.js' | head -1; echo '---'; readlink -f /var/www/bitrium/dist; echo '---'; stat /var/www/bitrium/dist/index.html | grep Modify"
+
           # Install deps, run DB migrations if needed, zero-downtime reload
           ssh root@${{ secrets.DROPLET_IP }} << 'EOF'
             cd /var/www/bitrium
