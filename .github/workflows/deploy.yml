@@ -80,16 +80,19 @@ jobs:
               fi
             fi
 
-            # Debug: find the OLD index.html source
-            echo "=== /var/www/html contents ==="
-            ls -la /var/www/html/ 2>/dev/null | head -10
-            head -3 /var/www/html/index.html 2>/dev/null || echo "(no /var/www/html/index.html)"
-            ls /var/www/html/assets/ 2>/dev/null | head -5 || echo "(no /var/www/html/assets/)"
-            echo "=== /var/www/bitrium/dist/index.html ==="
-            head -3 /var/www/bitrium/dist/index.html
-            echo "=== All server blocks and roots in nginx ==="
-            nginx -T 2>/dev/null | grep -n -E "server \{|root |default_server|listen " | head -20
-            echo "=== Server self-curl ==="
+            # NUCLEAR TEST: stop nginx, check if external still works
+            echo "=== Stopping nginx ==="
+            systemctl stop nginx
+            echo "Nginx stopped"
+            echo "=== Server IPs ==="
+            ip addr show | grep "inet " | grep -v 127.0.0
+            echo "=== All listening on 80/443 after nginx stop ==="
+            ss -tlnp | grep -E ":80 |:443 " || echo "(nothing on 80/443)"
+            sleep 2
+            echo "=== Starting nginx back ==="
+            systemctl start nginx
+            echo "Nginx started"
+            echo "=== Self-curl after start ==="
             curl -skI "https://127.0.0.1/" -H "Host: bitrium.com" 2>/dev/null | grep content-length
 
             # Zero-downtime reload: PM2 restarts workers one by one
