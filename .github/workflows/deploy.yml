@@ -51,10 +51,6 @@ jobs:
           # Upload deploy configs
           rsync -avz deploy/ root@${{ secrets.DROPLET_IP }}:/var/www/bitrium/deploy/
 
-          # Verify from external network (CI runner)
-          echo "=== External curl from CI runner ==="
-          curl -sI "https://bitrium.com/" | head -10
-
           # Install deps, run DB migrations if needed, zero-downtime reload
           ssh root@${{ secrets.DROPLET_IP }} << 'EOF'
             cd /var/www/bitrium
@@ -74,7 +70,7 @@ jobs:
               ln -sf /etc/nginx/sites-available/bitrium /etc/nginx/sites-enabled/bitrium
 
               if nginx -t 2>&1; then
-                # Full restart to kill stale workers from previous broken reloads
+                # Full restart to ensure clean worker state
                 systemctl restart nginx
                 echo "✓ Nginx config updated and restarted"
               else
@@ -84,23 +80,11 @@ jobs:
               fi
             fi
 
-            # Verify nginx state
-            echo "=== Nginx workers ==="
-            ps aux | grep "nginx: worker" | grep -v grep
-            echo "=== Curl localhost:443 ==="
+            # Debug: what is actually listening on 443 and serving content?
+            echo "=== lsof :443 ==="
+            lsof -i :443 -P -n 2>/dev/null | head -15
+            echo "=== Server self-curl ==="
             curl -skI "https://127.0.0.1/" -H "Host: bitrium.com" 2>/dev/null | grep -E "(content-length|x-deploy)"
-            echo "=== Curl own public IP ==="
-            PUB_IP=$(curl -s ifconfig.me)
-            echo "Public IP: $PUB_IP"
-            curl -skI "https://$PUB_IP/" -H "Host: bitrium.com" 2>/dev/null | grep -E "(content-length|x-deploy|server:)"
-            echo "=== conf.d contents ==="
-            ls -la /etc/nginx/conf.d/ 2>/dev/null
-            echo "=== iptables NAT rules ==="
-            iptables -t nat -L -n 2>/dev/null | head -20
-            echo "=== Docker? ==="
-            docker ps 2>/dev/null | head -5 || echo "No docker"
-            echo "=== nginx.conf includes ==="
-            nginx -T 2>/dev/null | grep -E "^# configuration file|include " | head -20
 
             # Zero-downtime reload: PM2 restarts workers one by one
             pm2 reload ecosystem.config.cjs || pm2 start ecosystem.config.cjs
@@ -117,3 +101,11 @@ jobs:
             done
             echo "WARNING: Health check did not pass within 20s"
           EOF
+
+      - name: Verify deployment externally
+        run: |
+          echo "=== External verification from CI runner ==="
+          sleep 3
+          curl -sI "https://bitrium.com/" | head -12
+          echo "=== Content check ==="
+          curl -s "https://bitrium.com/" | grep -o 'index-[^"]*\.js'
