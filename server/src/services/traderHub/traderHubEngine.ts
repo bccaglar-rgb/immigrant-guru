@@ -17,6 +17,7 @@ import { ExchangeCoreService } from "../exchangeCore/exchangeCoreService.ts";
 import { BotScheduler } from "./botScheduler.ts";
 import { createBotProcessor } from "./botDecisionWorker.ts";
 import { TraderHubStore } from "./traderHubStore.ts";
+import { batchResultWriter } from "./batchResultWriter.ts";
 import type {
   TraderAiModule,
   TraderHubMetrics,
@@ -76,12 +77,14 @@ export class TraderHubEngine {
   async start(): Promise<void> {
     if (this.started) return;
     this.started = true;
+    batchResultWriter.start();
     await this.scheduler.start();
-    console.log("[TraderHubEngine] Started (BullMQ scheduler)");
+    console.log("[TraderHubEngine] Started (BullMQ scheduler + batch writer)");
   }
 
   stop(): void {
     this.started = false;
+    batchResultWriter.stop();
     void this.scheduler.stop();
   }
 

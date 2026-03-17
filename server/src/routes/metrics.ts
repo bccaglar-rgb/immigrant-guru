@@ -8,6 +8,8 @@
  *   bitrium_bot_queue_*        — BullMQ queue depth
  *   bitrium_exchange_rl_*      — rate limiter usage per exchange
  *   bitrium_circuit_breaker_*  — circuit breaker state per exchange
+ *   bitrium_bot_breaker_*      — bot breaker state (market/strategy/user)
+ *   bitrium_batch_writer_*     — batch result writer queue depth
  *   bitrium_process_*          — Node.js memory + event loop lag
  *   bitrium_uptime_seconds     — process uptime
  */
@@ -15,6 +17,8 @@
 import type { Express } from "express";
 import { ExchangeRateLimiter } from "../services/exchangeCore/exchangeRateLimiter.ts";
 import { getAllCircuitStatus } from "../services/exchangeCore/circuitBreaker.ts";
+import { botBreaker } from "../services/traderHub/botBreaker.ts";
+import { batchResultWriter } from "../services/traderHub/batchResultWriter.ts";
 
 const rateLimiter = new ExchangeRateLimiter();
 
@@ -83,6 +87,37 @@ export function registerMetricsRoute(app: Express, deps: {
         }
       }
     } catch { /* best-effort */ }
+
+    // ── Bot Breakers ──────────────────────────────────────────
+    try {
+      const bb = await botBreaker.getStatus();
+      let marketOpen = 0;
+      for (const m of bb.marketBreakers) {
+        if (m.open) marketOpen++;
+        lines.push(gauge("bitrium_bot_breaker_market_trades", m.count, { symbol: m.symbol }, "Market breaker trade count"));
+      }
+      lines.push(gauge("bitrium_bot_breaker_market_open_total", marketOpen, {}, "Open market breakers"));
+
+      let stratOpen = 0;
+      for (const s of bb.strategyBreakers) {
+        if (s.open) stratOpen++;
+      }
+      lines.push(gauge("bitrium_bot_breaker_strategy_open_total", stratOpen, {}, "Open strategy breakers"));
+
+      let userOpen = 0;
+      for (const u of bb.userBreakers) {
+        if (u.open) userOpen++;
+      }
+      lines.push(gauge("bitrium_bot_breaker_user_open_total", userOpen, {}, "Open user breakers"));
+    } catch { /* best-effort */ }
+
+    // ── Batch result writer ───────────────────────────────────
+    lines.push(gauge(
+      "bitrium_batch_writer_pending",
+      (batchResultWriter as unknown as { pending: Map<string, unknown> }).pending?.size ?? 0,
+      {},
+      "Bot results pending batch flush",
+    ));
 
     res.setHeader("Content-Type", "text/plain; version=0.0.4; charset=utf-8");
     res.send(lines.join(""));

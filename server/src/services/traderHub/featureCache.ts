@@ -9,6 +9,7 @@
  */
 import { redis } from "../../db/redis.ts";
 import { pool } from "../../db/pool.ts";
+import { writeSignalCache } from "./signalCache.ts";
 
 const FEATURE_KEY_PREFIX = "bot:features:";
 const FEATURE_TTL_SEC = 120; // 2 minutes, refreshed every 60s
@@ -81,6 +82,29 @@ export async function writeFeatureCache(
     pipeline.set(key, JSON.stringify(data), "EX", FEATURE_TTL_SEC);
   }
   await pipeline.exec();
+
+  // Pre-compute signals for all symbols (batch, ~0ms per symbol after feature write)
+  const snapshots = coins.map((coin) => ({
+    symbol: coin.symbol,
+    price: coin.price,
+    change24hPct: coin.change24hPct,
+    volume24hUsd: coin.volume24hUsd,
+    spreadBps: coin.spreadBps,
+    depthUsd: coin.depthUsd ?? null,
+    imbalance: coin.imbalance ?? null,
+    fundingRate: coin.fundingRate,
+    atrPct: coin.atrPct,
+    rsi14: coin.rsi14,
+    srDistPct: coin.srDistPct,
+    tier1Score: coin.tier1Score,
+    tier2Score: coin.tier2Score,
+    compositeScore: coin.compositeScore,
+    discoveryScore: coin.discoveryScore,
+    updatedAt: now,
+  }));
+  void writeSignalCache(snapshots).catch((err) => {
+    console.error("[featureCache] Signal cache write error:", (err as Error)?.message ?? err);
+  });
 
   // Dual-write: persist to PostgreSQL feature_snapshots (best-effort, non-blocking)
   void writeFeatureSnapshots(coins).catch((err) => {
