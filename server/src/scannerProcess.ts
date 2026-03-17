@@ -16,6 +16,7 @@ import { TradeIdeaStore } from "./services/tradeIdeaStore.ts";
 import { TradeIdeaTracker } from "./services/tradeIdeaTracker.ts";
 import { SystemScannerService } from "./services/systemScannerService.ts";
 import { CoinUniverseEngine } from "./services/coinUniverseEngine.ts";
+import { exportYesterday } from "./services/coldStorage/parquetExporter.ts";
 
 // ── Stub BinanceFuturesHub: scanner uses REST API for universe, not WS ──
 // The SystemScannerService.ensureUniverse() tries REST first (Binance 24hr ticker),
@@ -61,8 +62,33 @@ async function main() {
   tradeIdeaTracker.start();
   systemScanner.start();
 
+  // ── Nightly Parquet export scheduler ──
+  // Runs at 00:30 UTC daily: exports previous day's 1m candles to MinIO as Parquet
+  const scheduleNightlyExport = () => {
+    const now = new Date();
+    const next = new Date(now);
+    next.setUTCHours(0, 30, 0, 0);
+    if (next.getTime() <= now.getTime()) {
+      next.setUTCDate(next.getUTCDate() + 1);
+    }
+    const delayMs = next.getTime() - now.getTime();
+    console.log(`[scanner-worker] Next Parquet export at ${next.toISOString()} (in ${Math.round(delayMs / 60_000)}m)`);
+    setTimeout(async () => {
+      try {
+        console.log("[scanner-worker] Starting nightly Parquet export...");
+        const result = await exportYesterday();
+        console.log(`[scanner-worker] Parquet export done: ${result.exported} files, ${result.errors} errors`);
+      } catch (err: any) {
+        console.error("[scanner-worker] Parquet export failed:", err?.message ?? err);
+      }
+      // Schedule next run
+      scheduleNightlyExport();
+    }, delayMs);
+  };
+  scheduleNightlyExport();
+
   console.log(`[scanner-worker] Scanner process ready — targeting market worker at port ${serverPort}`);
-  console.log("[scanner-worker] Services: SystemScanner, CoinUniverseEngine, TradeIdeaTracker");
+  console.log("[scanner-worker] Services: SystemScanner, CoinUniverseEngine, TradeIdeaTracker, ParquetExporter");
 
   // Keep process alive
   process.on("SIGINT", () => {

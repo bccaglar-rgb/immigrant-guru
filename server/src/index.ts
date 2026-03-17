@@ -36,6 +36,7 @@ import { TraderHubEngine } from "./services/traderHub/traderHubEngine.ts";
 import { BotScheduler } from "./services/traderHub/botScheduler.ts";
 import { writeFeatureCache } from "./services/traderHub/featureCache.ts";
 import { markFeaturesRefreshed } from "./services/traderHub/featureFreshness.ts";
+import { registerMLRoutes } from "./routes/ml.ts";
 import { createGateway } from "./ws/gateway.ts";
 import { HubEventBridge } from "./services/marketHub/HubEventBridge.ts";
 import { PaymentStore } from "./payments/storage.ts";
@@ -163,6 +164,7 @@ registerExchangeCoreRoutes(app, exchangeCore);
 registerTraderHubRoutes(app, traderHubEngine);
 registerPaymentsRoutes(app, authService, paymentService);
 registerTokenCreatorRoutes(app, authService, tokenCreatorService);
+registerMLRoutes(app);
 
 // In production, serve the Vite-built frontend
 if (process.env.NODE_ENV === "production") {

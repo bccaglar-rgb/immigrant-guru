@@ -1,6 +1,8 @@
 import type { IExchangeMarketAdapter } from "./adapter.ts";
 import { BinanceFuturesMarketAdapter } from "./BinanceFuturesMarketAdapter.ts";
 import { GateFuturesMarketAdapter } from "./GateFuturesMarketAdapter.ts";
+import { BybitFuturesMarketAdapter } from "./BybitFuturesMarketAdapter.ts";
+import { OkxFuturesMarketAdapter } from "./OkxFuturesMarketAdapter.ts";
 import { HealthScoreRouter } from "./HealthScoreRouter.ts";
 import type {
   AdapterCandlePoint,
@@ -19,12 +21,21 @@ const normalizeSymbol = (raw: string): string => {
 
 const toExchangeId = (value: string | undefined | null): MarketExchangeId => {
   const raw = String(value ?? "").toUpperCase();
+  if (raw.includes("BYBIT")) return "BYBIT";
+  if (raw.includes("OKX")) return "OKX";
   if (raw.includes("GATE")) return "GATEIO";
   return "BINANCE";
 };
 
-const toExchangeName = (exchange: MarketExchangeId): "Binance" | "Gate.io" =>
-  exchange === "GATEIO" ? "Gate.io" : "Binance";
+const EXCHANGE_NAMES: Record<MarketExchangeId, string> = {
+  BINANCE: "Binance",
+  GATEIO: "Gate.io",
+  BYBIT: "Bybit",
+  OKX: "OKX",
+};
+
+const toExchangeName = (exchange: MarketExchangeId): string =>
+  EXCHANGE_NAMES[exchange] ?? "Binance";
 
 export interface ExchangeMarketHubStatus {
   started: boolean;
@@ -43,10 +54,14 @@ export class ExchangeMarketHub {
   constructor() {
     const binance = new BinanceFuturesMarketAdapter();
     const gate = new GateFuturesMarketAdapter();
+    const bybit = new BybitFuturesMarketAdapter();
+    const okx = new OkxFuturesMarketAdapter();
     this.adapters.set(binance.exchange, binance);
     this.adapters.set(gate.exchange, gate);
+    this.adapters.set(bybit.exchange, bybit);
+    this.adapters.set(okx.exchange, okx);
     this.router = new HealthScoreRouter(this.adapters, {
-      order: ["BINANCE", "GATEIO"],
+      order: ["BINANCE", "BYBIT", "GATEIO", "OKX"],
       degradeHoldMs: 7_000,
       switchCooldownMs: 26_000,
       switchInMinScore: 60,
@@ -234,7 +249,7 @@ export class ExchangeMarketHub {
     };
   }
 
-  static exchangeIdToName(exchange: MarketExchangeId): "Binance" | "Gate.io" {
+  static exchangeIdToName(exchange: MarketExchangeId): string {
     return toExchangeName(exchange);
   }
 }

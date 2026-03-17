@@ -8,7 +8,9 @@
  *   4. Bulk snapshot flush (553 symbols → Redis every 10s)
  *   5. Market list dirty-patch bridge (500ms flush → Redis hub:market_list)
  *   6. hub:commands subscriber (monolith → ensureSymbol)
- *   7. Express /health endpoint
+ *   7. CandleWriter: persist closed 1m candles → TimescaleDB
+ *   8. CandleBackfill: fetch historical candles on startup
+ *   9. Express /health endpoint
  */
 try { process.loadEnvFile(); } catch { /* .env optional */ }
 
@@ -18,6 +20,8 @@ import { BinanceFuturesHub } from "./services/binanceFuturesHub.ts";
 import type { BinanceFuturesHubEvent } from "./services/binanceFuturesHub.ts";
 import { ExchangeMarketHub } from "./services/marketHub/ExchangeMarketHub.ts";
 import { HubEventBridge } from "./services/marketHub/HubEventBridge.ts";
+import { CandleWriter } from "./services/candleWriter.ts";
+import { CandleBackfill } from "./services/candleBackfill.ts";
 
 const app = express();
 app.use(express.json());
@@ -169,7 +173,27 @@ async function main() {
   // 6. Listen for commands from monolith (ensureSymbol, etc.)
   hubEventBridge.startCommandSubscriber(exchangeMarketHub, binanceFuturesHub);
 
-  // 7. Start HTTP server
+  // 7. CandleWriter: persist closed 1m candles → TimescaleDB
+  const candleWriter = new CandleWriter({});
+  candleWriter.start();
+  exchangeMarketHub.onEvent((event) => {
+    if (event.type === "kline") candleWriter.ingest(event as any);
+  });
+  console.log("[market-hub] CandleWriter started (1m candles → TimescaleDB)");
+
+  // 8. CandleBackfill: fetch historical 1m candles for top symbols
+  const candleBackfill = new CandleBackfill({});
+  setTimeout(() => {
+    const symbols = binanceFuturesHub.getSymbols?.() ?? [];
+    const topSymbols = symbols.slice(0, 30);
+    if (topSymbols.length > 0) {
+      void candleBackfill.backfillSymbols(topSymbols).catch((err: any) => {
+        console.error("[market-hub] Backfill error:", err?.message ?? err);
+      });
+    }
+  }, 30_000); // 30s delay after startup
+
+  // 9. Start HTTP server
   const port = Number(process.env.HUB_PORT ?? 8091);
   const host = process.env.HUB_HOST ?? "127.0.0.1";
   app.listen(port, host, () => {
@@ -189,6 +213,7 @@ const shutdown = () => {
   binanceFuturesHub.stop();
   exchangeMarketHub.stop();
   hubEventBridge.stop();
+  // candleWriter cleanup handled by process exit
   process.exit(0);
 };
 process.on("SIGTERM", shutdown);

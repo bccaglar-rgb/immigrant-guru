@@ -2984,6 +2984,72 @@ export const registerMarketRoutes = (
 
   const hubBridge = options?.hubEventBridge;
 
+  // ---- Candle API: serve from TimescaleDB (primary) or exchange REST (fallback) ----
+  app.get("/api/market/candles", async (req, res) => {
+    try {
+      const symbol = String(req.query.symbol ?? "").toUpperCase().replace(/[-_/]/g, "").trim();
+      const interval = String(req.query.interval ?? "15m");
+      const limit = Math.min(Math.max(Number(req.query.limit ?? 360), 1), 2000);
+      const exchange = req.query.exchange ? String(req.query.exchange).toUpperCase() : undefined;
+
+      if (!symbol) {
+        res.status(400).json({ ok: false, error: "symbol required" });
+        return;
+      }
+
+      const validIntervals = ["1m", "5m", "15m", "30m", "1h", "4h", "1d"];
+      if (!validIntervals.includes(interval)) {
+        res.status(400).json({ ok: false, error: `invalid interval, use: ${validIntervals.join(",")}` });
+        return;
+      }
+
+      // Try TimescaleDB first
+      const { queryCandles } = await import("../db/candleStore.ts");
+      const dbCandles = await queryCandles(symbol, interval, limit, exchange);
+
+      if (dbCandles.length >= Math.floor(limit / 2)) {
+        res.json({
+          ok: true,
+          symbol,
+          interval,
+          source: "timescaledb",
+          count: dbCandles.length,
+          candles: dbCandles,
+        });
+        return;
+      }
+
+      // Fallback: try exchange market hub (in-memory candles)
+      if (exchangeMarketHub) {
+        const hubCandles = exchangeMarketHub.getCandles(symbol, exchange, interval, limit);
+        if (hubCandles.length > 0) {
+          res.json({
+            ok: true,
+            symbol,
+            interval,
+            source: "hub_memory",
+            count: hubCandles.length,
+            candles: hubCandles,
+          });
+          return;
+        }
+      }
+
+      // Return whatever we have from DB (even if insufficient)
+      res.json({
+        ok: true,
+        symbol,
+        interval,
+        source: dbCandles.length > 0 ? "timescaledb" : "empty",
+        count: dbCandles.length,
+        candles: dbCandles,
+      });
+    } catch (err: any) {
+      console.error("[/api/market/candles] Error:", err?.message ?? err);
+      res.status(500).json({ ok: false, error: "internal error" });
+    }
+  });
+
   // ---- Lightweight Binance Futures universe (for gateway secondary worker snapshot) ----
   // Worker 0 has live WS hub data; Workers 1-2 read from Redis snapshot.
   app.get("/api/market/futures-universe", async (_req, res) => {

@@ -1,4 +1,4 @@
-export type MarketExchangeId = "BINANCE" | "GATEIO";
+export type MarketExchangeId = "BINANCE" | "GATEIO" | "BYBIT" | "OKX";
 
 export type AdapterHealthState = "healthy" | "degraded" | "down";
 

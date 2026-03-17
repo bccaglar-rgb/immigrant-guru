@@ -73,12 +73,9 @@ export class HubEventBridge {
     this.unsubHub = hub.onEvent((event) => {
       if (!this.pub) return;
 
-      // 1. Bridge critical events via pub/sub channel (existing behavior)
-      // CRITICAL: Only bridge Binance events. Gate.io trade/kline events have different
-      // prices and would contaminate tick pipeline, chart candles, and displayed prices.
-      const evtExchange = String((event as Record<string, unknown>).exchange ?? "").toUpperCase();
-      const isBinance = !evtExchange || evtExchange.includes("BINANCE");
-      if (BRIDGED_TYPES.has(event.type) && isBinance) {
+      // 1. Bridge critical events via pub/sub channel
+      // All exchanges are now bridged — gateway filters per-pipeline if needed.
+      if (BRIDGED_TYPES.has(event.type)) {
         try {
           this.pub.publish(CHANNEL, JSON.stringify(event));
         } catch {

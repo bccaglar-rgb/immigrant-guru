@@ -73,12 +73,9 @@ export class HubEventBridge {
     this.unsubHub = hub.onEvent((event) => {
       if (!this.pub) return;
 
-      // 1. Bridge critical events via pub/sub channel (existing behavior)
-      // CRITICAL: Only bridge Binance events. Gate.io trade/kline events have different
-      // prices and would contaminate tick pipeline, chart candles, and displayed prices.
-      const evtExchange = String((event as Record<string, unknown>).exchange ?? "").toUpperCase();
-      const isBinance = !evtExchange || evtExchange.includes("BINANCE");
-      if (BRIDGED_TYPES.has(event.type) && isBinance) {
+      // 1. Bridge critical events via pub/sub channel
+      // All exchanges are now bridged — gateway filters per-pipeline if needed.
+      if (BRIDGED_TYPES.has(event.type)) {
         try {
           this.pub.publish(CHANNEL, JSON.stringify(event));
         } catch {
@@ -407,46 +404,21 @@ export class HubEventBridge {
     }, 5_000);
   }
 
-  // ═══════════════════════════════════════════════════════════════
-  // Command channel: monolith → hub service (e.g., ensureSymbol)
-  // Monolith publishes to "hub:commands", hub service subscribes.
-  // ═══════════════════════════════════════════════════════════════
-  private cmdSub: Redis | null = null;
-
   /**
-   * Start listening for commands from the monolith via Redis pub/sub.
+   * Publish a command to the hub service via Redis pub/sub.
+   * Used in HUB_EXTERNAL mode when the hub runs as a separate service.
    * Commands: { cmd: "ensure_symbol", symbol: "DOGEUSDT" }
-   * Called ONLY in the standalone hub service.
    */
-  startCommandSubscriber(
-    hub: ExchangeMarketHub,
-    binanceHub?: { subscribeSymbols?: (symbols: string[]) => void },
-  ): void {
-    this.cmdSub = new Redis(redisOpts);
-    this.cmdSub.on("error", (err) => {
-      console.error("[HubEventBridge:cmd] Redis error:", err.message);
-    });
-
-    const CMD_CHANNEL = "hub:commands";
-    this.cmdSub.subscribe(CMD_CHANNEL, (err) => {
-      if (err) {
-        console.error("[HubEventBridge] Command subscribe failed:", err.message);
-      } else {
-        console.log("[HubEventBridge] Listening on hub:commands channel");
-      }
-    });
-
-    this.cmdSub.on("message", (_channel: string, message: string) => {
-      try {
-        const cmd = JSON.parse(message) as { cmd: string; symbol?: string };
-        if (cmd.cmd === "ensure_symbol" && cmd.symbol) {
-          hub.ensureSymbol(cmd.symbol);
-          console.log(`[HubEventBridge:cmd] ensureSymbol(${cmd.symbol})`);
-        }
-      } catch {
-        // malformed command — skip
-      }
-    });
+  publishCommand(cmd: { cmd: string; symbol?: string }): void {
+    // Use reader connection (always available after startSubscriber)
+    // because pub connection only exists when startPublisher is called (not in HUB_EXTERNAL mode).
+    const conn = this.pub ?? this.reader;
+    if (!conn) return;
+    try {
+      conn.publish("hub:commands", JSON.stringify(cmd));
+    } catch {
+      // best-effort
+    }
   }
 
   stop(): void {
@@ -466,11 +438,6 @@ export class HubEventBridge {
     if (this.reader) {
       this.reader.disconnect();
       this.reader = null;
-    }
-    if (this.cmdSub) {
-      this.cmdSub.unsubscribe("hub:commands").catch(() => {});
-      this.cmdSub.disconnect();
-      this.cmdSub = null;
     }
     if (this.bulkFlushTimer) {
       clearInterval(this.bulkFlushTimer);
