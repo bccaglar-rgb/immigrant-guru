@@ -204,10 +204,15 @@ export default function PricingPage() {
   const daysRemaining = hasMembership && expiryDate ? Math.max(0, Math.ceil((expiryDate.getTime() - Date.now()) / (24 * 60 * 60 * 1000))) : 0;
   const expiryLabel = expiryDate ? expiryDate.toLocaleDateString("en-US") : "";
 
-  // ── Current plan (server-first, localStorage fallback) ──
+  // ── Current plan (server-first, localStorage fallback, then default) ──
   const serverPlanId = activeSub?.planId ?? null;
   const localPlanId = typeof window !== "undefined" ? window.localStorage.getItem(MEMBERSHIP_PLAN_KEY) : null;
-  const currentPlan = hasMembership ? parsePlanId(serverPlanId ?? localPlanId) : null;
+  const resolvedPlanId = serverPlanId ?? localPlanId ?? (hasMembership ? "explorer-6m" : null);
+  // Persist resolved planId so it sticks on next visit
+  if (hasMembership && resolvedPlanId && !localPlanId) {
+    try { window.localStorage.setItem(MEMBERSHIP_PLAN_KEY, resolvedPlanId); } catch { /* ignore */ }
+  }
+  const currentPlan = hasMembership ? parsePlanId(resolvedPlanId) : null;
   const currentTierPrefix = currentPlan?.prefix ?? null;
   const currentPeriod = currentPlan?.period ?? null;
 
