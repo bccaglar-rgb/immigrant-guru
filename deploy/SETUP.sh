@@ -106,6 +106,10 @@ chmod 640 /etc/pgbouncer/userlist.txt
 # pgbouncer.ini'ye DB bağlantısını yaz
 sed -i "s|^bitrium.*|bitrium = host=127.0.0.1 port=5432 dbname=bitrium|" /etc/pgbouncer/pgbouncer.ini 2>/dev/null || true
 
+# Log ve pid dizinleri (paket oluşturmayabiliyor)
+mkdir -p /var/log/pgbouncer /var/run/pgbouncer
+chown pgbouncer:pgbouncer /var/log/pgbouncer /var/run/pgbouncer
+
 systemctl enable pgbouncer
 systemctl restart pgbouncer
 echo "  PgBouncer hazır (port 6432)"
