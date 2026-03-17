@@ -1084,9 +1084,15 @@ const toScanRow = (
     parsed?.entry && typeof parsed.entry === "object" ? (parsed.entry as Record<string, unknown>) : undefined;
   const planEntry =
     parsed?.plan?.entry && typeof parsed.plan.entry === "object" ? (parsed.plan.entry as Record<string, unknown>) : undefined;
+  // AI flat-field zone: entry_zone_low / entry_zone_high (from JSON output schema)
+  const flatZoneLow = toFinite(parsed?.entry_zone_low);
+  const flatZoneHigh = toFinite(parsed?.entry_zone_high);
   const parsedZone = collectNumberArray(parsedEntry?.zone);
   const planZone = collectNumberArray(planEntry?.zone);
-  let resolvedZone = parsedZone.length >= 2 ? [parsedZone[0], parsedZone[1]] : planZone.length >= 2 ? [planZone[0], planZone[1]] : [];
+  let resolvedZone =
+    flatZoneLow !== null && flatZoneHigh !== null && (flatZoneLow > 0 || flatZoneHigh > 0)
+      ? [flatZoneLow, flatZoneHigh]
+      : parsedZone.length >= 2 ? [parsedZone[0], parsedZone[1]] : planZone.length >= 2 ? [planZone[0], planZone[1]] : [];
   if (resolvedZone.length < 2) {
     const hi = rangeHigh ?? resistanceLevels[0] ?? toFinite(compact?.p) ?? null;
     const lo = rangeLow ?? supportLevels[0] ?? toFinite(compact?.p) ?? null;
@@ -1112,12 +1118,17 @@ const toScanRow = (
       ? Math.max(zoneHigh - zoneLow, Math.max(Math.abs(zoneMid ?? zoneHigh), 1) * 0.0012)
       : null;
 
+  // AI flat-field stops: stop_1 / stop_2 (from JSON output schema)
+  const flatStop1 = toFinite(parsed?.stop_1);
+  const flatStop2 = toFinite(parsed?.stop_2);
   const parsedStops = collectNumberArray(
+    flatStop1, flatStop2,
     parsedEntry?.sl,
     parsedEntry?.stops,
     parsed?.stops?.map((item: any) => (typeof item === "object" ? item?.price : item)),
   );
   const primaryStop =
+    flatStop1 ??
     toFinite(parsedEntry?.stop) ??
     toFinite(parsed?.plan?.stop?.p) ??
     parsedStops[0] ??
@@ -1133,12 +1144,17 @@ const toScanRow = (
       : primaryStop);
   const resolvedStops = [primaryStop, secondaryStop].filter((value): value is number => Number.isFinite(value as number));
 
+  // AI flat-field targets: target_1 / target_2 (from JSON output schema)
+  const flatTarget1 = toFinite(parsed?.target_1);
+  const flatTarget2 = toFinite(parsed?.target_2);
   const parsedTargets = collectNumberArray(
+    flatTarget1, flatTarget2,
     parsedEntry?.tp,
     parsed?.targets?.map((item: any) => (typeof item === "object" ? item?.price : item)),
     parsed?.plan?.tp?.map((item: any) => item?.p),
   );
   const primaryTarget =
+    flatTarget1 ??
     parsedTargets[0] ??
     (sideHint === "LONG"
       ? (rangeHigh ?? resistanceLevels[0] ?? (zoneHigh !== null && rangeWidth !== null ? zoneHigh + rangeWidth * 0.30 : null))
@@ -1146,6 +1162,7 @@ const toScanRow = (
         ? (rangeLow ?? supportLevels[0] ?? (zoneLow !== null && rangeWidth !== null ? zoneLow - rangeWidth * 0.30 : null))
         : null);
   const secondaryTarget =
+    flatTarget2 ??
     parsedTargets[1] ??
     (primaryTarget !== null && rangeWidth !== null
       ? (sideHint === "LONG" ? primaryTarget + rangeWidth * 0.32 : primaryTarget - rangeWidth * 0.32)
