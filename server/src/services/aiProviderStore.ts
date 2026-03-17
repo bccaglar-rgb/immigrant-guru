@@ -17,9 +17,9 @@ export interface AiProviderRecord {
 const defaultProviders = (): AiProviderRecord[] => [
   {
     id: "CHATGPT",
-    enabled: false,
+    enabled: true,
     baseUrl: "https://api.openai.com/v1/chat/completions",
-    apiKey: "",
+    apiKey: process.env.OPENAI_API_KEY ?? "",
     model: "gpt-4o-mini",
     intervalSec: 180,
     timeoutMs: 15000,
