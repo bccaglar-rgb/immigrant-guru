@@ -456,36 +456,16 @@ export class TradeIdeaTracker {
     try {
       const openIdeas = await this.store.listOpenIdeas();
       if (!openIdeas.length) return;
-      console.log(`[TradeIdeaTracker] reconcileHistoryOnStartup: ${openIdeas.length} open ideas`);
-      const nowMs = Date.now();
-      const GRACE_MS = 2 * 60_000; // Skip ideas created less than 2 minutes ago
-      for (const idea of openIdeas) {
-        try {
-          const createdMs = Date.parse(idea.created_at);
-          if (!Number.isFinite(createdMs)) continue;
-          // Skip very fresh ideas — they'll be handled by tick() with proper prevPrice seeding
-          if (nowMs - createdMs < GRACE_MS) {
-            // Seed prevPrice for fresh ideas so tick() can detect entry/SL/TP
-            this.lastPriceByIdeaId.set(idea.id, (idea.entry_low + idea.entry_high) / 2);
-            continue;
-          }
-          const fromMs = Math.max(0, createdMs - 60_000);
-          const candles = await fetchSymbolHistory(idea.symbol, fromMs, nowMs);
-          if (!candles.length) {
-            // No candle data — seed prevPrice from entry zone so tick() works
-            this.lastPriceByIdeaId.set(idea.id, (idea.entry_low + idea.entry_high) / 2);
-            continue;
-          }
-          await this.reconcileIdeaWithHistory(idea, candles);
-        } catch (err: unknown) {
-          console.error(`[TradeIdeaTracker] reconcile error for ${idea.symbol} (${idea.id}):`, (err as Error)?.message ?? err);
-          // Continue with next idea — don't let one error block reconciliation
-          this.lastPriceByIdeaId.set(idea.id, (idea.entry_low + idea.entry_high) / 2);
-        }
-      }
+      console.log(`[TradeIdeaTracker] reconcileHistoryOnStartup: ${openIdeas.length} open ideas — seeding prevPrices`);
 
-      // Repair: fill missing minutes_to_exit for resolved ideas with hit_level_type
-      await this.repairMissingExitTimes();
+      // Lightweight startup: just seed prevPrice for all open ideas from their entry zone.
+      // Full reconciliation with historical candles is too expensive when there are 1000+ ideas
+      // (each needs API calls to Binance/Bybit). This blocks tick() via the processing flag
+      // for potentially 10+ minutes. Instead, seed prevPrice and let tick() do the live tracking.
+      for (const idea of openIdeas) {
+        this.lastPriceByIdeaId.set(idea.id, (idea.entry_low + idea.entry_high) / 2);
+      }
+      console.log(`[TradeIdeaTracker] Seeded ${openIdeas.length} prevPrices — tick() will handle live tracking`);
     } catch (err: unknown) {
       console.error("[TradeIdeaTracker] reconcileHistoryOnStartup error:", (err as Error)?.message ?? err);
     } finally {
@@ -531,18 +511,27 @@ export class TradeIdeaTracker {
       if (!openIdeas.length) return;
 
       const symbols = [...new Set(openIdeas.map((idea) => idea.symbol.toUpperCase()))];
+      const t0 = Date.now();
+      console.log(`[TradeIdeaTracker] tick: fetching prices for ${symbols.length} symbols (${openIdeas.length} ideas)...`);
       const symbolPrices = new Map<string, number>();
-      await Promise.all(
-        symbols.map(async (symbol) => {
-          const price = await fetchSymbolPrice(symbol);
-          if (typeof price === "number") symbolPrices.set(symbol, price);
-        }),
-      );
+
+      // Batch symbol price fetches in chunks of 20 to avoid overwhelming external APIs
+      const CHUNK_SIZE = 20;
+      for (let i = 0; i < symbols.length; i += CHUNK_SIZE) {
+        const chunk = symbols.slice(i, i + CHUNK_SIZE);
+        await Promise.all(
+          chunk.map(async (symbol) => {
+            const price = await fetchSymbolPrice(symbol);
+            if (typeof price === "number") symbolPrices.set(symbol, price);
+          }),
+        );
+      }
 
       const pending = openIdeas.filter((i) => i.status === "PENDING").length;
       const active = openIdeas.filter((i) => i.status === "ACTIVE").length;
       const priced = symbolPrices.size;
-      console.log(`[TradeIdeaTracker] tick: ${openIdeas.length} ideas (${pending}P/${active}A), ${priced}/${symbols.length} prices fetched`);
+      const elapsed = Date.now() - t0;
+      console.log(`[TradeIdeaTracker] tick: ${openIdeas.length} ideas (${pending}P/${active}A), ${priced}/${symbols.length} prices fetched in ${elapsed}ms`);
 
       for (const idea of openIdeas) {
         const currentPrice = symbolPrices.get(idea.symbol.toUpperCase());
