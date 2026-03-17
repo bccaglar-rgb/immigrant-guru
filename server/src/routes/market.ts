@@ -541,15 +541,22 @@ const makeModeBreakdown = (
   };
 
   if (mode === "FLOW") {
-    const out = computeExtremeConsensus({
+    // FLOW uses the same engine as AGGRESSIVE (VelocityConsensus) — identical scoring logic
+    const out = computeVelocityConsensus({
       ...commonFields,
       regime,
       trendStrength,
       emaAlignment,
       vwapPosition,
-      structureAge,
       marketSpeed,
+      atrRegime,
       compression,
+      breakoutRisk,
+      fakeBreakoutProb,
+      suddenMoveRisk,
+      volumeSpike,
+      impulseReadiness,
+      liquidityDensity,
       spoofRisk,
       spreadRegime,
       depthQuality,
@@ -557,59 +564,25 @@ const makeModeBreakdown = (
       cascadeRisk,
       stressLevel,
       entryWindow,
-      // 6-component model signals
-      orderbookImbalance,
-      oiChangeStrength,
-      fundingBias,
-      fundingRatePct,
-      oiChangePct,
-      spotVsDerivativesPressure,
-      volumeSpike,
-      whaleActivity,
-      exchangeFlow,
-      relativeStrength,
-      liquidationPoolBias,
-      rsiState,
-      atrRegime,
-      liquidityDensity,
-      suddenMoveRisk,
-      impulseReadiness,
-      dxyTrend,
-      nasdaqTrend,
-      // Playbook detection & no-trade rule signals
-      signalConflict: mapTriRisk(String(panel.conflictLevel ?? "UNKNOWN")),
-      trapProbability: mapTriRisk(snapshotTileState(snapshot, "trap-probability")),
-      fakeBreakoutProb,
-      rangePosition: snapshotTileState(snapshot, "range-position"),
-      stopClusterProb: mapTriRisk(snapshotTileState(snapshot, "stop-cluster-probability")),
-      aggressorFlow: snapshotTileState(snapshot, "aggressor-flow"),
-      breakoutRisk,
-      expansionProbability: mapTriRisk(snapshotTileState(snapshot, "expansion-probability")),
+      breakoutOnly,
     });
-    // Flow decision: ideaMode-based TRADE/WATCH/NO_TRADE
-    const flowScore = Math.round(out.extremeScore);
     const gatingFlags = [
-      ...(out.gates.safety === "BLOCK" ? ["SAFETY_BLOCK"] : []),
+      ...(out.gates.risk === "BLOCK" ? ["RISK_BLOCK"] : []),
+      ...(out.gates.entry === "BLOCK" ? ["ENTRY_BLOCK"] : []),
+      ...(out.gates.fill === "BLOCK" ? ["FILL_BLOCK"] : []),
       ...(out.gates.data === "BLOCK" ? ["DATA_BLOCK"] : []),
-      ...(out.ideaMode === "NO_TRADE" ? ["LOW_CONFIDENCE"] : []),
     ];
-    const decision: ModeBreakdown["decision"] =
-      (out.ideaMode === "TRADE" || out.ideaMode === "HIGH_CONVICTION")
-        ? "TRADE"
-        : out.ideaMode === "WATCHLIST"
-          ? "WATCH"
-          : "NO_TRADE";
     return {
-      raw: out.candidateScore,
-      base: out.finalTradeScore,
-      final: out.extremeScore,
-      penaltyModel: "SUBTRACT",
-      penaltyApplied: Math.max(0, out.candidateScore - out.finalTradeScore),
-      penaltyRate: 0,
+      raw: out.baseScore,
+      base: out.adjustedScore,
+      final: out.finalScore,
+      penaltyModel: "MULTIPLY",
+      penaltyApplied: Math.max(0, out.adjustedScore - out.finalScore),
+      penaltyRate: out.penaltyRate,
       edgeAdj: Number.isFinite(consensusCore.edgeNetR) ? consensusCore.edgeNetR : 0,
       riskAdj: Number.isFinite(consensusCore.riskAdjustment) ? consensusCore.riskAdjustment : 0,
       gatingFlags,
-      decision,
+      decision: out.decision,
     };
   }
 
