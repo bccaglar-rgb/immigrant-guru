@@ -80,15 +80,17 @@ jobs:
               fi
             fi
 
-            # Debug: check for caching configs and what's really listening
-            echo "=== performance.conf ==="
-            cat /etc/nginx/conf.d/performance.conf 2>/dev/null
-            echo "=== All processes on :443 (LISTEN only) ==="
-            ss -tlnp | grep 443
+            # Debug: find the OLD index.html source
+            echo "=== /var/www/html contents ==="
+            ls -la /var/www/html/ 2>/dev/null | head -10
+            head -3 /var/www/html/index.html 2>/dev/null || echo "(no /var/www/html/index.html)"
+            ls /var/www/html/assets/ 2>/dev/null | head -5 || echo "(no /var/www/html/assets/)"
+            echo "=== /var/www/bitrium/dist/index.html ==="
+            head -3 /var/www/bitrium/dist/index.html
+            echo "=== All server blocks and roots in nginx ==="
+            nginx -T 2>/dev/null | grep -n -E "server \{|root |default_server|listen " | head -20
             echo "=== Server self-curl ==="
-            curl -skI "https://127.0.0.1/" -H "Host: bitrium.com" 2>/dev/null | grep -E "(content-length|x-deploy)"
-            echo "=== Check if any proxy_cache enabled ==="
-            nginx -T 2>/dev/null | grep -i "proxy_cache\|open_file_cache\|fastcgi_cache" || echo "No caching directives"
+            curl -skI "https://127.0.0.1/" -H "Host: bitrium.com" 2>/dev/null | grep content-length
 
             # Zero-downtime reload: PM2 restarts workers one by one
             pm2 reload ecosystem.config.cjs || pm2 start ecosystem.config.cjs
