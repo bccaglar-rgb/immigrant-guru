@@ -570,7 +570,7 @@ export default function TradeIdeasReportPage() {
                 <button type="button" onClick={() => setExpandedHour(null)} className="text-[10px] text-[#8A8F98] hover:text-white">Close ✕</button>
               </div>
               <div className="max-h-60 overflow-auto rounded-lg border border-white/10">
-                <table className="min-w-full text-xs">
+                <table className="min-w-[700px] w-full text-xs">
                   <thead className="sticky top-0 bg-[#0F1012] text-[#8A8F98]">
                     <tr>
                       <th className="px-2 py-1.5 text-left">Time</th>
@@ -607,7 +607,7 @@ export default function TradeIdeasReportPage() {
                           <td className="px-2 py-1 text-[#e4b4af]">{p.sl_levels.length ? p.sl_levels.map((s) => fmtLevel(s)).join(", ") : "-"}</td>
                           <td className="px-2 py-1 text-[#dce4d0]">{p.tp_levels.length ? p.tp_levels.map((t) => fmtLevel(t)).join(", ") : "-"}</td>
                           <td className="px-2 py-1">
-                            <span className={`rounded-md border px-2 py-0.5 text-[10px] font-semibold ${resultStyle(p)}`}>
+                            <span className={`whitespace-nowrap rounded-md border px-2 py-0.5 text-[10px] font-semibold ${resultStyle(p)}`}>
                               {resultLabel(p)}
                             </span>
                           </td>
@@ -628,7 +628,7 @@ export default function TradeIdeasReportPage() {
         <section className="rounded-2xl border border-white/10 bg-[#121316] p-4">
           <h2 className="mb-2 text-sm font-semibold text-white">Last 100 trade ideas <span className="text-[11px] font-normal text-[#6B6F76]">(auto-refreshing)</span></h2>
           <div className="max-h-[52vh] overflow-auto rounded-lg border border-white/10">
-            <table className="min-w-full text-xs">
+            <table className="min-w-[900px] w-full text-xs">
               <thead className="sticky top-0 bg-[#0F1012] text-[#8A8F98]">
                 <tr>
                   <th className="px-2 py-2 text-left">Time</th>
@@ -728,7 +728,7 @@ export default function TradeIdeasReportPage() {
                       </td>
                       <td className="px-2 py-1.5 text-right text-[#BFC2C7]">{timeToExit}</td>
                       <td className="px-2 py-1.5">
-                        <span className={`rounded-md border px-2 py-1 text-[11px] font-semibold ${resultStyle(p)}`}>
+                        <span className={`whitespace-nowrap rounded-md border px-2 py-1 text-[11px] font-semibold ${resultStyle(p)}`}>
                           {label}
                         </span>
                       </td>
