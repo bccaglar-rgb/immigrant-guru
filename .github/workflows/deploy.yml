@@ -80,20 +80,14 @@ jobs:
               fi
             fi
 
-            # NUCLEAR TEST: stop nginx, check if external still works
-            echo "=== Stopping nginx ==="
-            systemctl stop nginx
-            echo "Nginx stopped"
-            echo "=== Server IPs ==="
-            ip addr show | grep "inet " | grep -v 127.0.0
-            echo "=== All listening on 80/443 after nginx stop ==="
-            ss -tlnp | grep -E ":80 |:443 " || echo "(nothing on 80/443)"
-            sleep 2
-            echo "=== Starting nginx back ==="
-            systemctl start nginx
-            echo "Nginx started"
-            echo "=== Self-curl after start ==="
-            curl -skI "https://127.0.0.1/" -H "Host: bitrium.com" 2>/dev/null | grep content-length
+            # Debug: check IP mismatch
+            REAL_IP=$(curl -s ifconfig.me)
+            echo "Server public IP (dash-separated): $(echo $REAL_IP | tr '.' '-')"
+            echo "DNS resolves bitrium.com to: $(dig +short bitrium.com 2>/dev/null || echo 'dig unavailable')"
+            echo "Server network interfaces:"
+            ip addr show eth0 | grep "inet "
+            echo "=== Test: curl via actual IP ==="
+            curl -skI "https://$REAL_IP/" -H "Host: bitrium.com" 2>/dev/null | grep content-length || echo "(self-curl via public IP failed)"
 
             # Zero-downtime reload: PM2 restarts workers one by one
             pm2 reload ecosystem.config.cjs || pm2 start ecosystem.config.cjs
