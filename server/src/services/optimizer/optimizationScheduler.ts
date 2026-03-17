@@ -1,0 +1,124 @@
+import { TradeIdeaStore } from "../tradeIdeaStore.ts";
+import { SCORING_MODES } from "../scoringMode.ts";
+import { groupTradesByModeAndSegment, groupTradesByMode } from "./segmentAnalyzer.ts";
+import { optimizeModeGlobal, optimizeModeSegments } from "./moduleOptimizer.ts";
+import { ccManager } from "./championChallengerManager.ts";
+import type { SegmentKey } from "./types.ts";
+
+const DAILY_MS = 24 * 60 * 60 * 1000;
+const WARMUP_MS = 45_000; // 45s to let DB fully warm up
+
+export class OptimizationScheduler {
+  private store = new TradeIdeaStore();
+  private timer: ReturnType<typeof setInterval> | null = null;
+  private started = false;
+
+  start(): void {
+    if (this.started) return;
+    this.started = true;
+
+    console.log("[Optimizer] Scheduler started. First run in 45s.");
+
+    setTimeout(() => {
+      this.run().catch((err) => console.error("[Optimizer] Warm-up run failed:", err));
+    }, WARMUP_MS);
+
+    this.timer = setInterval(() => {
+      this.run().catch((err) => console.error("[Optimizer] Daily run failed:", err));
+    }, DAILY_MS);
+  }
+
+  stop(): void {
+    if (this.timer) { clearInterval(this.timer); this.timer = null; }
+    this.started = false;
+  }
+
+  async run(): Promise<void> {
+    try {
+      console.log("[Optimizer] Starting optimization run...");
+
+      const allResolved = await this.store.listIdeas({
+        statuses: ["RESOLVED"],
+        limit: 10000,
+      });
+
+      console.log(`[Optimizer] Loaded ${allResolved.length} resolved trades.`);
+
+      // Group by mode (global)
+      const byMode = groupTradesByMode(allResolved);
+
+      // Group by mode + segment (needs DB snapshots)
+      const byModeAndSegment = await groupTradesByModeAndSegment(allResolved);
+
+      for (const mode of SCORING_MODES) {
+        const trades = byMode.get(mode) ?? [];
+        const modeState = ccManager.getModeState(mode);
+        const currentChampion = modeState?.global.champion;
+
+        if (!currentChampion) {
+          ccManager.markRun(mode);
+          console.log(`[Optimizer] ${mode}: no state — skipping.`);
+          continue;
+        }
+
+        // ── Global optimization ──
+        const globalChallenger = optimizeModeGlobal(trades, currentChampion);
+        ccManager.setGlobalChallenger(mode, globalChallenger);
+
+        if (globalChallenger) {
+          console.log(
+            `[Optimizer] ${mode} global challenger: RR=${globalChallenger.config.rr} ` +
+            `slBuf=${globalChallenger.config.slBufferFactor} ` +
+            `expectancy=${globalChallenger.metrics.expectancy.toFixed(3)} ` +
+            `trades=${globalChallenger.tradeCount}`,
+          );
+        } else {
+          console.log(`[Optimizer] ${mode} global: no improvement (trades=${trades.length})`);
+        }
+
+        // ── Segment optimization ──
+        const segmentMap = byModeAndSegment.get(mode);
+        if (segmentMap && segmentMap.size > 0) {
+          // Build trades-only map by segment
+          const segTradesMap = new Map<SegmentKey, import("../tradeIdeaTypes.ts").TradeIdeaRecord[]>();
+          for (const [seg, items] of segmentMap) {
+            segTradesMap.set(seg, items.map((i) => i.trade));
+          }
+
+          const currentSegChampions = Object.fromEntries(
+            Object.entries(modeState?.segments ?? {}).map(([k, v]) => [k, v.champion]),
+          );
+
+          const segChallengerMap = optimizeModeSegments(segTradesMap, currentChampion, currentSegChampions);
+
+          for (const [segment, challenger] of segChallengerMap) {
+            ccManager.setSegmentChallenger(mode, segment, challenger);
+            if (challenger) {
+              console.log(
+                `[Optimizer] ${mode}/${segment} challenger: RR=${challenger.config.rr} ` +
+                `expectancy=${challenger.metrics.expectancy.toFixed(3)} ` +
+                `trades=${challenger.tradeCount}`,
+              );
+            }
+          }
+        }
+
+        ccManager.markRun(mode);
+      }
+
+      // Evaluate promotions
+      const promotions = ccManager.evaluatePromotions();
+      for (const p of promotions) {
+        if (p.promoted) {
+          console.log(`[Optimizer] PROMOTED ${p.mode}: ${p.reason}`);
+        }
+      }
+
+      console.log("[Optimizer] Run complete.");
+    } catch (err) {
+      console.error("[Optimizer] Run error:", err);
+    }
+  }
+}
+
+export const optimizationScheduler = new OptimizationScheduler();

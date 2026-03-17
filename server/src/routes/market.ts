@@ -15,6 +15,8 @@ import type { CoinUniverseEngine } from "../services/coinUniverseEngine.ts";
 import type { HubEventBridge } from "../services/marketHub/HubEventBridge.ts";
 import { computeEnhancedScore } from "../services/coinScoring.ts";
 import { adaptiveRR } from "../services/adaptiveRRService.ts";
+import { runtimeDecision } from "../services/optimizer/runtimeDecisionEngine.ts";
+import { buildQuantSnapshotDirect } from "../services/optimizer/quantSnapshotAdapter.ts";
 
 type JsonValue = string | number | boolean | null | JsonValue[] | { [k: string]: JsonValue };
 type ExchangeName = "Binance" | "Bybit" | "OKX" | "Gate.io";
@@ -4122,14 +4124,17 @@ export const registerMarketRoutes = (
         .filter((l) => (l.type === "resistance" || l.price > close) && l.price > 0 && l.price > close)
         .sort((a, b) => a.price - b.price); // closest first
 
-      // ── Symmetric entry zone: ±ATR*0.15 around close ──
-      let entryLow = close - atrValue * 0.15;
-      let entryHigh = close + atrValue * 0.15;
+      // ── Adaptive config from optimizer (falls back to defaults gracefully) ──
+      const optCfg = runtimeDecision.getConfig(scoringMode);
+
+      // ── Symmetric entry zone: ±ATR*entryZoneFactor around close ──
+      let entryLow = close - atrValue * optCfg.entryZoneFactor;
+      let entryHigh = close + atrValue * optCfg.entryZoneFactor;
       if (entryLow > entryHigh) [entryLow, entryHigh] = [entryHigh, entryLow];
       const entryWidth = entryHigh - entryLow;
 
-      // ── SL buffer: max(ATR*0.25, entry zone width) for adequate breathing room ──
-      const buffer = Math.max(atrValue * 0.25, entryWidth);
+      // ── SL buffer: max(ATR*slBufferFactor, entry zone width) ──
+      const buffer = Math.max(atrValue * optCfg.slBufferFactor, entryWidth);
 
       let sl1: number, sl2: number, tp1: number, tp2: number;
 
@@ -4138,12 +4143,11 @@ export const registerMarketRoutes = (
         sl1 = supports.length >= 1 ? supports[0].price - buffer : close - atrValue * 1.0;
         sl2 = supports.length >= 2 ? supports[1].price - buffer : close - atrValue * 2.0;
 
-        // Hybrid TP: max(structure level, RR target) → ensures minimum adaptive RR
+        // Hybrid TP: max(structure level, RR target) → adaptive RR from optimizer
         const risk1 = close - sl1;
         const risk2 = close - sl2;
-        const modeRR = adaptiveRR.getRR(scoringMode);
-        const rrTp1 = close + risk1 * modeRR;
-        const rrTp2 = close + risk2 * (modeRR * 1.25);
+        const rrTp1 = close + risk1 * optCfg.rr;
+        const rrTp2 = close + risk2 * (optCfg.rr * 1.25);
         tp1 = resistances.length >= 1 ? Math.max(resistances[0].price, rrTp1) : rrTp1;
         tp2 = resistances.length >= 2 ? Math.max(resistances[1].price, rrTp2) : rrTp2;
       } else {
@@ -4153,9 +4157,8 @@ export const registerMarketRoutes = (
 
         const risk1 = sl1 - close;
         const risk2 = sl2 - close;
-        const modeRR = adaptiveRR.getRR(scoringMode);
-        const rrTp1 = close - risk1 * modeRR;
-        const rrTp2 = close - risk2 * (modeRR * 1.25);
+        const rrTp1 = close - risk1 * optCfg.rr;
+        const rrTp2 = close - risk2 * (optCfg.rr * 1.25);
         tp1 = supports.length >= 1 ? Math.min(supports[0].price, rrTp1) : rrTp1;
         tp2 = supports.length >= 2 ? Math.min(supports[1].price, rrTp2) : rrTp2;
       }
@@ -4244,6 +4247,28 @@ Always manage your own risk.`;
         type: l.type,
         strength: l.strength,
       }));
+
+      // ── Quant Snapshot (additive — always included for optimizer capture) ──
+      const quantSnapshot = buildQuantSnapshotDirect({
+        regime: tileState("market-regime", "UNKNOWN"),
+        volatilityState: tileState("atr-regime", "MID"),
+        trendStrength: tileState("trend-strength", "LOW"),
+        trendDirection: String(trendDirection),
+        marketBias: tileState("ema-alignment", "MIXED"),
+        playbook: selectedPanel.playbook ?? "",
+        atrValue,
+        closePrice: close,
+        pWin: Number(selectedPanel.consensusEngine?.pWin ?? 0),
+        expectedRR: Number(selectedPanel.consensusEngine?.expectedRR ?? 0),
+        edgeNetR: Number(selectedPanel.consensusEngine?.edgeNetR ?? 0),
+        finalScore: Math.round((confidence ?? 0) * 100),
+        liquidityDensity: tileState("liquidity-density", "LOW"),
+        spreadRegime: tileState("spread-regime", "WIDE"),
+        cascadeRisk: tileState("cascade-risk", "LOW"),
+        marketStress: tileState("market-stress-level", "LOW"),
+        fundingBias: tileState("funding-bias", "NEUTRAL"),
+      });
+
       res.json({
         ok: true,
         text,
@@ -4287,6 +4312,7 @@ Always manage your own risk.`;
         triggers_to_activate: selectedPanel.triggerConditions.slice(0, 4),
         invalidation_triggers: selectedPanel.invalidationTriggers.slice(0, 2),
         key_levels: keyLevelsResponse,
+        quant_snapshot: quantSnapshot,
         // Full snapshot data for AI consumers (opt-in via ?include_snapshot=1)
         ...(String(req.query.include_snapshot ?? "0") === "1" ? {
           snapshot_tiles: selectedSnapshot.tiles

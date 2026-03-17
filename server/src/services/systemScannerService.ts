@@ -22,6 +22,7 @@ import type { TradeIdeaRecord } from "./tradeIdeaTypes.ts";
 import type { ScoringMode } from "./scoringMode.ts";
 import { computeEnhancedScore } from "./coinScoring.ts";
 import type { CoinUniverseEngine } from "./coinUniverseEngine.ts";
+import { runtimeDecision } from "./optimizer/runtimeDecisionEngine.ts";
 
 const SCAN_CACHE_REDIS_KEY = "scanner:scan_cache";
 const SCAN_CACHE_REDIS_TTL = 120; // 2 minutes — scanner cycles every 60s
@@ -128,6 +129,7 @@ interface EnrichedScanResult extends SystemScanResult {
   horizon: "SCALP" | "INTRADAY" | "SWING";
   timeframe: "1m" | "5m" | "15m" | "30m" | "1h" | "4h" | "1d";
   pricePrecision?: number;
+  quantSnapshot?: Record<string, unknown>;
 }
 
 interface SystemScannerDeps {
@@ -880,6 +882,7 @@ export class SystemScannerService {
           horizon: horizon as "SCALP" | "INTRADAY" | "SWING",
           timeframe: timeframe as "5m" | "15m" | "4h",
           pricePrecision: apiPricePrecision,
+          quantSnapshot: data.quant_snapshot as Record<string, unknown> | undefined,
         });
       }
       return results;
@@ -970,8 +973,9 @@ export class SystemScannerService {
         const risk = Math.abs(entryMid - sl1);
         const reward = Math.abs(tp1 - entryMid);
         const rr = risk > 0 ? reward / risk : 0;
-        if (rr < 1.5) {
-          console.log(`[SystemScanner] SKIP ${result.symbol} ${result.mode}: RR ${rr.toFixed(2)} < 1.5`);
+        const rrCfg = runtimeDecision.getConfig(result.mode);
+        if (rr < rrCfg.minRRFilter) {
+          console.log(`[SystemScanner] SKIP ${result.symbol} ${result.mode}: RR ${rr.toFixed(2)} < ${rrCfg.minRRFilter}`);
           continue;
         }
       }
@@ -1041,6 +1045,18 @@ export class SystemScannerService {
 
         const initialPrice = Number(((idea.entry_low + idea.entry_high) / 2).toFixed(8));
         await this.deps.tradeIdeaStore.createIdea(idea, initialPrice);
+
+        // Write quant snapshot event if available (for optimizer analytics)
+        if (result.quantSnapshot) {
+          await this.deps.tradeIdeaStore.appendEvent({
+            idea_id: idea.id,
+            event_type: "QUANT_SNAPSHOT",
+            ts: new Date().toISOString(),
+            price: null,
+            meta: result.quantSnapshot,
+          });
+        }
+
         created += 1;
         // Increment highScoreByMode only when a real trade idea is created
         this.highScoreByMode[result.mode] = (this.highScoreByMode[result.mode] ?? 0) + 1;

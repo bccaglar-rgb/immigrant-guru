@@ -163,6 +163,7 @@ export default function TradeIdeasReportPage() {
   // AI report: per-module stats from DB
   const [aiStatsByModule, setAiStatsByModule] = useState<Record<string, AiReportModuleStats>>({});
   const [rrConfig, setRrConfig] = useState<Record<string, { currentRR: number; recommendedRR: number; winRate: number; tradeCount: number }>>({});
+  const [optPerf, setOptPerf] = useState<Record<string, { champion: { config: { rr: number; slBufferFactor: number; entryZoneFactor: number; minRRFilter: number }; metrics: { winRate: number; tradeCount: number; expectancy: number }; tradeCount: number } | null; challenger: { config: { rr: number }; metrics: { expectancy: number }; tradeCount: number } | null; lastRun: string } | null>>({});
 
   // ── RR Config Fetch (once on mount) ──
   useEffect(() => {
@@ -170,6 +171,10 @@ export default function TradeIdeasReportPage() {
     fetch("/api/trade-ideas/rr-config")
       .then((r) => r.ok ? r.json() : null)
       .then((body: any) => { if (body?.ok && body.config) setRrConfig(body.config); })
+      .catch(() => {});
+    fetch("/api/optimizer/performance")
+      .then((r) => r.ok ? r.json() : null)
+      .then((body: any) => { if (body?.ok && body.performance) setOptPerf(body.performance); })
       .catch(() => {});
   }, [isAiReport]);
 
@@ -469,43 +474,80 @@ export default function TradeIdeasReportPage() {
             </div>
           </div>
 
-          {/* ── Adaptive RR Info (Quant only) ── */}
+          {/* ── Adaptive Optimizer Info (Quant only) ── */}
           {!isAiReport && (() => {
+            const modePerf = optPerf[scoringMode];
+            const champion = modePerf?.champion;
+            const challenger = modePerf?.challenger;
+            const hasChampion = !!champion;
             const modeRR = rrConfig[scoringMode];
-            if (!modeRR) return null;
-            const hasEnough = modeRR.tradeCount >= 30;
-            const changed = hasEnough && modeRR.recommendedRR !== modeRR.currentRR;
+            const tradeCount = champion?.tradeCount ?? modeRR?.tradeCount ?? 0;
+            const hasEnough = tradeCount >= 30;
+            const hasPendingChallenger = !!challenger;
+            const cfg = champion?.config;
+
             return (
               <div className="mt-3 flex flex-wrap items-center gap-3 rounded-lg border border-white/10 bg-[#0F1012] px-3 py-2 text-xs">
-                <span className="text-[#8A8F98]">Adaptive RR Optimizer</span>
-                <span className="text-[#6B6F76]">|</span>
-                <span>
-                  <span className="text-[#8A8F98]">Current RR: </span>
-                  <span className="font-semibold text-[#F5C542]">{modeRR.currentRR.toFixed(2)}</span>
+                <span className={`text-[#8A8F98] ${hasPendingChallenger ? "text-[#F5C542]" : ""}`}>
+                  Adaptive Optimizer
                 </span>
                 <span className="text-[#6B6F76]">|</span>
                 <span>
-                  <span className="text-[#8A8F98]">Recommended: </span>
-                  <span className={`font-semibold ${changed ? "text-[#8fc9ab]" : "text-[#BFC2C7]"}`}>
-                    {hasEnough ? modeRR.recommendedRR.toFixed(2) : "–"}
+                  <span className="text-[#8A8F98]">RR: </span>
+                  <span className="font-semibold text-[#F5C542]">
+                    {hasChampion ? cfg!.rr.toFixed(2) : (modeRR?.currentRR?.toFixed(2) ?? "–")}
                   </span>
                 </span>
+                {hasChampion && (
+                  <>
+                    <span className="text-[#6B6F76]">|</span>
+                    <span>
+                      <span className="text-[#8A8F98]">SL Factor: </span>
+                      <span className="font-semibold text-[#BFC2C7]">{cfg!.slBufferFactor.toFixed(2)}</span>
+                    </span>
+                    <span className="text-[#6B6F76]">|</span>
+                    <span>
+                      <span className="text-[#8A8F98]">Entry: </span>
+                      <span className="font-semibold text-[#BFC2C7]">±{cfg!.entryZoneFactor.toFixed(2)}</span>
+                    </span>
+                    <span className="text-[#6B6F76]">|</span>
+                    <span>
+                      <span className="text-[#8A8F98]">Min RR: </span>
+                      <span className="font-semibold text-[#BFC2C7]">{cfg!.minRRFilter.toFixed(1)}</span>
+                    </span>
+                  </>
+                )}
                 <span className="text-[#6B6F76]">|</span>
                 <span>
                   <span className="text-[#8A8F98]">Based on </span>
-                  <span className="font-semibold text-white">{modeRR.tradeCount}</span>
-                  <span className="text-[#8A8F98]"> resolved trades</span>
+                  <span className="font-semibold text-white">{tradeCount}</span>
+                  <span className="text-[#8A8F98]"> trades</span>
                 </span>
-                {hasEnough && (
+                {hasEnough && champion?.metrics && (
                   <>
                     <span className="text-[#6B6F76]">|</span>
                     <span>
                       <span className="text-[#8A8F98]">Win Rate: </span>
-                      <span className="font-semibold text-[#BFC2C7]">{(modeRR.winRate * 100).toFixed(1)}%</span>
+                      <span className="font-semibold text-[#BFC2C7]">{(champion.metrics.winRate * 100).toFixed(1)}%</span>
+                    </span>
+                    <span className="text-[#6B6F76]">|</span>
+                    <span>
+                      <span className="text-[#8A8F98]">Expectancy: </span>
+                      <span className={`font-semibold ${champion.metrics.expectancy >= 0 ? "text-[#8fc9ab]" : "text-[#d49f9a]"}`}>
+                        {champion.metrics.expectancy.toFixed(3)}R
+                      </span>
                     </span>
                   </>
                 )}
-                {!hasEnough && (
+                {hasPendingChallenger && (
+                  <>
+                    <span className="text-[#6B6F76]">|</span>
+                    <span className="text-[#F5C542]">
+                      ⚡ Challenger pending (RR {cfg?.rr.toFixed(2)}→{challenger!.config.rr.toFixed(2)}, E: {challenger!.metrics.expectancy.toFixed(3)}R, {challenger!.tradeCount} trades)
+                    </span>
+                  </>
+                )}
+                {!hasEnough && !hasChampion && (
                   <span className="text-[#555] italic">min 30 trades required</span>
                 )}
               </div>

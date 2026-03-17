@@ -5,6 +5,8 @@ import type { TradeIdeaDirection, TradeIdeaRecord, TradeIdeaStatus } from "../se
 import { isScoringMode, normalizeScoringMode, SCORING_MODES } from "../services/scoringMode.ts";
 import { SystemScannerService } from "../services/systemScannerService.ts";
 import { adaptiveRR } from "../services/adaptiveRRService.ts";
+import { ccManager } from "../services/optimizer/championChallengerManager.ts";
+import { optimizationScheduler } from "../services/optimizer/optimizationScheduler.ts";
 
 const readUserId = (req: Request): string => {
   const raw = req.headers["x-user-id"];
@@ -447,5 +449,45 @@ export const registerTradeIdeasRoutes = (app: Express, store: TradeIdeaStore, sy
     const idea = await store.getIdea(id);
     if (!idea || idea.user_id !== userId) return res.status(404).json({ ok: false, error: "idea_not_found" });
     return res.json({ ok: true, idea: normalizeLegacyIdea(idea) });
+  });
+
+  // ── Optimizer endpoints ──────────────────────────────────────────
+  app.get("/api/optimizer/config", (_req, res) => {
+    const config: Record<string, unknown> = {};
+    for (const mode of SCORING_MODES) {
+      config[mode] = ccManager.getModeState(mode) ?? null;
+    }
+    return res.json({ ok: true, config });
+  });
+
+  app.get("/api/optimizer/performance", (_req, res) => {
+    const performance: Record<string, unknown> = {};
+    for (const mode of SCORING_MODES) {
+      const state = ccManager.getModeState(mode);
+      performance[mode] = state ? {
+        champion: state.global.champion,
+        challenger: state.global.challenger,
+        lastRun: state.lastRun,
+      } : null;
+    }
+    return res.json({ ok: true, performance });
+  });
+
+  app.get("/api/optimizer/segments", (_req, res) => {
+    const segments: Record<string, unknown> = {};
+    for (const mode of SCORING_MODES) {
+      const state = ccManager.getModeState(mode);
+      segments[mode] = state?.segments ?? {};
+    }
+    return res.json({ ok: true, segments });
+  });
+
+  app.post("/api/optimizer/run", async (_req, res) => {
+    try {
+      await optimizationScheduler.run();
+      return res.json({ ok: true, message: "Optimization run completed" });
+    } catch (err) {
+      return res.status(500).json({ ok: false, error: String(err) });
+    }
   });
 };
