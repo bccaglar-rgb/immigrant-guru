@@ -83,10 +83,20 @@ jobs:
             # Verify nginx state
             echo "=== Nginx workers ==="
             ps aux | grep "nginx: worker" | grep -v grep
-            echo "=== File on disk ==="
-            wc -c /var/www/bitrium/dist/index.html
             echo "=== Curl localhost:443 ==="
             curl -skI "https://127.0.0.1/" -H "Host: bitrium.com" 2>/dev/null | grep -E "(content-length|x-deploy)"
+            echo "=== Curl own public IP ==="
+            PUB_IP=$(curl -s ifconfig.me)
+            echo "Public IP: $PUB_IP"
+            curl -skI "https://$PUB_IP/" -H "Host: bitrium.com" 2>/dev/null | grep -E "(content-length|x-deploy|server:)"
+            echo "=== conf.d contents ==="
+            ls -la /etc/nginx/conf.d/ 2>/dev/null
+            echo "=== iptables NAT rules ==="
+            iptables -t nat -L -n 2>/dev/null | head -20
+            echo "=== Docker? ==="
+            docker ps 2>/dev/null | head -5 || echo "No docker"
+            echo "=== nginx.conf includes ==="
+            nginx -T 2>/dev/null | grep -E "^# configuration file|include " | head -20
 
             # Zero-downtime reload: PM2 restarts workers one by one
             pm2 reload ecosystem.config.cjs || pm2 start ecosystem.config.cjs
