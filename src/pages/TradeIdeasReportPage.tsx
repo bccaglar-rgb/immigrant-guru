@@ -82,6 +82,60 @@ const resultLabel = (idea: ApiTradeIdea): string => {
   return "ACTIVE";
 };
 
+// ── PnL Simulation helper ────────────────────────────────────
+
+interface ReportPnLSimulation {
+  margin: number;
+  leverage: number;
+  positionSize: number;
+  pnlUsd: number;
+  roiPct: number;
+}
+
+function calculateReportPnLSimulation(
+  direction: "LONG" | "SHORT",
+  entryPrice: number,
+  exitPrice: number,
+  margin = 10,
+  leverage = 10,
+): ReportPnLSimulation {
+  const positionSize = margin * leverage;
+  const priceChange =
+    direction === "LONG"
+      ? (exitPrice - entryPrice) / entryPrice
+      : (entryPrice - exitPrice) / entryPrice;
+  const pnlUsd = positionSize * priceChange;
+  const roiPct = (pnlUsd / margin) * 100;
+  return { margin, leverage, positionSize, pnlUsd, roiPct };
+}
+
+function getPnlSimulation(idea: ApiTradeIdea): ReportPnLSimulation | null {
+  if (!idea.hit_level_price || idea.result === "NONE") return null;
+  const entryPrice = (idea.entry_low + idea.entry_high) / 2;
+  if (!entryPrice) return null;
+  return calculateReportPnLSimulation(idea.direction, entryPrice, idea.hit_level_price);
+}
+
+const PnlCell = ({ idea }: { idea: ApiTradeIdea }) => {
+  const sim = getPnlSimulation(idea);
+  if (!sim) return <span className="text-[#555]">-</span>;
+  const pos = sim.pnlUsd >= 0;
+  const sign = pos ? "+" : "";
+  const color = pos ? "text-[#8fc9ab]" : "text-[#d49f9a]";
+  const tooltip = `Hypothetical PnL based on $${sim.margin} margin and ${sim.leverage}x leverage. If this idea had been executed under those conditions, the estimated result would have been ${sign}$${sim.pnlUsd.toFixed(2)} (${sign}${sim.roiPct.toFixed(1)}% ROI). This is a simulation only and does not include fees or slippage.`;
+  return (
+    <span className="inline-flex items-center gap-1">
+      <span className={`font-semibold ${color}`}>{sign}${sim.pnlUsd.toFixed(2)}</span>
+      <span
+        title={tooltip}
+        className="cursor-help rounded-full border border-white/20 bg-[#1a1c22] px-1 text-[9px] text-[#8A8F98] hover:border-white/40 hover:text-white"
+      >
+        i
+      </span>
+    </span>
+  );
+};
+
 const resultStyle = (idea: ApiTradeIdea): string => {
   if (idea.result === "SUCCESS") return "border-[#6f8f6d] bg-[#1f2c1d] text-[#8fc9ab]";
   if (idea.result === "FAIL") return "border-[#a85a52] bg-[#3a1e1d] text-[#d49f9a]";
@@ -444,6 +498,7 @@ export default function TradeIdeasReportPage() {
                       <th className="px-2 py-1.5 text-left">SL</th>
                       <th className="px-2 py-1.5 text-left">TP</th>
                       <th className="px-2 py-1.5 text-left">Result</th>
+                      <th className="px-2 py-1.5 text-right">PnL</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -474,6 +529,9 @@ export default function TradeIdeasReportPage() {
                               {resultLabel(p)}
                             </span>
                           </td>
+                          <td className="px-2 py-1 text-right">
+                            <PnlCell idea={p} />
+                          </td>
                         </tr>
                       );
                     })}
@@ -499,11 +557,12 @@ export default function TradeIdeasReportPage() {
                   <th className="px-2 py-2 text-left">TP Level</th>
                   <th className="px-2 py-2 text-right">Time to Exit (min)</th>
                   <th className="px-2 py-2 text-left">Result</th>
+                  <th className="px-2 py-2 text-right">PnL</th>
                 </tr>
               </thead>
               <tbody>
                 {last100.length === 0 && (
-                  <tr><td colSpan={8} className="px-2 py-4 text-center text-[#6B6F76]">No trade ideas yet</td></tr>
+                  <tr><td colSpan={9} className="px-2 py-4 text-center text-[#6B6F76]">No trade ideas yet</td></tr>
                 )}
                 {last100.map((raw) => {
                   // ── DB-backed idea row (same format for Quant and AI) ──
@@ -590,6 +649,9 @@ export default function TradeIdeasReportPage() {
                         <span className={`rounded-md border px-2 py-1 text-[11px] font-semibold ${resultStyle(p)}`}>
                           {label}
                         </span>
+                      </td>
+                      <td className="px-2 py-1.5 text-right">
+                        <PnlCell idea={p} />
                       </td>
                     </tr>
                   );
