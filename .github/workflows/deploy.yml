@@ -51,6 +51,10 @@ jobs:
           # Upload deploy configs
           rsync -avz deploy/ root@${{ secrets.DROPLET_IP }}:/var/www/bitrium/deploy/
 
+          # Verify from external network (CI runner)
+          echo "=== External curl from CI runner ==="
+          curl -sI "https://bitrium.com/" | head -10
+
           # Install deps, run DB migrations if needed, zero-downtime reload
           ssh root@${{ secrets.DROPLET_IP }} << 'EOF'
             cd /var/www/bitrium
