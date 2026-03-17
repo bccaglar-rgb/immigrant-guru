@@ -83,6 +83,21 @@ export class AiProviderStore {
     return defaultProviders().map((def) => fromDb.find((n) => n.id === def.id) ?? def);
   }
 
+  /** Auto-enable CHATGPT on startup if it has an API key in DB */
+  async ensureChatGptEnabled(): Promise<void> {
+    try {
+      const providers = await this.getAll();
+      const chatgpt = providers.find((p) => p.id === "CHATGPT");
+      if (chatgpt && chatgpt.apiKey && !chatgpt.enabled) {
+        await pool.query(
+          `UPDATE ai_providers SET config = jsonb_set(config, '{enabled}', 'true'), updated_at = now() WHERE id = 'CHATGPT'`,
+        );
+      }
+    } catch {
+      // Non-critical — scan loop will retry with DB values
+    }
+  }
+
   async replaceAll(input: unknown): Promise<AiProviderRecord[]> {
     const items = Array.isArray(input) ? input : [];
     const normalized = items

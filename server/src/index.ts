@@ -91,6 +91,7 @@ const tradeIdeaStore = new TradeIdeaStore();
 const tradeIdeaTracker = new TradeIdeaTracker(tradeIdeaStore);
 const adminProviderStore = new AdminProviderStore();
 const aiProviderStore = new AiProviderStore();
+void aiProviderStore.ensureChatGptEnabled();
 const binanceFuturesHub = new BinanceFuturesHub();
 const exchangeMarketHub = new ExchangeMarketHub();
 const hubEventBridge = new HubEventBridge();
