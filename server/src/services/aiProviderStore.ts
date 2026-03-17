@@ -28,10 +28,10 @@ const defaultProviders = (): AiProviderRecord[] => [
   },
   {
     id: "QWEN",
-    enabled: false,
-    baseUrl: "https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions",
-    apiKey: "",
-    model: "qwen-plus",
+    enabled: true,
+    baseUrl: "https://openrouter.ai/api/v1/chat/completions",
+    apiKey: process.env.QWEN_API_KEY ?? "",
+    model: "qwen/qwen-2.5-72b-instruct",
     intervalSec: 180,
     timeoutMs: 15000,
     temperature: 0.2,
@@ -97,29 +97,36 @@ export class AiProviderStore {
         );
       }
 
-      // 2. If CHATGPT has env API key but DB row is missing the key, sync env key to DB
-      const envKey = (process.env.OPENAI_API_KEY ?? "").trim();
-      if (envKey) {
-        await pool.query(
-          `UPDATE ai_providers
-           SET config = jsonb_set(
-             jsonb_set(config, '{apiKey}', $1::jsonb),
-             '{enabled}', 'true'
-           ),
-           updated_at = now()
-           WHERE id = 'CHATGPT'
-             AND (config->>'apiKey' IS NULL OR config->>'apiKey' = '')`,
-          [JSON.stringify(envKey)],
-        );
+      // 2. Sync env API keys to DB when DB rows are missing their keys
+      const envKeys: Record<string, string> = {
+        CHATGPT: (process.env.OPENAI_API_KEY ?? "").trim(),
+        QWEN: (process.env.QWEN_API_KEY ?? "").trim(),
+      };
+      for (const [providerId, envKey] of Object.entries(envKeys)) {
+        if (envKey) {
+          await pool.query(
+            `UPDATE ai_providers
+             SET config = jsonb_set(
+               jsonb_set(config, '{apiKey}', $1::jsonb),
+               '{enabled}', 'true'
+             ),
+             updated_at = now()
+             WHERE id = $2
+               AND (config->>'apiKey' IS NULL OR config->>'apiKey' = '')`,
+            [JSON.stringify(envKey), providerId],
+          );
+        }
       }
 
-      // 3. Auto-enable CHATGPT if it has an API key in DB but is currently disabled
+      // 3. Auto-enable providers that have an API key in DB but are currently disabled
       const providers = await this.getAll();
-      const chatgpt = providers.find((p) => p.id === "CHATGPT");
-      if (chatgpt && chatgpt.apiKey && !chatgpt.enabled) {
-        await pool.query(
-          `UPDATE ai_providers SET config = jsonb_set(config, '{enabled}', 'true'), updated_at = now() WHERE id = 'CHATGPT'`,
-        );
+      for (const p of providers) {
+        if (p.apiKey && !p.enabled) {
+          await pool.query(
+            `UPDATE ai_providers SET config = jsonb_set(config, '{enabled}', 'true'), updated_at = now() WHERE id = $1`,
+            [p.id],
+          );
+        }
       }
     } catch {
       // Non-critical — scan loop will retry with DB values

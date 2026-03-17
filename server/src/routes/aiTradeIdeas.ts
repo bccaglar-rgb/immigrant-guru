@@ -91,7 +91,7 @@ const resolveProviderEndpoint = (provider: AiProviderRecord): string => {
   if (provider.id === "QWEN") {
     return normalizeChatCompletionsEndpoint(
       String(provider.baseUrl ?? ""),
-      "https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions",
+      "https://openrouter.ai/api/v1/chat/completions",
     );
   }
   return "";
