@@ -166,20 +166,16 @@ export default function PricingPage() {
 
   // ── Server-fetched membership state ──
   const [activeSub, setActiveSub] = useState<SubscriptionDto | null>(null);
-  const [membershipLoaded, setMembershipLoaded] = useState(false);
 
   useEffect(() => {
-    if (!getAuthToken()) {
-      setMembershipLoaded(true);
-      return;
-    }
+    if (!getAuthToken()) return;
     let cancelled = false;
     (async () => {
       try {
         const res = await fetch("/api/payments/subscriptions/me", {
           headers: { Authorization: `Bearer ${getAuthToken()}` },
         });
-        if (!res.ok || cancelled) { setMembershipLoaded(true); return; }
+        if (!res.ok || cancelled) return;
         const data = await res.json();
         const subs: SubscriptionDto[] = Array.isArray(data.subscriptions) ? data.subscriptions : [];
         const now = Date.now();
@@ -195,7 +191,6 @@ export default function PricingPage() {
           }
         }
       } catch { /* server unreachable — fall through to localStorage */ }
-      if (!cancelled) setMembershipLoaded(true);
     })();
     return () => { cancelled = true; };
   }, []);
