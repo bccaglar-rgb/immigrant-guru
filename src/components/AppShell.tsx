@@ -9,6 +9,7 @@ const titleForPath = (path: string) => {
   if (path.startsWith("/quant-engine")) return "Bitrium Quant Engine";
   if (path.startsWith("/admin")) return "Admin";
   if (path.startsWith("/exchange-terminal") || path.startsWith("/exchanges")) return "Exchange";
+  if (path.startsWith("/quant-trade-ideas")) return "Quant Trade Ideas";
   if (path.startsWith("/trade-ideas")) return "Quant Trade Ideas";
   if (path.startsWith("/ai-trade-ideas")) return "AI Trade Ideas";
   if (path.startsWith("/games")) return "Games";

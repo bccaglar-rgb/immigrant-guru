@@ -37,7 +37,7 @@ const AdminIcon = () => <Icon><path d="M12 3l3 2 4-1 1 4 3 3-3 3-1 4-4-1-3 2-3-2
 
 const menuItems = [
   { label: "Bitrium Quant Engine", to: "/quant-engine", accent: "var(--menu-accent-1)", icon: () => <DashboardIcon /> },
-  { label: "Trade Ideas", to: "/trade-ideas", accent: "var(--menu-accent-2)", icon: () => <TradeIcon /> },
+  { label: "Quant Trade Ideas", to: "/quant-trade-ideas", accent: "var(--menu-accent-2)", icon: () => <TradeIcon /> },
   { label: "Exchanges", to: "/exchanges", accent: "var(--menu-accent-3)", icon: () => <ExchangeIcon /> },
   { label: "Crypto Market", to: "/crypto-market", accent: "var(--menu-accent-4)", icon: () => <MarketIcon /> },
   { label: "Coin Universe", to: "/coin-universe", accent: "var(--menu-accent-8)", icon: () => <UniverseIcon /> },

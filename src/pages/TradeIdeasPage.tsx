@@ -889,7 +889,7 @@ export default function TradeIdeasPage() {
                     ))}
                     <button
                       type="button"
-                      onClick={() => navigate(isAiTradeIdeasPage ? "/ai-trade-ideas/report" : "/trade-ideas/report")}
+                      onClick={() => navigate(isAiTradeIdeasPage ? "/ai-trade-ideas/report" : "/quant-trade-ideas/report")}
                       className="shrink-0 rounded-lg border border-white/10 bg-[#11151c] px-2.5 py-1 text-[11px] text-[#b7bec9] transition hover:text-white"
                     >
                       Open detailed report
@@ -1950,7 +1950,7 @@ export default function TradeIdeasPage() {
       <ShareModal
         open={!!sharePlan}
         text={sharePlan ? formatTradePlan(sharePlan) : ""}
-        shareLink={sharePlan ? `${window.location.origin}/trade-ideas?msgId=${sharePlan.id}` : `${window.location.origin}/trade-ideas`}
+        shareLink={sharePlan ? `${window.location.origin}/quant-trade-ideas?msgId=${sharePlan.id}` : `${window.location.origin}/quant-trade-ideas`}
         onClose={() => setSharePlan(null)}
       />
 

@@ -74,11 +74,13 @@ function App() {
         <Route path="/crypto-market" element={<Suspense fallback={<PageLoader />}><CryptoMarketPage /></Suspense>} />
         <Route path="/coin-universe" element={<Suspense fallback={<PageLoader />}><CoinUniversePage /></Suspense>} />
         <Route path="/super-charts" element={<Suspense fallback={<PageLoader />}><SuperChartsPage /></Suspense>} />
-        <Route path="/trade-ideas" element={<Suspense fallback={<PageLoader />}><TradeIdeasPage /></Suspense>} />
-        <Route path="/bitrium-trade-ideas" element={<Navigate to="/trade-ideas" replace />} />
+        <Route path="/quant-trade-ideas" element={<Suspense fallback={<PageLoader />}><TradeIdeasPage /></Suspense>} />
+        <Route path="/trade-ideas" element={<Navigate to="/quant-trade-ideas" replace />} />
+        <Route path="/bitrium-trade-ideas" element={<Navigate to="/quant-trade-ideas" replace />} />
         <Route path="/ai-trade-ideas" element={<Suspense fallback={<PageLoader />}><TradeIdeasPage /></Suspense>} />
         <Route path="/games" element={<Suspense fallback={<PageLoader />}><GamesPage /></Suspense>} />
-        <Route path="/trade-ideas/report" element={<Suspense fallback={<PageLoader />}><TradeIdeasReportPage /></Suspense>} />
+        <Route path="/quant-trade-ideas/report" element={<Suspense fallback={<PageLoader />}><TradeIdeasReportPage /></Suspense>} />
+        <Route path="/trade-ideas/report" element={<Navigate to="/quant-trade-ideas/report" replace />} />
         <Route path="/ai-trade-ideas/report" element={<Suspense fallback={<PageLoader />}><TradeIdeasReportPage /></Suspense>} />
         <Route path="/ai-trader/leaderboard" element={<Suspense fallback={<PageLoader />}><AiTraderLeaderboardPage /></Suspense>} />
         <Route path="/ai-trader/dashboard" element={<Suspense fallback={<PageLoader />}><AiTraderDashboardPage /></Suspense>} />

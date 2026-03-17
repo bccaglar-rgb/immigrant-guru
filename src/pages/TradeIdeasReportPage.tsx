@@ -377,7 +377,7 @@ export default function TradeIdeasReportPage() {
               ) : null}
               <button
                 type="button"
-                onClick={() => navigate(isAiReport ? "/ai-trade-ideas" : "/trade-ideas")}
+                onClick={() => navigate(isAiReport ? "/ai-trade-ideas" : "/quant-trade-ideas")}
                 className="rounded-lg border border-white/15 bg-[#0F1012] px-2 py-1 text-xs text-[#BFC2C7]"
               >
                 Back
