@@ -1740,13 +1740,18 @@ export const registerAiTradeIdeasRoutes = (
         symbolsByModule[moduleId] = rankedSymbols.slice(start, end);
       }
 
-      const chatgptProvider = providers.find((row) => row.id === "CHATGPT");
+      // Get CHATGPT provider from ALL stored providers (not just enabled) so key is always available for QWEN2
+      const allProviders = await store.getAll();
+      const chatgptProvider = allProviders.find((row) => row.id === "CHATGPT");
+      // Resolve the best OpenAI key: DB-stored ChatGPT key → env var fallback
+      const openAiKey = (chatgptProvider?.apiKey ?? "").trim() || (process.env.OPENAI_API_KEY ?? "").trim();
+      const openAiModel = (chatgptProvider?.model ?? "").trim() || "gpt-4o-mini";
 
       for (const moduleId of ALL_MODULE_IDS) {
         let provider = providers.find((row) => row.id === moduleId);
-        // QWEN2 (Bitrium Axiom) uses ChatGPT's API key + model so it runs on OpenAI
-        if (moduleId === "QWEN2" && provider && chatgptProvider) {
-          provider = { ...provider, apiKey: chatgptProvider.apiKey, model: chatgptProvider.model };
+        // QWEN2 (Bitrium Axiom) uses OpenAI API with ChatGPT's key + model
+        if (moduleId === "QWEN2" && provider && openAiKey) {
+          provider = { ...provider, apiKey: openAiKey, model: openAiModel };
         }
         const status = sharedAiState.moduleStatus[moduleId];
         status.running = true;
