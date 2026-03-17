@@ -79,15 +79,20 @@ jobs:
               fi
             fi
 
-            # Diagnose: what is nginx actually serving?
-            echo "=== Sites enabled ==="
-            ls -la /etc/nginx/sites-enabled/
-            echo "=== All server roots in nginx config ==="
-            nginx -T 2>/dev/null | grep -E "root |server_name |listen " || echo "(nginx -T failed)"
-            echo "=== index.html on disk ==="
-            cat /var/www/bitrium/dist/index.html
-            echo "=== Curl from localhost ==="
-            curl -s http://127.0.0.1:8090/ 2>/dev/null | head -5
+            # Diagnose: nginx process state
+            echo "=== Nginx processes ==="
+            ps aux | grep nginx | grep -v grep
+            echo "=== What listens on 443 ==="
+            ss -tlnp | grep 443 || netstat -tlnp | grep 443 2>/dev/null || echo "(ss/netstat unavailable)"
+            echo "=== Systemctl status ==="
+            systemctl status nginx --no-pager | head -15
+            echo "=== File size on disk ==="
+            ls -la /var/www/bitrium/dist/index.html
+            wc -c /var/www/bitrium/dist/index.html
+            echo "=== Curl localhost:443 ==="
+            curl -skI "https://127.0.0.1/" -H "Host: bitrium.com" 2>/dev/null | head -10
+            echo "=== nginx -T full server block (first 80 lines) ==="
+            nginx -T 2>/dev/null | head -80
 
             # Zero-downtime reload: PM2 restarts workers one by one
             pm2 reload ecosystem.config.cjs || pm2 start ecosystem.config.cjs
