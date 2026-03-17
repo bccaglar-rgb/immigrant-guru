@@ -51,7 +51,7 @@ jobs:
           # Upload deploy configs
           rsync -avz deploy/ root@${{ secrets.DROPLET_IP }}:/var/www/bitrium/deploy/
 
-          # Install deps, run DB migrations if needed, zero-downtime reload
+          # Install deps, run DB migrations if needed, restart services
           ssh root@${{ secrets.DROPLET_IP }} << 'EOF'
             cd /var/www/bitrium
 
@@ -70,7 +70,6 @@ jobs:
               ln -sf /etc/nginx/sites-available/bitrium /etc/nginx/sites-enabled/bitrium
 
               if nginx -t 2>&1; then
-                # Full restart to ensure clean worker state
                 systemctl restart nginx
                 echo "✓ Nginx config updated and restarted"
               else
@@ -79,15 +78,6 @@ jobs:
                 nginx -t 2>&1 && systemctl restart nginx 2>/dev/null || echo "Backup also invalid — nginx unchanged"
               fi
             fi
-
-            # Debug: check IP mismatch
-            REAL_IP=$(curl -s ifconfig.me)
-            echo "Server public IP (dash-separated): $(echo $REAL_IP | tr '.' '-')"
-            echo "DNS resolves bitrium.com to: $(dig +short bitrium.com 2>/dev/null || echo 'dig unavailable')"
-            echo "Server network interfaces:"
-            ip addr show eth0 | grep "inet "
-            echo "=== Test: curl via actual IP ==="
-            curl -skI "https://$REAL_IP/" -H "Host: bitrium.com" 2>/dev/null | grep content-length || echo "(self-curl via public IP failed)"
 
             # Zero-downtime reload: PM2 restarts workers one by one
             pm2 reload ecosystem.config.cjs || pm2 start ecosystem.config.cjs
@@ -105,10 +95,10 @@ jobs:
             echo "WARNING: Health check did not pass within 20s"
           EOF
 
-      - name: Verify deployment externally
+      - name: Verify deployment
         run: |
-          echo "=== External verification from CI runner ==="
+          echo "=== Deployment verification ==="
           sleep 3
-          curl -sI "https://bitrium.com/" | head -12
-          echo "=== Content check ==="
+          curl -sI "https://bitrium.com/" | head -8
+          echo "=== Bundle check ==="
           curl -s "https://bitrium.com/" | grep -o 'index-[^"]*\.js'
