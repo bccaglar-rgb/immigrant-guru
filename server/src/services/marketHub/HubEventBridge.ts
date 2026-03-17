@@ -53,6 +53,7 @@ export class HubEventBridge {
   private listeners = new Set<(event: NormalizedEvent) => void>();
   private marketListListeners = new Set<(msg: string) => void>();
   private unsubHub: (() => void) | null = null;
+  private bulkFlushTimer: ReturnType<typeof setInterval> | null = null;
 
   /** Throttle map for book_ticker writes: "symbol" → last write timestamp */
   private bookTickerLastWrite = new Map<string, number>();
@@ -336,6 +337,76 @@ export class HubEventBridge {
     return () => this.marketListListeners.delete(cb);
   }
 
+  /**
+   * Periodically bulk-write live snapshot data from BinanceFuturesHub to Redis
+   * for ALL symbols. This solves the problem where Workers 1-2 only have Redis
+   * snapshots for ~10 depth-subscribed symbols (from ExchangeMarketHub events)
+   * but need data for 500+ symbols to avoid falling back to Gate.io REST.
+   *
+   * Called ONLY on Worker 0 (primary) after BinanceFuturesHub is started.
+   * Runs every intervalMs (default 10s) — lightweight: pipeline batch write.
+   */
+  startBulkSnapshotFlush(
+    getUniverseRows: () => Array<{
+      symbol: string;
+      price: number;
+      change24hPct: number;
+      volume24hUsd: number;
+      topBid: number | null;
+      topAsk: number | null;
+      markPrice: number | null;
+      fundingRate: number | null;
+      nextFundingTime: number | null;
+      sourceTs: number | null;
+    }>,
+    intervalMs = 10_000,
+  ): void {
+    if (this.bulkFlushTimer) clearInterval(this.bulkFlushTimer);
+
+    const flush = () => {
+      if (!this.pub) return;
+      const rows = getUniverseRows();
+      if (!rows.length) return;
+      const now = Date.now();
+      const pipeline = this.pub.pipeline();
+      let count = 0;
+      for (const row of rows) {
+        if (!row.symbol || !row.price || row.price <= 0) continue;
+        const key = SNAPSHOT_KEY_PREFIX + row.symbol;
+        const fields: Record<string, string> = {
+          lastTradePrice: String(row.price),
+          price: String(row.price),
+          change24hPct: String(row.change24hPct ?? 0),
+          volume24hUsd: String(row.volume24hUsd ?? 0),
+          updatedAt: String(now),
+        };
+        if (row.topBid != null && row.topBid > 0) fields.topBid = String(row.topBid);
+        if (row.topAsk != null && row.topAsk > 0) fields.topAsk = String(row.topAsk);
+        if (row.markPrice != null && row.markPrice > 0) {
+          fields.markPrice = String(row.markPrice);
+        }
+        if (row.fundingRate != null) fields.fundingRate = String(row.fundingRate);
+        if (row.nextFundingTime != null) fields.nextFundingTime = String(row.nextFundingTime);
+        if (row.sourceTs != null) fields.sourceTs = String(row.sourceTs);
+        pipeline.hmset(key, fields);
+        pipeline.expire(key, SNAPSHOT_TTL_SEC);
+        count++;
+      }
+      if (count > 0) {
+        pipeline.exec().catch((err) => {
+          console.error("[HubEventBridge] Bulk snapshot flush error:", err?.message ?? err);
+        });
+      }
+    };
+
+    // First flush after 5s (give hub time to populate)
+    setTimeout(() => {
+      flush();
+      this.bulkFlushTimer = setInterval(flush, intervalMs);
+      console.log(`[HubEventBridge] Bulk snapshot flush started (every ${intervalMs / 1000}s)`);
+    }, 5_000);
+  }
+
   stop(): void {
     if (this.unsubHub) {
       this.unsubHub();
@@ -353,6 +424,10 @@ export class HubEventBridge {
     if (this.reader) {
       this.reader.disconnect();
       this.reader = null;
+    }
+    if (this.bulkFlushTimer) {
+      clearInterval(this.bulkFlushTimer);
+      this.bulkFlushTimer = null;
     }
     this.listeners.clear();
     this.marketListListeners.clear();

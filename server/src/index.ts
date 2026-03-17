@@ -169,6 +169,9 @@ bootstrap()
         binanceFuturesHub.start();
         exchangeMarketHub.start();
         hubEventBridge.startPublisher(exchangeMarketHub);
+        // Bulk-write ALL Binance symbol prices to Redis every 10s.
+        // Workers 1-2 read these snapshots to serve Binance data without REST (which is 403/418 blocked).
+        hubEventBridge.startBulkSnapshotFlush(() => binanceFuturesHub.getUniverseRows(), 10_000);
         exchangeCore.start();
         void traderHubEngine.start();
         tronMonitor.start();

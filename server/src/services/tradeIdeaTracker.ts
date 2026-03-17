@@ -456,29 +456,38 @@ export class TradeIdeaTracker {
     try {
       const openIdeas = await this.store.listOpenIdeas();
       if (!openIdeas.length) return;
+      console.log(`[TradeIdeaTracker] reconcileHistoryOnStartup: ${openIdeas.length} open ideas`);
       const nowMs = Date.now();
       const GRACE_MS = 2 * 60_000; // Skip ideas created less than 2 minutes ago
       for (const idea of openIdeas) {
-        const createdMs = Date.parse(idea.created_at);
-        if (!Number.isFinite(createdMs)) continue;
-        // Skip very fresh ideas — they'll be handled by tick() with proper prevPrice seeding
-        if (nowMs - createdMs < GRACE_MS) {
-          // Seed prevPrice for fresh ideas so tick() can detect entry/SL/TP
+        try {
+          const createdMs = Date.parse(idea.created_at);
+          if (!Number.isFinite(createdMs)) continue;
+          // Skip very fresh ideas — they'll be handled by tick() with proper prevPrice seeding
+          if (nowMs - createdMs < GRACE_MS) {
+            // Seed prevPrice for fresh ideas so tick() can detect entry/SL/TP
+            this.lastPriceByIdeaId.set(idea.id, (idea.entry_low + idea.entry_high) / 2);
+            continue;
+          }
+          const fromMs = Math.max(0, createdMs - 60_000);
+          const candles = await fetchSymbolHistory(idea.symbol, fromMs, nowMs);
+          if (!candles.length) {
+            // No candle data — seed prevPrice from entry zone so tick() works
+            this.lastPriceByIdeaId.set(idea.id, (idea.entry_low + idea.entry_high) / 2);
+            continue;
+          }
+          await this.reconcileIdeaWithHistory(idea, candles);
+        } catch (err: unknown) {
+          console.error(`[TradeIdeaTracker] reconcile error for ${idea.symbol} (${idea.id}):`, (err as Error)?.message ?? err);
+          // Continue with next idea — don't let one error block reconciliation
           this.lastPriceByIdeaId.set(idea.id, (idea.entry_low + idea.entry_high) / 2);
-          continue;
         }
-        const fromMs = Math.max(0, createdMs - 60_000);
-        const candles = await fetchSymbolHistory(idea.symbol, fromMs, nowMs);
-        if (!candles.length) {
-          // No candle data — seed prevPrice from entry zone so tick() works
-          this.lastPriceByIdeaId.set(idea.id, (idea.entry_low + idea.entry_high) / 2);
-          continue;
-        }
-        await this.reconcileIdeaWithHistory(idea, candles);
       }
 
       // Repair: fill missing minutes_to_exit for resolved ideas with hit_level_type
       await this.repairMissingExitTimes();
+    } catch (err: unknown) {
+      console.error("[TradeIdeaTracker] reconcileHistoryOnStartup error:", (err as Error)?.message ?? err);
     } finally {
       this.processing = false;
     }
@@ -530,6 +539,11 @@ export class TradeIdeaTracker {
         }),
       );
 
+      const pending = openIdeas.filter((i) => i.status === "PENDING").length;
+      const active = openIdeas.filter((i) => i.status === "ACTIVE").length;
+      const priced = symbolPrices.size;
+      console.log(`[TradeIdeaTracker] tick: ${openIdeas.length} ideas (${pending}P/${active}A), ${priced}/${symbols.length} prices fetched`);
+
       for (const idea of openIdeas) {
         const currentPrice = symbolPrices.get(idea.symbol.toUpperCase());
         let prevPrice = this.lastPriceByIdeaId.get(idea.id) ?? null;
@@ -546,6 +560,7 @@ export class TradeIdeaTracker {
           const ttl = this.ttlMinutes(idea.horizon);
           const ageMin = minutesBetween(idea.created_at, nowIso);
           if (typeof ageMin === "number" && ageMin > ttl) {
+            console.log(`[TradeIdeaTracker] TTL_EXPIRED ${idea.symbol} ${idea.direction} (age=${ageMin}min > ttl=${ttl}min)`);
             await this.store.updateIdea(idea.id, {
               status: "RESOLVED",
               resolved_at: nowIso,
@@ -567,6 +582,7 @@ export class TradeIdeaTracker {
 
           const touched = isEntryTouched(prevPrice, currentPrice, idea.entry_low, idea.entry_high);
           if (touched) {
+            console.log(`[TradeIdeaTracker] ENTRY_TOUCHED ${idea.symbol} ${idea.direction} @ ${currentPrice} (zone=${idea.entry_low}-${idea.entry_high})`);
             const minutesToEntry = minutesBetween(idea.created_at, nowIso);
             await this.store.updateIdea(idea.id, {
               status: "ACTIVE",
@@ -649,6 +665,7 @@ export class TradeIdeaTracker {
           if (typeof currentPrice !== "number") continue;
           const hit = resolveFirstHit(idea.direction, idea.tp_levels, idea.sl_levels, prevPrice, currentPrice);
           if (hit) {
+            console.log(`[TradeIdeaTracker] RESOLVED ${idea.symbol} ${idea.direction} → ${hit.type}${hit.index} @ ${currentPrice} (prev=${prevPrice}, level=${hit.price})`);
             const eventType = hit.type === "TP" ? "TP_HIT" : "SL_HIT";
             const result = hit.type === "TP" ? "SUCCESS" : "FAIL";
             const minutesToExit = idea.activated_at ? minutesBetween(idea.activated_at, nowIso) : null;
@@ -698,6 +715,8 @@ export class TradeIdeaTracker {
           this.lastPriceByIdeaId.set(idea.id, currentPrice);
         }
       }
+    } catch (err: unknown) {
+      console.error("[TradeIdeaTracker] tick error:", (err as Error)?.message ?? err);
     } finally {
       this.processing = false;
     }
