@@ -373,7 +373,7 @@ const score8Signals = (input: CapitalGuardConsensusInput, dir: TradeDirection): 
   scores.push(s8);
   labels.push("VolSpike");
 
-  const aligned = scores.filter((s) => s >= 55).length;
+  const aligned = scores.filter((s) => s >= 50).length;
   return { scores, aligned, labels };
 };
 
@@ -499,39 +499,39 @@ const computeRiskEvents = (input: CapitalGuardConsensusInput): LayerResult => {
   let total = 0;
   const breakdown: Record<string, number> = {};
 
-  // 1. Cascade Liquidation: -4 HIGH, -1.5 MID
-  const cascadePenalty = input.cascadeRisk === "HIGH" ? -4 : input.cascadeRisk === "MID" ? -1.5 : 0;
+  // 1. Cascade Liquidation: -3 HIGH, -1 MID (lightened)
+  const cascadePenalty = input.cascadeRisk === "HIGH" ? -3 : input.cascadeRisk === "MID" ? -1 : 0;
   total += cascadePenalty;
   breakdown.cascadeLiquidation = cascadePenalty;
 
-  // 2. Funding Spike: -2.5 EXTREME
+  // 2. Funding Spike: -2 EXTREME (lightened)
   let fundingPenalty = 0;
-  if (input.fundingBias === "EXTREME") fundingPenalty = -2.5;
+  if (input.fundingBias === "EXTREME") fundingPenalty = -2;
   total += fundingPenalty;
   breakdown.fundingSpike = fundingPenalty;
 
-  // 3. Stress + Sudden Move: -3 both HIGH, -1.5 either HIGH
+  // 3. Stress + Sudden Move: -2.5 both HIGH, -1 either HIGH (lightened)
   let stressPenalty = 0;
-  if (input.suddenMoveRisk === "HIGH" && input.stressLevel === "HIGH") stressPenalty = -3;
-  else if (input.suddenMoveRisk === "HIGH" || input.stressLevel === "HIGH") stressPenalty = -1.5;
+  if (input.suddenMoveRisk === "HIGH" && input.stressLevel === "HIGH") stressPenalty = -2.5;
+  else if (input.suddenMoveRisk === "HIGH" || input.stressLevel === "HIGH") stressPenalty = -1;
   total += stressPenalty;
   breakdown.stressEvent = stressPenalty;
 
-  // 4. Whale against direction: -3 DISTRIBUTION+INFLOW, -1.5 DISTRIBUTION
+  // 4. Whale against direction: -2 DISTRIBUTION+INFLOW, -1 DISTRIBUTION (lightened)
   let whalePenalty = 0;
-  if (input.whaleActivity === "DISTRIBUTION" && input.exchangeFlow === "INFLOW") whalePenalty = -3;
-  else if (input.whaleActivity === "DISTRIBUTION") whalePenalty = -1.5;
+  if (input.whaleActivity === "DISTRIBUTION" && input.exchangeFlow === "INFLOW") whalePenalty = -2;
+  else if (input.whaleActivity === "DISTRIBUTION") whalePenalty = -1;
   total += whalePenalty;
   breakdown.whaleAnomaly = whalePenalty;
 
-  // 5. Exchange instability: -3 stress HIGH + degraded feeds
+  // 5. Exchange instability: -2 stress HIGH + degraded feeds, -1 degraded alone (lightened)
   const degradedOrDown = FEED_KEYS.filter((k) => {
     const status = input.dataHealth?.feeds?.[k];
     return status === "degraded" || status === "down";
   }).length;
   let exchangePenalty = 0;
-  if (input.stressLevel === "HIGH" && degradedOrDown >= 2) exchangePenalty = -3;
-  else if (degradedOrDown >= 3) exchangePenalty = -1.5;
+  if (input.stressLevel === "HIGH" && degradedOrDown >= 2) exchangePenalty = -2;
+  else if (degradedOrDown >= 3) exchangePenalty = -1;
   total += exchangePenalty;
   breakdown.exchangeInstability = exchangePenalty;
 
@@ -582,30 +582,32 @@ export const computeCapitalGuardConsensus = (
   const flow = computeFlow(input, signals.scores);
   const riskEvents = computeRiskEvents(input);
 
-  // ── 4. Layer alignment check ──
-  const structureAligned = structure.score >= 55;
-  const positioningAligned = positioning.score >= 50;
-  const executionAligned = execution.score >= 45;
-  const flowAligned = flow.score >= 50;
+  // ── 4. Layer alignment check (relaxed for trade generation) ──
+  const structureAligned = structure.score >= 48;
+  const positioningAligned = positioning.score >= 45;
+  const executionAligned = execution.score >= 40;
+  const flowAligned = flow.score >= 45;
   const alignedLayers = [structureAligned, positioningAligned, executionAligned, flowAligned].filter(Boolean).length;
 
   // ── 5. Base score = equal-weight 4 layers ──
   const rawBase = 0.25 * structure.score + 0.25 * positioning.score + 0.25 * execution.score + 0.25 * flow.score;
 
-  // ── 6. Signal alignment bonus ──
+  // ── 6. Signal alignment bonus (more generous for trade generation) ──
   let alignmentBonus = 0;
-  if (signals.aligned >= 8) alignmentBonus = 15;
-  else if (signals.aligned >= 7) alignmentBonus = 10;
-  else if (signals.aligned >= 6) alignmentBonus = 6;
-  else if (signals.aligned >= 5) alignmentBonus = 3;
-  else if (signals.aligned >= 4) alignmentBonus = 0;
-  else alignmentBonus = -8;
+  if (signals.aligned >= 8) alignmentBonus = 16;
+  else if (signals.aligned >= 7) alignmentBonus = 12;
+  else if (signals.aligned >= 6) alignmentBonus = 8;
+  else if (signals.aligned >= 5) alignmentBonus = 5;
+  else if (signals.aligned >= 4) alignmentBonus = 2;
+  else if (signals.aligned >= 3) alignmentBonus = 0;
+  else alignmentBonus = -6;
 
-  // ── 7. Layer alignment bonus ──
+  // ── 7. Layer alignment bonus (more generous) ──
   let layerBonus = 0;
-  if (alignedLayers >= 4) layerBonus = 8;
-  else if (alignedLayers >= 3) layerBonus = 4;
-  else if (alignedLayers < 2) layerBonus = -6;
+  if (alignedLayers >= 4) layerBonus = 10;
+  else if (alignedLayers >= 3) layerBonus = 6;
+  else if (alignedLayers >= 2) layerBonus = 2;
+  else layerBonus = -4;
 
   // ── 8. Strategy bias (pullback = good, breakout = risky) ──
   const strategy = detectStrategyBias(input);
@@ -654,18 +656,27 @@ export const computeCapitalGuardConsensus = (
 
   let finalScore = adjustedScore;
 
-  // Win rate filter: need ≥ 4/8 aligned signals for TRADE
-  // If < 4 aligned, cap at WATCH zone (max 54)
-  const winRatePass = signals.aligned >= 4 && input.conflictLevel !== "HIGH";
+  // Win rate filter: need ≥ 3/8 aligned signals for TRADE (relaxed from 4)
+  // If < 3 aligned, cap at WATCH zone (max 54)
+  const winRatePass = signals.aligned >= 3 && input.conflictLevel !== "HIGH";
   if (!winRatePass && finalScore >= 55) {
     finalScore = 54;
-    addReason(reasons, `Win rate filter: ${signals.aligned}/8 aligned (need 4+)`, 90);
+    addReason(reasons, `Win rate filter: ${signals.aligned}/8 aligned (need 3+)`, 90);
   }
 
-  // A+ floor: high conviction setups keep minimum 72
+  // Quant engine confidence boost: if edge + pWin are strong, add small uplift
+  const edgeR = safeNumber(input.riskAdjEdgeR, 0);
+  const pWin = safeNumber(input.pWin, 0.5);
+  if (edgeR > 0.05 && pWin > 0.52 && winRatePass) {
+    const confidenceBoost = Math.min(4, roundTo2((edgeR * 10 + (pWin - 0.5) * 10)));
+    finalScore = roundTo2(clamp(finalScore + confidenceBoost, 0, 100));
+    if (confidenceBoost > 1) addReason(reasons, `Quant confidence boost +${confidenceBoost.toFixed(1)}`, 40);
+  }
+
+  // A+ floor: high conviction setups keep minimum 68 (lowered from 72 for more trades)
   let floorsApplied = false;
   if (isAPlus && dataGate === "PASS" && safetyGate === "PASS") {
-    const floored = Math.max(finalScore, 72);
+    const floored = Math.max(finalScore, 68);
     floorsApplied = floored > finalScore;
     finalScore = floored;
     if (floorsApplied) addReason(reasons, "High conviction floor applied", 150);

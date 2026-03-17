@@ -42,16 +42,16 @@ const SCAN_INTERVAL_MS = 60_000; // 60 seconds between cycles (was 15s — CPU r
 const STARTUP_DELAY_MS = 20_000; // Wait for WS hubs to connect
 const IDEA_MIN_SCORE_PCT = 55;
 const IDEA_MIN_SCORE_BY_MODE: Record<string, number> = {
-  FLOW: 58,
+  FLOW: 52,
   AGGRESSIVE: 66,
   BALANCED: 56,
-  CAPITAL_GUARD: 55,
+  CAPITAL_GUARD: 50,
 };
 const MAX_TRADE_PER_MODE: Record<string, number> = {
-  FLOW: 4,
+  FLOW: 8,
   AGGRESSIVE: 4,
   BALANCED: 8,
-  CAPITAL_GUARD: 6,
+  CAPITAL_GUARD: 8,
 };
 
 // Stablecoins to exclude from universe

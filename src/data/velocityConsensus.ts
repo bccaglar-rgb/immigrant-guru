@@ -514,9 +514,39 @@ export const computeVelocityConsensus = (input: VelocityConsensusInput): Velocit
   const anyHardBlock = riskBlocked || entryBlocked || fillBlocked;
   if (anyHardBlock) finalScore = roundTo2(Math.min(finalScore, 52));
 
+  // ── Quant Engine Quality Gates (filter bad trades without lowering scores) ──
+  // These prevent low-quality setups from becoming TRADE even with high momentum
+
+  // QG1: Edge quality gate — reject TRADE if quant engine shows negative edge
+  const qgEdgeFail = (safeNumber(input.riskAdjEdgeR, 0) < -0.02 && safeNumber(input.pWin, 0.5) < 0.42);
+
+  // QG2: Asymmetry gate — reject TRADE if risk dominant AND momentum not strong enough
+  const qgAsymmetryFail = (input.asymmetry === "RISK_DOMINANT" && momentum01 < 0.55 && edge01 < 0.3);
+
+  // QG3: Execution certainty gate — reject TRADE if execution is too poor
+  const qgExecFail = (executionCertainty01 < 0.25);
+
+  // QG4: RR quality gate — reject TRADE if expectedRR < 0.5 and pWin is low
+  const qgRRFail = (safeNumber(input.expectedRR, 1.0) < 0.5 && safeNumber(input.pWin, 0.5) < 0.48);
+
+  // QG5: Conflict gate — model conflict HIGH with weak positioning degrades to WATCH
+  const qgConflictFail = (input.conflictLevel === "HIGH" && positioning01 < 0.5);
+
+  const qualityGateFail = qgEdgeFail || qgAsymmetryFail || qgExecFail || qgRRFail || qgConflictFail;
+  if (qualityGateFail) {
+    if (qgEdgeFail) addReason(reasons, "Quality gate: negative edge + low pWin", 870);
+    if (qgAsymmetryFail) addReason(reasons, "Quality gate: risk-dominant with weak momentum", 860);
+    if (qgExecFail) addReason(reasons, "Quality gate: execution certainty too low", 850);
+    if (qgRRFail) addReason(reasons, "Quality gate: poor RR + low win rate", 840);
+    if (qgConflictFail) addReason(reasons, "Quality gate: model conflict HIGH + weak positioning", 830);
+  }
+
   let decision: "TRADE" | "WATCH" | "NO_TRADE" = "NO_TRADE";
   if (anyHardBlock || gates.data === "BLOCK") {
     decision = "NO_TRADE";
+  } else if (qualityGateFail && Math.round(finalScore) >= 60) {
+    // Quality gate downgrades TRADE → WATCH (score stays, decision changes)
+    decision = "WATCH";
   } else if (Math.round(finalScore) >= 60) {
     decision = "TRADE";
   } else if (Math.round(finalScore) >= 40) {

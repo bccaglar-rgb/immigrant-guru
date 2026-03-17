@@ -541,60 +541,74 @@ const makeModeBreakdown = (
   };
 
   if (mode === "FLOW") {
-    const consensusFill = clamp(consensusCore.pFill, 0, 1);
-    const microFill = estimateExtremeFillFromMicro(spreadRegime, depthQuality, liquidityDensity, slippageLevel);
-    // Extreme mode is momentum/opportunity-seeking; execution confidence is blended with live microstructure.
-    const extremePFill = clamp((consensusFill * 0.45) + (microFill * 0.55), 0, 1);
     const out = computeExtremeConsensus({
-      liquidityDensity: liquidityDensity === "UNKNOWN" ? "MID" : liquidityDensity,
+      ...commonFields,
+      regime,
+      trendStrength,
+      emaAlignment,
+      vwapPosition,
+      structureAge,
+      marketSpeed,
+      compression,
+      spoofRisk,
+      spreadRegime,
+      depthQuality,
+      crowdingRisk,
+      cascadeRisk,
+      stressLevel,
+      entryWindow,
+      // 6-component model signals
       orderbookImbalance,
-      depthQuality: depthQuality === "UNKNOWN" ? "MID" : depthQuality,
-      spreadRegime: spreadRegime === "UNKNOWN" ? "MID" : spreadRegime,
-      spoofRisk: spoofRisk === "UNKNOWN" ? "MID" : spoofRisk,
       oiChangeStrength,
       fundingBias,
+      fundingRatePct,
+      oiChangePct,
       spotVsDerivativesPressure,
-      compression: mapBinaryToggle(compression),
-      volumeSpike: mapBinaryToggle(volumeSpike),
-      marketSpeed: marketSpeed === "UNKNOWN" ? "NORMAL" : marketSpeed,
-      suddenMoveRisk: suddenMoveRisk === "UNKNOWN" ? "MID" : suddenMoveRisk,
-      cascadeRisk: cascadeRisk === "UNKNOWN" ? "MID" : cascadeRisk,
-      pFill: extremePFill,
-      slippageLevel: slippageLevel === "UNKNOWN" ? "MED" : slippageLevel,
+      volumeSpike,
       whaleActivity,
       exchangeFlow,
       relativeStrength,
-      asymmetryScore: asymmetry === "UNKNOWN" ? "NEUTRAL" : asymmetry,
-      fundingRate1hPct: fundingRatePct,
-      fundingRate8hPct: fundingRatePct,
-      oiChange5mPct: oiChangePct,
-      oiChange1hPct: oiChangePct,
       liquidationPoolBias,
-      spotVolumeSupport,
+      rsiState,
+      atrRegime,
+      liquidityDensity,
+      suddenMoveRisk,
+      impulseReadiness,
       dxyTrend,
       nasdaqTrend,
-      atrRegime,
-      rsiState,
+      // Playbook detection & no-trade rule signals
+      signalConflict: mapTriRisk(String(panel.conflictLevel ?? "UNKNOWN")),
+      trapProbability: mapTriRisk(snapshotTileState(snapshot, "trap-probability")),
+      fakeBreakoutProb,
+      rangePosition: snapshotTileState(snapshot, "range-position"),
+      stopClusterProb: mapTriRisk(snapshotTileState(snapshot, "stop-cluster-probability")),
+      aggressorFlow: snapshotTileState(snapshot, "aggressor-flow"),
+      breakoutRisk,
+      expansionProbability: mapTriRisk(snapshotTileState(snapshot, "expansion-probability")),
     });
-    // Flow decision: phase-based for TRADE, threshold-based for WATCH (≥35%)
-    // Aligns with S/R boost path's modeWatchThreshold.FLOW = 35
+    // Flow decision: ideaMode-based TRADE/WATCH/NO_TRADE
     const flowScore = Math.round(out.extremeScore);
+    const gatingFlags = [
+      ...(out.gates.safety === "BLOCK" ? ["SAFETY_BLOCK"] : []),
+      ...(out.gates.data === "BLOCK" ? ["DATA_BLOCK"] : []),
+      ...(out.ideaMode === "NO_TRADE" ? ["LOW_CONFIDENCE"] : []),
+    ];
     const decision: ModeBreakdown["decision"] =
-      (out.phase === "TRADE" || out.phase === "SQUEEZE_EVENT") && flowScore >= 55
+      (out.ideaMode === "TRADE" || out.ideaMode === "HIGH_CONVICTION")
         ? "TRADE"
-        : flowScore >= 35
+        : out.ideaMode === "WATCHLIST"
           ? "WATCH"
           : "NO_TRADE";
     return {
-      raw: out.extremeScore,
-      base: out.extremeScore,
+      raw: out.candidateScore,
+      base: out.finalTradeScore,
       final: out.extremeScore,
       penaltyModel: "SUBTRACT",
-      penaltyApplied: 0,
+      penaltyApplied: Math.max(0, out.candidateScore - out.finalTradeScore),
       penaltyRate: 0,
       edgeAdj: Number.isFinite(consensusCore.edgeNetR) ? consensusCore.edgeNetR : 0,
       riskAdj: Number.isFinite(consensusCore.riskAdjustment) ? consensusCore.riskAdjustment : 0,
-      gatingFlags: decision === "NO_TRADE" ? ["LOW_CONFIDENCE"] : [],
+      gatingFlags,
       decision,
     };
   }
@@ -757,7 +771,7 @@ const makeModeBreakdown = (
     edgeAdj: Number.isFinite(consensusCore.edgeNetR) ? consensusCore.edgeNetR : 0,
     riskAdj: Number.isFinite(consensusCore.riskAdjustment) ? consensusCore.riskAdjustment : 0,
     gatingFlags,
-    decision: Math.round(out.finalScore) >= 52 && out.gates.data === "PASS" && out.gates.safety === "PASS" ? "TRADE" : Math.round(out.finalScore) >= 35 ? "WATCH" : "NO_TRADE",
+    decision: Math.round(out.finalScore) >= 50 && out.gates.data === "PASS" && out.gates.safety === "PASS" ? "TRADE" : Math.round(out.finalScore) >= 35 ? "WATCH" : "NO_TRADE",
   };
 };
 
@@ -3946,13 +3960,13 @@ export const registerMarketRoutes = (
         };
         // Per-mode TRADE decision thresholds — must stay aligned with consensus functions
         const modeTradeThreshold: Record<ScoringMode, number> = {
-          FLOW: 55,
+          FLOW: 66,
           AGGRESSIVE: 60,
           BALANCED: 56,
-          CAPITAL_GUARD: 52,
+          CAPITAL_GUARD: 50,
         };
         const modeWatchThreshold: Record<ScoringMode, number> = {
-          FLOW: 35,
+          FLOW: 50,
           AGGRESSIVE: 40,
           BALANCED: 40,
           CAPITAL_GUARD: 35,
@@ -3977,10 +3991,10 @@ export const registerMarketRoutes = (
       // Only in borderline zone: [tradeThreshold - 15, tradeThreshold + 5)
       {
         const confluenceTradeThreshold: Record<ScoringMode, number> = {
-          FLOW: 55, AGGRESSIVE: 60, BALANCED: 56, CAPITAL_GUARD: 52,
+          FLOW: 66, AGGRESSIVE: 60, BALANCED: 56, CAPITAL_GUARD: 50,
         };
         const confluenceWatchThreshold: Record<ScoringMode, number> = {
-          FLOW: 35, AGGRESSIVE: 40, BALANCED: 40, CAPITAL_GUARD: 35,
+          FLOW: 50, AGGRESSIVE: 40, BALANCED: 40, CAPITAL_GUARD: 35,
         };
         for (const targetMode of SCORING_MODES) {
           const tradeTh = confluenceTradeThreshold[targetMode];
