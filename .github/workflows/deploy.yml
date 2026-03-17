@@ -51,9 +51,9 @@ jobs:
           # Upload deploy configs
           rsync -avz deploy/ root@${{ secrets.DROPLET_IP }}:/var/www/bitrium/deploy/
 
-          # Debug: verify files on server after rsync
-          echo "=== Verifying dist on server ==="
-          ssh root@${{ secrets.DROPLET_IP }} "ls -la /var/www/bitrium/dist/assets/index-*.js /var/www/bitrium/dist/assets/Pricing*.js /var/www/bitrium/dist/index.html 2>/dev/null; echo '---'; cat /var/www/bitrium/dist/index.html | grep -o 'index-[^\"]*\.js' | head -1; echo '---'; readlink -f /var/www/bitrium/dist; echo '---'; stat /var/www/bitrium/dist/index.html | grep Modify"
+          # Debug: check nginx config root + sync dist to nginx root if different
+          echo "=== Checking nginx root ==="
+          ssh root@${{ secrets.DROPLET_IP }} 'NGINX_ROOT=$(nginx -T 2>/dev/null | grep -m1 "root " | sed "s/.*root //;s/;//;s/ //g"); echo "Nginx root: $NGINX_ROOT"; echo "Deploy root: /var/www/bitrium/dist"; if [ "$NGINX_ROOT" != "/var/www/bitrium/dist" ] && [ -n "$NGINX_ROOT" ]; then echo "MISMATCH! Syncing to nginx root..."; rsync -av --delete /var/www/bitrium/dist/ "$NGINX_ROOT/"; echo "Synced."; else echo "Roots match or nginx root empty"; fi'
 
           # Install deps, run DB migrations if needed, zero-downtime reload
           ssh root@${{ secrets.DROPLET_IP }} << 'EOF'
