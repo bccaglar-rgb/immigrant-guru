@@ -1,10 +1,19 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { getAuthToken } from "../services/authClient";
 import { createInvoice } from "../services/paymentsApi";
 
 const MEMBERSHIP_EXPIRES_KEY = "membership.expiresAt";
 const MEMBERSHIP_PLAN_KEY = "membership.planId";
+
+interface SubscriptionDto {
+  id: string;
+  planId: string;
+  startAt: string;
+  endAt: string;
+  status: "active" | "expired" | "cancelled";
+  planSnapshot: { name: string; priceUsdt: number; durationDays: number };
+}
 
 type BillingPeriod = "1m" | "3m" | "6m" | "12m";
 
@@ -155,16 +164,55 @@ export default function PricingPage() {
   const [err, setErr] = useState("");
   const [busyTier, setBusyTier] = useState("");
 
-  // ── Current membership ──
-  const expiryRaw = typeof window !== "undefined" ? window.localStorage.getItem(MEMBERSHIP_EXPIRES_KEY) : null;
-  const expiryDate = expiryRaw ? new Date(expiryRaw) : null;
+  // ── Server-fetched membership state ──
+  const [activeSub, setActiveSub] = useState<SubscriptionDto | null>(null);
+  const [membershipLoaded, setMembershipLoaded] = useState(false);
+
+  useEffect(() => {
+    if (!getAuthToken()) {
+      setMembershipLoaded(true);
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch("/api/payments/subscriptions/me", {
+          headers: { Authorization: `Bearer ${getAuthToken()}` },
+        });
+        if (!res.ok || cancelled) { setMembershipLoaded(true); return; }
+        const data = await res.json();
+        const subs: SubscriptionDto[] = Array.isArray(data.subscriptions) ? data.subscriptions : [];
+        const now = Date.now();
+        const active = subs
+          .filter((s) => s.status === "active" && Date.parse(s.endAt) > now)
+          .sort((a, b) => Date.parse(b.endAt) - Date.parse(a.endAt))[0] ?? null;
+        if (!cancelled) {
+          setActiveSub(active);
+          // Sync to localStorage for other pages
+          if (active) {
+            window.localStorage.setItem(MEMBERSHIP_EXPIRES_KEY, active.endAt);
+            window.localStorage.setItem(MEMBERSHIP_PLAN_KEY, active.planId);
+          }
+        }
+      } catch { /* server unreachable — fall through to localStorage */ }
+      if (!cancelled) setMembershipLoaded(true);
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
+  // ── Derive membership from server data or localStorage fallback ──
+  const serverExpiry = activeSub ? new Date(activeSub.endAt) : null;
+  const localExpiryRaw = typeof window !== "undefined" ? window.localStorage.getItem(MEMBERSHIP_EXPIRES_KEY) : null;
+  const localExpiry = localExpiryRaw ? new Date(localExpiryRaw) : null;
+  const expiryDate = serverExpiry ?? localExpiry;
   const hasMembership = Boolean(expiryDate && !Number.isNaN(expiryDate.getTime()) && expiryDate.getTime() > Date.now());
   const daysRemaining = hasMembership && expiryDate ? Math.max(0, Math.ceil((expiryDate.getTime() - Date.now()) / (24 * 60 * 60 * 1000))) : 0;
   const expiryLabel = expiryDate ? expiryDate.toLocaleDateString("en-US") : "";
 
-  // ── Current plan ──
-  const currentPlanRaw = typeof window !== "undefined" ? window.localStorage.getItem(MEMBERSHIP_PLAN_KEY) : null;
-  const currentPlan = hasMembership ? parsePlanId(currentPlanRaw) : null;
+  // ── Current plan (server-first, localStorage fallback) ──
+  const serverPlanId = activeSub?.planId ?? null;
+  const localPlanId = typeof window !== "undefined" ? window.localStorage.getItem(MEMBERSHIP_PLAN_KEY) : null;
+  const currentPlan = hasMembership ? parsePlanId(serverPlanId ?? localPlanId) : null;
   const currentTierPrefix = currentPlan?.prefix ?? null;
   const currentPeriod = currentPlan?.period ?? null;
 
