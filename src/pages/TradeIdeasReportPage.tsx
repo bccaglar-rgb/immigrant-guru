@@ -3,7 +3,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { CoinIcon } from "../components/CoinIcon";
 import { useUserSettings } from "../hooks/useUserSettings";
 import { SCORING_MODE_OPTIONS, scoringModeLabel } from "../data/scoringEngine";
-import { fetchAiTradeIdeasState, type AiProviderId, type AiScanRowDto } from "../services/adminAiProvidersApi";
+import { fetchAiTradeIdeasState, fetchAiTradeIdeasReportStats, type AiProviderId, type AiScanRowDto, type AiReportModuleStats } from "../services/adminAiProvidersApi";
 
 type WindowKey = "1H" | "4H" | "24H";
 
@@ -61,11 +61,7 @@ const REPORT_MIN_SCORE_QUANT: Record<string, number> = {
 const REPORT_MIN_CONSENSUS_AI = 60;
 const clampPercent = (value: number) => Math.max(0, Math.min(100, Math.round(value)));
 
-const windowMs: Record<WindowKey, number> = {
-  "1H": 60 * 60 * 1000,
-  "4H": 4 * 60 * 60 * 1000,
-  "24H": 24 * 60 * 60 * 1000,
-};
+// windowMs removed — stats now fetched via API with range param
 
 const fmtDate = (iso: string) => {
   const d = new Date(iso);
@@ -153,6 +149,9 @@ export default function TradeIdeasReportPage() {
   const reportMinConsensus = isAiReport ? REPORT_MIN_CONSENSUS_AI : (REPORT_MIN_SCORE_QUANT[scoringMode] ?? 70);
   const now = Date.now();
 
+  // AI report: per-module stats from DB
+  const [aiStatsByModule, setAiStatsByModule] = useState<Record<string, AiReportModuleStats>>({});
+
   // ── Data Fetch (every 10s) ──
   useEffect(() => {
     let mounted = true;
@@ -160,12 +159,44 @@ export default function TradeIdeasReportPage() {
     const run = async () => {
       try {
         if (isAiReport) {
+          // Fetch real DB-backed trade ideas for AI modules
+          const aiUserIds = ["ai-chatgpt", "ai-qwen", "ai-qwen2"];
+          const [ideasRes, statsData] = await Promise.all([
+            Promise.all(aiUserIds.map((uid) =>
+              fetch(`/api/trade-ideas?limit=500`, { headers: { "x-user-id": uid } })
+                .then((r) => r.ok ? r.json() : null)
+                .then((body: any) => (body?.ok && Array.isArray(body.items) ? body.items as ApiTradeIdea[] : []))
+                .catch(() => [] as ApiTradeIdea[])
+            )),
+            fetchAiTradeIdeasReportStats(windowKey === "1H" ? "1h" : windowKey === "4H" ? "4h" : "24h"),
+          ]);
+          if (!mounted) return;
+
+          const allAiIdeas = ideasRes.flat();
+          // Also fetch scan rows for display in hourly breakdown
           const state = await fetchAiTradeIdeasState();
-          if (!mounted || !state?.ok) return;
-          const rows = (Object.values(state.scansByModule ?? {}) as AiScanRowDto[][])
-            .flat()
-            .map((row, index) => normalizeAiReportIdea(row, index));
-          setAiReportRows(rows);
+          if (!mounted) return;
+          if (state?.ok) {
+            const rows = (Object.values(state.scansByModule ?? {}) as AiScanRowDto[][])
+              .flat()
+              .map((row, index) => normalizeAiReportIdea(row, index));
+            setAiReportRows(rows);
+          }
+
+          if (statsData?.ok) {
+            setAiStatsByModule(statsData.statsByModule ?? {});
+          }
+
+          // Use real DB ideas for the idea table
+          const qualified = allAiIdeas.filter((i) => i.confidence_pct >= reportMinConsensus);
+          const filtered = qualified
+            .filter((i) => !isEntryMissed(i))
+            .sort((a, b) => Date.parse(b.created_at) - Date.parse(a.created_at));
+          const missed = qualified
+            .filter((i) => isEntryMissed(i))
+            .sort((a, b) => Date.parse(b.created_at) - Date.parse(a.created_at));
+          setApiIdeas(filtered);
+          setEntryMissedIdeas(missed);
           return;
         }
         // Quant report: fetch system-scanner ideas only (matches report-stats)
@@ -216,7 +247,7 @@ export default function TradeIdeasReportPage() {
       mounted = false;
       if (timer !== null) window.clearInterval(timer);
     };
-  }, [isAiReport, scoringMode, reportMinConsensus]);
+  }, [isAiReport, scoringMode, reportMinConsensus, windowKey]);
 
   // ── AI report computed data (unchanged) ──
   const aiBase = useMemo(
@@ -228,18 +259,27 @@ export default function TradeIdeasReportPage() {
         .slice(0, 100),
     [aiModelFilter, aiReportRows, reportMinConsensus],
   );
-  const aiFiltered = useMemo(() => {
-    const threshold = windowMs[windowKey];
-    return aiBase.filter((m) => {
-      const ts = Date.parse(m.timestampUtc);
-      return Number.isFinite(ts) && now - ts <= threshold;
-    });
-  }, [aiBase, now, windowKey]);
+  // aiFiltered removed — stats now come from DB via fetchAiTradeIdeasReportStats
 
   // ── Stats: use report-stats endpoint data directly (matches main page) ──
   const stats = useMemo(() => {
     if (isAiReport) {
-      return { totalScan: 0, total: aiFiltered.length, totalReal: 0, success: 0, failed: 0, successRate: 0 };
+      // Aggregate across all AI modules (or filter by selected model)
+      const moduleIds = aiModelFilter === "ALL" ? ["CHATGPT", "QWEN", "QWEN2"] : [aiModelFilter];
+      let totalScan = 0, total = 0, active = 0, totalReal = 0, success = 0, failed = 0, entryMissed = 0;
+      for (const mid of moduleIds) {
+        const s = aiStatsByModule[mid];
+        if (!s) continue;
+        totalScan += s.totalScan;
+        total += s.totalIdeas;
+        active += s.active;
+        totalReal += s.resolved;
+        success += s.success;
+        failed += s.failed;
+        entryMissed += s.entryMissed;
+      }
+      const successRate = totalReal > 0 ? (success / totalReal) * 100 : 0;
+      return { totalScan, total, totalReal, success, failed, successRate };
     }
     const modeStats = totalScanByMode[scoringMode];
     if (!modeStats) return { totalScan: 0, total: 0, totalReal: 0, success: 0, failed: 0, successRate: 0 };
@@ -251,7 +291,7 @@ export default function TradeIdeasReportPage() {
       failed: modeStats.failed,
       successRate: modeStats.successRate,
     };
-  }, [isAiReport, aiFiltered, totalScanByMode, scoringMode]);
+  }, [isAiReport, aiModelFilter, aiStatsByModule, totalScanByMode, scoringMode]);
 
   // ── Hourly Breakdown: ALWAYS last 24 hours ──
   const grouped = useMemo(() => {
@@ -305,7 +345,11 @@ export default function TradeIdeasReportPage() {
 
   // ── Last 100: NO time window, always latest 100 ──
   const last100 = useMemo(() => {
-    if (isAiReport) return aiBase.slice(0, 100);
+    if (isAiReport) {
+      // Use real DB-backed ideas when available, fall back to scan rows
+      if (apiIdeas.length > 0) return apiIdeas.slice(0, 100);
+      return aiBase.slice(0, 100);
+    }
     return apiIdeas.slice(0, 100);
   }, [isAiReport, aiBase, apiIdeas]);
 
@@ -559,7 +603,10 @@ export default function TradeIdeasReportPage() {
                   <tr><td colSpan={8} className="px-2 py-4 text-center text-[#6B6F76]">No trade ideas yet</td></tr>
                 )}
                 {last100.map((raw) => {
-                  if (isAiReport) {
+                  // Check if this is a DB-backed idea (ApiTradeIdea) or scan-row (AiReportIdea)
+                  const isDbIdea = "created_at" in (raw as any) && "entry_low" in (raw as any);
+
+                  if (isAiReport && !isDbIdea) {
                     const p = raw as AiReportIdea;
                     const entryLevel =
                       Number.isFinite(Number(p.entryLow)) && Number.isFinite(Number(p.entryHigh))
@@ -637,13 +684,16 @@ export default function TradeIdeasReportPage() {
                     );
                   }
 
-                  // ── Quant idea row ──
-                  const p = raw as ApiTradeIdea;
+                  // ── DB-backed idea row (Quant or AI with real tracking) ──
+                  const p = raw as ApiTradeIdea & { user_id?: string };
                   const label = resultLabel(p);
                   const entryLevel = `${fmtLevel(Math.min(p.entry_low, p.entry_high))} - ${fmtLevel(Math.max(p.entry_low, p.entry_high))}`;
                   const slWasHit = p.result !== "NONE" && p.hit_level_type === "SL";
                   const tpWasHit = p.result !== "NONE" && p.hit_level_type === "TP";
                   const timeToExit = typeof p.minutes_to_exit === "number" ? p.minutes_to_exit.toFixed(2) : "-";
+                  const aiModule = isAiReport && p.user_id?.startsWith("ai-") ? p.user_id.replace("ai-", "").toUpperCase() : null;
+                  const aiModuleLabel = aiModule === "CHATGPT" ? "ChatGPT" : aiModule === "QWEN2" ? "Qwen-2" : aiModule === "QWEN" ? "Qwen" : null;
+                  const aiModuleClass = aiModule === "CHATGPT" ? "border-[#3d5f8f]/70 bg-[#132033] text-[#b8d3ff]" : aiModule === "QWEN2" ? "border-[#8b4fa8]/70 bg-[#2e1a3c] text-[#e8cdfd]" : "border-[#6b4fa8]/70 bg-[#241a3c] text-[#dbcdfd]";
                   return (
                     <tr key={p.id} className="border-t border-white/10">
                       <td className="px-2 py-1.5 text-[#BFC2C7]">{fmtDate(p.created_at)}</td>
@@ -651,6 +701,11 @@ export default function TradeIdeasReportPage() {
                         <div className="flex items-center gap-2">
                           <CoinIcon symbol={p.symbol} className="h-4 w-4" />
                           <span className="text-white">{p.symbol}</span>
+                          {aiModuleLabel && (
+                            <span className={`rounded-full border px-1.5 py-0.5 text-[10px] font-semibold ${aiModuleClass}`}>
+                              {aiModuleLabel}
+                            </span>
+                          )}
                         </div>
                       </td>
                       <td className="px-2 py-1.5">
@@ -722,7 +777,7 @@ export default function TradeIdeasReportPage() {
           </div>
         </section>
         {/* ── Entry Level Missed ── */}
-        {!isAiReport && entryMissedIdeas.length > 0 && (
+        {entryMissedIdeas.length > 0 && (
           <section className="rounded-2xl border border-white/10 bg-[#121316] p-4">
             <h2 className="mb-2 text-sm font-semibold text-[#8A8F98]">
               Entry Level Missed{" "}

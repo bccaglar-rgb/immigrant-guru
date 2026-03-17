@@ -371,7 +371,7 @@ export const registerTradeIdeasRoutes = (app: Express, store: TradeIdeaStore, sy
         scoringMode: isScoringMode(scoringModeRaw) ? scoringModeRaw : undefined,
         limit,
       }),
-      userId !== "system-scanner"
+      userId !== "system-scanner" && !userId.startsWith("ai-")
         ? store.listIdeas({
             userId: "system-scanner",
             statuses: statuses.length ? statuses : undefined,

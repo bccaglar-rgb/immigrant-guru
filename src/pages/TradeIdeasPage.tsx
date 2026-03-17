@@ -14,7 +14,7 @@ import type { ExchangeTradeSignal } from "../types/exchange";
 import { formatTradePlan } from "../utils/parseTradePlan";
 import { readUserModeConsensusMinPct, writeUserModeConsensusMinPct } from "../utils/modeConsensusRangeStorage";
 import { resolveMinConfidence } from "../utils/resolveModeConfidence";
-import { fetchAiTradeIdeasState, type AiProviderId } from "../services/adminAiProvidersApi";
+import { fetchAiTradeIdeasState, fetchAiTradeIdeasReportStats, type AiProviderId, type AiReportModuleStats } from "../services/adminAiProvidersApi";
 
 const ALL = "ALL";
 const SCAN_MODE_ORDER: ScoringMode[] = ["FLOW", "AGGRESSIVE", "BALANCED", "CAPITAL_GUARD"];
@@ -129,8 +129,8 @@ type ModeConsensusRange = { min: number; max: number };
 type ModeConsensusRanges = Record<ScoringMode, ModeConsensusRange>;
 
 const FLOW_MIN_CONSENSUS = 40;
-const REPORT_MIN_CONSENSUS = 70;
-const AI_REPORT_MIN_SCORE = 60;
+// REPORT_MIN_CONSENSUS removed — stats now come from report-stats API
+// AI_REPORT_MIN_SCORE removed — stats now come from DB via report-stats endpoint
 
 const chip = (active: boolean) =>
   `rounded-full border px-2 py-1 text-xs font-semibold ${
@@ -621,39 +621,6 @@ export default function TradeIdeasPage() {
   const visible = scanBasedPlans.slice(0, visibleCount);
   const visibleAiRows = aiFilteredRows.slice(0, Math.min(40, visibleCount));
   const noVisibleCards = isAiTradeIdeasPage ? !visibleAiRows.length : !visible.length;
-  const reportBase = useMemo(
-    () =>
-      messages
-        .filter((m) => {
-          if (Array.isArray(m.approvedModes) && m.approvedModes.length > 0) {
-            if (!m.approvedModes.includes(scoringMode)) return false;
-            return resolveModeScorePct(m, scoringMode) >= REPORT_MIN_CONSENSUS;
-          }
-          if ((m.scoringMode ?? "BALANCED") !== scoringMode) return false;
-          return resolveModeScorePct(m, scoringMode) >= REPORT_MIN_CONSENSUS;
-        })
-        .slice(0, 100),
-    [messages, scoringMode],
-  );
-  const reportStats = useMemo(() => {
-    if (isAiTradeIdeasPage) {
-      const activeModules = effectiveAiModules;
-      const rows = activeModules.flatMap((id) => aiScansByModule[id] ?? []);
-      const reportRows = rows.filter((row) => row.scorePct >= AI_REPORT_MIN_SCORE);
-      const total = reportRows.length;
-      const successful = reportRows.filter((row) => row.ok).length;
-      const failed = reportRows.filter((row) => !row.ok).length;
-      const successRate = total ? (successful / total) * 100 : 0;
-      return { total, successful, failed, successRate };
-    }
-    const resolved = reportBase.filter((m) => m.status === "RESOLVED");
-    const successful = resolved.filter((m) => m.result === "SUCCESS").length;
-    const failed = resolved.filter((m) => m.result === "FAIL").length;
-    const total = resolved.length;
-    const successRate = total ? (successful / total) * 100 : 0;
-    return { total, successful, failed, successRate };
-  }, [aiScansByModule, effectiveAiModules, isAiTradeIdeasPage, reportBase]);
-
   // Per-mode report stats — fetched from API for consistency with detail report page
   const [reportTimeRange, setReportTimeRange] = useState<string>("24h");
   const [reportStatsByMode, setReportStatsByMode] = useState<Record<string, {
@@ -725,6 +692,24 @@ export default function TradeIdeasPage() {
     } catch { /* ignore */ }
     setReportResetting(false);
   };
+
+  // ── AI Report Stats (per-module from trade_ideas DB) ──
+  const [aiReportTimeRange, setAiReportTimeRange] = useState<string>("24h");
+  const [aiReportStatsByModule, setAiReportStatsByModule] = useState<Record<string, AiReportModuleStats>>({});
+  useEffect(() => {
+    if (!isAiTradeIdeasPage) return;
+    let mounted = true;
+    const fetchStats = async () => {
+      try {
+        const data = await fetchAiTradeIdeasReportStats(aiReportTimeRange);
+        if (!mounted || !data?.ok) return;
+        setAiReportStatsByModule(data.statsByModule ?? {});
+      } catch { /* keep existing */ }
+    };
+    void fetchStats();
+    const timer = window.setInterval(() => void fetchStats(), 10_000);
+    return () => { mounted = false; window.clearInterval(timer); };
+  }, [isAiTradeIdeasPage, aiReportTimeRange]);
 
   const sourceLabelFromDiagnostics = (sourceKey: string): string => {
     const value = String(sourceKey ?? "").trim().toUpperCase();
@@ -884,20 +869,23 @@ export default function TradeIdeasPage() {
                 <div className="flex items-center justify-between gap-2">
                   <p className="text-sm font-semibold text-white">Trade Ideas Report</p>
                   <div className="flex items-center gap-1.5">
-                    {!isAiTradeIdeasPage && (["1h", "4h", "24h", "7d"] as const).map((range) => (
-                      <button
-                        key={range}
-                        type="button"
-                        onClick={() => setReportTimeRange(range)}
-                        className={`rounded-md px-2 py-0.5 text-[11px] font-medium transition ${
-                          reportTimeRange === range
-                            ? "bg-[#F5C542]/20 text-[#F5C542] border border-[#F5C542]/40"
-                            : "text-[#6B6F76] hover:text-[#b7bec9] border border-transparent"
-                        }`}
-                      >
-                        {range}
-                      </button>
-                    ))}
+                    {(["1h", "4h", "24h", "7d"] as const).map((range) => {
+                      const active = isAiTradeIdeasPage ? aiReportTimeRange === range : reportTimeRange === range;
+                      return (
+                        <button
+                          key={range}
+                          type="button"
+                          onClick={() => isAiTradeIdeasPage ? setAiReportTimeRange(range) : setReportTimeRange(range)}
+                          className={`rounded-md px-2 py-0.5 text-[11px] font-medium transition ${
+                            active
+                              ? "bg-[#F5C542]/20 text-[#F5C542] border border-[#F5C542]/40"
+                              : "text-[#6B6F76] hover:text-[#b7bec9] border border-transparent"
+                          }`}
+                        >
+                          {range}
+                        </button>
+                      );
+                    })}
                     <button
                       type="button"
                       onClick={() => navigate(isAiTradeIdeasPage ? "/ai-trade-ideas/report" : "/quant-trade-ideas/report")}
@@ -919,24 +907,49 @@ export default function TradeIdeasPage() {
                   </div>
                 </div>
                 {isAiTradeIdeasPage ? (
-                  <div className="mt-2 grid grid-cols-2 gap-1.5 text-[11px] sm:grid-cols-4">
-                    <div className="rounded-lg border border-[#31415b]/60 bg-[#121a27] px-2 py-1.5 text-center">
-                      <p className="text-[#7f8796]">Total</p>
-                      <p className="text-base font-semibold text-white">{reportStats.total}</p>
-                    </div>
-                    <div className="rounded-lg border border-[#2f5a4d]/60 bg-[#11201b] px-2 py-1.5 text-center">
-                      <p className="text-[#7f8796]">Success</p>
-                      <p className="text-base font-semibold text-[#8fc9ab]">{reportStats.successful}</p>
-                    </div>
-                    <div className="rounded-lg border border-[#5f3a3a]/60 bg-[#221516] px-2 py-1.5 text-center">
-                      <p className="text-[#7f8796]">Failed</p>
-                      <p className="text-base font-semibold text-[#d49f9a]">{reportStats.failed}</p>
-                    </div>
-                    <div className="rounded-lg border border-[#5b4b2c]/60 bg-[#221c12] px-2 py-1.5 text-center">
-                      <p className="text-[#7f8796]">Success %</p>
-                      <p className="text-base font-semibold text-[#F5C542]">{reportStats.successRate.toFixed(1)}%</p>
-                    </div>
-                  </div>
+                  <table className="mt-1.5 w-full text-[11px]">
+                    <thead>
+                      <tr className="text-[#7f8796]">
+                        <th className="pb-1 pl-2 text-left font-medium">Module</th>
+                        <th className="pb-1 text-center font-medium">Total Scan</th>
+                        <th className="pb-1 text-center font-medium">Ideas</th>
+                        <th className="pb-1 text-center font-medium">Entry Missed</th>
+                        <th className="pb-1 text-center font-medium">Active</th>
+                        <th className="pb-1 text-center font-medium">Resolved</th>
+                        <th className="pb-1 text-center font-medium">Success</th>
+                        <th className="pb-1 text-center font-medium">Failed</th>
+                        <th className="pb-1 pr-2 text-center font-medium">S/R</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {(["CHATGPT", "QWEN", "QWEN2"] as const).map((mod) => {
+                        const s = aiReportStatsByModule[mod] ?? { totalScan: 0, totalIdeas: 0, active: 0, resolved: 0, success: 0, failed: 0, entryMissed: 0, successRate: 0 };
+                        const moduleColors: Record<string, string> = {
+                          CHATGPT: "border-[#3d5f8f]/50 text-[#b8d3ff]",
+                          QWEN: "border-[#6b4fa8]/50 text-[#dbcdfd]",
+                          QWEN2: "border-[#8b4fa8]/50 text-[#e8cdfd]",
+                        };
+                        const moduleLabels: Record<string, string> = { CHATGPT: "ChatGPT", QWEN: "Qwen", QWEN2: "Qwen-2" };
+                        return (
+                          <tr key={mod} className="border-t border-white/5">
+                            <td className="py-1 pl-2">
+                              <span className={`inline-block rounded-md border px-1.5 py-0.5 text-[10px] font-semibold ${moduleColors[mod]}`}>
+                                {moduleLabels[mod]}
+                              </span>
+                            </td>
+                            <td className="py-1 text-center font-semibold text-[#8f95a3]">{s.totalScan}</td>
+                            <td className="py-1 text-center font-semibold text-white">{s.totalIdeas}</td>
+                            <td className="py-1 text-center font-semibold text-[#8A8F98]">{s.entryMissed}</td>
+                            <td className="py-1 text-center font-semibold text-[#F5C542]">{s.active}</td>
+                            <td className="py-1 text-center font-semibold text-[#b7bec9]">{s.resolved}</td>
+                            <td className="py-1 text-center font-semibold text-[#8fc9ab]">{s.success}</td>
+                            <td className="py-1 text-center font-semibold text-[#d49f9a]">{s.failed}</td>
+                            <td className="py-1 pr-2 text-center font-semibold text-[#F5C542]">{s.successRate.toFixed(1)}%</td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
                 ) : (
                   <table className="mt-1.5 w-full text-[11px]">
                     <thead>

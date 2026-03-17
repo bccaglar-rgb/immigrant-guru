@@ -1,7 +1,10 @@
 import express, { type Express } from "express";
+import { randomUUID } from "node:crypto";
 import type { AiProviderStore, AiProviderRecord } from "../services/aiProviderStore.ts";
 import type { BinanceFuturesHub, BinanceFuturesUniverseRow } from "../services/binanceFuturesHub.ts";
 import type { CoinUniverseEngine } from "../services/coinUniverseEngine.ts";
+import type { TradeIdeaStore } from "../services/tradeIdeaStore.ts";
+import type { TradeIdeaRecord } from "../services/tradeIdeaTypes.ts";
 import { redis } from "../db/redis.ts";
 
 const AI_STATE_REDIS_KEY = "bitrium:ai-trade-ideas:state";
@@ -1500,6 +1503,73 @@ const readAiStateFromRedis = async (): Promise<SharedAiState | null> => {
   }
 };
 
+/** Map AI module ID to user_id for trade_ideas DB table */
+const aiModuleUserId = (moduleId: AiModuleId): string => `ai-${moduleId.toLowerCase()}`;
+const AI_USER_ID_PREFIX = "ai-";
+const AI_MODULE_LABELS: Record<AiModuleId, string> = { CHATGPT: "ChatGPT", QWEN: "Qwen", QWEN2: "Qwen2" };
+
+/** Convert an AI scan row with TRADE decision into a TradeIdeaRecord for DB tracking */
+const aiScanToTradeIdea = (row: AiScanRow, moduleId: AiModuleId, nowIso: string): TradeIdeaRecord | null => {
+  if (row.decision !== "TRADE") return null;
+  if (row.side !== "LONG" && row.side !== "SHORT") return null;
+  const zone = row.entry?.zone;
+  const sl = row.entry?.sl ?? (row.entry?.stop != null ? [row.entry.stop] : []);
+  const tp = row.entry?.tp ?? [];
+  if (!Array.isArray(zone) || zone.length < 2 || !zone.every(Number.isFinite)) return null;
+  if (!sl.length || !tp.length) return null;
+  const entryLow = Math.min(zone[0], zone[1]);
+  const entryHigh = Math.max(zone[0], zone[1]);
+  if (!Number.isFinite(entryLow) || entryLow <= 0) return null;
+
+  return {
+    id: randomUUID(),
+    user_id: aiModuleUserId(moduleId),
+    symbol: row.symbol,
+    direction: row.side as "LONG" | "SHORT",
+    confidence_pct: row.scorePct,
+    scoring_mode: "BALANCED" as any,
+    approved_modes: [],
+    mode_scores: {},
+    entry_low: entryLow,
+    entry_high: entryHigh,
+    sl_levels: sl.filter(Number.isFinite),
+    tp_levels: tp.filter(Number.isFinite),
+    status: "PENDING",
+    result: "NONE",
+    hit_level_type: null,
+    hit_level_index: null,
+    hit_level_price: null,
+    minutes_to_entry: null,
+    minutes_to_exit: null,
+    minutes_total: null,
+    horizon: "INTRADAY",
+    timeframe: (row.tf || "15m") as any,
+    setup: AI_MODULE_LABELS[moduleId] ?? moduleId,
+    trade_validity: "VALID",
+    entry_window: row.entry?.type === "LIMIT" ? "OPEN" : "OPEN",
+    slippage_risk: (row.risk?.slippage as any) ?? "MED",
+    triggers_to_activate: row.triggers ?? [],
+    invalidation: row.invalidIf ?? "",
+    timestamp_utc: nowIso,
+    valid_until_bars: 16,
+    valid_until_utc: new Date(Date.now() + 16 * 15 * 60_000).toISOString(),
+    market_state: row.marketState ? {
+      trend: row.marketState.trendDir ?? "",
+      htfBias: "",
+      volatility: "",
+      execution: "",
+    } : { trend: "", htfBias: "", volatility: "", execution: "" },
+    flow_analysis: [],
+    trade_intent: [],
+    raw_text: row.notes?.one_liner ?? "",
+    incomplete: false,
+    price_precision: undefined,
+    created_at: nowIso,
+    activated_at: null,
+    resolved_at: null,
+  };
+};
+
 export const registerAiTradeIdeasRoutes = (
   app: Express,
   store: AiProviderStore,
@@ -1508,6 +1578,7 @@ export const registerAiTradeIdeasRoutes = (
     coinUniverseEngine?: CoinUniverseEngine;
     serverPort?: number;
     isPrimary?: boolean;
+    tradeIdeaStore?: TradeIdeaStore;
   },
 ) => {
   const runSharedScan = async () => {
@@ -1638,6 +1709,24 @@ export const registerAiTradeIdeasRoutes = (
             continue;
           }
           rows.push(toScanRow(moduleId, symbol, response, compactFallback));
+        }
+
+        // ── Persist TRADE decisions to trade_ideas DB for outcome tracking ──
+        if (deps.tradeIdeaStore) {
+          for (const row of rows) {
+            if (row.decision !== "TRADE" || row.scorePct < 60) continue;
+            try {
+              const userId = aiModuleUserId(moduleId);
+              const existing = await deps.tradeIdeaStore.findOpenIdea(userId, row.symbol);
+              if (existing) continue; // already tracking this symbol for this module
+              const idea = aiScanToTradeIdea(row, moduleId, nowIso);
+              if (!idea) continue;
+              const initialPrice = (idea.entry_low + idea.entry_high) / 2;
+              await deps.tradeIdeaStore.createIdea(idea, initialPrice);
+            } catch {
+              // Non-critical — scan results still shown in UI without DB tracking
+            }
+          }
         }
 
         sharedAiState.scansByModule[moduleId] = [...rows, ...(sharedAiState.scansByModule[moduleId] ?? [])]
@@ -1808,6 +1897,68 @@ export const registerAiTradeIdeasRoutes = (
       return res.status(500).json({
         ok: false,
         error: "ai_trade_ideas_state_failed",
+        detail: error instanceof Error ? error.message : "unknown_error",
+      });
+    }
+  });
+
+  // ── AI Report Stats — per-module stats from trade_ideas DB (mirrors Quant report-stats) ──
+  app.get("/api/ai-trade-ideas/report-stats", async (req, res) => {
+    try {
+      if (!deps.tradeIdeaStore) {
+        return res.json({ ok: true, statsByModule: {} });
+      }
+      const RANGE_MS: Record<string, number> = {
+        "1h": 60 * 60 * 1000,
+        "4h": 4 * 60 * 60 * 1000,
+        "24h": 24 * 60 * 60 * 1000,
+        "7d": 7 * 24 * 60 * 60 * 1000,
+      };
+      const rangeParam = String(req.query?.range ?? "");
+      const rangeMs = RANGE_MS[rangeParam] ?? 0;
+      const cutoffMs = rangeMs > 0 ? Date.now() - rangeMs : 0;
+
+      const statsByModule: Record<string, {
+        totalScan: number; totalIdeas: number; active: number; resolved: number;
+        success: number; failed: number; entryMissed: number; successRate: number;
+      }> = {};
+
+      for (const moduleId of ALL_MODULE_IDS) {
+        const userId = aiModuleUserId(moduleId);
+        const allIdeas = await deps.tradeIdeaStore.listIdeas({ userId, limit: 5000 });
+        const ideas = cutoffMs > 0
+          ? allIdeas.filter((i) => Date.parse(i.created_at) >= cutoffMs)
+          : allIdeas;
+
+        const isEntryMissed = (i: typeof ideas[number]) =>
+          i.result === "FAIL" && !i.activated_at && !i.hit_level_type;
+        const entryMissedCount = ideas.filter((i) => isEntryMissed(i)).length;
+        const activeCount = ideas.filter((i) => i.status === "PENDING" || i.status === "ACTIVE").length;
+        const activatedIdeas = ideas.filter((i) => !isEntryMissed(i));
+        const success = activatedIdeas.filter((i) => i.result === "SUCCESS").length;
+        const failed = activatedIdeas.filter((i) => i.result === "FAIL").length;
+        const resolved = success + failed;
+
+        // totalScan = count of scans in current sharedAiState for this module
+        const scanCount = (sharedAiState.scansByModule[moduleId] ?? []).length;
+
+        statsByModule[moduleId] = {
+          totalScan: scanCount,
+          totalIdeas: ideas.length,
+          active: activeCount,
+          resolved,
+          success,
+          failed,
+          entryMissed: entryMissedCount,
+          successRate: resolved > 0 ? (success / resolved) * 100 : 0,
+        };
+      }
+
+      return res.json({ ok: true, statsByModule });
+    } catch (error) {
+      return res.status(500).json({
+        ok: false,
+        error: "ai_report_stats_failed",
         detail: error instanceof Error ? error.message : "unknown_error",
       });
     }

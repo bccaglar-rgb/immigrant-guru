@@ -136,3 +136,26 @@ export const fetchAiTradeIdeasState = async (): Promise<AiTradeIdeasStateRespons
   if (!res.ok) throw new Error(await parseError(res));
   return (await res.json()) as AiTradeIdeasStateResponse;
 };
+
+export interface AiReportModuleStats {
+  totalScan: number;
+  totalIdeas: number;
+  active: number;
+  resolved: number;
+  success: number;
+  failed: number;
+  entryMissed: number;
+  successRate: number;
+}
+
+export interface AiReportStatsResponse {
+  ok: boolean;
+  statsByModule: Record<string, AiReportModuleStats>;
+}
+
+export const fetchAiTradeIdeasReportStats = async (range?: string): Promise<AiReportStatsResponse> => {
+  const qs = range ? `?range=${encodeURIComponent(range)}` : "";
+  const res = await fetch(`/api/ai-trade-ideas/report-stats${qs}`, { method: "GET" });
+  if (!res.ok) throw new Error(await parseError(res));
+  return (await res.json()) as AiReportStatsResponse;
+};
