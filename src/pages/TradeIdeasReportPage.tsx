@@ -3,7 +3,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { CoinIcon } from "../components/CoinIcon";
 import { useUserSettings } from "../hooks/useUserSettings";
 import { SCORING_MODE_OPTIONS, scoringModeLabel } from "../data/scoringEngine";
-import { fetchAiTradeIdeasState, fetchAiTradeIdeasReportStats, type AiProviderId, type AiScanRowDto, type AiReportModuleStats } from "../services/adminAiProvidersApi";
+import { fetchAiTradeIdeasReportStats, type AiProviderId, type AiReportModuleStats } from "../services/adminAiProvidersApi";
 
 type WindowKey = "1H" | "4H" | "24H";
 
@@ -37,19 +37,6 @@ type ApiTradeIdea = {
 };
 
 type AiModelFilter = "ALL" | AiProviderId;
-type AiReportIdea = {
-  id: string;
-  module: AiProviderId;
-  symbol: string;
-  direction: "LONG" | "SHORT";
-  confidencePct: number;
-  timestampUtc: string;
-  entryLow: number | null;
-  entryHigh: number | null;
-  stops: number[];
-  targets: number[];
-  decision: string;
-};
 
 // Per-mode min score thresholds — must match server's REPORT_MIN_SCORE
 const REPORT_MIN_SCORE_QUANT: Record<string, number> = {
@@ -59,7 +46,6 @@ const REPORT_MIN_SCORE_QUANT: Record<string, number> = {
   CAPITAL_GUARD: 68,
 };
 const REPORT_MIN_CONSENSUS_AI = 60;
-const clampPercent = (value: number) => Math.max(0, Math.min(100, Math.round(value)));
 
 // windowMs removed — stats now fetched via API with range param
 
@@ -77,35 +63,6 @@ const fmtLevel = (value: number) => {
     minimumFractionDigits: 2,
     maximumFractionDigits: digits,
   });
-};
-
-const normalizeAiReportIdea = (row: AiScanRowDto, index: number): AiReportIdea => {
-  const side = String(row.side ?? "").toUpperCase();
-  const direction: "LONG" | "SHORT" = side === "SHORT" ? "SHORT" : "LONG";
-  const zone = Array.isArray(row.entry?.zone) ? row.entry?.zone.filter((v) => Number.isFinite(Number(v))).map(Number) : [];
-  const zoneLow = zone.length ? Math.min(...zone) : null;
-  const zoneHigh = zone.length ? Math.max(...zone) : null;
-  const sls = Array.isArray(row.entry?.sl)
-    ? row.entry.sl.map((v) => Number(v)).filter((v) => Number.isFinite(v))
-    : Number.isFinite(Number(row.entry?.stop))
-      ? [Number(row.entry?.stop)]
-      : [];
-  const tps = Array.isArray(row.entry?.tp)
-    ? row.entry.tp.map((v) => Number(v)).filter((v) => Number.isFinite(v))
-    : [];
-  return {
-    id: `${row.module}-${row.symbol}-${row.scannedAt}-${index}`,
-    module: row.module,
-    symbol: String(row.symbol ?? "").toUpperCase(),
-    direction,
-    confidencePct: clampPercent(Number(row.scorePct ?? 0)),
-    timestampUtc: String(row.scannedAt ?? new Date().toISOString()),
-    entryLow: zoneLow,
-    entryHigh: zoneHigh,
-    stops: sls,
-    targets: tps,
-    decision: String(row.decision ?? "NO_TRADE").toUpperCase(),
-  };
 };
 
 /** Entry-missed ideas are NOT real trades — filter them out */
@@ -144,7 +101,6 @@ export default function TradeIdeasReportPage() {
     success: number; failed: number; successRate: number;
   }>>({});
   const [aiModelFilter, setAiModelFilter] = useState<AiModelFilter>("ALL");
-  const [aiReportRows, setAiReportRows] = useState<AiReportIdea[]>([]);
   const [expandedHour, setExpandedHour] = useState<string | null>(null);
   const reportMinConsensus = isAiReport ? REPORT_MIN_CONSENSUS_AI : (REPORT_MIN_SCORE_QUANT[scoringMode] ?? 70);
   const now = Date.now();
@@ -173,15 +129,6 @@ export default function TradeIdeasReportPage() {
           if (!mounted) return;
 
           const allAiIdeas = ideasRes.flat();
-          // Also fetch scan rows for display in hourly breakdown
-          const state = await fetchAiTradeIdeasState();
-          if (!mounted) return;
-          if (state?.ok) {
-            const rows = (Object.values(state.scansByModule ?? {}) as AiScanRowDto[][])
-              .flat()
-              .map((row, index) => normalizeAiReportIdea(row, index));
-            setAiReportRows(rows);
-          }
 
           if (statsData?.ok) {
             setAiStatsByModule(statsData.statsByModule ?? {});
@@ -249,17 +196,13 @@ export default function TradeIdeasReportPage() {
     };
   }, [isAiReport, scoringMode, reportMinConsensus, windowKey]);
 
-  // ── AI report computed data (unchanged) ──
-  const aiBase = useMemo(
-    () =>
-      aiReportRows
-        .filter((row) => row.confidencePct >= reportMinConsensus)
-        .filter((row) => (aiModelFilter === "ALL" ? true : row.module === aiModelFilter))
-        .sort((a, b) => Date.parse(b.timestampUtc) - Date.parse(a.timestampUtc))
-        .slice(0, 100),
-    [aiModelFilter, aiReportRows, reportMinConsensus],
-  );
-  // aiFiltered removed — stats now come from DB via fetchAiTradeIdeasReportStats
+  // AI model filter applied to DB-backed ideas
+  const aiFilteredDbIdeas = useMemo(() => {
+    if (!isAiReport) return [];
+    if (aiModelFilter === "ALL") return apiIdeas;
+    const prefix = `ai-${aiModelFilter.toLowerCase()}`;
+    return apiIdeas.filter((i) => (i as any).user_id === prefix);
+  }, [isAiReport, aiModelFilter, apiIdeas]);
 
   // ── Stats: use report-stats endpoint data directly (matches main page) ──
   const stats = useMemo(() => {
@@ -293,30 +236,12 @@ export default function TradeIdeasReportPage() {
     };
   }, [isAiReport, aiModelFilter, aiStatsByModule, totalScanByMode, scoringMode]);
 
-  // ── Hourly Breakdown: ALWAYS last 24 hours ──
+  // ── Hourly Breakdown: ALWAYS last 24 hours (same format for AI and Quant) ──
   const grouped = useMemo(() => {
     const threshold24h = 24 * 60 * 60 * 1000;
-
-    if (isAiReport) {
-      const map = new Map<string, { total: number; real: number; success: number; failed: number; items: AiReportIdea[] }>();
-      for (const p of aiBase) {
-        const d = new Date(p.timestampUtc);
-        const ts = d.getTime();
-        if (Number.isNaN(ts) || now - ts > threshold24h) continue;
-        const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")} ${String(d.getHours()).padStart(2, "0")}:00`;
-        const prev = map.get(key) ?? { total: 0, real: 0, success: 0, failed: 0, items: [] };
-        prev.total += 1;
-        prev.items.push(p);
-        map.set(key, prev);
-      }
-      return Array.from(map.entries())
-        .map(([key, v]) => ({ key, ...v, rate: 0 }))
-        .sort((a, b) => (a.key < b.key ? 1 : -1));
-    }
-
-    // Quant: always 24H
+    const source = isAiReport ? aiFilteredDbIdeas : apiIdeas;
     const map = new Map<string, { total: number; real: number; success: number; failed: number; items: ApiTradeIdea[] }>();
-    for (const idea of apiIdeas) {
+    for (const idea of source) {
       const d = new Date(idea.created_at);
       const ts = d.getTime();
       if (Number.isNaN(ts) || now - ts > threshold24h) continue;
@@ -334,7 +259,7 @@ export default function TradeIdeasReportPage() {
     return Array.from(map.entries())
       .map(([key, v]) => ({ key, ...v, rate: v.real ? (v.success / v.real) * 100 : 0 }))
       .sort((a, b) => (a.key < b.key ? 1 : -1));
-  }, [isAiReport, aiBase, apiIdeas, now]);
+  }, [isAiReport, aiFilteredDbIdeas, apiIdeas, now]);
 
   // Expanded hour items
   const expandedItems = useMemo(() => {
@@ -343,15 +268,11 @@ export default function TradeIdeasReportPage() {
     return bucket?.items ?? [];
   }, [expandedHour, grouped]);
 
-  // ── Last 100: NO time window, always latest 100 ──
+  // ── Last 100: NO time window, always latest 100 (same for AI and Quant) ──
   const last100 = useMemo(() => {
-    if (isAiReport) {
-      // Use real DB-backed ideas when available, fall back to scan rows
-      if (apiIdeas.length > 0) return apiIdeas.slice(0, 100);
-      return aiBase.slice(0, 100);
-    }
-    return apiIdeas.slice(0, 100);
-  }, [isAiReport, aiBase, apiIdeas]);
+    const source = isAiReport ? aiFilteredDbIdeas : apiIdeas;
+    return source.slice(0, 100);
+  }, [isAiReport, aiFilteredDbIdeas, apiIdeas]);
 
   return (
     <main className="min-h-screen bg-[#0B0B0C] p-4 text-[#BFC2C7] md:p-6">
@@ -527,29 +448,10 @@ export default function TradeIdeasReportPage() {
                   </thead>
                   <tbody>
                     {expandedItems.map((raw) => {
-                      if (isAiReport) {
-                        const p = raw as AiReportIdea;
-                        return (
-                          <tr key={p.id} className="border-t border-white/10">
-                            <td className="px-2 py-1 text-[#BFC2C7]">{fmtDate(p.timestampUtc)}</td>
-                            <td className="px-2 py-1">
-                              <div className="flex items-center gap-1.5">
-                                <CoinIcon symbol={p.symbol} className="h-3.5 w-3.5" />
-                                <span className="text-white">{p.symbol}</span>
-                              </div>
-                            </td>
-                            <td className="px-2 py-1">
-                              <span className={`mr-1 text-[10px] font-semibold ${p.direction === "LONG" ? "text-[#d8decf]" : "text-[#d6b3af]"}`}>{p.direction}</span>
-                              <span className="font-semibold text-[#F5C542]">{p.confidencePct}%</span>
-                            </td>
-                            <td className="px-2 py-1 text-[#d8decf]">{p.entryLow != null && p.entryHigh != null ? `${fmtLevel(p.entryLow)} - ${fmtLevel(p.entryHigh)}` : "-"}</td>
-                            <td className="px-2 py-1 text-[#e4b4af]">{p.stops.length ? p.stops.map((s) => fmtLevel(s)).join(", ") : "-"}</td>
-                            <td className="px-2 py-1 text-[#dce4d0]">{p.targets.length ? p.targets.map((t) => fmtLevel(t)).join(", ") : "-"}</td>
-                            <td className="px-2 py-1 font-semibold text-[#BFC2C7]">{p.decision}</td>
-                          </tr>
-                        );
-                      }
                       const p = raw as ApiTradeIdea;
+                      const aiModule = isAiReport && (p as any).user_id?.startsWith("ai-") ? (p as any).user_id.replace("ai-", "").toUpperCase() : null;
+                      const moduleLabel = aiModule === "CHATGPT" ? "ChatGPT" : aiModule === "QWEN2" ? "Bitrium Axiom" : aiModule === "QWEN" ? "Qwen" : null;
+                      const moduleClass = aiModule === "CHATGPT" ? "border-[#3d5f8f]/70 bg-[#132033] text-[#b8d3ff]" : aiModule === "QWEN2" ? "border-[#c4893d]/70 bg-[#2a1f0f] text-[#ffd699]" : "border-[#6b4fa8]/70 bg-[#241a3c] text-[#dbcdfd]";
                       return (
                         <tr key={p.id} className="border-t border-white/10">
                           <td className="px-2 py-1 text-[#BFC2C7]">{fmtDate(p.created_at)}</td>
@@ -557,6 +459,7 @@ export default function TradeIdeasReportPage() {
                             <div className="flex items-center gap-1.5">
                               <CoinIcon symbol={p.symbol} className="h-3.5 w-3.5" />
                               <span className="text-white">{p.symbol}</span>
+                              {moduleLabel && <span className={`rounded-full border px-1 py-0.5 text-[9px] font-semibold ${moduleClass}`}>{moduleLabel}</span>}
                             </div>
                           </td>
                           <td className="px-2 py-1">
@@ -603,88 +506,7 @@ export default function TradeIdeasReportPage() {
                   <tr><td colSpan={8} className="px-2 py-4 text-center text-[#6B6F76]">No trade ideas yet</td></tr>
                 )}
                 {last100.map((raw) => {
-                  // Check if this is a DB-backed idea (ApiTradeIdea) or scan-row (AiReportIdea)
-                  const isDbIdea = "created_at" in (raw as any) && "entry_low" in (raw as any);
-
-                  if (isAiReport && !isDbIdea) {
-                    const p = raw as AiReportIdea;
-                    const entryLevel =
-                      Number.isFinite(Number(p.entryLow)) && Number.isFinite(Number(p.entryHigh))
-                        ? `${fmtLevel(Number(p.entryLow))} - ${fmtLevel(Number(p.entryHigh))}`
-                        : "-";
-                    const slLevels = p.stops.map((value) => fmtLevel(value));
-                    const tpLevels = p.targets.map((value) => fmtLevel(value));
-                    const aiResultText = p.decision || "PENDING";
-                    return (
-                      <tr key={p.id} className="border-t border-white/10">
-                        <td className="px-2 py-1.5 text-[#BFC2C7]">{fmtDate(p.timestampUtc)}</td>
-                        <td className="px-2 py-1.5">
-                          <div className="flex items-center gap-2">
-                            <CoinIcon symbol={p.symbol} className="h-4 w-4" />
-                            <span className="text-white">{p.symbol}</span>
-                            <span className={`rounded-full border px-1.5 py-0.5 text-[10px] font-semibold ${
-                              p.module === "CHATGPT"
-                                ? "border-[#3d5f8f]/70 bg-[#132033] text-[#b8d3ff]"
-                                : p.module === "QWEN2"
-                                  ? "border-[#c4893d]/70 bg-[#2a1f0f] text-[#ffd699]"
-                                  : "border-[#6b4fa8]/70 bg-[#241a3c] text-[#dbcdfd]"
-                            }`}>
-                              {p.module === "CHATGPT" ? "ChatGPT" : p.module === "QWEN2" ? "Bitrium Axiom" : "Qwen"}
-                            </span>
-                          </div>
-                        </td>
-                        <td className="px-2 py-1.5">
-                          <div className="inline-flex items-center gap-2">
-                            <span className={`rounded-full border px-2 py-0.5 text-[11px] font-semibold ${p.direction === "LONG" ? "border-[#6f765f] bg-[#1f251b] text-[#d8decf]" : "border-[#704844] bg-[#271a19] text-[#d6b3af]"}`}>
-                              {p.direction}
-                            </span>
-                            <span className="font-semibold text-[#F5C542]">{p.confidencePct}%</span>
-                          </div>
-                        </td>
-                        <td className="px-2 py-1.5 font-medium text-[#d8decf]">{entryLevel}</td>
-                        <td className="px-2 py-1.5">
-                          <div className="flex flex-wrap gap-1">
-                            {slLevels.length ? (
-                              slLevels.map((price, idx) => (
-                                <span key={`${p.id}-sl-${idx}`} className="rounded-md border border-[#704844]/70 bg-[#1f1515] px-1.5 py-0.5 text-[11px] font-semibold text-[#e4b4af]">
-                                  SL{idx + 1} {price}
-                                </span>
-                              ))
-                            ) : (
-                              <span className="text-[#BFC2C7]">-</span>
-                            )}
-                          </div>
-                        </td>
-                        <td className="px-2 py-1.5">
-                          <div className="flex flex-wrap gap-1">
-                            {tpLevels.length ? (
-                              tpLevels.map((price, idx) => (
-                                <span key={`${p.id}-tp-${idx}`} className="rounded-md border border-[#5c6a56]/70 bg-[#171f16] px-1.5 py-0.5 text-[11px] font-semibold text-[#dce4d0]">
-                                  TP{idx + 1} {price}
-                                </span>
-                              ))
-                            ) : (
-                              <span className="text-[#BFC2C7]">-</span>
-                            )}
-                          </div>
-                        </td>
-                        <td className="px-2 py-1.5 text-right text-[#BFC2C7]">-</td>
-                        <td className="px-2 py-1.5 font-semibold text-[#BFC2C7]">
-                          <span className={`rounded-md border px-2 py-1 ${
-                            aiResultText === "TRADE"
-                              ? "border-[#6f8f6d] bg-[#1f2c1d] text-[#8fc9ab]"
-                              : aiResultText === "WATCH" || aiResultText === "WAIT"
-                                ? "border-[#7a6840] bg-[#2a2418] text-[#F5C542]"
-                                : "border-[#a85a52] bg-[#3a1e1d] text-[#d49f9a]"
-                          }`}>
-                            {aiResultText}
-                          </span>
-                        </td>
-                      </tr>
-                    );
-                  }
-
-                  // ── DB-backed idea row (Quant or AI with real tracking) ──
+                  // ── DB-backed idea row (same format for Quant and AI) ──
                   const p = raw as ApiTradeIdea & { user_id?: string };
                   const label = resultLabel(p);
                   const entryLevel = `${fmtLevel(Math.min(p.entry_low, p.entry_high))} - ${fmtLevel(Math.max(p.entry_low, p.entry_high))}`;
