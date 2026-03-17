@@ -330,6 +330,15 @@ export default function TradeIdeasReportPage() {
     return bucket?.items ?? [];
   }, [expandedHour, grouped]);
 
+  // ── Total PnL across all resolved ideas in current view ──
+  const totalPnlUsd = useMemo(() => {
+    const source = isAiReport ? aiFilteredDbIdeas : apiIdeas;
+    return source.reduce((sum, idea) => {
+      const sim = getPnlSimulation(idea);
+      return sim ? sum + sim.pnlUsd : sum;
+    }, 0);
+  }, [isAiReport, aiFilteredDbIdeas, apiIdeas]);
+
   // ── Last 100: NO time window, always latest 100 (same for AI and Quant) ──
   const last100 = useMemo(() => {
     const source = isAiReport ? aiFilteredDbIdeas : apiIdeas;
@@ -434,7 +443,7 @@ export default function TradeIdeasReportPage() {
             <span className="font-semibold text-white">{stats.totalReal}</span>
           </p>
 
-          <div className="mt-3 grid gap-2 sm:grid-cols-7">
+          <div className="mt-3 grid gap-2 sm:grid-cols-8">
             <div className="rounded-lg border border-white/10 bg-[#0F1012] px-3 py-2"><p className="text-[11px] text-[#6B6F76]">Total Scan</p><p className="text-lg font-semibold text-[#8A8F98]">{stats.totalScan}</p></div>
             <div className="rounded-lg border border-white/10 bg-[#0F1012] px-3 py-2"><p className="text-[11px] text-[#6B6F76]">Total Trade Ideas</p><p className="text-lg font-semibold text-white">{stats.total}</p></div>
             <div className="rounded-lg border border-white/10 bg-[#0F1012] px-3 py-2"><p className="text-[11px] text-[#6B6F76]">Entry Missed</p><p className="text-lg font-semibold text-[#8A8F98]">{entryMissedIdeas.length}</p></div>
@@ -442,6 +451,12 @@ export default function TradeIdeasReportPage() {
             <div className="rounded-lg border border-white/10 bg-[#0F1012] px-3 py-2"><p className="text-[11px] text-[#6B6F76]">Success</p><p className="text-lg font-semibold text-[#8fc9ab]">{stats.success}</p></div>
             <div className="rounded-lg border border-white/10 bg-[#0F1012] px-3 py-2"><p className="text-[11px] text-[#6B6F76]">Failed</p><p className="text-lg font-semibold text-[#d49f9a]">{stats.failed}</p></div>
             <div className="rounded-lg border border-white/10 bg-[#0F1012] px-3 py-2"><p className="text-[11px] text-[#6B6F76]">Success %</p><p className="text-lg font-semibold text-[#F5C542]">{stats.successRate.toFixed(1)}%</p></div>
+            <div className={`rounded-lg border px-3 py-2 ${totalPnlUsd >= 0 ? "border-[#6f8f6d]/40 bg-[#111a10]" : "border-[#a85a52]/40 bg-[#1a100f]"}`}>
+              <p className="text-[11px] text-[#6B6F76]">PnL Sim <span className="text-[9px] opacity-60">($10×10x)</span></p>
+              <p className={`text-lg font-semibold ${totalPnlUsd >= 0 ? "text-[#8fc9ab]" : "text-[#d49f9a]"}`}>
+                {totalPnlUsd >= 0 ? "+" : ""}{totalPnlUsd.toFixed(2)}$
+              </p>
+            </div>
           </div>
         </section>
 
