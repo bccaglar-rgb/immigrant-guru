@@ -225,6 +225,7 @@ type SharedAiState = {
   inFlight: boolean;
   updatedAt: string;
   universeCount: number;
+  aiRotationIndex: number;
   cursor: Record<AiModuleId, number>;
   moduleStatus: Record<AiModuleId, AiModuleStatus>;
   scansByModule: Record<AiModuleId, AiScanRow[]>;
@@ -238,6 +239,7 @@ const sharedAiState: SharedAiState = {
   inFlight: false,
   updatedAt: "",
   universeCount: 0,
+  aiRotationIndex: 0,
   cursor: {
     CHATGPT: 0,
     QWEN: 0,
@@ -908,6 +910,40 @@ const buildCompactPayload = (api: MarketApiResponse, universeRow?: BinanceFuture
     sz: panel.sizeHint,
   });
   if (Object.keys(plan).length) payload.plan = plan;
+
+  // 6. EX — execution block (needed by toScanRow for risk gates)
+  const spreadBps = universeRow ? Number(universeRow.spreadBps ?? 8) : 8;
+  const depthUsd = universeRow ? Number(universeRow.depthUsd ?? 0) : 0;
+  const slClass = spreadBps <= 4 ? 0 : spreadBps <= 10 ? 1 : 2;
+  const fillProb = Math.max(0.15, Math.min(0.92, depthUsd >= 1_500_000 ? 0.78 : depthUsd >= 300_000 ? 0.52 : 0.34));
+  const cap = depthUsd >= 1_500_000 ? 0.72 : depthUsd >= 300_000 ? 0.46 : 0.28;
+  const entryWindowOpen = String(api.entry_window ?? tileVal(tiles, "entry-timing-window") ?? "").toUpperCase() === "OPEN";
+  const ex = cleanBlock({
+    en: entryWindowOpen ? 1 : 1, // Default open — AI decides quality independently
+    sl: slClass,
+    pf: Number(fillProb.toFixed(3)),
+    cpct: Number(Math.max(0.2, Math.min(0.95, cap)).toFixed(3)),
+    lat: 0,
+  });
+  if (Object.keys(ex).length) payload.ex = ex;
+
+  // 7. ED — edge block
+  const riskEdge = universeRow && Number.isFinite(Number(universeRow.change24hPct))
+    ? Number(universeRow.change24hPct) / 100
+    : 0;
+  const ed = cleanBlock({
+    rae: Number(Math.max(-0.03, Math.min(0.12, riskEdge)).toFixed(3)),
+    pw: ce.pWin ?? (typeof modeScores.AGGRESSIVE === "number" ? modeScores.AGGRESSIVE : undefined),
+  });
+  if (Object.keys(ed).length) payload.ed = ed;
+
+  // 8. VO — volatility block
+  const atrVal = tileVal(tiles, "atr-regime");
+  const vo = cleanBlock({
+    atr: atrVal === "HIGH" ? 2 : atrVal === "LOW" ? 0 : 1,
+    ms: tileVal(tiles, "momentum-speed") === "HIGH" ? 2 : 1,
+  });
+  if (Object.keys(vo).length) payload.vo = vo;
 
   return payload;
 };
@@ -1614,10 +1650,19 @@ export const registerAiTradeIdeasRoutes = (
       const enabledModuleIds = ALL_MODULE_IDS.filter((id) => providers.some((p) => p.id === id));
       const totalCoinsNeeded = enabledModuleIds.length * AI_SCAN_COINS_PER_MODULE;
 
-      // ── Coin selection: top N from CoinUniverseEngine (unique per module) ──
+      // ── Coin selection: rotating window from CoinUniverseEngine (unique per module, new each cycle) ──
       let rankedSymbols: string[] = [];
       if (deps.coinUniverseEngine) {
-        rankedSymbols = deps.coinUniverseEngine.getActiveSymbolsRanked().slice(0, totalCoinsNeeded);
+        const allRanked = deps.coinUniverseEngine.getActiveSymbolsRanked();
+        // Rotate through the ranked list — each cycle picks a different slice
+        const poolSize = Math.max(allRanked.length, 1);
+        const offset = (sharedAiState.aiRotationIndex ?? 0) * totalCoinsNeeded;
+        const rotated: string[] = [];
+        for (let i = 0; i < totalCoinsNeeded && i < poolSize; i++) {
+          rotated.push(allRanked[(offset + i) % poolSize]);
+        }
+        rankedSymbols = rotated;
+        sharedAiState.aiRotationIndex = ((sharedAiState.aiRotationIndex ?? 0) + 1) % Math.max(1, Math.ceil(poolSize / totalCoinsNeeded));
       }
       // Fallback: volume-sorted universe rows
       if (!rankedSymbols.length) {
@@ -1696,10 +1741,10 @@ export const registerAiTradeIdeasRoutes = (
           let compactFallback: Record<string, any>;
 
           if (marketData) {
-            // Ultra-compact 5-block payload (meta, lvl, core, logic, plan)
+            // Ultra-compact payload with ex/ed/vo blocks for toScanRow risk gates
             const compactPayload = buildCompactPayload(marketData, universeRow);
             userPrompt = buildUserPrompt(JSON.stringify(compactPayload));
-            compactFallback = marketData;
+            compactFallback = compactPayload as Record<string, any>;
           } else {
             // Fallback: old compact format
             const compact = universeRow ? buildCompactFromUniverseRow(universeRow) : buildCompactFromSymbol(symbol);
