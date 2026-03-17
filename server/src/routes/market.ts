@@ -14,6 +14,7 @@ import type { SystemScannerService } from "../services/systemScannerService.ts";
 import type { CoinUniverseEngine } from "../services/coinUniverseEngine.ts";
 import type { HubEventBridge } from "../services/marketHub/HubEventBridge.ts";
 import { computeEnhancedScore } from "../services/coinScoring.ts";
+import { adaptiveRR } from "../services/adaptiveRRService.ts";
 
 type JsonValue = string | number | boolean | null | JsonValue[] | { [k: string]: JsonValue };
 type ExchangeName = "Binance" | "Bybit" | "OKX" | "Gate.io";
@@ -4137,11 +4138,12 @@ export const registerMarketRoutes = (
         sl1 = supports.length >= 1 ? supports[0].price - buffer : close - atrValue * 1.0;
         sl2 = supports.length >= 2 ? supports[1].price - buffer : close - atrValue * 2.0;
 
-        // Hybrid TP: max(structure level, RR target) → ensures minimum 1:2 RR
+        // Hybrid TP: max(structure level, RR target) → ensures minimum adaptive RR
         const risk1 = close - sl1;
         const risk2 = close - sl2;
-        const rrTp1 = close + risk1 * 2;
-        const rrTp2 = close + risk2 * 2.5;
+        const modeRR = adaptiveRR.getRR(scoringMode);
+        const rrTp1 = close + risk1 * modeRR;
+        const rrTp2 = close + risk2 * (modeRR * 1.25);
         tp1 = resistances.length >= 1 ? Math.max(resistances[0].price, rrTp1) : rrTp1;
         tp2 = resistances.length >= 2 ? Math.max(resistances[1].price, rrTp2) : rrTp2;
       } else {
@@ -4151,8 +4153,9 @@ export const registerMarketRoutes = (
 
         const risk1 = sl1 - close;
         const risk2 = sl2 - close;
-        const rrTp1 = close - risk1 * 2;
-        const rrTp2 = close - risk2 * 2.5;
+        const modeRR = adaptiveRR.getRR(scoringMode);
+        const rrTp1 = close - risk1 * modeRR;
+        const rrTp2 = close - risk2 * (modeRR * 1.25);
         tp1 = supports.length >= 1 ? Math.min(supports[0].price, rrTp1) : rrTp1;
         tp2 = supports.length >= 2 ? Math.min(supports[1].price, rrTp2) : rrTp2;
       }

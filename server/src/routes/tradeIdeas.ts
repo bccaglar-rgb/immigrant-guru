@@ -4,6 +4,7 @@ import { TradeIdeaStore } from "../services/tradeIdeaStore.ts";
 import type { TradeIdeaDirection, TradeIdeaRecord, TradeIdeaStatus } from "../services/tradeIdeaTypes.ts";
 import { isScoringMode, normalizeScoringMode, SCORING_MODES } from "../services/scoringMode.ts";
 import { SystemScannerService } from "../services/systemScannerService.ts";
+import { adaptiveRR } from "../services/adaptiveRRService.ts";
 
 const readUserId = (req: Request): string => {
   const raw = req.headers["x-user-id"];
@@ -434,6 +435,10 @@ export const registerTradeIdeasRoutes = (app: Express, store: TradeIdeaStore, sy
     if (!idea || idea.user_id !== userId) return res.status(404).json({ ok: false, error: "idea_not_found" });
     const events = await store.listEvents(id);
     return res.json({ ok: true, events });
+  });
+
+  app.get("/api/trade-ideas/rr-config", (_req, res) => {
+    return res.json({ ok: true, config: adaptiveRR.getConfig() });
   });
 
   app.get("/api/trade-ideas/:id", async (req, res) => {

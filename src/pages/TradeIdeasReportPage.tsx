@@ -162,6 +162,16 @@ export default function TradeIdeasReportPage() {
 
   // AI report: per-module stats from DB
   const [aiStatsByModule, setAiStatsByModule] = useState<Record<string, AiReportModuleStats>>({});
+  const [rrConfig, setRrConfig] = useState<Record<string, { currentRR: number; recommendedRR: number; winRate: number; tradeCount: number }>>({});
+
+  // ── RR Config Fetch (once on mount) ──
+  useEffect(() => {
+    if (isAiReport) return;
+    fetch("/api/trade-ideas/rr-config")
+      .then((r) => r.ok ? r.json() : null)
+      .then((body: any) => { if (body?.ok && body.config) setRrConfig(body.config); })
+      .catch(() => {});
+  }, [isAiReport]);
 
   // ── Data Fetch (every 10s) ──
   useEffect(() => {
@@ -458,6 +468,49 @@ export default function TradeIdeasReportPage() {
               </p>
             </div>
           </div>
+
+          {/* ── Adaptive RR Info (Quant only) ── */}
+          {!isAiReport && (() => {
+            const modeRR = rrConfig[scoringMode];
+            if (!modeRR) return null;
+            const hasEnough = modeRR.tradeCount >= 30;
+            const changed = hasEnough && modeRR.recommendedRR !== modeRR.currentRR;
+            return (
+              <div className="mt-3 flex flex-wrap items-center gap-3 rounded-lg border border-white/10 bg-[#0F1012] px-3 py-2 text-xs">
+                <span className="text-[#8A8F98]">Adaptive RR Optimizer</span>
+                <span className="text-[#6B6F76]">|</span>
+                <span>
+                  <span className="text-[#8A8F98]">Current RR: </span>
+                  <span className="font-semibold text-[#F5C542]">{modeRR.currentRR.toFixed(2)}</span>
+                </span>
+                <span className="text-[#6B6F76]">|</span>
+                <span>
+                  <span className="text-[#8A8F98]">Recommended: </span>
+                  <span className={`font-semibold ${changed ? "text-[#8fc9ab]" : "text-[#BFC2C7]"}`}>
+                    {hasEnough ? modeRR.recommendedRR.toFixed(2) : "–"}
+                  </span>
+                </span>
+                <span className="text-[#6B6F76]">|</span>
+                <span>
+                  <span className="text-[#8A8F98]">Based on </span>
+                  <span className="font-semibold text-white">{modeRR.tradeCount}</span>
+                  <span className="text-[#8A8F98]"> resolved trades</span>
+                </span>
+                {hasEnough && (
+                  <>
+                    <span className="text-[#6B6F76]">|</span>
+                    <span>
+                      <span className="text-[#8A8F98]">Win Rate: </span>
+                      <span className="font-semibold text-[#BFC2C7]">{(modeRR.winRate * 100).toFixed(1)}%</span>
+                    </span>
+                  </>
+                )}
+                {!hasEnough && (
+                  <span className="text-[#555] italic">min 30 trades required</span>
+                )}
+              </div>
+            );
+          })()}
         </section>
 
         {/* ── Hourly Breakdown (always last 24H) ── */}
