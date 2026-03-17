@@ -52,6 +52,11 @@ import { CoinUniverseEngine } from "./services/coinUniverseEngine.ts";
 const WORKER_ID = Number(process.env.NODE_APP_INSTANCE ?? "0");
 const IS_PRIMARY = WORKER_ID === 0;
 
+// HUB_EXTERNAL: When true, market data hub runs as a separate service (market-hub/).
+// All workers read from Redis only — no local WS connections to exchanges.
+// When false (default), Worker 0 runs the hub locally (backward compatible).
+const HUB_EXTERNAL = process.env.HUB_EXTERNAL === "true";
+
 const app = express();
 app.use(express.json());
 app.get("/api/health", (_req, res) => {
@@ -103,9 +108,29 @@ const traderHubStore = new TraderHubStore();
 const botScheduler = new BotScheduler(traderHubStore);
 const traderHubEngine = new TraderHubEngine(traderHubStore, botScheduler, { exchangeCore });
 const serverPort = Number(process.env.PORT ?? 8090);
-const coinUniverseEngine = new CoinUniverseEngine({ binanceFuturesHub });
+
+// ── HUB_EXTERNAL mode: Redis-backed stub for BinanceFuturesHub ──
+// When hub runs externally, CoinUniverseEngine reads universe from Redis instead of live WS.
+let _cachedUniverseRows: Array<Record<string, unknown>> = [];
+const redisBinanceHubStub = {
+  getUniverseRows() { return _cachedUniverseRows as any; },
+  getLiveRow(symbol: string) { return (_cachedUniverseRows as any[]).find((r: any) => r.symbol === symbol) ?? null; },
+  getStatus() { return { connected: false, stale: true, note: "external-hub" }; },
+  getTickers() { return []; },
+  getSymbols() { return []; },
+  onEvent() { return () => {}; },
+  start() {},
+  stop() {},
+  subscribeSymbols() {},
+  getPricePrecision() { return 2; },
+  getQuantityPrecision() { return 3; },
+};
+
+const coinUniverseEngine = new CoinUniverseEngine({
+  binanceFuturesHub: HUB_EXTERNAL ? redisBinanceHubStub as any : binanceFuturesHub,
+});
 const systemScanner = new SystemScannerService({
-  binanceFuturesHub,
+  binanceFuturesHub: HUB_EXTERNAL ? redisBinanceHubStub as any : binanceFuturesHub,
   tradeIdeaStore,
   serverPort,
   coinUniverseEngine,
@@ -153,7 +178,7 @@ if (process.env.NODE_ENV === "production") {
 }
 
 const server = http.createServer(app);
-createGateway(server, { exchangeMarketHub, hubEventBridge, binanceFuturesHub, isPrimary: IS_PRIMARY });
+createGateway(server, { exchangeMarketHub, hubEventBridge, binanceFuturesHub, isPrimary: IS_PRIMARY, hubExternal: HUB_EXTERNAL });
 
 const host = process.env.HOST ?? "127.0.0.1";
 const port = Number(process.env.PORT ?? 8090);
@@ -165,37 +190,54 @@ bootstrap()
       hubEventBridge.startSubscriber();
 
       if (IS_PRIMARY) {
-        // Singleton services — only Worker 0 (1 Binance WS → Redis → N workers)
-        binanceFuturesHub.start();
-        exchangeMarketHub.start();
-        hubEventBridge.startPublisher(exchangeMarketHub);
-        // Bulk-write ALL Binance symbol prices to Redis every 10s.
-        // Workers 1-2 read these snapshots to serve Binance data without REST (which is 403/418 blocked).
-        hubEventBridge.startBulkSnapshotFlush(() => binanceFuturesHub.getUniverseRows(), 10_000);
+        // ── Market Data Hub: local vs external ──
+        if (!HUB_EXTERNAL) {
+          // LOCAL MODE: Worker 0 runs WS hub (backward compatible)
+          binanceFuturesHub.start();
+          exchangeMarketHub.start();
+          hubEventBridge.startPublisher(exchangeMarketHub);
+          hubEventBridge.startBulkSnapshotFlush(() => binanceFuturesHub.getUniverseRows(), 10_000);
+          console.log(`[Worker ${WORKER_ID}] LOCAL hub mode — running WS connections`);
+        } else {
+          // EXTERNAL MODE: Hub runs as separate service (market-hub/)
+          // All data comes from Redis. Periodically refresh cached universe for CoinUniverseEngine.
+          const refreshCachedUniverse = async () => {
+            try {
+              const json = await hubEventBridge.getFuturesUniverse();
+              if (json) {
+                const parsed = JSON.parse(json);
+                _cachedUniverseRows = parsed.rows ?? [];
+              }
+            } catch { /* best-effort */ }
+          };
+          setTimeout(() => {
+            void refreshCachedUniverse();
+            setInterval(() => void refreshCachedUniverse(), 15_000);
+          }, 5_000);
+          console.log(`[Worker ${WORKER_ID}] EXTERNAL hub mode — reading from Redis`);
+        }
+
+        // Singleton services (run regardless of hub mode)
         exchangeCore.start();
         void traderHubEngine.start();
         tronMonitor.start();
-        // ══════════════════════════════════════════════════════════════
-        // Scanner + TradeIdeaTracker run in scanner-worker (scannerProcess.ts).
-        // CoinUniverseEngine refresh runs HERE on Worker 0 because it needs
-        // live WS hub data (scanner-worker has stub hub → empty).
-        // ══════════════════════════════════════════════════════════════
-        // tradeIdeaTracker.start();   // → scanner-worker
-        // systemScanner.start();       // → scanner-worker
 
-        // CoinUniverseEngine: refresh every 60s on Worker 0 (needs live WS hub data)
-        // After refresh, store snapshot in Redis so Workers 1-2 can serve the endpoint too.
+        // CoinUniverseEngine: refresh every 60s on Worker 0
+        // In HUB_EXTERNAL mode, reads universe from Redis cache (redisBinanceHubStub)
+        // In LOCAL mode, reads from live WS hub (binanceFuturesHub)
         const COIN_UNIVERSE_REFRESH_MS = 60_000;
-        const COIN_UNIVERSE_INITIAL_DELAY_MS = 30_000; // wait for hub to accumulate data
+        const COIN_UNIVERSE_INITIAL_DELAY_MS = HUB_EXTERNAL ? 20_000 : 30_000;
         setTimeout(() => {
           const doRefresh = async () => {
             try {
-              // ── BinanceFuturesHub universe → Redis (so Workers 1-2 and scanner-worker can read it) ──
-              const hubRows = binanceFuturesHub.getUniverseRows();
-              if (hubRows.length > 0) {
-                hubEventBridge.storeFuturesUniverse(JSON.stringify({
-                  ok: true, rows: hubRows, count: hubRows.length,
-                }));
+              // LOCAL mode: push universe to Redis for Workers 1-2
+              if (!HUB_EXTERNAL) {
+                const hubRows = binanceFuturesHub.getUniverseRows();
+                if (hubRows.length > 0) {
+                  hubEventBridge.storeFuturesUniverse(JSON.stringify({
+                    ok: true, rows: hubRows, count: hubRows.length,
+                  }));
+                }
               }
 
               await coinUniverseEngine.refresh();
@@ -209,16 +251,15 @@ bootstrap()
                   cooldownCoins: snapshot.cooldownCoins,
                 }));
 
-                // ── Shared Feature Engine: write per-symbol features to Redis ──
-                // Bot decision workers read these via featureCache.readFeature()
                 const allCoins = [...snapshot.activeCoins, ...snapshot.cooldownCoins];
-                // Enrich with BinanceFuturesHub depth/imbalance data
+                // Enrich: LOCAL mode uses live hub, EXTERNAL mode uses cached universe
+                const hubSource = HUB_EXTERNAL ? redisBinanceHubStub : binanceFuturesHub;
                 const enriched = allCoins.map((coin: Record<string, unknown>) => {
-                  const hubRow = binanceFuturesHub.getLiveRow(String(coin.symbol ?? ""));
+                  const hubRow = hubSource.getLiveRow(String(coin.symbol ?? ""));
                   return {
                     ...coin,
-                    depthUsd: hubRow?.depthUsd ?? null,
-                    imbalance: hubRow?.imbalance ?? null,
+                    depthUsd: (hubRow as any)?.depthUsd ?? null,
+                    imbalance: (hubRow as any)?.imbalance ?? null,
                   };
                 });
                 await writeFeatureCache(enriched as any);
@@ -228,12 +269,12 @@ bootstrap()
               console.error("[CoinUniverseEngine] Refresh error:", err?.message ?? err);
             }
           };
-          void doRefresh(); // first refresh
+          void doRefresh();
           setInterval(() => void doRefresh(), COIN_UNIVERSE_REFRESH_MS);
           console.log(`[Worker ${WORKER_ID}] CoinUniverseEngine refresh started (every ${COIN_UNIVERSE_REFRESH_MS / 1000}s)`);
         }, COIN_UNIVERSE_INITIAL_DELAY_MS);
 
-        console.log(`[Worker ${WORKER_ID}] PRIMARY — market data + hub publisher (scanner in separate process)`);
+        console.log(`[Worker ${WORKER_ID}] PRIMARY — ${HUB_EXTERNAL ? "external hub" : "local hub + publisher"} (scanner in separate process)`);
       } else {
         console.log(`[Worker ${WORKER_ID}] HTTP worker (hub events via Redis bridge)`);
       }

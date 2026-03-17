@@ -63,5 +63,28 @@ module.exports = {
       merge_logs: true,
       time: true,
     },
+    // ═══════════════════════════════════════════════════════════════
+    // Market Data Hub: Standalone exchange data ingestion service
+    // Binance + Gate.io WS → normalize → Redis pub/sub + hash snapshots
+    // Decoupled from market-worker: runs independently, writes to Redis.
+    // Enable by setting HUB_EXTERNAL=true on market-worker.
+    // ═══════════════════════════════════════════════════════════════
+    {
+      name: "market-hub",
+      script: "market-hub/src/index.ts",
+      interpreter: "node",
+      interpreter_args: "--experimental-strip-types",
+      instances: 1,
+      exec_mode: "fork",
+      env: {
+        NODE_ENV: "production",
+        HUB_PORT: 8091,
+        ...envFromFile,
+      },
+      kill_timeout: 15000,
+      max_memory_restart: "1200M",
+      merge_logs: true,
+      time: true,
+    },
   ],
 };

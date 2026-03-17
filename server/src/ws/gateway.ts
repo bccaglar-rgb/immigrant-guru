@@ -66,6 +66,7 @@ interface GatewayOpts {
   hubEventBridge?: HubEventBridge;
   binanceFuturesHub?: BinanceFuturesHub; // Pipeline 6: market list universe data
   isPrimary?: boolean; // Worker 0: use direct hub (skip Redis roundtrip)
+  hubExternal?: boolean; // When true, hub runs as separate service — all workers use Redis
 }
 
 export const createGateway = (httpServer: HttpServer, opts?: GatewayOpts) => {
@@ -284,7 +285,11 @@ export const createGateway = (httpServer: HttpServer, opts?: GatewayOpts) => {
         // Reset stale timestamp to avoid spamming
         lastKlineAtBySymbol.set(symbol, now);
         // Re-ensure symbol triggers re-subscribe on the adapter
-        opts?.exchangeMarketHub?.ensureSymbol(symbol);
+        if (opts?.hubExternal) {
+          opts?.hubEventBridge?.publishCommand({ cmd: "ensure_symbol", symbol });
+        } else {
+          opts?.exchangeMarketHub?.ensureSymbol(symbol);
+        }
       }
     }
   }, 5_000);
@@ -366,11 +371,17 @@ export const createGateway = (httpServer: HttpServer, opts?: GatewayOpts) => {
     }
   };
 
-  // Primary worker: listen to hub via setImmediate (async decoupling WITHOUT Redis roundtrip).
-  // This saves ~500 JSON.parse/sec that the Redis subscriber would do.
-  // The bridge publisher still runs for Workers 1,2 (they get events via Redis).
-  // Secondary workers: get events via Redis bridge as before.
-  if (opts?.isPrimary && opts?.exchangeMarketHub) {
+  // Hub event listening:
+  // - HUB_EXTERNAL mode: ALL workers use Redis bridge (hub is a separate service)
+  // - LOCAL mode: Worker 0 (primary) listens directly to hub (saves ~500 JSON.parse/sec)
+  //              Workers 1-2 use Redis bridge
+  if (opts?.hubExternal) {
+    // EXTERNAL hub: all workers use Redis bridge
+    if (opts?.hubEventBridge) {
+      opts.hubEventBridge.onEvent(handleHubEvent);
+      console.log("[Gateway] EXTERNAL hub — Redis bridge listener");
+    }
+  } else if (opts?.isPrimary && opts?.exchangeMarketHub) {
     opts.exchangeMarketHub.onEvent((event) => {
       setImmediate(() => handleHubEvent(event as { type: string; [k: string]: unknown }));
     });
@@ -523,8 +534,9 @@ export const createGateway = (httpServer: HttpServer, opts?: GatewayOpts) => {
     return false;
   };
 
-  // Worker 0: listen to BinanceFuturesHub for market list dirty tracking
-  if (opts?.isPrimary && opts?.binanceFuturesHub) {
+  // Worker 0 LOCAL mode: listen to BinanceFuturesHub for market list dirty tracking
+  // HUB_EXTERNAL mode: hub service does this and publishes patches to Redis
+  if (!opts?.hubExternal && opts?.isPrimary && opts?.binanceFuturesHub) {
     opts.binanceFuturesHub.onEvent((event: BinanceFuturesHubEvent) => {
       if (!hasMarketListClients()) return;
 
@@ -575,8 +587,9 @@ export const createGateway = (httpServer: HttpServer, opts?: GatewayOpts) => {
       if (state.marketListSubscribed) socket.send(body);
     }
 
-    // If primary, publish to Redis for secondary workers
-    if (opts?.isPrimary && opts?.hubEventBridge) {
+    // LOCAL mode: primary publishes to Redis for secondary workers
+    // EXTERNAL mode: hub service publishes patches, no local action needed
+    if (!opts?.hubExternal && opts?.isPrimary && opts?.hubEventBridge) {
       try {
         opts.hubEventBridge.publishMarketListPatch(body);
       } catch {
@@ -585,8 +598,9 @@ export const createGateway = (httpServer: HttpServer, opts?: GatewayOpts) => {
     }
   }, MARKET_LIST_FLUSH_MS);
 
-  // Worker 0: store full universe snapshot in Redis every 5s for secondary workers
-  if (opts?.isPrimary && opts?.binanceFuturesHub && opts?.hubEventBridge) {
+  // LOCAL mode: Worker 0 stores full universe snapshot in Redis every 5s
+  // EXTERNAL mode: hub service does this
+  if (!opts?.hubExternal && opts?.isPrimary && opts?.binanceFuturesHub && opts?.hubEventBridge) {
     setInterval(() => {
       try {
         const rows = opts.binanceFuturesHub!.getUniverseRows();
@@ -601,8 +615,10 @@ export const createGateway = (httpServer: HttpServer, opts?: GatewayOpts) => {
     }, 5_000);
   }
 
-  // Secondary workers: receive market_patch from Redis
-  if (!opts?.isPrimary && opts?.hubEventBridge) {
+  // Receive market_patch from Redis:
+  // - LOCAL mode: only secondary workers (Worker 0 generates patches locally)
+  // - EXTERNAL mode: ALL workers receive patches from Redis (hub service publishes)
+  if ((opts?.hubExternal || !opts?.isPrimary) && opts?.hubEventBridge) {
     opts.hubEventBridge.onMarketListPatch((patchJson: string) => {
       for (const [socket, state] of sockets.entries()) {
         if (socket.readyState !== WebSocket.OPEN) continue;
@@ -659,7 +675,11 @@ export const createGateway = (httpServer: HttpServer, opts?: GatewayOpts) => {
         void sendInitialBundle(socket, sub);
 
         // Ensure the hub is watching this symbol (triggers depth subscription + snapshot)
-        opts?.exchangeMarketHub?.ensureSymbol(symbol);
+        if (opts?.hubExternal) {
+          opts?.hubEventBridge?.publishCommand({ cmd: "ensure_symbol", symbol });
+        } else {
+          opts?.exchangeMarketHub?.ensureSymbol(symbol);
+        }
       } else if (parsed?.type === "unsubscribe_market") {
         const symbol = String(parsed.symbol ?? "BTCUSDT").toUpperCase();
         const interval = asInterval(parsed.interval);
@@ -677,8 +697,8 @@ export const createGateway = (httpServer: HttpServer, opts?: GatewayOpts) => {
         socket.send(JSON.stringify({ type: "subscribed_market_list", ts: Date.now() }));
 
         // Send initial snapshot
-        if (opts?.isPrimary && opts?.binanceFuturesHub) {
-          // Worker 0: direct access to hub data
+        if (!opts?.hubExternal && opts?.isPrimary && opts?.binanceFuturesHub) {
+          // LOCAL mode Worker 0: direct access to hub data
           try {
             const rows = opts.binanceFuturesHub.getUniverseRows();
             socket.send(JSON.stringify({ type: "market_snapshot", rows, ts: Date.now() }));
@@ -686,7 +706,8 @@ export const createGateway = (httpServer: HttpServer, opts?: GatewayOpts) => {
             socket.send(JSON.stringify({ type: "market_snapshot", rows: [], ts: Date.now() }));
           }
         } else {
-          // Workers 1-2: read snapshot from Redis (Worker 0 stores it every 5s)
+          // EXTERNAL mode (all workers) or LOCAL mode Workers 1-2:
+          // Read snapshot from Redis (hub service / Worker 0 stores it every 5s)
           void (async () => {
             try {
               const json = await opts?.hubEventBridge?.getMarketListSnapshot();

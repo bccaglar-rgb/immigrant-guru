@@ -407,21 +407,46 @@ export class HubEventBridge {
     }, 5_000);
   }
 
+  // ═══════════════════════════════════════════════════════════════
+  // Command channel: monolith → hub service (e.g., ensureSymbol)
+  // Monolith publishes to "hub:commands", hub service subscribes.
+  // ═══════════════════════════════════════════════════════════════
+  private cmdSub: Redis | null = null;
+
   /**
-   * Publish a command to the hub service via Redis pub/sub.
-   * Used in HUB_EXTERNAL mode when the hub runs as a separate service.
+   * Start listening for commands from the monolith via Redis pub/sub.
    * Commands: { cmd: "ensure_symbol", symbol: "DOGEUSDT" }
+   * Called ONLY in the standalone hub service.
    */
-  publishCommand(cmd: { cmd: string; symbol?: string }): void {
-    // Use reader connection (always available after startSubscriber)
-    // because pub connection only exists when startPublisher is called (not in HUB_EXTERNAL mode).
-    const conn = this.pub ?? this.reader;
-    if (!conn) return;
-    try {
-      conn.publish("hub:commands", JSON.stringify(cmd));
-    } catch {
-      // best-effort
-    }
+  startCommandSubscriber(
+    hub: ExchangeMarketHub,
+    binanceHub?: { subscribeSymbols?: (symbols: string[]) => void },
+  ): void {
+    this.cmdSub = new Redis(redisOpts);
+    this.cmdSub.on("error", (err) => {
+      console.error("[HubEventBridge:cmd] Redis error:", err.message);
+    });
+
+    const CMD_CHANNEL = "hub:commands";
+    this.cmdSub.subscribe(CMD_CHANNEL, (err) => {
+      if (err) {
+        console.error("[HubEventBridge] Command subscribe failed:", err.message);
+      } else {
+        console.log("[HubEventBridge] Listening on hub:commands channel");
+      }
+    });
+
+    this.cmdSub.on("message", (_channel: string, message: string) => {
+      try {
+        const cmd = JSON.parse(message) as { cmd: string; symbol?: string };
+        if (cmd.cmd === "ensure_symbol" && cmd.symbol) {
+          hub.ensureSymbol(cmd.symbol);
+          console.log(`[HubEventBridge:cmd] ensureSymbol(${cmd.symbol})`);
+        }
+      } catch {
+        // malformed command — skip
+      }
+    });
   }
 
   stop(): void {
@@ -441,6 +466,11 @@ export class HubEventBridge {
     if (this.reader) {
       this.reader.disconnect();
       this.reader = null;
+    }
+    if (this.cmdSub) {
+      this.cmdSub.unsubscribe("hub:commands").catch(() => {});
+      this.cmdSub.disconnect();
+      this.cmdSub = null;
     }
     if (this.bulkFlushTimer) {
       clearInterval(this.bulkFlushTimer);

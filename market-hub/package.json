@@ -1,0 +1,19 @@
+{
+  "name": "bitrium-market-hub",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "start": "node --experimental-strip-types src/index.ts",
+    "dev": "node --experimental-strip-types src/index.ts"
+  },
+  "dependencies": {
+    "ws": "^8.18.0",
+    "ioredis": "^5.10.0",
+    "express": "^4.21.0"
+  },
+  "devDependencies": {
+    "@types/ws": "^8.5.0",
+    "@types/express": "^5.0.0"
+  }
+}
