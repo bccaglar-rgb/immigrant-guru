@@ -52,6 +52,11 @@ const AI_MODULE_THEME: Record<AiProviderId, { label: string; labelClass: string;
     labelClass: "border-[#6b4fa8]/80 bg-[#241a3c] text-[#dbcdfd]",
     chipClass: "border-[#6b4fa8]/70 bg-[#241a3c] text-[#dbcdfd]",
   },
+  QWEN2: {
+    label: "Qwen-2",
+    labelClass: "border-[#8b4fa8]/80 bg-[#2e1a3c] text-[#e8cdfd]",
+    chipClass: "border-[#8b4fa8]/70 bg-[#2e1a3c] text-[#e8cdfd]",
+  },
 };
 
 type AiScanRow = {
@@ -335,14 +340,17 @@ export default function TradeIdeasPage() {
   const [aiModules, setAiModules] = useState<Record<AiProviderId, boolean>>({
     CHATGPT: true,
     QWEN: true,
+    QWEN2: true,
   });
   const [aiModuleStatus, setAiModuleStatus] = useState<Record<AiProviderId, AiModuleStatus>>({
     CHATGPT: { running: false, lastRunAt: "", error: "" },
     QWEN: { running: false, lastRunAt: "", error: "" },
+    QWEN2: { running: false, lastRunAt: "", error: "" },
   });
   const [aiScansByModule, setAiScansByModule] = useState<Record<AiProviderId, AiScanRow[]>>({
     CHATGPT: [],
     QWEN: [],
+    QWEN2: [],
   });
   const [aiUniverseCount, setAiUniverseCount] = useState(0);
   const [aiLastUpdatedAt, setAiLastUpdatedAt] = useState("");
@@ -751,6 +759,7 @@ export default function TradeIdeasPage() {
         const moduleStatusNext: Record<AiProviderId, AiModuleStatus> = {
           CHATGPT: { running: false, lastRunAt: "", error: "" },
           QWEN: { running: false, lastRunAt: "", error: "" },
+          QWEN2: { running: false, lastRunAt: "", error: "" },
         };
         const enabledModules: Partial<Record<AiProviderId, boolean>> = {};
         for (const moduleState of state.modules ?? []) {
@@ -766,12 +775,14 @@ export default function TradeIdeasPage() {
           setAiModules((prev) => ({
             CHATGPT: enabledModules.CHATGPT === false ? false : prev.CHATGPT,
             QWEN: enabledModules.QWEN === false ? false : prev.QWEN,
+            QWEN2: enabledModules.QWEN2 === false ? false : prev.QWEN2,
           }));
         }
-        const byModule = state.scansByModule ?? { CHATGPT: [], QWEN: [] };
+        const byModule = state.scansByModule ?? { CHATGPT: [], QWEN: [], QWEN2: [] };
         setAiScansByModule({
           CHATGPT: (byModule.CHATGPT ?? []) as AiScanRow[],
           QWEN: (byModule.QWEN ?? []) as AiScanRow[],
+          QWEN2: (byModule.QWEN2 ?? []) as AiScanRow[],
         });
         setAiStateError("");
       } catch {
@@ -1219,12 +1230,10 @@ export default function TradeIdeasPage() {
                             type="button"
                             onClick={() => setAiModules((prev) => ({ ...prev, [moduleId]: !prev[moduleId] }))}
                             className={`rounded-md border px-2 py-1.5 text-left text-xs font-semibold ${
-                              moduleId === "CHATGPT"
-                                ? "border-[#3d5f8f]/80 bg-[#132033] text-[#b8d3ff]"
-                                : "border-[#6b4fa8]/80 bg-[#241a3c] text-[#dbcdfd]"
+                              AI_MODULE_THEME[moduleId]?.labelClass ?? "border-white/20 bg-[#151a22] text-white/80"
                             } ${active ? "" : "opacity-45 grayscale"}`}
                           >
-                            {moduleId === "CHATGPT" ? "ChatGPT" : "Qwen"}
+                            {AI_MODULE_THEME[moduleId]?.label ?? moduleId}
                           </button>
                           <span
                             className={`rounded-full border px-2 py-0.5 text-[10px] font-semibold ${

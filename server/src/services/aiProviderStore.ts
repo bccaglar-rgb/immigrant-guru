@@ -1,6 +1,6 @@
 import { pool } from "../db/pool.ts";
 
-export type AiProviderId = "CHATGPT" | "QWEN";
+export type AiProviderId = "CHATGPT" | "QWEN" | "QWEN2";
 
 export interface AiProviderRecord {
   id: AiProviderId;
@@ -37,6 +37,17 @@ const defaultProviders = (): AiProviderRecord[] => [
     temperature: 0.2,
     maxTokens: 1200,
   },
+  {
+    id: "QWEN2",
+    enabled: true,
+    baseUrl: "https://openrouter.ai/api/v1/chat/completions",
+    apiKey: process.env.QWEN_API_KEY_2 ?? "",
+    model: "qwen/qwen-2.5-72b-instruct",
+    intervalSec: 180,
+    timeoutMs: 15000,
+    temperature: 0.2,
+    maxTokens: 1200,
+  },
 ];
 
 const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v));
@@ -45,7 +56,7 @@ const normalizeProvider = (raw: unknown): AiProviderRecord | null => {
   if (!raw || typeof raw !== "object") return null;
   const row = raw as Record<string, unknown>;
   const idRaw = String(row.id ?? "").toUpperCase();
-  if (idRaw !== "CHATGPT" && idRaw !== "QWEN") return null;
+  if (idRaw !== "CHATGPT" && idRaw !== "QWEN" && idRaw !== "QWEN2") return null;
   const id = idRaw as AiProviderId;
   const intervalSec = clamp(Number(row.intervalSec ?? 180) || 180, 60, 900);
   const timeoutMs = clamp(Number(row.timeoutMs ?? 15000) || 15000, 5000, 60000);
@@ -83,7 +94,7 @@ export class AiProviderStore {
     return defaultProviders().map((def) => fromDb.find((n) => n.id === def.id) ?? def);
   }
 
-  /** Ensure both providers exist in DB (visible in admin panel) and auto-enable CHATGPT if it has an API key */
+  /** Ensure all providers exist in DB (visible in admin panel) and auto-enable if they have API keys */
   async ensureChatGptEnabled(): Promise<void> {
     try {
       // 1. Ensure both providers have DB rows so they're visible/editable in admin panel
@@ -101,6 +112,7 @@ export class AiProviderStore {
       const envKeys: Record<string, string> = {
         CHATGPT: (process.env.OPENAI_API_KEY ?? "").trim(),
         QWEN: (process.env.QWEN_API_KEY ?? "").trim(),
+        QWEN2: (process.env.QWEN_API_KEY_2 ?? "").trim(),
       };
       for (const [providerId, envKey] of Object.entries(envKeys)) {
         if (envKey) {
@@ -138,7 +150,7 @@ export class AiProviderStore {
     const normalized = items
       .map((row) => normalizeProvider(row))
       .filter((row): row is AiProviderRecord => Boolean(row));
-    // Merge with defaults so both CHATGPT and QWEN always exist
+    // Merge with defaults so CHATGPT, QWEN, QWEN2 always exist
     const merged = defaultProviders().map((def) => normalized.find((n) => n.id === def.id) ?? def);
 
     const client = await pool.connect();

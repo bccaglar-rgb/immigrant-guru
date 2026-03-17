@@ -88,7 +88,7 @@ const resolveProviderEndpoint = (provider: AiProviderRecord): string => {
       "https://api.openai.com/v1/chat/completions",
     );
   }
-  if (provider.id === "QWEN") {
+  if (provider.id === "QWEN" || provider.id === "QWEN2") {
     return normalizeChatCompletionsEndpoint(
       String(provider.baseUrl ?? ""),
       "https://openrouter.ai/api/v1/chat/completions",
@@ -120,8 +120,10 @@ type AiModuleStatus = {
   scanned: number;
 };
 
+type AiModuleId = "CHATGPT" | "QWEN" | "QWEN2";
+
 type AiProviderDebug = {
-  provider: "CHATGPT" | "QWEN";
+  provider: AiModuleId;
   ok: boolean;
   endpoint: string;
   model: string;
@@ -132,7 +134,7 @@ type AiProviderDebug = {
 };
 
 type AiScanRow = {
-  module: "CHATGPT" | "QWEN";
+  module: AiModuleId;
   symbol: string;
   tf: string;
   profile?: string;
@@ -205,11 +207,13 @@ type SharedAiState = {
   inFlight: boolean;
   updatedAt: string;
   universeCount: number;
-  cursor: Record<"CHATGPT" | "QWEN", number>;
-  moduleStatus: Record<"CHATGPT" | "QWEN", AiModuleStatus>;
-  scansByModule: Record<"CHATGPT" | "QWEN", AiScanRow[]>;
-  lastProviderDebug: Record<"CHATGPT" | "QWEN", AiProviderDebug | null>;
+  cursor: Record<AiModuleId, number>;
+  moduleStatus: Record<AiModuleId, AiModuleStatus>;
+  scansByModule: Record<AiModuleId, AiScanRow[]>;
+  lastProviderDebug: Record<AiModuleId, AiProviderDebug | null>;
 };
+
+const ALL_MODULE_IDS: AiModuleId[] = ["CHATGPT", "QWEN", "QWEN2"];
 
 const sharedAiState: SharedAiState = {
   started: false,
@@ -219,18 +223,22 @@ const sharedAiState: SharedAiState = {
   cursor: {
     CHATGPT: 0,
     QWEN: 0,
+    QWEN2: 0,
   },
   moduleStatus: {
     CHATGPT: { running: false, lastRunAt: "", error: "", updatedAt: "", scanned: 0 },
     QWEN: { running: false, lastRunAt: "", error: "", updatedAt: "", scanned: 0 },
+    QWEN2: { running: false, lastRunAt: "", error: "", updatedAt: "", scanned: 0 },
   },
   scansByModule: {
     CHATGPT: [],
     QWEN: [],
+    QWEN2: [],
   },
   lastProviderDebug: {
     CHATGPT: null,
     QWEN: null,
+    QWEN2: null,
   },
 };
 
@@ -907,7 +915,7 @@ const fetchMarketSnapshot = async (symbol: string, serverPort: number): Promise<
 };
 
 const toScanRow = (
-  moduleId: "CHATGPT" | "QWEN",
+  moduleId: AiModuleId,
   symbol: string,
   response: Awaited<ReturnType<typeof callProvider>>,
   compact: Record<string, any>,
@@ -1482,7 +1490,7 @@ export const registerAiTradeIdeasRoutes = (
       sharedAiState.universeCount = liveRows.length;
 
       if (!topSymbols.length) {
-        const moduleIds: Array<"CHATGPT" | "QWEN"> = ["CHATGPT", "QWEN"];
+        const moduleIds = ALL_MODULE_IDS;
         for (const moduleId of moduleIds) {
           sharedAiState.moduleStatus[moduleId] = {
             ...sharedAiState.moduleStatus[moduleId],
@@ -1498,7 +1506,7 @@ export const registerAiTradeIdeasRoutes = (
         return;
       }
 
-      const moduleIds: Array<"CHATGPT" | "QWEN"> = ["CHATGPT", "QWEN"];
+      const moduleIds = ALL_MODULE_IDS;
       for (const moduleId of moduleIds) {
         const provider = providers.find((row) => row.id === moduleId);
         const status = sharedAiState.moduleStatus[moduleId];
@@ -1578,7 +1586,7 @@ export const registerAiTradeIdeasRoutes = (
       sharedAiState.updatedAt = nowIso;
     } catch (error) {
       const message = error instanceof Error ? error.message : "scan_failed";
-      const moduleIds: Array<"CHATGPT" | "QWEN"> = ["CHATGPT", "QWEN"];
+      const moduleIds = ALL_MODULE_IDS;
       for (const moduleId of moduleIds) {
         sharedAiState.moduleStatus[moduleId] = {
           ...sharedAiState.moduleStatus[moduleId],
@@ -1702,7 +1710,7 @@ export const registerAiTradeIdeasRoutes = (
       }
       const providers = await store.getAll();
       const enabled = providers.filter((row) => row.enabled).map((row) => row.id);
-      const moduleIds: Array<"CHATGPT" | "QWEN"> = ["CHATGPT", "QWEN"];
+      const moduleIds = ALL_MODULE_IDS;
       return res.json({
         ok: true,
         ts: new Date().toISOString(),
@@ -1729,7 +1737,7 @@ export const registerAiTradeIdeasRoutes = (
 
   app.get("/api/ai-trade-ideas/debug", async (_req, res) => {
     try {
-      const moduleIds: Array<"CHATGPT" | "QWEN"> = ["CHATGPT", "QWEN"];
+      const moduleIds = ALL_MODULE_IDS;
       return res.json({
         ok: true,
         ts: new Date().toISOString(),

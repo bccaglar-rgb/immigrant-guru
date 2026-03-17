@@ -1,4 +1,4 @@
-export type TraderAiModule = "CHATGPT" | "QWEN";
+export type TraderAiModule = "CHATGPT" | "QWEN" | "QWEN2";
 export type TraderExchange = "AUTO" | "BINANCE" | "GATEIO";
 export type TraderRunStatus = "RUNNING" | "STOPPED" | "ERROR";
 

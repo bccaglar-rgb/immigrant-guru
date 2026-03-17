@@ -333,8 +333,9 @@ export default function TradeIdeasReportPage() {
               {isAiReport ? (
                 <div className="inline-flex items-center gap-1 rounded-lg border border-white/10 bg-[#0F1012] px-2 py-1">
                   <span className="text-[11px] text-[#8A8F98]">AI</span>
-                  {(["ALL", "CHATGPT", "QWEN"] as AiModelFilter[]).map((item) => {
+                  {(["ALL", "CHATGPT", "QWEN", "QWEN2"] as AiModelFilter[]).map((item) => {
                     const active = aiModelFilter === item;
+                    const label = item === "ALL" ? "All" : item === "CHATGPT" ? "ChatGPT" : item === "QWEN" ? "Qwen" : "Qwen-2";
                     return (
                       <button
                         key={item}
@@ -346,7 +347,7 @@ export default function TradeIdeasReportPage() {
                             : "border border-white/10 bg-[#121316] text-[#BFC2C7] hover:text-white"
                         }`}
                       >
-                        {item === "ALL" ? "All" : item === "CHATGPT" ? "ChatGPT" : "Qwen"}
+                        {label}
                       </button>
                     );
                   })}
@@ -395,7 +396,7 @@ export default function TradeIdeasReportPage() {
               <>
                 AI Model:{" "}
                 <span className="font-semibold text-[#F5C542]">
-                  {aiModelFilter === "CHATGPT" ? "ChatGPT" : "Qwen"}
+                  {aiModelFilter === "CHATGPT" ? "ChatGPT" : aiModelFilter === "QWEN" ? "Qwen" : "Qwen-2"}
                 </span>{" "}
                 ·{" "}
               </>
@@ -577,9 +578,11 @@ export default function TradeIdeasReportPage() {
                             <span className={`rounded-full border px-1.5 py-0.5 text-[10px] font-semibold ${
                               p.module === "CHATGPT"
                                 ? "border-[#3d5f8f]/70 bg-[#132033] text-[#b8d3ff]"
-                                : "border-[#6b4fa8]/70 bg-[#241a3c] text-[#dbcdfd]"
+                                : p.module === "QWEN2"
+                                  ? "border-[#8b4fa8]/70 bg-[#2e1a3c] text-[#e8cdfd]"
+                                  : "border-[#6b4fa8]/70 bg-[#241a3c] text-[#dbcdfd]"
                             }`}>
-                              {p.module === "CHATGPT" ? "ChatGPT" : "Qwen"}
+                              {p.module === "CHATGPT" ? "ChatGPT" : p.module === "QWEN2" ? "Qwen-2" : "Qwen"}
                             </span>
                           </div>
                         </td>

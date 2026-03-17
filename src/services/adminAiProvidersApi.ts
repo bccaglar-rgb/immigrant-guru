@@ -1,4 +1,4 @@
-export type AiProviderId = "CHATGPT" | "QWEN";
+export type AiProviderId = "CHATGPT" | "QWEN" | "QWEN2";
 
 export interface AiProviderConfigDto {
   id: AiProviderId;
