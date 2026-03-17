@@ -1,6 +1,7 @@
 import express, { type Express } from "express";
 import type { AiProviderStore, AiProviderRecord } from "../services/aiProviderStore.ts";
 import type { BinanceFuturesHub, BinanceFuturesUniverseRow } from "../services/binanceFuturesHub.ts";
+import type { CoinUniverseEngine } from "../services/coinUniverseEngine.ts";
 
 const maskKey = (key?: string) => {
   const raw = String(key ?? "").trim();
@@ -17,18 +18,42 @@ const toSafeProvider = (row: AiProviderRecord) => ({
 
 const buildSystemPrompt = () =>
   [
-    "You are Bitrium AI trade consensus assistant.",
-    "Return strict JSON only.",
-    "Use schema_version bitrium_gpt_consensus_out_v1.",
-    "Do not add markdown, code fences, or prose outside JSON.",
-    "If a field is unknown, keep null or empty string exactly as schema requires.",
-    "Decision policy is mandatory: TRADE, WATCH, or NO_TRADE.",
-    "Use NO_TRADE only when hard gates fail (data_fail, severely_low_fill, severely_negative_edge).",
-    "Use WATCH when soft gates fail (entry_closed, slippage_high, borderline_fill, borderline_edge, high_latency).",
-    "Use TRADE only when critical gates pass and setup is actionable.",
-    "Always fill blockers[] and activate_if[] with concise machine-readable items.",
-    "Include compact dbg object when possible: {g:{data,risk,entry,fill,edge,cap}, hard_fail:[], soft_fail:[], raw, pen}.",
+    "You are an institutional crypto trade evaluator working on top of a quantitative trading engine.",
+    "You will receive structured engine data. Some fields or even whole sections may be omitted when the engine has no data for them.",
+    "Rules:",
+    "1. Use only the fields explicitly provided.",
+    "2. Missing fields mean unavailable data, not negative data.",
+    "3. Do not penalize a setup only because a field is absent.",
+    "4. Evaluate the setup using structure, levels, liquidity, positioning, volatility, risk, execution, engine outputs, logic summary, and hints when available.",
+    "5. Use support, resistance, liquidity zones, entry zones, invalidation zones, and target zones as the primary basis for entry, stop, and target decisions.",
+    "6. Do not invent arbitrary price levels disconnected from the provided structure.",
+    "7. Return one final decision only: TRADE, WATCH, or NO_TRADE.",
+    "8. Return one direction only: LONG, SHORT, or NONE.",
+    "9. Return a score from 0 to 100.",
+    "10. Return confidence from 0 to 100.",
+    "11. Explain the decision in Turkish using at most 80 words.",
+    "12. Return only valid JSON and no extra text.",
+    "Decision thresholds: 78 to 100 = TRADE, 62 to 77 = WATCH, 0 to 61 = NO_TRADE.",
   ].join(" ");
+
+const buildUserPrompt = (engineJson: string) =>
+  [
+    "Evaluate this crypto setup using the provided quant engine data.",
+    "Your tasks:",
+    "- score the setup from 0 to 100",
+    "- give confidence from 0 to 100",
+    "- choose one decision: TRADE, WATCH, or NO_TRADE",
+    "- choose one direction: LONG, SHORT, or NONE",
+    "- determine entry zone, stop levels, and target levels using the provided market levels and engine logic",
+    "- explain the reason in Turkish using maximum 80 words",
+    "- return only valid JSON",
+    "",
+    "Use this exact JSON output schema:",
+    '{"score":0,"confidence":0,"decision":"TRADE","direction":"LONG","entry_zone_low":0.0,"entry_zone_high":0.0,"stop_1":0.0,"stop_2":0.0,"target_1":0.0,"target_2":0.0,"reason_80_words":"","risk_flags":[]}',
+    "",
+    "Data:",
+    engineJson,
+  ].join("\n");
 
 const normalizeChatCompletionsEndpoint = (urlRaw: string, fallback: string): string => {
   const configured = String(urlRaw ?? "").trim();
@@ -59,8 +84,8 @@ const resolveProviderEndpoint = (provider: AiProviderRecord): string => {
   return "";
 };
 
-const AI_SCAN_INTERVAL_MS = 180_000;
-const AI_SCAN_BATCH_SIZE = 10;
+const AI_SCAN_INTERVAL_MS = 60_000;
+const AI_SCAN_BATCH_SIZE = 2;
 const AI_SCAN_ROW_LIMIT = 80;
 const AI_MIN_CONSENSUS = 60;
 const AI_MODE_BUFFER: Record<string, number> = {
@@ -695,6 +720,298 @@ const buildCompactFromSymbol = (symbol: string) => {
   };
 };
 
+/* ── 15-Block Full Payload Builder ─────────────────────────── */
+
+type TileEntry = { key: string; state?: string; value?: number; rawValue?: string };
+type MarketApiResponse = Record<string, any>;
+
+/** Remove undefined, null, empty string, empty arrays from an object (1 level deep) */
+const cleanBlock = <T extends Record<string, unknown>>(obj: T): Partial<T> => {
+  const out: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(obj)) {
+    if (v === undefined || v === null) continue;
+    if (v === "" || v === "UNKNOWN" || v === "N/A") continue;
+    if (Array.isArray(v) && v.length === 0) continue;
+    out[k] = v;
+  }
+  return out as Partial<T>;
+};
+
+const tileVal = (tiles: TileEntry[], key: string): string | undefined => {
+  const t = tiles.find((tile) => tile.key === key);
+  if (!t) return undefined;
+  const s = t.state;
+  if (!s || s === "UNKNOWN" || s === "N/A") return undefined;
+  return s;
+};
+
+const tileNum = (tiles: TileEntry[], key: string): number | undefined => {
+  const t = tiles.find((tile) => tile.key === key);
+  if (!t) return undefined;
+  if (typeof t.value === "number" && Number.isFinite(t.value)) return t.value;
+  if (t.rawValue) {
+    const matched = t.rawValue.match(/-?\d+(?:\.\d+)?/);
+    if (matched) return Number(matched[0]);
+  }
+  return undefined;
+};
+
+const buildFullPayload = (api: MarketApiResponse, universeRow?: BinanceFuturesUniverseRow): Record<string, unknown> => {
+  const tiles: TileEntry[] = Array.isArray(api.snapshot_tiles) ? api.snapshot_tiles : [];
+  const panel = api.ai_panel ?? {};
+  const ce = panel.consensusEngine ?? {};
+  const payload: Record<string, unknown> = {};
+
+  // 1. META
+  const meta = cleanBlock({
+    symbol: String(api.text ?? "").match(/Symbol:\s*(\S+)/)?.[1] ?? universeRow?.symbol ?? "",
+    timeframe: api.timeframe ?? api.tf_pack?.primary ?? "15m",
+    current_price: api.price_value ?? universeRow?.price,
+    timestamp: api.compute_ts ?? new Date().toISOString(),
+    exchange: api.exchange ?? "BINANCE",
+    horizon: api.horizon ?? "INTRADAY",
+    risk_mode: "NORMAL",
+    session: panel.sessionContext?.session,
+  });
+  if (Object.keys(meta).length) payload.meta = meta;
+
+  // 2. LEVELS
+  const klArr = Array.isArray(api.key_levels) ? api.key_levels : [];
+  const supports = klArr.filter((l: any) => l.type === "support").map((l: any) => ({ price: l.price, strength: l.strength }));
+  const resistances = klArr.filter((l: any) => l.type === "resistance").map((l: any) => ({ price: l.price, strength: l.strength }));
+  const levels = cleanBlock({
+    supports: supports.length ? supports : undefined,
+    resistances: resistances.length ? resistances : undefined,
+    nearest_support: supports[0]?.price,
+    nearest_resistance: resistances[0]?.price,
+    entry_zone_low: api.entry_low,
+    entry_zone_high: api.entry_high,
+    invalidation_level: Array.isArray(api.sl_levels) ? api.sl_levels[1] : undefined,
+    target_zone_1: Array.isArray(api.tp_levels) ? api.tp_levels[0] : undefined,
+    target_zone_2: Array.isArray(api.tp_levels) ? api.tp_levels[1] : undefined,
+  });
+  if (Object.keys(levels).length) payload.levels = levels;
+
+  // 3. STRUCTURE
+  const structure = cleanBlock({
+    market_regime: tileVal(tiles, "market-regime"),
+    distance_key_level: tileVal(tiles, "distance-key-level"),
+    range_position: tileVal(tiles, "range-position"),
+    liquidity_cluster_nearby: tileVal(tiles, "liquidity-cluster"),
+    last_swing_distance: tileVal(tiles, "last-swing-distance"),
+    htf_level_reaction: tileVal(tiles, "htf-level-reaction"),
+    structure_age: tileVal(tiles, "structure-age"),
+    time_in_range: tileNum(tiles, "time-in-range"),
+    trend_direction: tileVal(tiles, "trend-direction"),
+    trend_strength: tileVal(tiles, "trend-strength"),
+    trend_phase: tileVal(tiles, "trend-phase"),
+    ema_alignment: tileVal(tiles, "ema-alignment"),
+    vwap_position: tileVal(tiles, "vwap-position"),
+    time_since_regime_change: tileNum(tiles, "time-since-regime-change"),
+    market_intent: tileVal(tiles, "market-intent") ?? panel.marketIntent,
+  });
+  if (Object.keys(structure).length) payload.structure = structure;
+
+  // 4. LIQUIDITY / MICROSTRUCTURE
+  const liquidity = cleanBlock({
+    orderbook_imbalance: tileVal(tiles, "orderbook-imbalance"),
+    stop_cluster_probability: tileVal(tiles, "stop-cluster-probability"),
+    liquidity_distance: tileNum(tiles, "liquidity-distance"),
+    reaction_sensitivity: tileVal(tiles, "reaction-sensitivity"),
+    impulse_readiness: tileVal(tiles, "impulse-readiness"),
+    aggressor_flow: tileVal(tiles, "aggressor-flow"),
+    liquidity_density: tileVal(tiles, "liquidity-density"),
+    orderbook_stability: tileVal(tiles, "orderbook-stability"),
+  });
+  if (Object.keys(liquidity).length) payload.liquidity = liquidity;
+
+  // 5. POSITIONING
+  const positioning = cleanBlock({
+    volume_spike: tileVal(tiles, "volume-spike"),
+    buy_sell_imbalance: tileVal(tiles, "buy-sell-imbalance"),
+    oi_change_1h: api.oi_change_1h ?? tileNum(tiles, "oi-change"),
+    funding_bias: tileVal(tiles, "funding-bias"),
+    funding_slope: tileVal(tiles, "funding-slope"),
+    liquidations_bias: tileVal(tiles, "liquidations-bias"),
+    move_participation_score: tileVal(tiles, "move-participation-score"),
+    spot_vs_derivatives_pressure: tileVal(tiles, "spot-vs-derivatives-pressure"),
+    real_momentum_score: tileVal(tiles, "real-momentum-score"),
+  });
+  if (Object.keys(positioning).length) payload.positioning = positioning;
+
+  // 6. VOLATILITY
+  const volatility = cleanBlock({
+    atr_regime: tileVal(tiles, "atr-regime"),
+    compression: tileVal(tiles, "compression"),
+    market_speed: tileVal(tiles, "market-speed"),
+    breakout_risk: tileVal(tiles, "breakout-risk"),
+    fake_breakout_probability: tileVal(tiles, "fake-breakout-prob"),
+    expansion_probability: tileVal(tiles, "expansion-prob"),
+    sudden_move_risk: tileVal(tiles, "sudden-move-risk"),
+    volatility_expansion_probability: tileVal(tiles, "volatility-expansion-prob"),
+    news_risk_flag: tileVal(tiles, "news-risk-flag"),
+  });
+  if (Object.keys(volatility).length) payload.volatility = volatility;
+
+  // 7. RISK ENVIRONMENT
+  const risk_environment = cleanBlock({
+    signal_conflict_level: tileVal(tiles, "signal-conflict") ?? panel.conflictLevel,
+    cascade_risk: tileVal(tiles, "cascade-risk"),
+    trap_probability: tileVal(tiles, "trap-probability"),
+    market_stress_level: tileVal(tiles, "market-stress-level"),
+    crowding_risk: panel.crowdingRisk,
+  });
+  if (Object.keys(risk_environment).length) payload.risk_environment = risk_environment;
+
+  // 8. EXECUTION
+  const execution = cleanBlock({
+    spread_regime: tileVal(tiles, "spread-regime"),
+    depth_quality: tileVal(tiles, "depth-quality"),
+    liquidity_density: tileVal(tiles, "liquidity-density"),
+    entry_quality: tileVal(tiles, "entry-quality"),
+    rr_potential: tileVal(tiles, "rr-potential"),
+    invalidation_distance: tileVal(tiles, "invalidation-distance"),
+    reward_distance: tileVal(tiles, "reward-distance"),
+    risk_arrival_speed: tileVal(tiles, "risk-arrival-speed"),
+    reward_accessibility: tileVal(tiles, "reward-accessibility"),
+    entry_timing_window: api.entry_window ?? tileVal(tiles, "entry-timing-window"),
+    slippage_risk: api.slippage_risk ?? tileVal(tiles, "slippage-risk"),
+    asymmetry: tileVal(tiles, "asymmetry-score"),
+  });
+  if (Object.keys(execution).length) payload.execution = execution;
+
+  // 9. ON-CHAIN (omit entire block if no data)
+  const onchain = cleanBlock({
+    exchange_inflow_outflow: tileVal(tiles, "exchange-inflow-outflow"),
+    whale_activity: tileVal(tiles, "whale-activity"),
+    wallet_distribution: tileVal(tiles, "wallet-distribution"),
+    active_addresses: tileNum(tiles, "active-addresses"),
+    nvt_ratio: tileNum(tiles, "nvt-ratio"),
+    mvrv_ratio: tileNum(tiles, "mvrv-ratio"),
+    dormancy: tileNum(tiles, "dormancy"),
+    relative_strength_vs_market: tileVal(tiles, "relative-strength-vs-market"),
+    opportunity_rank: tileVal(tiles, "opportunity-rank"),
+    btc_leadership_state: tileVal(tiles, "btc-leadership-state"),
+  });
+  if (Object.keys(onchain).length) payload.onchain = onchain;
+
+  // 10. SIGNALS / DECISION PANEL
+  const signals = cleanBlock({
+    trade_validity: api.trade_validity,
+    bias: panel.bias ?? api.direction,
+    intent: panel.marketIntent,
+    urgency: panel.executionUrgency,
+    slippage: api.slippage_risk,
+    entry_timing: api.entry_window,
+    risk_gate: tileVal(tiles, "risk-gate"),
+    market_stress: tileVal(tiles, "market-stress-level"),
+    model_agreement_aligned: panel.modelAgreement?.aligned,
+    model_agreement_total: panel.modelAgreement?.totalModels,
+  });
+  if (Object.keys(signals).length) payload.signals = signals;
+
+  // 11. SCORE ENGINE
+  const modeScores = api.mode_scores ?? {};
+  const scores = cleanBlock({
+    final_score: typeof modeScores.AGGRESSIVE === "number" ? Math.round(modeScores.AGGRESSIVE * 100) : undefined,
+    flow_score: typeof modeScores.FLOW === "number" ? Math.round(modeScores.FLOW * 100) : undefined,
+    balanced_score: typeof modeScores.BALANCED === "number" ? Math.round(modeScores.BALANCED * 100) : undefined,
+    capital_guard_score: typeof modeScores.CAPITAL_GUARD === "number" ? Math.round(modeScores.CAPITAL_GUARD * 100) : undefined,
+    edge_net: ce.edgeNetR,
+    fill_probability: ce.pFill,
+    capacity: ce.capacityFactor,
+    risk_adjusted_edge: ce.riskAdjustedEdgeR,
+    pwin: ce.pWin,
+    stop_probability: ce.pStop,
+    avg_win_r: ce.avgWinR,
+    expected_rr: ce.expectedRR,
+    cost_r: ce.costR,
+    expected_hold_bars: ce.expectedHoldingBars,
+    penalty_rate: ce.penaltyRate,
+    penalty_impact: ce.penaltyApplied,
+    raw_consensus: ce.rawConsensus,
+    adjusted_consensus: ce.adjustedConsensus,
+  });
+  if (Object.keys(scores).length) payload.scores = scores;
+
+  // 12. PLAYBOOK / SCENARIO
+  const playbook = cleanBlock({
+    active_playbook: panel.playbook ?? api.setup,
+    trend_continuation_prob: panel.scenarioOutlook?.trendContinuation,
+    range_continuation_prob: panel.scenarioOutlook?.rangeContinuation,
+    breakout_move_prob: panel.scenarioOutlook?.breakoutMove,
+  });
+  if (Object.keys(playbook).length) payload.playbook = playbook;
+
+  // 13. TRADE PLAN
+  const trade_plan = cleanBlock({
+    direction: api.direction,
+    entry_zone_low: api.entry_low,
+    entry_zone_high: api.entry_high,
+    stop_1: Array.isArray(api.sl_levels) ? api.sl_levels[0] : undefined,
+    stop_2: Array.isArray(api.sl_levels) ? api.sl_levels[1] : undefined,
+    target_1: Array.isArray(api.tp_levels) ? api.tp_levels[0] : undefined,
+    target_2: Array.isArray(api.tp_levels) ? api.tp_levels[1] : undefined,
+    confidence: api.mode_scores?.AGGRESSIVE != null ? Math.round(api.mode_scores.AGGRESSIVE * 100) : undefined,
+    size_hint: panel.sizeHint,
+  });
+  if (Object.keys(trade_plan).length) payload.trade_plan = trade_plan;
+
+  // 14. SERVER LOGIC SUMMARY
+  const dt = api.decision_trace?.selected ?? {};
+  const mb = api.mode_breakdown?.AGGRESSIVE ?? {};
+  const logic = cleanBlock({
+    setup_type: api.setup ?? panel.playbook,
+    setup_strength: dt.coreAlpha,
+    trend_alignment: panel.confidenceDrivers?.structure,
+    level_quality: panel.priceLocation,
+    liquidity_alignment: panel.confidenceDrivers?.liquidity,
+    positioning_alignment: panel.confidenceDrivers?.positioning,
+    execution_alignment: panel.confidenceDrivers?.execution,
+    risk_penalty: mb.penaltyApplied ?? ce.penaltyApplied,
+    penalty_rate: mb.penaltyRate ?? ce.penaltyRate,
+    gating_flags: Array.isArray(panel.gatingFlags) && panel.gatingFlags.length ? panel.gatingFlags : undefined,
+    location_score: dt.tradeability,
+    continuation_prob: panel.scenarioOutlook?.trendContinuation,
+    reversal_prob: panel.scenarioOutlook?.breakoutMove,
+  });
+  if (Object.keys(logic).length) payload.logic = logic;
+
+  // 15. INTERNAL HINTS
+  const hints = cleanBlock({
+    preferred_side: api.direction,
+    preferred_action: panel.executionUrgency,
+    trade_window_open: api.entry_window === "OPEN" ? true : api.entry_window === "CLOSED" ? false : undefined,
+    size_hint: panel.sizeHint,
+    size_hint_reason: panel.sizeHintReason,
+    triggers_to_activate: Array.isArray(api.triggers_to_activate) && api.triggers_to_activate.length ? api.triggers_to_activate : undefined,
+    invalidation_triggers: Array.isArray(api.invalidation_triggers) && api.invalidation_triggers.length ? api.invalidation_triggers : undefined,
+  });
+  if (Object.keys(hints).length) payload.hints = hints;
+
+  return payload;
+};
+
+/* ── Internal market API call ─────────────────────────────── */
+
+const fetchMarketSnapshot = async (symbol: string, serverPort: number): Promise<MarketApiResponse | null> => {
+  try {
+    const url = `http://127.0.0.1:${serverPort}/api/market/trade-idea?` +
+      `symbol=${encodeURIComponent(symbol)}` +
+      `&timeframe=15m&horizon=INTRADAY&exchange=Binance` +
+      `&scoring_mode=AGGRESSIVE&source=exchange&strict=0&include_snapshot=1`;
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 12_000);
+    const res = await fetch(url, { signal: controller.signal });
+    clearTimeout(timeout);
+    if (!res.ok) return null;
+    const data = (await res.json()) as MarketApiResponse;
+    return data.ok ? data : null;
+  } catch {
+    return null;
+  }
+};
+
 const toScanRow = (
   moduleId: "CHATGPT" | "QWEN",
   symbol: string,
@@ -1104,7 +1421,7 @@ const callProvider = async (
         response_format: { type: "json_object" },
         messages: [
           { role: "system", content: buildSystemPrompt() },
-          { role: "user", content: JSON.stringify(payload) },
+          { role: "user", content: typeof payload === "string" ? payload : buildUserPrompt(JSON.stringify(payload)) },
         ],
       };
       const res = await fetch(endpoint, {
@@ -1237,25 +1554,55 @@ export const registerAiTradeIdeasRoutes = (
   store: AiProviderStore,
   deps: {
     binanceFuturesHub: BinanceFuturesHub;
+    coinUniverseEngine?: CoinUniverseEngine;
+    serverPort?: number;
   },
 ) => {
   const runSharedScan = async () => {
     if (sharedAiState.inFlight) return;
     sharedAiState.inFlight = true;
     const nowIso = new Date().toISOString();
+    const port = deps.serverPort ?? 8090;
     try {
       const providers = (await store.getAll()).filter((row) => row.enabled);
-      const liveRows = deps.binanceFuturesHub
-        .getUniverseRows()
-        .filter((row) => Number.isFinite(Number(row.price)) && Number(row.price) > 0)
-        .sort((a, b) => Number(b.volume24hUsd ?? 0) - Number(a.volume24hUsd ?? 0));
-      // AI ideas must be generated from live exchange rows only.
-      // If there is no live feed, do not fall back to synthetic/default symbols.
-      const symbols = liveRows
-        .map((row) => String(row.symbol ?? "").toUpperCase())
-        .filter(Boolean) as string[];
+
+      // ── Coin selection: top 2 from CoinUniverseEngine composite score ──
+      let topSymbols: string[] = [];
+      if (deps.coinUniverseEngine) {
+        topSymbols = deps.coinUniverseEngine.getActiveSymbolsRanked().slice(0, AI_SCAN_BATCH_SIZE);
+      }
+      // Fallback: volume-sorted universe rows
+      if (!topSymbols.length) {
+        const liveRows = deps.binanceFuturesHub
+          .getUniverseRows()
+          .filter((row) => Number.isFinite(Number(row.price)) && Number(row.price) > 0)
+          .sort((a, b) => Number(b.volume24hUsd ?? 0) - Number(a.volume24hUsd ?? 0));
+        topSymbols = liveRows
+          .slice(0, AI_SCAN_BATCH_SIZE)
+          .map((row) => String(row.symbol ?? "").toUpperCase())
+          .filter(Boolean);
+      }
+
+      const liveRows = deps.binanceFuturesHub.getUniverseRows();
       const rowBySymbol = new Map(liveRows.map((row) => [String(row.symbol ?? "").toUpperCase(), row]));
-      sharedAiState.universeCount = symbols.length;
+      sharedAiState.universeCount = liveRows.length;
+
+      if (!topSymbols.length) {
+        const moduleIds: Array<"CHATGPT" | "QWEN"> = ["CHATGPT", "QWEN"];
+        for (const moduleId of moduleIds) {
+          sharedAiState.moduleStatus[moduleId] = {
+            ...sharedAiState.moduleStatus[moduleId],
+            running: false,
+            error: "live_unavailable",
+            errorDetail: "No coins available from engine or exchange hub",
+            scanned: 0,
+            lastRunAt: nowIso,
+            updatedAt: nowIso,
+          };
+        }
+        sharedAiState.updatedAt = nowIso;
+        return;
+      }
 
       const moduleIds: Array<"CHATGPT" | "QWEN"> = ["CHATGPT", "QWEN"];
       for (const moduleId of moduleIds) {
@@ -1271,26 +1618,30 @@ export const registerAiTradeIdeasRoutes = (
           status.updatedAt = nowIso;
           continue;
         }
-        const ordered = moduleId === "CHATGPT" ? symbols.slice() : symbols.slice().reverse();
-        if (!ordered.length) {
-          status.running = false;
-          status.error = "live_unavailable";
-          status.errorDetail = "No live market rows available from exchange hub";
-          status.scanned = 0;
-          status.lastRunAt = nowIso;
-          status.updatedAt = nowIso;
-          continue;
-        }
-        const cursor = sharedAiState.cursor[moduleId] % ordered.length;
-        const rotated = [...ordered.slice(cursor), ...ordered.slice(0, cursor)];
-        const batch = rotated.slice(0, AI_SCAN_BATCH_SIZE);
         const rows: AiScanRow[] = [];
         let firstError = "";
         let firstErrorDetail = "";
-        for (const symbol of batch) {
-          const live = rowBySymbol.get(symbol);
-          const compact = live ? buildCompactFromUniverseRow(live) : buildCompactFromSymbol(symbol);
-          const response = await callProvider(provider, compact);
+
+        for (const symbol of topSymbols) {
+          // ── Fetch full quant engine snapshot via internal API ──
+          const marketData = await fetchMarketSnapshot(symbol, port);
+          const universeRow = rowBySymbol.get(symbol);
+          let userPrompt: string;
+          let compactFallback: Record<string, any>;
+
+          if (marketData) {
+            // Full 15-block structured payload
+            const fullPayload = buildFullPayload(marketData, universeRow);
+            userPrompt = buildUserPrompt(JSON.stringify(fullPayload));
+            compactFallback = marketData;
+          } else {
+            // Fallback: old compact format
+            const compact = universeRow ? buildCompactFromUniverseRow(universeRow) : buildCompactFromSymbol(symbol);
+            userPrompt = buildUserPrompt(JSON.stringify(compact));
+            compactFallback = compact as Record<string, any>;
+          }
+
+          const response = await callProvider(provider, userPrompt);
           if (response.debug) {
             sharedAiState.lastProviderDebug[moduleId] = response.debug;
           }
@@ -1302,8 +1653,8 @@ export const registerAiTradeIdeasRoutes = (
             rows.push({
               module: moduleId,
               symbol,
-              tf: String((compact as Record<string, unknown>).tf ?? "15m"),
-              profile: mapProfile(String((compact as Record<string, unknown>)?.o?.["mode"] ?? "AGGRESSIVE")),
+              tf: "15m",
+              profile: "INTRADAY",
               contract: "PERP",
               scorePct: 0,
               reason: String(response.error ?? "provider_error").toUpperCase(),
@@ -1314,9 +1665,10 @@ export const registerAiTradeIdeasRoutes = (
             });
             continue;
           }
-          rows.push(toScanRow(moduleId, symbol, response, compact as Record<string, any>));
+          rows.push(toScanRow(moduleId, symbol, response, compactFallback));
         }
-        sharedAiState.cursor[moduleId] = (cursor + batch.length) % ordered.length;
+
+        // No cursor rotation needed — always scan top 2 from engine
         sharedAiState.scansByModule[moduleId] = [...rows, ...(sharedAiState.scansByModule[moduleId] ?? [])]
           .slice(0, AI_SCAN_ROW_LIMIT)
           .sort((a, b) => {
@@ -1325,7 +1677,7 @@ export const registerAiTradeIdeasRoutes = (
         status.running = false;
         status.lastRunAt = nowIso;
         status.updatedAt = nowIso;
-        status.scanned = batch.length;
+        status.scanned = topSymbols.length;
         status.error = firstError;
         status.errorDetail = firstErrorDetail;
       }

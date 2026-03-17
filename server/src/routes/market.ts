@@ -4229,6 +4229,34 @@ Always manage your own risk.`;
         triggers_to_activate: selectedPanel.triggerConditions.slice(0, 4),
         invalidation_triggers: selectedPanel.invalidationTriggers.slice(0, 2),
         key_levels: keyLevelsResponse,
+        // Full snapshot data for AI consumers (opt-in via ?include_snapshot=1)
+        ...(String(req.query.include_snapshot ?? "0") === "1" ? {
+          snapshot_tiles: selectedSnapshot.tiles
+            .filter((t) => t.state && t.state !== "UNKNOWN")
+            .map((t) => ({ key: t.key, state: t.state, ...(t.value != null ? { value: t.value } : {}), ...(t.rawValue ? { rawValue: t.rawValue } : {}) })),
+          ai_panel: {
+            bias: selectedPanel.bias,
+            conflictLevel: selectedPanel.conflictLevel,
+            playbook: selectedPanel.playbook,
+            confidenceDrivers: selectedPanel.confidenceDrivers,
+            scenarioOutlook: selectedPanel.scenarioOutlook,
+            crowdingRisk: selectedPanel.crowdingRisk,
+            modelAgreement: selectedPanel.modelAgreement,
+            executionUrgency: selectedPanel.executionUrgency,
+            sizeHint: selectedPanel.sizeHint,
+            sizeHintReason: selectedPanel.sizeHintReason,
+            triggerConditions: selectedPanel.triggerConditions,
+            invalidationTriggers: selectedPanel.invalidationTriggers,
+            consensusEngine: selectedPanel.consensusEngine,
+            gatingFlags: selectedPanel.gatingFlags,
+            layerScores: selectedPanel.layerScores,
+            freshness: selectedPanel.freshness,
+            summary: selectedPanel.summary?.slice(0, 4),
+            keyReasons: selectedPanel.keyReasons?.slice(0, 4),
+            marketIntent: selectedPanel.marketIntent,
+            priceLocation: selectedPanel.priceLocation,
+          },
+        } : {}),
       });
     } catch (err) {
       res.status(500).json({ ok: false, error: err instanceof Error ? err.message : "trade idea fetch failed" });

@@ -130,7 +130,7 @@ registerAuthRoutes(app, authService);
 registerUserSettingsRoutes(app);
 registerTradeIdeasRoutes(app, tradeIdeaStore, systemScanner);
 registerAdminProviderRoutes(app, adminProviderStore);
-registerAiTradeIdeasRoutes(app, aiProviderStore, { binanceFuturesHub });
+registerAiTradeIdeasRoutes(app, aiProviderStore, { binanceFuturesHub, coinUniverseEngine, serverPort });
 registerExchangeCoreRoutes(app, exchangeCore);
 registerTraderHubRoutes(app, traderHubEngine);
 registerPaymentsRoutes(app, authService, paymentService);
