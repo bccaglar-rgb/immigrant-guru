@@ -80,11 +80,15 @@ jobs:
               fi
             fi
 
-            # Debug: what is actually listening on 443 and serving content?
-            echo "=== lsof :443 ==="
-            lsof -i :443 -P -n 2>/dev/null | head -15
+            # Debug: check for caching configs and what's really listening
+            echo "=== performance.conf ==="
+            cat /etc/nginx/conf.d/performance.conf 2>/dev/null
+            echo "=== All processes on :443 (LISTEN only) ==="
+            ss -tlnp | grep 443
             echo "=== Server self-curl ==="
             curl -skI "https://127.0.0.1/" -H "Host: bitrium.com" 2>/dev/null | grep -E "(content-length|x-deploy)"
+            echo "=== Check if any proxy_cache enabled ==="
+            nginx -T 2>/dev/null | grep -i "proxy_cache\|open_file_cache\|fastcgi_cache" || echo "No caching directives"
 
             # Zero-downtime reload: PM2 restarts workers one by one
             pm2 reload ecosystem.config.cjs || pm2 start ecosystem.config.cjs
