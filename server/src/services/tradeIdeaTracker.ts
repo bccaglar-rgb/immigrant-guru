@@ -1,6 +1,7 @@
 import { isEntryMissed, isEntryTouched, minutesBetween, resolveFirstHit, resolveFirstHitFromRange } from "./tradeIdeaLogic.ts";
 import { TradeIdeaStore } from "./tradeIdeaStore.ts";
 import type { TradeIdeaRecord } from "./tradeIdeaTypes.ts";
+import { redis } from "../db/redis.ts";
 
 type Horizon = TradeIdeaRecord["horizon"];
 
@@ -210,6 +211,45 @@ const fetchSymbolPrice = async (symbol: string): Promise<number | null> => {
     }
   }
   return null;
+};
+
+/**
+ * Bulk-fetch live prices for many symbols from Redis (hub:live:{symbol} hashes).
+ * Worker 0 writes these every 10s from BinanceFuturesHub via HubEventBridge.
+ * This is MUCH faster than making 5 REST API calls per symbol — one Redis pipeline
+ * for all symbols takes <50ms vs 5-60s for REST APIs.
+ *
+ * Returns a Map of symbol → price. Symbols not in Redis are returned in the
+ * `missing` set so the caller can fall back to REST for those.
+ */
+const bulkFetchPricesFromRedis = async (symbols: string[]): Promise<{ prices: Map<string, number>; missing: string[] }> => {
+  const prices = new Map<string, number>();
+  const missing: string[] = [];
+  if (!symbols.length) return { prices, missing };
+
+  try {
+    const pipeline = redis.pipeline();
+    for (const symbol of symbols) {
+      pipeline.hget(`hub:live:${symbol}`, "lastTradePrice");
+    }
+    const results = await pipeline.exec();
+    if (!results) return { prices, missing: [...symbols] };
+
+    for (let i = 0; i < symbols.length; i++) {
+      const result = results[i];
+      if (result && !result[0] && result[1]) {
+        const price = Number(result[1]);
+        if (Number.isFinite(price) && price > 0) {
+          prices.set(symbols[i], price);
+          continue;
+        }
+      }
+      missing.push(symbols[i]);
+    }
+  } catch {
+    return { prices, missing: [...symbols] };
+  }
+  return { prices, missing };
 };
 
 export class TradeIdeaTracker {
@@ -512,26 +552,30 @@ export class TradeIdeaTracker {
 
       const symbols = [...new Set(openIdeas.map((idea) => idea.symbol.toUpperCase()))];
       const t0 = Date.now();
-      console.log(`[TradeIdeaTracker] tick: fetching prices for ${symbols.length} symbols (${openIdeas.length} ideas)...`);
-      const symbolPrices = new Map<string, number>();
 
-      // Batch symbol price fetches in chunks of 20 to avoid overwhelming external APIs
-      const CHUNK_SIZE = 20;
-      for (let i = 0; i < symbols.length; i += CHUNK_SIZE) {
-        const chunk = symbols.slice(i, i + CHUNK_SIZE);
-        await Promise.all(
-          chunk.map(async (symbol) => {
-            const price = await fetchSymbolPrice(symbol);
-            if (typeof price === "number") symbolPrices.set(symbol, price);
-          }),
-        );
+      // 1. Bulk-fetch from Redis (fast: single pipeline, <50ms for 500+ symbols)
+      const { prices: symbolPrices, missing } = await bulkFetchPricesFromRedis(symbols);
+      const redisMs = Date.now() - t0;
+
+      // 2. REST fallback only for symbols NOT in Redis (typically spot-only coins)
+      if (missing.length > 0) {
+        const CHUNK_SIZE = 20;
+        for (let i = 0; i < missing.length; i += CHUNK_SIZE) {
+          const chunk = missing.slice(i, i + CHUNK_SIZE);
+          await Promise.all(
+            chunk.map(async (symbol) => {
+              const price = await fetchSymbolPrice(symbol);
+              if (typeof price === "number") symbolPrices.set(symbol, price);
+            }),
+          );
+        }
       }
 
       const pending = openIdeas.filter((i) => i.status === "PENDING").length;
       const active = openIdeas.filter((i) => i.status === "ACTIVE").length;
       const priced = symbolPrices.size;
       const elapsed = Date.now() - t0;
-      console.log(`[TradeIdeaTracker] tick: ${openIdeas.length} ideas (${pending}P/${active}A), ${priced}/${symbols.length} prices fetched in ${elapsed}ms`);
+      console.log(`[TradeIdeaTracker] tick: ${openIdeas.length} ideas (${pending}P/${active}A), ${priced}/${symbols.length} prices (redis=${symbols.length - missing.length} in ${redisMs}ms, rest=${missing.length}) total ${elapsed}ms`);
 
       for (const idea of openIdeas) {
         const currentPrice = symbolPrices.get(idea.symbol.toUpperCase());
