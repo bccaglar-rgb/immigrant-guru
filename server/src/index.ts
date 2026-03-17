@@ -49,6 +49,7 @@ import { SystemScannerService } from "./services/systemScannerService.ts";
 import { CoinUniverseEngine } from "./services/coinUniverseEngine.ts";
 import { adaptiveRR } from "./services/adaptiveRRService.ts";
 import { optimizationScheduler } from "./services/optimizer/optimizationScheduler.ts";
+import { tickOrchestrator } from "./services/tickOrchestrator.ts";
 
 // PM2 cluster mode: Worker 0 = primary (runs singleton services + HTTP)
 // Worker 1, 2 = HTTP-only
@@ -227,6 +228,7 @@ bootstrap()
         tronMonitor.start();
         adaptiveRR.start();
         optimizationScheduler.start();
+        tickOrchestrator.start();
 
         // CoinUniverseEngine: refresh every 60s on Worker 0
         // In HUB_EXTERNAL mode, reads universe from Redis cache (redisBinanceHubStub)

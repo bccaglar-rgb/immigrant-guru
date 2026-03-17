@@ -22,11 +22,18 @@ const DEFAULT_CONCURRENCY = 64;
 const RESEED_INTERVAL_MS = 30_000;
 const RESEED_BATCH_SIZE = 200;
 
+// Priority levels: lower number = higher priority (BullMQ convention)
+export const JOB_PRIORITY = {
+  HIGH: 1,    // bot with open position — must not be delayed
+  NORMAL: 5,  // standard scan bot
+} as const;
+
 export interface BotJobData {
   traderId: string;
   userId: string;
   symbol: string;
   scanIntervalSec: number;
+  hasOpenPosition?: boolean; // true → HIGH priority
 }
 
 export interface BotJobResult {
@@ -124,8 +131,9 @@ export class BotScheduler {
   }
 
   /** Enqueue a single bot for immediate or delayed processing. */
-  async enqueue(trader: { id: string; userId: string; symbol: string; scanIntervalSec: number }, delaySec = 0): Promise<void> {
+  async enqueue(trader: { id: string; userId: string; symbol: string; scanIntervalSec: number; hasOpenPosition?: boolean }, delaySec = 0): Promise<void> {
     try {
+      const priority = trader.hasOpenPosition ? JOB_PRIORITY.HIGH : JOB_PRIORITY.NORMAL;
       await this.queue.add(
         `bot:${trader.id}`,
         {
@@ -133,10 +141,12 @@ export class BotScheduler {
           userId: trader.userId,
           symbol: trader.symbol,
           scanIntervalSec: trader.scanIntervalSec,
+          hasOpenPosition: trader.hasOpenPosition ?? false,
         },
         {
           delay: delaySec > 0 ? delaySec * 1000 : 0,
           jobId: `bot-${trader.id}`, // prevents duplicate jobs for same bot
+          priority,
         },
       );
     } catch (err: any) {
@@ -158,12 +168,14 @@ export class BotScheduler {
     }
   }
 
-  /** Get queue metrics for monitoring. */
+  /** Get queue metrics for monitoring (Prometheus / dashboard). */
   async getMetrics(): Promise<{
     waiting: number;
     active: number;
     delayed: number;
     failed: number;
+    priorityHigh: number;
+    priorityNormal: number;
   }> {
     const [waiting, active, delayed, failed] = await Promise.all([
       this.queue.getWaitingCount(),
@@ -171,7 +183,19 @@ export class BotScheduler {
       this.queue.getDelayedCount(),
       this.queue.getFailedCount(),
     ]);
-    return { waiting, active, delayed, failed };
+
+    // Count jobs by priority (best-effort — sample from waiting jobs)
+    let priorityHigh = 0;
+    let priorityNormal = 0;
+    try {
+      const waitingJobs = await this.queue.getWaiting(0, Math.min(waiting, 500));
+      for (const job of waitingJobs) {
+        if ((job.opts?.priority ?? JOB_PRIORITY.NORMAL) <= JOB_PRIORITY.HIGH) priorityHigh++;
+        else priorityNormal++;
+      }
+    } catch { /* best-effort */ }
+
+    return { waiting, active, delayed, failed, priorityHigh, priorityNormal };
   }
 
   // ── Internal ──
