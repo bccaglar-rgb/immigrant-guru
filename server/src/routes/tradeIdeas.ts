@@ -185,9 +185,13 @@ export const registerTradeIdeasRoutes = (app: Express, store: TradeIdeaStore, sy
       ? allIdeas.filter((i) => Date.parse(i.created_at) >= cutoffMs)
       : allIdeas;
 
+    const MARGIN = 10;
+    const LEVERAGE = 10;
+    const POSITION_SIZE = MARGIN * LEVERAGE;
+
     const statsByMode: Record<string, {
       totalScan: number; highScoreScan: number; totalIdeas: number; active: number; resolved: number;
-      success: number; failed: number; entryMissed: number; successRate: number;
+      success: number; failed: number; entryMissed: number; successRate: number; totalPnlUsd: number;
     }> = {};
 
     for (const mode of ALL_MODES) {
@@ -206,6 +210,18 @@ export const registerTradeIdeasRoutes = (app: Express, store: TradeIdeaStore, sy
       const success = activatedIdeas.filter((i) => i.result === "SUCCESS").length;
       const failed = activatedIdeas.filter((i) => i.result === "FAIL").length;
       const resolved = success + failed;
+
+      let totalPnlUsd = 0;
+      for (const idea of activatedIdeas.filter((i) => i.result === "SUCCESS" || i.result === "FAIL")) {
+        if (!idea.hit_level_price || !idea.entry_low || !idea.entry_high) continue;
+        const entryPrice = (idea.entry_low + idea.entry_high) / 2;
+        if (!entryPrice) continue;
+        const priceChange = idea.direction === "LONG"
+          ? (idea.hit_level_price - entryPrice) / entryPrice
+          : (entryPrice - idea.hit_level_price) / entryPrice;
+        totalPnlUsd += POSITION_SIZE * priceChange;
+      }
+
       statsByMode[mode] = {
         totalScan: totalScansByMode[mode] ?? 0,
         highScoreScan: 0, // TODO: persist high-score counts if needed
@@ -216,6 +232,7 @@ export const registerTradeIdeasRoutes = (app: Express, store: TradeIdeaStore, sy
         failed,
         entryMissed: entryMissedCount,
         successRate: resolved > 0 ? (success / resolved) * 100 : 0,
+        totalPnlUsd,
       };
     }
 

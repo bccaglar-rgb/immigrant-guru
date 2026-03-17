@@ -626,7 +626,7 @@ export default function TradeIdeasPage() {
   const [reportTimeRange, setReportTimeRange] = useState<string>("24h");
   const [reportStatsByMode, setReportStatsByMode] = useState<Record<string, {
     totalScan: number; highScoreScan: number; totalIdeas: number; active: number; resolved: number;
-    successful: number; failed: number; entryMissed: number; successRate: number;
+    successful: number; failed: number; entryMissed: number; successRate: number; totalPnlUsd: number;
   }>>({});
   // When reset is triggered, bump epoch to bypass the backwards-guard for one cycle
   const [reportResetEpoch, setReportResetEpoch] = useState(0);
@@ -647,7 +647,7 @@ export default function TradeIdeasPage() {
           }>;
         };
         if (!body?.ok || !body.statsByMode || !mounted) return;
-        const mapped: Record<string, { totalScan: number; highScoreScan: number; totalIdeas: number; active: number; resolved: number; successful: number; failed: number; entryMissed: number; successRate: number }> = {};
+        const mapped: Record<string, { totalScan: number; highScoreScan: number; totalIdeas: number; active: number; resolved: number; successful: number; failed: number; entryMissed: number; successRate: number; totalPnlUsd: number }> = {};
         for (const [mode, s] of Object.entries(body.statsByMode)) {
           mapped[mode] = {
             totalScan: s.totalScan,
@@ -659,6 +659,7 @@ export default function TradeIdeasPage() {
             failed: s.failed,
             entryMissed: s.entryMissed ?? 0,
             successRate: s.successRate,
+            totalPnlUsd: (s as any).totalPnlUsd ?? 0,
           };
         }
         // Guard: if any mode's totalScan went backwards (cache not ready yet),
@@ -919,18 +920,22 @@ export default function TradeIdeasPage() {
                         <th className="pb-1 text-center font-medium">Resolved</th>
                         <th className="pb-1 text-center font-medium">Success</th>
                         <th className="pb-1 text-center font-medium">Failed</th>
-                        <th className="pb-1 pr-2 text-center font-medium">S/R</th>
+                        <th className="pb-1 text-center font-medium">S/R</th>
+                        <th className="pb-1 pr-2 text-right font-medium">PnL (sim)</th>
                       </tr>
                     </thead>
                     <tbody>
                       {(["CHATGPT", "QWEN", "QWEN2"] as const).map((mod) => {
-                        const s = aiReportStatsByModule[mod] ?? { totalScan: 0, totalIdeas: 0, active: 0, resolved: 0, success: 0, failed: 0, entryMissed: 0, successRate: 0 };
+                        const s = aiReportStatsByModule[mod] ?? { totalScan: 0, totalIdeas: 0, active: 0, resolved: 0, success: 0, failed: 0, entryMissed: 0, successRate: 0, totalPnlUsd: 0 };
                         const moduleColors: Record<string, string> = {
                           CHATGPT: "border-[#3d5f8f]/50 text-[#b8d3ff]",
                           QWEN: "border-[#6b4fa8]/50 text-[#dbcdfd]",
                           QWEN2: "border-[#c4893d]/50 text-[#ffd699]",
                         };
                         const moduleLabels: Record<string, string> = { CHATGPT: "ChatGPT", QWEN: "Qwen", QWEN2: "Bitrium Axiom" };
+                        const pnl = s.totalPnlUsd ?? 0;
+                        const pnlSign = pnl >= 0 ? "+" : "";
+                        const pnlColor = pnl >= 0 ? "text-[#8fc9ab]" : "text-[#d49f9a]";
                         return (
                           <tr key={mod} className="border-t border-white/5">
                             <td className="py-1 pl-2">
@@ -945,7 +950,10 @@ export default function TradeIdeasPage() {
                             <td className="py-1 text-center font-semibold text-[#b7bec9]">{s.resolved}</td>
                             <td className="py-1 text-center font-semibold text-[#8fc9ab]">{s.success}</td>
                             <td className="py-1 text-center font-semibold text-[#d49f9a]">{s.failed}</td>
-                            <td className="py-1 pr-2 text-center font-semibold text-[#F5C542]">{s.successRate.toFixed(1)}%</td>
+                            <td className="py-1 text-center font-semibold text-[#F5C542]">{s.successRate.toFixed(1)}%</td>
+                            <td className={`py-1 pr-2 text-right font-semibold ${s.resolved > 0 ? pnlColor : "text-[#555]"}`}>
+                              {s.resolved > 0 ? `${pnlSign}$${pnl.toFixed(2)}` : "-"}
+                            </td>
                           </tr>
                         );
                       })}
@@ -963,18 +971,22 @@ export default function TradeIdeasPage() {
                         <th className="pb-1 text-center font-medium">Resolved</th>
                         <th className="pb-1 text-center font-medium">Success</th>
                         <th className="pb-1 text-center font-medium">Failed</th>
-                        <th className="pb-1 pr-2 text-center font-medium">S/R</th>
+                        <th className="pb-1 text-center font-medium">S/R</th>
+                        <th className="pb-1 pr-2 text-right font-medium">PnL (sim)</th>
                       </tr>
                     </thead>
                     <tbody>
                       {(["FLOW", "AGGRESSIVE", "BALANCED", "CAPITAL_GUARD"] as const).map((mode) => {
-                        const s = reportStatsByMode[mode] ?? { totalScan: 0, totalIdeas: 0, active: 0, resolved: 0, successful: 0, failed: 0, entryMissed: 0, successRate: 0 };
+                        const s = reportStatsByMode[mode] ?? { totalScan: 0, totalIdeas: 0, active: 0, resolved: 0, successful: 0, failed: 0, entryMissed: 0, successRate: 0, totalPnlUsd: 0 };
                         const modeColors: Record<string, string> = {
                           FLOW: "border-[#3d5f8f]/50 text-[#b8d3ff]",
                           AGGRESSIVE: "border-[#8b5cf6]/50 text-[#c4b5fd]",
                           BALANCED: "border-[#d4a74a]/50 text-[#F5C542]",
                           CAPITAL_GUARD: "border-[#2f8a5e]/50 text-[#8fc9ab]",
                         };
+                        const pnl = s.totalPnlUsd ?? 0;
+                        const pnlSign = pnl >= 0 ? "+" : "";
+                        const pnlColor = pnl >= 0 ? "text-[#8fc9ab]" : "text-[#d49f9a]";
                         return (
                           <tr key={mode} className="border-t border-white/5">
                             <td className="py-1 pl-2">
@@ -989,7 +1001,10 @@ export default function TradeIdeasPage() {
                             <td className="py-1 text-center font-semibold text-[#b7bec9]">{s.resolved}</td>
                             <td className="py-1 text-center font-semibold text-[#8fc9ab]">{s.successful}</td>
                             <td className="py-1 text-center font-semibold text-[#d49f9a]">{s.failed}</td>
-                            <td className="py-1 pr-2 text-center font-semibold text-[#F5C542]">{s.successRate.toFixed(1)}%</td>
+                            <td className="py-1 text-center font-semibold text-[#F5C542]">{s.successRate.toFixed(1)}%</td>
+                            <td className={`py-1 pr-2 text-right font-semibold ${s.resolved > 0 ? pnlColor : "text-[#555]"}`}>
+                              {s.resolved > 0 ? `${pnlSign}$${pnl.toFixed(2)}` : "-"}
+                            </td>
                           </tr>
                         );
                       })}

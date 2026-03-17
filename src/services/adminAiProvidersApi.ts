@@ -146,6 +146,7 @@ export interface AiReportModuleStats {
   failed: number;
   entryMissed: number;
   successRate: number;
+  totalPnlUsd?: number;
 }
 
 export interface AiReportStatsResponse {

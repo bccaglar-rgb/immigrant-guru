@@ -126,6 +126,7 @@ const PnlCell = ({ idea }: { idea: ApiTradeIdea }) => {
   return (
     <span className="inline-flex items-center gap-1">
       <span className={`font-semibold ${color}`}>{sign}${sim.pnlUsd.toFixed(2)}</span>
+      <span className={`text-[10px] opacity-75 ${color}`}>({sign}{sim.roiPct.toFixed(1)}%)</span>
       <span
         title={tooltip}
         className="cursor-help rounded-full border border-white/20 bg-[#1a1c22] px-1 text-[9px] text-[#8A8F98] hover:border-white/40 hover:text-white"
@@ -311,7 +312,14 @@ export default function TradeIdeasReportPage() {
       map.set(key, prev);
     }
     return Array.from(map.entries())
-      .map(([key, v]) => ({ key, ...v, rate: v.real ? (v.success / v.real) * 100 : 0 }))
+      .map(([key, v]) => {
+        let totalPnlUsd = 0;
+        for (const idea of v.items) {
+          const sim = getPnlSimulation(idea);
+          if (sim) totalPnlUsd += sim.pnlUsd;
+        }
+        return { key, ...v, rate: v.real ? (v.success / v.real) * 100 : 0, totalPnlUsd };
+      })
       .sort((a, b) => (a.key < b.key ? 1 : -1));
   }, [isAiReport, aiFilteredDbIdeas, apiIdeas, now]);
 
@@ -450,14 +458,17 @@ export default function TradeIdeasReportPage() {
                   <th className="px-2 py-2 text-right">Success</th>
                   <th className="px-2 py-2 text-right">Failed</th>
                   <th className="px-2 py-2 text-right">Success %</th>
+                  <th className="px-2 py-2 text-right">PnL (sim)</th>
                 </tr>
               </thead>
               <tbody>
                 {grouped.length === 0 && (
-                  <tr><td colSpan={6} className="px-2 py-4 text-center text-[#6B6F76]">No data in last 24 hours</td></tr>
+                  <tr><td colSpan={7} className="px-2 py-4 text-center text-[#6B6F76]">No data in last 24 hours</td></tr>
                 )}
                 {grouped.map((g) => {
                   const isExpanded = expandedHour === g.key;
+                  const pnlSign = g.totalPnlUsd >= 0 ? "+" : "";
+                  const pnlColor = g.totalPnlUsd >= 0 ? "text-[#8fc9ab]" : "text-[#d49f9a]";
                   return (
                     <tr
                       key={g.key}
@@ -473,6 +484,9 @@ export default function TradeIdeasReportPage() {
                       <td className="px-2 py-1.5 text-right text-[#8fc9ab]">{g.success}</td>
                       <td className="px-2 py-1.5 text-right text-[#d49f9a]">{g.failed}</td>
                       <td className="px-2 py-1.5 text-right text-[#F5C542]">{g.rate.toFixed(1)}%</td>
+                      <td className={`px-2 py-1.5 text-right font-semibold ${g.real > 0 ? pnlColor : "text-[#555]"}`}>
+                        {g.real > 0 ? `${pnlSign}$${g.totalPnlUsd.toFixed(2)}` : "-"}
+                      </td>
                     </tr>
                   );
                 })}
