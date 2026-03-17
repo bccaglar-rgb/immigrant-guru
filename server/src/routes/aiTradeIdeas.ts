@@ -106,7 +106,13 @@ const resolveProviderEndpoint = (provider: AiProviderRecord): string => {
       "https://api.openai.com/v1/chat/completions",
     );
   }
-  if (provider.id === "QWEN" || provider.id === "QWEN2") {
+  if (provider.id === "QWEN2") {
+    return normalizeChatCompletionsEndpoint(
+      String(provider.baseUrl ?? ""),
+      "https://api.openai.com/v1/chat/completions",
+    );
+  }
+  if (provider.id === "QWEN") {
     return normalizeChatCompletionsEndpoint(
       String(provider.baseUrl ?? ""),
       "https://openrouter.ai/api/v1/chat/completions",
@@ -1389,7 +1395,7 @@ const callProvider = async (
   const timer = setTimeout(() => controller.abort(), provider.timeoutMs);
   try {
     const endpoint = resolveProviderEndpoint(provider);
-    const models = provider.id === "CHATGPT"
+    const models = (provider.id === "CHATGPT" || provider.id === "QWEN2")
       ? openAiModelFallbacks(String(override?.model ?? provider.model))
       : [String(override?.model ?? provider.model)];
     let lastHttpError: { code: number; text: string; model: string } | null = null;
@@ -1734,8 +1740,14 @@ export const registerAiTradeIdeasRoutes = (
         symbolsByModule[moduleId] = rankedSymbols.slice(start, end);
       }
 
+      const chatgptProvider = providers.find((row) => row.id === "CHATGPT");
+
       for (const moduleId of ALL_MODULE_IDS) {
-        const provider = providers.find((row) => row.id === moduleId);
+        let provider = providers.find((row) => row.id === moduleId);
+        // QWEN2 (Bitrium Axiom) uses ChatGPT's API key + model so it runs on OpenAI
+        if (moduleId === "QWEN2" && provider && chatgptProvider) {
+          provider = { ...provider, apiKey: chatgptProvider.apiKey, model: chatgptProvider.model };
+        }
         const status = sharedAiState.moduleStatus[moduleId];
         status.running = true;
         status.error = "";
