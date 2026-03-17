@@ -22,8 +22,8 @@ const toSafeProvider = (row: AiProviderRecord) => ({
   apiKey: "",
 });
 
-const buildSystemPrompt = () =>
-  [
+const buildSystemPrompt = (moduleId?: AiModuleId) => {
+  const base = [
     "You are an institutional crypto trade evaluator working on top of a quantitative trading engine.",
     "You will receive ultra-compact structured engine data with short field names.",
     "",
@@ -50,10 +50,22 @@ const buildSystemPrompt = () =>
     "8. Return one direction only: LONG, SHORT, or NONE.",
     "9. Return a score from 0 to 100.",
     "10. Return confidence from 0 to 100.",
-    "11. Explain the decision in Turkish using at most 80 words.",
+    "11. Write a concise comment in Turkish (max 30 words) explaining why you would or would not enter this trade for the scanned coin.",
     "12. Return only valid JSON and no extra text.",
     "13. Decision thresholds: 78 to 100 = TRADE, 62 to 77 = WATCH, 0 to 61 = NO_TRADE.",
-  ].join("\n");
+  ];
+  if (moduleId === "QWEN2") {
+    base.push(
+      "",
+      "QWEN2 Rule Set (mandatory evaluation):",
+      "When making decisions, alongside all other data and signals, you MUST evaluate this rule set.",
+      "First check veto conditions. If no veto, decide based on structure + liquidity event + aggressor + regime fit + conflict.",
+      "Check each setup type separately: trend continuation, sweep reversal, range rotation, breakout continuation, failed breakout reclaim, momentum ignition, mean reversion.",
+      "If a strong setup exists → TRADE. If no strong setup → NO_TRADE.",
+    );
+  }
+  return base.join("\n");
+};
 
 const buildUserPrompt = (engineJson: string) =>
   [
@@ -64,11 +76,11 @@ const buildUserPrompt = (engineJson: string) =>
     "- choose one decision: TRADE, WATCH, or NO_TRADE",
     "- choose one direction: LONG, SHORT, or NONE",
     "- determine entry zone, stop levels, and target levels using the provided market levels and engine logic",
-    "- explain the reason in Turkish using maximum 80 words",
+    "- write a concise comment in Turkish (max 30 words) about why entering or not entering this trade",
     "- return only valid JSON",
     "",
     "Use this exact JSON output schema:",
-    '{"score":0,"confidence":0,"decision":"TRADE","direction":"LONG","entry_zone_low":0.0,"entry_zone_high":0.0,"stop_1":0.0,"stop_2":0.0,"target_1":0.0,"target_2":0.0,"reason_80_words":"","risk_flags":[]}',
+    '{"score":0,"confidence":0,"decision":"TRADE","direction":"LONG","entry_zone_low":0.0,"entry_zone_high":0.0,"stop_1":0.0,"stop_2":0.0,"target_1":0.0,"target_2":0.0,"comment_30_words":"","risk_flags":[]}',
     "",
     "Data:",
     engineJson,
@@ -1221,7 +1233,10 @@ const toScanRow = (
       fill_prob: Number.isFinite(Number(compact?.ex?.pf)) ? Number(compact.ex.pf) : undefined,
       risk_adj_edge_r: Number.isFinite(Number(compact?.ed?.rae)) ? Number(compact.ed.rae) : undefined,
     },
-    notes: parsed?.notes,
+    notes: {
+      ...parsed?.notes,
+      one_liner: String(parsed?.comment_30_words ?? parsed?.reason_80_words ?? parsed?.notes?.one_liner ?? "").trim() || undefined,
+    },
     triggers: Array.isArray(parsed?.triggers) ? parsed.triggers.map((v: unknown) => String(v)) : undefined,
     blockers: blockersNormalized,
     activateIf: Array.isArray(parsed?.activate_if) ? parsed.activate_if.map((v: unknown) => String(v)) : undefined,
@@ -1328,7 +1343,7 @@ const callProvider = async (
           : provider.maxTokens,
         response_format: { type: "json_object" },
         messages: [
-          { role: "system", content: buildSystemPrompt() },
+          { role: "system", content: buildSystemPrompt(provider.id as AiModuleId) },
           { role: "user", content: typeof payload === "string" ? payload : buildUserPrompt(JSON.stringify(payload)) },
         ],
       };

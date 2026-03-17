@@ -1395,6 +1395,8 @@ export default function TradeIdeasPage() {
                 row.side === "UNKNOWN"
                   ? (decisionValue === "WATCH" ? "WAIT" : "NO_TRADE")
                   : row.side;
+              const isWaitCard = decisionValue === "WATCH" || sideLabel === "WAIT";
+              const showEntryLevels = isTradeCard || isWaitCard;
               const decisionTone =
                 sideLabel === "LONG"
                   ? "border-[#6f765f] bg-[#1f251b] text-[#d8decf]"
@@ -1472,7 +1474,7 @@ export default function TradeIdeasPage() {
               return (
                 <article
                   key={`${row.module}-${row.symbol}-${idx}-${row.scannedAt}`}
-                  className={`rounded-xl border border-white/10 bg-[#121316] ${isTradeCard ? "p-4 shadow-[0_14px_36px_rgba(0,0,0,0.32)]" : "p-2.5"}`}
+                  className={`rounded-xl border border-white/10 bg-[#121316] ${isTradeCard ? "p-4 shadow-[0_14px_36px_rgba(0,0,0,0.32)]" : showEntryLevels ? "p-3.5" : "p-2.5"}`}
                 >
                   <div className="flex flex-wrap items-start justify-between gap-2">
                     <div className="flex items-center gap-2">
@@ -1516,6 +1518,14 @@ export default function TradeIdeasPage() {
                       {elapsedText(row.scannedAt, nowMs)}
                     </span>
                   </div>
+                  {/* AI Comment — shown on ALL cards */}
+                  <div className="mt-2 rounded-md border border-white/10 bg-[#0F1012] px-2 py-1.5 text-[11px] text-[#BFC2C7]">
+                    <p className="text-[10px] uppercase tracking-wide text-[#8f95a3]">AI Comment</p>
+                    <p>{row.notes?.one_liner || row.reason || "No comment returned by AI module."}</p>
+                    {Array.isArray(row.blockers) && row.blockers.length ? (
+                      <p className="mt-1 text-[#d6b3af]">Blockers: {row.blockers.slice(0, 3).join(" · ")}</p>
+                    ) : null}
+                  </div>
                   {isTradeCard ? (
                     <div className="mt-2 grid gap-2 text-[11px] md:grid-cols-2">
                       <div className="rounded-md border border-white/10 bg-[#0F1012] px-2 py-1.5 text-[#BFC2C7]">
@@ -1535,16 +1545,8 @@ export default function TradeIdeasPage() {
                         </p>
                       </div>
                     </div>
-                  ) : (
-                    <div className="mt-2 rounded-md border border-white/10 bg-[#0F1012] px-2 py-1.5 text-[11px] text-[#BFC2C7]">
-                      <p className="text-[10px] uppercase tracking-wide text-[#8f95a3]">AI Summary</p>
-                      <p>{row.reason || "No reason returned by AI module."}</p>
-                      {Array.isArray(row.blockers) && row.blockers.length ? (
-                        <p className="mt-1 text-[#d6b3af]">Blockers: {row.blockers.slice(0, 3).join(" · ")}</p>
-                      ) : null}
-                    </div>
-                  )}
-                  {isTradeCard ? (
+                  ) : null}
+                  {showEntryLevels ? (
                     <div className="mt-2 grid gap-2 lg:grid-cols-3">
                       <div className="rounded-lg border border-[#7a6840]/60 bg-[#2a2418] p-2.5">
                         <p className="mb-2 text-[10px] uppercase tracking-wider text-[#d7c9a1]">Entry Zone</p>
@@ -1597,31 +1599,25 @@ export default function TradeIdeasPage() {
                       </div>
                     </div>
                   ) : null}
-                  {isTradeCard && (row.sr?.resistance?.length || row.sr?.support?.length) ? (
+                  {showEntryLevels && (row.sr?.resistance?.length || row.sr?.support?.length) ? (
                     <p className="mt-2 text-xs text-[#BFC2C7]">
                       SR · R: {(row.sr?.resistance ?? []).slice(0, 2).map((l) => formatPx(Number(l?.p ?? 0))).join(" / ") || "-"} ·
                       S: {(row.sr?.support ?? []).slice(0, 2).map((l) => formatPx(Number(l?.p ?? 0))).join(" / ") || "-"}
                     </p>
                   ) : null}
-                  {isTradeCard && Array.isArray(row.triggers) && row.triggers.length ? (
+                  {showEntryLevels && Array.isArray(row.triggers) && row.triggers.length ? (
                     <p className="mt-2 text-xs text-[#8fc9ab]">Triggers: {row.triggers.join(" · ")}</p>
                   ) : null}
-                  {isTradeCard && Array.isArray(row.blockers) && row.blockers.length ? (
+                  {showEntryLevels && Array.isArray(row.blockers) && row.blockers.length ? (
                     <p className="mt-2 text-xs text-[#d6b3af]">Blockers: {row.blockers.join(" · ")}</p>
                   ) : null}
-                  {isTradeCard && Array.isArray(row.activateIf) && row.activateIf.length ? (
+                  {showEntryLevels && Array.isArray(row.activateIf) && row.activateIf.length ? (
                     <p className="mt-2 text-xs text-[#cfbf98]">Activate if: {row.activateIf.join(" · ")}</p>
                   ) : null}
-                  {isTradeCard && row.watchZones ? (
+                  {showEntryLevels && row.watchZones ? (
                     <p className="mt-2 text-xs text-[#BFC2C7]">
                       Watch zones: upper {Number.isFinite(Number(row.watchZones.upper_reclaim)) ? formatPx(Number(row.watchZones.upper_reclaim)) : "-"} · lower{" "}
                       {Number.isFinite(Number(row.watchZones.lower_break)) ? formatPx(Number(row.watchZones.lower_break)) : "-"}
-                    </p>
-                  ) : null}
-                  {isTradeCard && row.notes?.one_liner ? <p className="mt-2 text-xs text-[#BFC2C7]">{row.notes.one_liner}</p> : null}
-                  {isTradeCard ? (
-                    <p className="mt-2 text-xs text-[#BFC2C7]">
-                      {row.reason || "No reason returned by AI module."}
                     </p>
                   ) : null}
                   {isTradeCard && row.invalidIf ? (
