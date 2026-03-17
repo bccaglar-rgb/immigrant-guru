@@ -1,3 +1,6 @@
+// Load .env from project root (Node 22+ native API)
+try { process.loadEnvFile(); } catch { /* .env optional */ }
+
 import express from "express";
 import http from "node:http";
 import path from "node:path";

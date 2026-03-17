@@ -19,13 +19,26 @@ const toSafeProvider = (row: AiProviderRecord) => ({
 const buildSystemPrompt = () =>
   [
     "You are an institutional crypto trade evaluator working on top of a quantitative trading engine.",
-    "You will receive structured engine data. Some fields or even whole sections may be omitted when the engine has no data for them.",
+    "You will receive ultra-compact structured engine data with short field names.",
+    "",
+    "Field definitions:",
+    "[meta] s=symbol, tf=timeframe, cp=current_price, h=horizon, rm=risk_mode",
+    "[lvl] su=supports, re=resistances, ns=nearest_support, nr=nearest_resistance, nl=nearest_liquidity, ezl=entry_zone_low, ezh=entry_zone_high, iv=invalidation",
+    "[core/trend] r=regime, td=trend_direction, ts=trend_strength, tp=trend_phase, ea=ema_alignment, vw=vwap_position, dk=distance_key_level, hr=htf_reaction",
+    "[core/liquidity] obi=orderbook_imbalance, scp=stop_cluster_prob, ld=liquidity_distance, af=aggressor_flow",
+    "[core/positioning] oi=oi_change, fb=funding_bias, mps=move_participation, rms=real_momentum",
+    "[core/volatility] cmp=compression, fbp=fake_breakout_prob, ep=expansion_prob, news=news_risk",
+    "[core/risk] sc=signal_conflict, cr=cascade_risk, trap=trap_probability",
+    "[core/execution] spr=spread, dq=depth_quality, eq=entry_quality, rrp=rr_potential, id=invalidation_distance, rd=reward_distance",
+    "[core/signals] tv=trade_validity, b=bias, it=intent, et=entry_timing, ma=model_agreement, fin=final_score, pw=pwin, rr=expected_rr",
+    "[logic] lq=level_quality, la=liquidity_alignment, pa=positioning_alignment, xa=execution_alignment, rp=risk_penalty, fbp2=fake_break_penalty, tp2=trap_penalty, loc=location_score, cpb=continuation_prob, rpb=reversal_prob, chp=chop_prob",
+    "",
     "Rules:",
     "1. Use only the fields explicitly provided.",
     "2. Missing fields mean unavailable data, not negative data.",
     "3. Do not penalize a setup only because a field is absent.",
-    "4. Evaluate the setup using structure, levels, liquidity, positioning, volatility, risk, execution, engine outputs, logic summary, and hints when available.",
-    "5. Use support, resistance, liquidity zones, entry zones, invalidation zones, and target zones as the primary basis for entry, stop, and target decisions.",
+    "4. Evaluate the setup using all available core data, levels, logic summary, and plan when available.",
+    "5. Use support, resistance, entry zones, invalidation, and target zones from lvl as the primary basis for entry, stop, and target decisions.",
     "6. Do not invent arbitrary price levels disconnected from the provided structure.",
     "7. Return one final decision only: TRADE, WATCH, or NO_TRADE.",
     "8. Return one direction only: LONG, SHORT, or NONE.",
@@ -33,8 +46,8 @@ const buildSystemPrompt = () =>
     "10. Return confidence from 0 to 100.",
     "11. Explain the decision in Turkish using at most 80 words.",
     "12. Return only valid JSON and no extra text.",
-    "Decision thresholds: 78 to 100 = TRADE, 62 to 77 = WATCH, 0 to 61 = NO_TRADE.",
-  ].join(" ");
+    "13. Decision thresholds: 78 to 100 = TRADE, 62 to 77 = WATCH, 0 to 61 = NO_TRADE.",
+  ].join("\n");
 
 const buildUserPrompt = (engineJson: string) =>
   [
@@ -756,238 +769,119 @@ const tileNum = (tiles: TileEntry[], key: string): number | undefined => {
   return undefined;
 };
 
-const buildFullPayload = (api: MarketApiResponse, universeRow?: BinanceFuturesUniverseRow): Record<string, unknown> => {
+const buildCompactPayload = (api: MarketApiResponse, universeRow?: BinanceFuturesUniverseRow): Record<string, unknown> => {
   const tiles: TileEntry[] = Array.isArray(api.snapshot_tiles) ? api.snapshot_tiles : [];
   const panel = api.ai_panel ?? {};
   const ce = panel.consensusEngine ?? {};
+  const dt = api.decision_trace?.selected ?? {};
+  const mb = api.mode_breakdown?.AGGRESSIVE ?? {};
+  const modeScores = api.mode_scores ?? {};
   const payload: Record<string, unknown> = {};
 
-  // 1. META
+  // 1. META — compact keys: s, tf, cp, h, rm
   const meta = cleanBlock({
-    symbol: String(api.text ?? "").match(/Symbol:\s*(\S+)/)?.[1] ?? universeRow?.symbol ?? "",
-    timeframe: api.timeframe ?? api.tf_pack?.primary ?? "15m",
-    current_price: api.price_value ?? universeRow?.price,
-    timestamp: api.compute_ts ?? new Date().toISOString(),
-    exchange: api.exchange ?? "BINANCE",
-    horizon: api.horizon ?? "INTRADAY",
-    risk_mode: "NORMAL",
-    session: panel.sessionContext?.session,
+    s: String(api.text ?? "").match(/Symbol:\s*(\S+)/)?.[1] ?? universeRow?.symbol ?? "",
+    tf: api.timeframe ?? api.tf_pack?.primary ?? "15m",
+    cp: api.price_value ?? universeRow?.price,
+    h: api.horizon ?? "INTRADAY",
+    rm: "NORMAL",
   });
   if (Object.keys(meta).length) payload.meta = meta;
 
-  // 2. LEVELS
+  // 2. LEVELS — compact keys: su, re, ns, nr, nl, ezl, ezh, iv
   const klArr = Array.isArray(api.key_levels) ? api.key_levels : [];
-  const supports = klArr.filter((l: any) => l.type === "support").map((l: any) => ({ price: l.price, strength: l.strength }));
-  const resistances = klArr.filter((l: any) => l.type === "resistance").map((l: any) => ({ price: l.price, strength: l.strength }));
-  const levels = cleanBlock({
-    supports: supports.length ? supports : undefined,
-    resistances: resistances.length ? resistances : undefined,
-    nearest_support: supports[0]?.price,
-    nearest_resistance: resistances[0]?.price,
-    entry_zone_low: api.entry_low,
-    entry_zone_high: api.entry_high,
-    invalidation_level: Array.isArray(api.sl_levels) ? api.sl_levels[1] : undefined,
-    target_zone_1: Array.isArray(api.tp_levels) ? api.tp_levels[0] : undefined,
-    target_zone_2: Array.isArray(api.tp_levels) ? api.tp_levels[1] : undefined,
+  const supports = klArr.filter((l: any) => l.type === "support").map((l: any) => l.price);
+  const resistances = klArr.filter((l: any) => l.type === "resistance").map((l: any) => l.price);
+  const lvl = cleanBlock({
+    su: supports.length ? supports : undefined,
+    re: resistances.length ? resistances : undefined,
+    ns: supports[0],
+    nr: resistances[0],
+    nl: tileNum(tiles, "liquidity-distance"),
+    ezl: api.entry_low,
+    ezh: api.entry_high,
+    iv: Array.isArray(api.sl_levels) ? api.sl_levels[1] : undefined,
   });
-  if (Object.keys(levels).length) payload.levels = levels;
+  if (Object.keys(lvl).length) payload.lvl = lvl;
 
-  // 3. STRUCTURE
-  const structure = cleanBlock({
-    market_regime: tileVal(tiles, "market-regime"),
-    distance_key_level: tileVal(tiles, "distance-key-level"),
-    range_position: tileVal(tiles, "range-position"),
-    liquidity_cluster_nearby: tileVal(tiles, "liquidity-cluster"),
-    last_swing_distance: tileVal(tiles, "last-swing-distance"),
-    htf_level_reaction: tileVal(tiles, "htf-level-reaction"),
-    structure_age: tileVal(tiles, "structure-age"),
-    time_in_range: tileNum(tiles, "time-in-range"),
-    trend_direction: tileVal(tiles, "trend-direction"),
-    trend_strength: tileVal(tiles, "trend-strength"),
-    trend_phase: tileVal(tiles, "trend-phase"),
-    ema_alignment: tileVal(tiles, "ema-alignment"),
-    vwap_position: tileVal(tiles, "vwap-position"),
-    time_since_regime_change: tileNum(tiles, "time-since-regime-change"),
-    market_intent: tileVal(tiles, "market-intent") ?? panel.marketIntent,
+  // 3. CORE — all market data compressed into one block
+  const core = cleanBlock({
+    // trend
+    r: tileVal(tiles, "market-regime"),
+    td: tileVal(tiles, "trend-direction"),
+    ts: tileVal(tiles, "trend-strength"),
+    tp: tileVal(tiles, "trend-phase"),
+    ea: tileVal(tiles, "ema-alignment"),
+    vw: tileVal(tiles, "vwap-position"),
+    dk: tileVal(tiles, "distance-key-level"),
+    hr: tileVal(tiles, "htf-level-reaction"),
+    // liquidity
+    obi: tileVal(tiles, "orderbook-imbalance"),
+    scp: tileVal(tiles, "stop-cluster-probability"),
+    ld: tileNum(tiles, "liquidity-distance"),
+    af: tileVal(tiles, "aggressor-flow"),
+    // positioning
+    oi: api.oi_change_1h ?? tileNum(tiles, "oi-change"),
+    fb: tileVal(tiles, "funding-bias"),
+    mps: tileVal(tiles, "move-participation-score"),
+    rms: tileVal(tiles, "real-momentum-score"),
+    // volatility
+    cmp: tileVal(tiles, "compression"),
+    fbp: tileVal(tiles, "fake-breakout-prob"),
+    ep: tileVal(tiles, "expansion-prob"),
+    news: tileVal(tiles, "news-risk-flag"),
+    // risk
+    sc: tileVal(tiles, "signal-conflict") ?? panel.conflictLevel,
+    cr: tileVal(tiles, "cascade-risk"),
+    trap: tileVal(tiles, "trap-probability"),
+    // execution
+    spr: tileVal(tiles, "spread-regime"),
+    dq: tileVal(tiles, "depth-quality"),
+    eq: tileVal(tiles, "entry-quality"),
+    rrp: tileVal(tiles, "rr-potential"),
+    id: tileVal(tiles, "invalidation-distance"),
+    rd: tileVal(tiles, "reward-distance"),
+    // signals & scores
+    tv: api.trade_validity,
+    b: panel.bias ?? api.direction,
+    it: panel.marketIntent,
+    et: api.entry_window ?? tileVal(tiles, "entry-timing-window"),
+    ma: panel.modelAgreement ? `${panel.modelAgreement.aligned}/${panel.modelAgreement.totalModels}` : undefined,
+    fin: typeof modeScores.AGGRESSIVE === "number" ? Math.round(modeScores.AGGRESSIVE * 100) : undefined,
+    pw: ce.pWin,
+    rr: ce.expectedRR,
   });
-  if (Object.keys(structure).length) payload.structure = structure;
+  if (Object.keys(core).length) payload.core = core;
 
-  // 4. LIQUIDITY / MICROSTRUCTURE
-  const liquidity = cleanBlock({
-    orderbook_imbalance: tileVal(tiles, "orderbook-imbalance"),
-    stop_cluster_probability: tileVal(tiles, "stop-cluster-probability"),
-    liquidity_distance: tileNum(tiles, "liquidity-distance"),
-    reaction_sensitivity: tileVal(tiles, "reaction-sensitivity"),
-    impulse_readiness: tileVal(tiles, "impulse-readiness"),
-    aggressor_flow: tileVal(tiles, "aggressor-flow"),
-    liquidity_density: tileVal(tiles, "liquidity-density"),
-    orderbook_stability: tileVal(tiles, "orderbook-stability"),
-  });
-  if (Object.keys(liquidity).length) payload.liquidity = liquidity;
-
-  // 5. POSITIONING
-  const positioning = cleanBlock({
-    volume_spike: tileVal(tiles, "volume-spike"),
-    buy_sell_imbalance: tileVal(tiles, "buy-sell-imbalance"),
-    oi_change_1h: api.oi_change_1h ?? tileNum(tiles, "oi-change"),
-    funding_bias: tileVal(tiles, "funding-bias"),
-    funding_slope: tileVal(tiles, "funding-slope"),
-    liquidations_bias: tileVal(tiles, "liquidations-bias"),
-    move_participation_score: tileVal(tiles, "move-participation-score"),
-    spot_vs_derivatives_pressure: tileVal(tiles, "spot-vs-derivatives-pressure"),
-    real_momentum_score: tileVal(tiles, "real-momentum-score"),
-  });
-  if (Object.keys(positioning).length) payload.positioning = positioning;
-
-  // 6. VOLATILITY
-  const volatility = cleanBlock({
-    atr_regime: tileVal(tiles, "atr-regime"),
-    compression: tileVal(tiles, "compression"),
-    market_speed: tileVal(tiles, "market-speed"),
-    breakout_risk: tileVal(tiles, "breakout-risk"),
-    fake_breakout_probability: tileVal(tiles, "fake-breakout-prob"),
-    expansion_probability: tileVal(tiles, "expansion-prob"),
-    sudden_move_risk: tileVal(tiles, "sudden-move-risk"),
-    volatility_expansion_probability: tileVal(tiles, "volatility-expansion-prob"),
-    news_risk_flag: tileVal(tiles, "news-risk-flag"),
-  });
-  if (Object.keys(volatility).length) payload.volatility = volatility;
-
-  // 7. RISK ENVIRONMENT
-  const risk_environment = cleanBlock({
-    signal_conflict_level: tileVal(tiles, "signal-conflict") ?? panel.conflictLevel,
-    cascade_risk: tileVal(tiles, "cascade-risk"),
-    trap_probability: tileVal(tiles, "trap-probability"),
-    market_stress_level: tileVal(tiles, "market-stress-level"),
-    crowding_risk: panel.crowdingRisk,
-  });
-  if (Object.keys(risk_environment).length) payload.risk_environment = risk_environment;
-
-  // 8. EXECUTION
-  const execution = cleanBlock({
-    spread_regime: tileVal(tiles, "spread-regime"),
-    depth_quality: tileVal(tiles, "depth-quality"),
-    liquidity_density: tileVal(tiles, "liquidity-density"),
-    entry_quality: tileVal(tiles, "entry-quality"),
-    rr_potential: tileVal(tiles, "rr-potential"),
-    invalidation_distance: tileVal(tiles, "invalidation-distance"),
-    reward_distance: tileVal(tiles, "reward-distance"),
-    risk_arrival_speed: tileVal(tiles, "risk-arrival-speed"),
-    reward_accessibility: tileVal(tiles, "reward-accessibility"),
-    entry_timing_window: api.entry_window ?? tileVal(tiles, "entry-timing-window"),
-    slippage_risk: api.slippage_risk ?? tileVal(tiles, "slippage-risk"),
-    asymmetry: tileVal(tiles, "asymmetry-score"),
-  });
-  if (Object.keys(execution).length) payload.execution = execution;
-
-  // 9. ON-CHAIN (omit entire block if no data)
-  const onchain = cleanBlock({
-    exchange_inflow_outflow: tileVal(tiles, "exchange-inflow-outflow"),
-    whale_activity: tileVal(tiles, "whale-activity"),
-    wallet_distribution: tileVal(tiles, "wallet-distribution"),
-    active_addresses: tileNum(tiles, "active-addresses"),
-    nvt_ratio: tileNum(tiles, "nvt-ratio"),
-    mvrv_ratio: tileNum(tiles, "mvrv-ratio"),
-    dormancy: tileNum(tiles, "dormancy"),
-    relative_strength_vs_market: tileVal(tiles, "relative-strength-vs-market"),
-    opportunity_rank: tileVal(tiles, "opportunity-rank"),
-    btc_leadership_state: tileVal(tiles, "btc-leadership-state"),
-  });
-  if (Object.keys(onchain).length) payload.onchain = onchain;
-
-  // 10. SIGNALS / DECISION PANEL
-  const signals = cleanBlock({
-    trade_validity: api.trade_validity,
-    bias: panel.bias ?? api.direction,
-    intent: panel.marketIntent,
-    urgency: panel.executionUrgency,
-    slippage: api.slippage_risk,
-    entry_timing: api.entry_window,
-    risk_gate: tileVal(tiles, "risk-gate"),
-    market_stress: tileVal(tiles, "market-stress-level"),
-    model_agreement_aligned: panel.modelAgreement?.aligned,
-    model_agreement_total: panel.modelAgreement?.totalModels,
-  });
-  if (Object.keys(signals).length) payload.signals = signals;
-
-  // 11. SCORE ENGINE
-  const modeScores = api.mode_scores ?? {};
-  const scores = cleanBlock({
-    final_score: typeof modeScores.AGGRESSIVE === "number" ? Math.round(modeScores.AGGRESSIVE * 100) : undefined,
-    flow_score: typeof modeScores.FLOW === "number" ? Math.round(modeScores.FLOW * 100) : undefined,
-    balanced_score: typeof modeScores.BALANCED === "number" ? Math.round(modeScores.BALANCED * 100) : undefined,
-    capital_guard_score: typeof modeScores.CAPITAL_GUARD === "number" ? Math.round(modeScores.CAPITAL_GUARD * 100) : undefined,
-    edge_net: ce.edgeNetR,
-    fill_probability: ce.pFill,
-    capacity: ce.capacityFactor,
-    risk_adjusted_edge: ce.riskAdjustedEdgeR,
-    pwin: ce.pWin,
-    stop_probability: ce.pStop,
-    avg_win_r: ce.avgWinR,
-    expected_rr: ce.expectedRR,
-    cost_r: ce.costR,
-    expected_hold_bars: ce.expectedHoldingBars,
-    penalty_rate: ce.penaltyRate,
-    penalty_impact: ce.penaltyApplied,
-    raw_consensus: ce.rawConsensus,
-    adjusted_consensus: ce.adjustedConsensus,
-  });
-  if (Object.keys(scores).length) payload.scores = scores;
-
-  // 12. PLAYBOOK / SCENARIO
-  const playbook = cleanBlock({
-    active_playbook: panel.playbook ?? api.setup,
-    trend_continuation_prob: panel.scenarioOutlook?.trendContinuation,
-    range_continuation_prob: panel.scenarioOutlook?.rangeContinuation,
-    breakout_move_prob: panel.scenarioOutlook?.breakoutMove,
-  });
-  if (Object.keys(playbook).length) payload.playbook = playbook;
-
-  // 13. TRADE PLAN
-  const trade_plan = cleanBlock({
-    direction: api.direction,
-    entry_zone_low: api.entry_low,
-    entry_zone_high: api.entry_high,
-    stop_1: Array.isArray(api.sl_levels) ? api.sl_levels[0] : undefined,
-    stop_2: Array.isArray(api.sl_levels) ? api.sl_levels[1] : undefined,
-    target_1: Array.isArray(api.tp_levels) ? api.tp_levels[0] : undefined,
-    target_2: Array.isArray(api.tp_levels) ? api.tp_levels[1] : undefined,
-    confidence: api.mode_scores?.AGGRESSIVE != null ? Math.round(api.mode_scores.AGGRESSIVE * 100) : undefined,
-    size_hint: panel.sizeHint,
-  });
-  if (Object.keys(trade_plan).length) payload.trade_plan = trade_plan;
-
-  // 14. SERVER LOGIC SUMMARY
-  const dt = api.decision_trace?.selected ?? {};
-  const mb = api.mode_breakdown?.AGGRESSIVE ?? {};
+  // 4. LOGIC — server logic summary with short keys
   const logic = cleanBlock({
-    setup_type: api.setup ?? panel.playbook,
-    setup_strength: dt.coreAlpha,
-    trend_alignment: panel.confidenceDrivers?.structure,
-    level_quality: panel.priceLocation,
-    liquidity_alignment: panel.confidenceDrivers?.liquidity,
-    positioning_alignment: panel.confidenceDrivers?.positioning,
-    execution_alignment: panel.confidenceDrivers?.execution,
-    risk_penalty: mb.penaltyApplied ?? ce.penaltyApplied,
-    penalty_rate: mb.penaltyRate ?? ce.penaltyRate,
-    gating_flags: Array.isArray(panel.gatingFlags) && panel.gatingFlags.length ? panel.gatingFlags : undefined,
-    location_score: dt.tradeability,
-    continuation_prob: panel.scenarioOutlook?.trendContinuation,
-    reversal_prob: panel.scenarioOutlook?.breakoutMove,
+    lq: panel.priceLocation,
+    la: panel.confidenceDrivers?.liquidity,
+    pa: panel.confidenceDrivers?.positioning,
+    xa: panel.confidenceDrivers?.execution,
+    rp: mb.penaltyApplied ?? ce.penaltyApplied,
+    fbp2: tileVal(tiles, "fake-breakout-prob"),
+    tp2: tileVal(tiles, "trap-probability"),
+    loc: dt.tradeability,
+    cpb: panel.scenarioOutlook?.trendContinuation,
+    rpb: panel.scenarioOutlook?.breakoutMove,
+    chp: panel.scenarioOutlook?.rangeContinuation,
   });
   if (Object.keys(logic).length) payload.logic = logic;
 
-  // 15. INTERNAL HINTS
-  const hints = cleanBlock({
-    preferred_side: api.direction,
-    preferred_action: panel.executionUrgency,
-    trade_window_open: api.entry_window === "OPEN" ? true : api.entry_window === "CLOSED" ? false : undefined,
-    size_hint: panel.sizeHint,
-    size_hint_reason: panel.sizeHintReason,
-    triggers_to_activate: Array.isArray(api.triggers_to_activate) && api.triggers_to_activate.length ? api.triggers_to_activate : undefined,
-    invalidation_triggers: Array.isArray(api.invalidation_triggers) && api.invalidation_triggers.length ? api.invalidation_triggers : undefined,
+  // 5. PLAN — trade plan
+  const plan = cleanBlock({
+    dir: api.direction,
+    ezl: api.entry_low,
+    ezh: api.entry_high,
+    sl1: Array.isArray(api.sl_levels) ? api.sl_levels[0] : undefined,
+    sl2: Array.isArray(api.sl_levels) ? api.sl_levels[1] : undefined,
+    tp1: Array.isArray(api.tp_levels) ? api.tp_levels[0] : undefined,
+    tp2: Array.isArray(api.tp_levels) ? api.tp_levels[1] : undefined,
+    conf: modeScores.AGGRESSIVE != null ? Math.round(modeScores.AGGRESSIVE * 100) : undefined,
+    sz: panel.sizeHint,
   });
-  if (Object.keys(hints).length) payload.hints = hints;
+  if (Object.keys(plan).length) payload.plan = plan;
 
   return payload;
 };
@@ -1630,9 +1524,9 @@ export const registerAiTradeIdeasRoutes = (
           let compactFallback: Record<string, any>;
 
           if (marketData) {
-            // Full 15-block structured payload
-            const fullPayload = buildFullPayload(marketData, universeRow);
-            userPrompt = buildUserPrompt(JSON.stringify(fullPayload));
+            // Ultra-compact 5-block payload (meta, lvl, core, logic, plan)
+            const compactPayload = buildCompactPayload(marketData, universeRow);
+            userPrompt = buildUserPrompt(JSON.stringify(compactPayload));
             compactFallback = marketData;
           } else {
             // Fallback: old compact format

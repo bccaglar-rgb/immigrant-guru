@@ -83,9 +83,37 @@ export class AiProviderStore {
     return defaultProviders().map((def) => fromDb.find((n) => n.id === def.id) ?? def);
   }
 
-  /** Auto-enable CHATGPT on startup if it has an API key in DB */
+  /** Ensure both providers exist in DB (visible in admin panel) and auto-enable CHATGPT if it has an API key */
   async ensureChatGptEnabled(): Promise<void> {
     try {
+      // 1. Ensure both providers have DB rows so they're visible/editable in admin panel
+      const defaults = defaultProviders();
+      for (const def of defaults) {
+        await pool.query(
+          `INSERT INTO ai_providers (id, config, updated_at)
+           VALUES ($1, $2, now())
+           ON CONFLICT (id) DO NOTHING`,
+          [def.id, JSON.stringify(def)],
+        );
+      }
+
+      // 2. If CHATGPT has env API key but DB row is missing the key, sync env key to DB
+      const envKey = (process.env.OPENAI_API_KEY ?? "").trim();
+      if (envKey) {
+        await pool.query(
+          `UPDATE ai_providers
+           SET config = jsonb_set(
+             jsonb_set(config, '{apiKey}', $1::jsonb),
+             '{enabled}', 'true'
+           ),
+           updated_at = now()
+           WHERE id = 'CHATGPT'
+             AND (config->>'apiKey' IS NULL OR config->>'apiKey' = '')`,
+          [JSON.stringify(envKey)],
+        );
+      }
+
+      // 3. Auto-enable CHATGPT if it has an API key in DB but is currently disabled
       const providers = await this.getAll();
       const chatgpt = providers.find((p) => p.id === "CHATGPT");
       if (chatgpt && chatgpt.apiKey && !chatgpt.enabled) {
