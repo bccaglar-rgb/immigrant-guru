@@ -107,14 +107,27 @@ const normalizeLegacyIdea = (idea: TradeIdeaRecord): TradeIdeaRecord => {
 };
 
 export const registerTradeIdeasRoutes = (app: Express, store: TradeIdeaStore, systemScanner?: SystemScannerService) => {
-  // System scan cache endpoint — returns latest background scan results instantly
-  app.get("/api/trade-ideas/system-scan", (_req, res) => {
-    if (!systemScanner) {
-      return res.json({ ok: true, results: [], lastScanAt: 0, universeSize: 0, scanRound: 0, startedAt: 0, totalScansByMode: {} });
-    }
+  // System scan cache endpoint — returns latest background scan results instantly.
+  // Scanner runs in separate process → cache stored in Redis → market-workers read from Redis.
+  app.get("/api/trade-ideas/system-scan", async (_req, res) => {
     const mode = typeof _req.query.mode === "string" ? _req.query.mode : undefined;
-    const cache = systemScanner.getCache();
-    const results = mode ? systemScanner.getLatestResults(mode) : cache.results;
+
+    // Try local scanner first (only available if scanner runs in this process)
+    let cache = systemScanner ? systemScanner.getCache() : null;
+
+    // Fallback: read from Redis (scanner-worker writes to Redis after each cycle)
+    if (!cache || !cache.results.length) {
+      cache = await SystemScannerService.readScanCacheFromRedis();
+    }
+
+    if (!cache) {
+      return res.json({ ok: true, results: [], lastScanAt: 0, universeSize: 0, scanRound: 0, startedAt: 0, totalScansByMode: {}, highScoreByMode: {} });
+    }
+
+    const results = mode
+      ? cache.results.filter((r) => r.mode === mode.toUpperCase())
+      : cache.results;
+
     return res.json({
       ok: true,
       results,
@@ -348,14 +361,33 @@ export const registerTradeIdeasRoutes = (app: Express, store: TradeIdeaStore, sy
     const symbol = String(req.query.symbol ?? "").toUpperCase().trim();
     const scoringModeRaw = String(req.query.scoring_mode ?? req.query.scoringMode ?? "").toUpperCase().trim();
     const limit = Math.max(1, Math.min(1000, Number(req.query.limit ?? 100)));
-    const items = await store.listIdeas({
-      userId,
-      statuses: statuses.length ? statuses : undefined,
-      symbol: symbol || undefined,
-      scoringMode: isScoringMode(scoringModeRaw) ? scoringModeRaw : undefined,
-      limit,
-    });
-    return res.json({ ok: true, items: items.map((idea) => normalizeLegacyIdea(idea)) });
+
+    // Fetch user's own ideas + system-scanner ideas (merged, deduplicated)
+    const [userItems, systemItems] = await Promise.all([
+      store.listIdeas({
+        userId,
+        statuses: statuses.length ? statuses : undefined,
+        symbol: symbol || undefined,
+        scoringMode: isScoringMode(scoringModeRaw) ? scoringModeRaw : undefined,
+        limit,
+      }),
+      userId !== "system-scanner"
+        ? store.listIdeas({
+            userId: "system-scanner",
+            statuses: statuses.length ? statuses : undefined,
+            symbol: symbol || undefined,
+            scoringMode: isScoringMode(scoringModeRaw) ? scoringModeRaw : undefined,
+            limit,
+          })
+        : Promise.resolve([]),
+    ]);
+
+    // Merge and sort by created_at descending, respecting limit
+    const merged = [...userItems, ...systemItems]
+      .sort((a, b) => Date.parse(b.created_at) - Date.parse(a.created_at))
+      .slice(0, limit);
+
+    return res.json({ ok: true, items: merged.map((idea) => normalizeLegacyIdea(idea)) });
   });
 
   app.get("/api/trade-ideas/locks", async (req, res) => {

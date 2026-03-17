@@ -93,6 +93,11 @@ export interface BinanceFuturesUniverseRow {
   sourceTs: number | null;
 }
 
+export type BinanceFuturesHubEvent =
+  | { type: "futures_ticker_batch"; rows: Array<{ symbol: string; price: number; change24hPct: number; volume24hUsd: number }> }
+  | { type: "futures_mark_batch"; rows: Array<{ symbol: string; markPrice: number; fundingRate: number | null; nextFundingTime: number | null }> }
+  | { type: "futures_book"; symbol: string; bid: number; ask: number; spreadBps: number; depthUsd: number; imbalance: number };
+
 export class BinanceFuturesHub {
   private ws: WebSocket | null = null;
   private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
@@ -111,6 +116,17 @@ export class BinanceFuturesHub {
   private readonly bookBySymbol = new Map<string, BookRow>();
   private readonly precisionBySymbol = new Map<string, { pricePrecision: number; quantityPrecision: number }>();
   private precisionLoading = false;
+  private readonly listeners = new Set<(event: BinanceFuturesHubEvent) => void>();
+
+  /** Register a callback for hub events. Returns unsubscribe function. */
+  onEvent(cb: (event: BinanceFuturesHubEvent) => void): () => void {
+    this.listeners.add(cb);
+    return () => this.listeners.delete(cb);
+  }
+
+  private emit(event: BinanceFuturesHubEvent): void {
+    for (const cb of this.listeners) cb(event);
+  }
 
   start() {
     if (this.started) return;
@@ -447,6 +463,21 @@ export class BinanceFuturesHub {
           });
         }
         this.pruneMap(this.tickerBySymbol);
+        // Emit batch event for gateway dirty tracking
+        if (this.listeners.size > 0) {
+          const batch: Array<{ symbol: string; price: number; change24hPct: number; volume24hUsd: number }> = [];
+          for (const row of rows) {
+            const rec = row as Record<string, unknown>;
+            const sym = normalizeSymbol(rec.s);
+            if (!toBaseAsset(sym)) continue;
+            const p = toFinite(rec.c);
+            const ch = toFinite(rec.P);
+            const vol = toFinite(rec.q);
+            if (p === null || ch === null || vol === null) continue;
+            batch.push({ symbol: sym, price: p, change24hPct: ch, volume24hUsd: vol });
+          }
+          if (batch.length) this.emit({ type: "futures_ticker_batch", rows: batch });
+        }
         return;
       }
 
@@ -467,6 +498,19 @@ export class BinanceFuturesHub {
           });
         }
         this.pruneMap(this.markBySymbol);
+        // Emit batch event for gateway dirty tracking
+        if (this.listeners.size > 0) {
+          const batch: Array<{ symbol: string; markPrice: number; fundingRate: number | null; nextFundingTime: number | null }> = [];
+          for (const row of rows) {
+            const rec = row as Record<string, unknown>;
+            const sym = normalizeSymbol(rec.s);
+            if (!toBaseAsset(sym)) continue;
+            const mp = toFinite(rec.p);
+            if (mp === null) continue;
+            batch.push({ symbol: sym, markPrice: mp, fundingRate: toFinite(rec.r), nextFundingTime: toFinite(rec.T) });
+          }
+          if (batch.length) this.emit({ type: "futures_mark_batch", rows: batch });
+        }
         return;
       }
 
@@ -497,6 +541,18 @@ export class BinanceFuturesHub {
           sourceTs: toFinite(rec.E),
         });
         this.pruneMap(this.bookBySymbol);
+        // Emit book event for gateway dirty tracking
+        if (this.listeners.size > 0) {
+          this.emit({
+            type: "futures_book",
+            symbol,
+            bid,
+            ask,
+            spreadBps: Number.isFinite(spreadBps) ? spreadBps : 0,
+            depthUsd: Number.isFinite(depthUsd) ? depthUsd : 0,
+            imbalance: Number.isFinite(imbalance) ? imbalance : 0,
+          });
+        }
       }
     } catch (error) {
       this.lastError = error instanceof Error ? error.message : "parse_error";

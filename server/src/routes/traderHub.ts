@@ -1,6 +1,7 @@
 import type { Express, Request } from "express";
 import { TraderHubEngine } from "../services/traderHub/traderHubEngine.ts";
 import type { TraderAiModule, TraderExchange, TraderRunStatus } from "../services/traderHub/types.ts";
+import { botCreate } from "../middleware/rateLimit.ts";
 
 const readUserId = (req: Request): string => {
   const raw = req.headers["x-user-id"];
@@ -61,24 +62,32 @@ export const registerTraderHubRoutes = (app: Express, traderHub: TraderHubEngine
     });
   });
 
-  app.post("/api/trader-hub/traders", async (req, res) => {
+  app.post("/api/trader-hub/traders", botCreate, async (req, res) => {
     const userId = readUserId(req);
     const name = String(req.body?.name ?? "").trim();
     if (!name) return res.status(400).json({ ok: false, error: "name_required" });
-    const created = await traderHub.createTrader({
-      userId,
-      name,
-      aiModule: normalizeAiModule(req.body?.aiModule),
-      exchange: normalizeExchange(req.body?.exchange),
-      exchangeAccountId: String(req.body?.exchangeAccountId ?? "").trim(),
-      exchangeAccountName: String(req.body?.exchangeAccountName ?? "Auto").trim() || "Auto",
-      strategyId: String(req.body?.strategyId ?? "strategy-default").trim() || "strategy-default",
-      strategyName: String(req.body?.strategyName ?? "Default Strategy").trim() || "Default Strategy",
-      symbol: normalizeSymbol(req.body?.symbol),
-      timeframe: normalizeTimeframe(req.body?.timeframe),
-      scanIntervalSec: Math.max(30, Math.min(600, Number(req.body?.scanIntervalSec ?? 180) || 180)),
-    });
-    return res.json({ ok: true, item: created });
+    try {
+      const created = await traderHub.createTrader({
+        userId,
+        name,
+        aiModule: normalizeAiModule(req.body?.aiModule),
+        exchange: normalizeExchange(req.body?.exchange),
+        exchangeAccountId: String(req.body?.exchangeAccountId ?? "").trim(),
+        exchangeAccountName: String(req.body?.exchangeAccountName ?? "Auto").trim() || "Auto",
+        strategyId: String(req.body?.strategyId ?? "strategy-default").trim() || "strategy-default",
+        strategyName: String(req.body?.strategyName ?? "Default Strategy").trim() || "Default Strategy",
+        symbol: normalizeSymbol(req.body?.symbol),
+        timeframe: normalizeTimeframe(req.body?.timeframe),
+        scanIntervalSec: Math.max(30, Math.min(600, Number(req.body?.scanIntervalSec ?? 180) || 180)),
+      });
+      return res.json({ ok: true, item: created });
+    } catch (err: any) {
+      const message = err?.message ?? "create_failed";
+      if (message.includes("Bot limit")) {
+        return res.status(429).json({ ok: false, error: "bot_limit_reached", message });
+      }
+      return res.status(500).json({ ok: false, error: "create_failed", message });
+    }
   });
 
   app.post("/api/trader-hub/traders/:id/status", async (req, res) => {

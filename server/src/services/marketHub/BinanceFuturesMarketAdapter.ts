@@ -13,11 +13,19 @@ import type {
 } from "./types.ts";
 import { SequenceSafeOrderbookStore } from "./sequenceSafeOrderbook.ts";
 
+// !bookTicker REMOVED: it fires for ALL 300+ symbols on every trade = 2000-5000 msgs/sec,
+// saturating the event loop. Bid/ask data is available from depth WS for subscribed symbols
+// and from !ticker@arr for price display. bookTicker data (top bid/ask, spread) is
+// a nice-to-have but not worth the CPU cost.
 const BINANCE_AGGREGATE_URLS = [
-  "wss://fstream.binance.com/stream?streams=!ticker@arr/!markPrice@arr@1s/!bookTicker",
-  "wss://fstream.binance.com:443/stream?streams=!ticker@arr/!markPrice@arr@1s/!bookTicker",
+  "wss://fstream.binance.com/stream?streams=!ticker@arr/!markPrice@arr@1s",
+  "wss://fstream.binance.com:443/stream?streams=!ticker@arr/!markPrice@arr@1s",
 ];
 const BINANCE_DEPTH_URLS = [
+  "wss://fstream.binance.com/ws",
+  "wss://fstream.binance.com:443/ws",
+];
+const BINANCE_TRADE_URLS = [
   "wss://fstream.binance.com/ws",
   "wss://fstream.binance.com:443/ws",
 ];
@@ -30,11 +38,21 @@ const SNAPSHOT_SANITY_INTERVAL_MS = 20_000;
 const SNAPSHOT_REFRESH_MIN_MS = 90_000;
 const SNAPSHOT_SANITY_BATCH = 3;
 const SNAPSHOT_REQUEST_GAP_MS = 350;
-const SNAPSHOT_BLOCK_COOLDOWN_MS = 120_000;
+const SNAPSHOT_BLOCK_COOLDOWN_MS = 600_000; // 10 min — Binance IP bans are long, no point retrying often
 const CONTRACT_REFRESH_INTERVAL_MS = 45 * 60_000;
 const RECONNECT_BASE_MS = 500;
 const RECONNECT_MAX_MS = 12_000;
 const DEPTH_BUFFER_MAX = 400;
+// Maximum symbols for depth+kline WS subscriptions.
+// Each symbol = @depth@500ms (2/sec) + 7 @kline streams + @trade on tradeWs.
+// 10 symbols × 2/sec = 20 depth msgs/sec — keeps event loop clean for trade latency.
+// Beyond this, symbols still get price/ticker/mark from the aggregate WS (!ticker@arr).
+const MAX_DEPTH_SYMBOLS = 10;
+
+// Priority symbols that MUST be in depthSymbols (subscribed first on start).
+// These are the highest-volume Binance Futures pairs — without priority seeding,
+// random low-volume symbols from !ticker@arr could fill the depth slots first.
+const PRIORITY_DEPTH_SYMBOLS = ["BTCUSDT", "ETHUSDT", "SOLUSDT", "BNBUSDT", "XRPUSDT"];
 const BINANCE_CANDLE_INTERVALS = ["1m", "5m", "15m", "30m", "1h", "4h", "1d"] as const;
 const CANDLE_STORE_MAX = 900;
 const TRADE_STORE_MAX = 500;
@@ -86,13 +104,17 @@ export class BinanceFuturesMarketAdapter implements IExchangeMarketAdapter {
 
   private aggregateWs: WebSocket | null = null;
   private depthWs: WebSocket | null = null;
+  private tradeWs: WebSocket | null = null;  // Fast lane: dedicated trade-only WS
   private aggregateUrlIndex = 0;
   private depthUrlIndex = 0;
+  private tradeUrlIndex = 0;
   private started = false;
   private aggregateReconnectAttempts = 0;
   private depthReconnectAttempts = 0;
+  private tradeReconnectAttempts = 0;
   private aggregateReconnectTimer: ReturnType<typeof setTimeout> | null = null;
   private depthReconnectTimer: ReturnType<typeof setTimeout> | null = null;
+  private tradeReconnectTimer: ReturnType<typeof setTimeout> | null = null;
   private heartbeatTimer: ReturnType<typeof setInterval> | null = null;
   private watchdogTimer: ReturnType<typeof setInterval> | null = null;
   private snapshotSanityTimer: ReturnType<typeof setInterval> | null = null;
@@ -127,16 +149,36 @@ export class BinanceFuturesMarketAdapter implements IExchangeMarketAdapter {
   private contractsLoading = false;
   private snapshotDrainInFlight = false;
   private latencyEmaMs: number | null = null;
+  private _depthLimitLogged = false;
+  /** 500ms batch flush timer for ticker/markPrice events */
+  private _tickerFlushTimer: ReturnType<typeof setInterval> | null = null;
+  /** Event loop lag detection — identifies what blocks the event loop */
+  private _elLagTimer: ReturnType<typeof setInterval> | null = null;
+  private _lastElCheck = 0;
+  /** Message counters per 30s window for diagnostic */
+  private _diagKlineCount = 0;
+  private _diagTradeCount = 0;
+  private _diagDepthCount = 0;
+  private _diagTickerCount = 0;
+  private _diagTimer: ReturnType<typeof setInterval> | null = null;
 
   start(): void {
     if (this.started) return;
     this.started = true;
+    // Pre-seed priority symbols so they always get depth/trade subscriptions
+    // before random low-volume symbols from !ticker@arr fill the slots
+    for (const symbol of PRIORITY_DEPTH_SYMBOLS) {
+      this.depthSymbols.add(symbol);
+    }
     this.connectAggregate();
     this.connectDepth();
+    this.connectTrade();  // Fast lane: dedicated trade WS
     this.startHeartbeat();
     this.startWatchdog();
     this.startSnapshotSanity();
     this.startContractRefresh();
+    this.startTickerFlush();  // 500ms batch emit for ticker/markPrice
+    this.startDiagnostics();  // Event loop lag + message rate monitor
     void this.refreshContracts();
   }
 
@@ -149,6 +191,10 @@ export class BinanceFuturesMarketAdapter implements IExchangeMarketAdapter {
     if (this.depthReconnectTimer) {
       clearTimeout(this.depthReconnectTimer);
       this.depthReconnectTimer = null;
+    }
+    if (this.tradeReconnectTimer) {
+      clearTimeout(this.tradeReconnectTimer);
+      this.tradeReconnectTimer = null;
     }
     if (this.heartbeatTimer) {
       clearInterval(this.heartbeatTimer);
@@ -166,6 +212,18 @@ export class BinanceFuturesMarketAdapter implements IExchangeMarketAdapter {
       clearInterval(this.contractRefreshTimer);
       this.contractRefreshTimer = null;
     }
+    if (this._tickerFlushTimer) {
+      clearInterval(this._tickerFlushTimer);
+      this._tickerFlushTimer = null;
+    }
+    if (this._elLagTimer) {
+      clearInterval(this._elLagTimer);
+      this._elLagTimer = null;
+    }
+    if (this._diagTimer) {
+      clearInterval(this._diagTimer);
+      this._diagTimer = null;
+    }
     if (this.aggregateWs) {
       this.aggregateWs.removeAllListeners();
       this.aggregateWs.terminate();
@@ -175,6 +233,11 @@ export class BinanceFuturesMarketAdapter implements IExchangeMarketAdapter {
       this.depthWs.removeAllListeners();
       this.depthWs.terminate();
       this.depthWs = null;
+    }
+    if (this.tradeWs) {
+      this.tradeWs.removeAllListeners();
+      this.tradeWs.terminate();
+      this.tradeWs = null;
     }
   }
 
@@ -186,11 +249,22 @@ export class BinanceFuturesMarketAdapter implements IExchangeMarketAdapter {
     const newlyAdded: string[] = [];
     for (const symbol of eligible) {
       if (this.depthSymbols.has(symbol)) continue;
+      // Enforce depth symbol limit — prevent 200+ symbols flooding the event loop
+      // Each symbol adds ~10 depth msgs/sec + 7 kline streams
+      if (this.depthSymbols.size >= MAX_DEPTH_SYMBOLS) {
+        // Log once per rejected symbol for debugging
+        if (!this._depthLimitLogged) {
+          console.log(`[BinanceFuturesAdapter] Depth limit reached (${MAX_DEPTH_SYMBOLS}), not subscribing ${symbol} and future symbols for depth/kline/trade WS`);
+          this._depthLimitLogged = true;
+        }
+        break;
+      }
       this.depthSymbols.add(symbol);
       newlyAdded.push(symbol);
     }
     if (!newlyAdded.length) return;
     this.subscribeDepthStreams(newlyAdded);
+    this.subscribeTradeStreams(newlyAdded);  // Fast lane: subscribe on trade WS too
     for (const symbol of newlyAdded) {
       this.enqueueSnapshot(symbol);
     }
@@ -205,9 +279,10 @@ export class BinanceFuturesMarketAdapter implements IExchangeMarketAdapter {
     const now = Date.now();
     const connectedAggregate = Boolean(this.aggregateWs && this.aggregateWs.readyState === WebSocket.OPEN);
     const connectedDepth = Boolean(this.depthWs && this.depthWs.readyState === WebSocket.OPEN);
-    const connected = connectedAggregate && connectedDepth;
+    const connectedTrade = Boolean(this.tradeWs && this.tradeWs.readyState === WebSocket.OPEN);
+    const connected = connectedAggregate && connectedDepth && connectedTrade;
     const lastMessageAgeMs = this.lastMessageAt > 0 ? Math.max(0, now - this.lastMessageAt) : Number.POSITIVE_INFINITY;
-    let score = connected ? 100 : connectedAggregate || connectedDepth ? 58 : 20;
+    let score = connected ? 100 : (connectedAggregate || connectedDepth || connectedTrade) ? 58 : 20;
     if (lastMessageAgeMs > 3_000) score -= 8;
     if (lastMessageAgeMs > 6_000) score -= 12;
     if (lastMessageAgeMs > 12_000) score -= 18;
@@ -240,6 +315,7 @@ export class BinanceFuturesMarketAdapter implements IExchangeMarketAdapter {
     const reasons: string[] = [];
     if (!connectedAggregate) reasons.push("aggregate_ws_disconnected");
     if (!connectedDepth) reasons.push("depth_ws_disconnected");
+    if (!connectedTrade) reasons.push("trade_ws_disconnected");
     if (lastMessageAgeMs > 6_000) reasons.push(`message_age_${Math.round(lastMessageAgeMs)}ms`);
     if (staleSymbolCount > 0) reasons.push(`stale_symbols_${staleSymbolCount}`);
     if (this.snapshotFailures > 0) reasons.push(`snapshot_failures_${this.snapshotFailures}`);
@@ -313,7 +389,7 @@ export class BinanceFuturesMarketAdapter implements IExchangeMarketAdapter {
       this.aggregateWs = null;
     }
     const url = BINANCE_AGGREGATE_URLS[this.aggregateUrlIndex] ?? BINANCE_AGGREGATE_URLS[0];
-    const ws = new WebSocket(url, { handshakeTimeout: 10_000 });
+    const ws = new WebSocket(url, { handshakeTimeout: 10_000, perMessageDeflate: false });
     this.aggregateWs = ws;
 
     ws.on("open", () => {
@@ -353,7 +429,7 @@ export class BinanceFuturesMarketAdapter implements IExchangeMarketAdapter {
       this.depthWs = null;
     }
     const url = BINANCE_DEPTH_URLS[this.depthUrlIndex] ?? BINANCE_DEPTH_URLS[0];
-    const ws = new WebSocket(url, { handshakeTimeout: 10_000 });
+    const ws = new WebSocket(url, { handshakeTimeout: 10_000, perMessageDeflate: false });
     this.depthWs = ws;
 
     ws.on("open", () => {
@@ -365,6 +441,12 @@ export class BinanceFuturesMarketAdapter implements IExchangeMarketAdapter {
       for (const symbol of this.depthSymbols) {
         this.resetSymbolSyncState(symbol);
         this.enqueueSnapshot(symbol);
+      }
+      // Backfill candles only if REST API is not blocked (403 = IP ban)
+      if (this.snapshotBlockedUntil <= Date.now()) {
+        void this.backfillCandles([...this.depthSymbols]);
+      } else {
+        this.pushReason("backfill_skipped:rest_blocked");
       }
     });
 
@@ -414,6 +496,82 @@ export class BinanceFuturesMarketAdapter implements IExchangeMarketAdapter {
     }, waitMs);
   }
 
+  // ═══════════════════════════════════════════════════════════════════
+  // FAST LANE: Dedicated trade-only WS connection
+  //  Isolates trade events from depth/kline flood (~2000+ msg/sec)
+  //  Expected: BTCUSDT trade latency drops from p50=200-900ms → ~35-50ms
+  // ═══════════════════════════════════════════════════════════════════
+
+  private connectTrade(): void {
+    if (!this.started) return;
+    if (this.tradeWs) {
+      this.tradeWs.removeAllListeners();
+      this.tradeWs.terminate();
+      this.tradeWs = null;
+    }
+    const url = BINANCE_TRADE_URLS[this.tradeUrlIndex] ?? BINANCE_TRADE_URLS[0];
+    const ws = new WebSocket(url, { handshakeTimeout: 10_000, perMessageDeflate: false });
+    this.tradeWs = ws;
+
+    ws.on("open", () => {
+      this.tradeReconnectAttempts = 0;
+      this.lastError = null;
+      this.touchMessage(Date.now());
+      this.pushReason("trade_fast_lane_open");
+      // Subscribe all tracked symbols for @trade on the fast lane
+      this.subscribeTradeStreams([...this.depthSymbols]);
+    });
+
+    ws.on("message", (raw) => {
+      this.parseTradeMessage(raw);
+    });
+
+    ws.on("pong", () => {
+      this.touchMessage(Date.now());
+    });
+
+    ws.on("close", () => {
+      if (!this.started) return;
+      this.pushReason("trade_fast_lane_close");
+      this.scheduleTradeReconnect();
+    });
+
+    ws.on("error", (error) => {
+      if (!this.started) return;
+      this.lastError = error instanceof Error ? error.message : "trade_ws_error";
+      this.pushReason(`trade_fast_lane_error:${this.lastError}`);
+      this.scheduleTradeReconnect();
+    });
+  }
+
+  /** Parse messages on the fast-lane trade WS — ONLY handles trade events */
+  private parseTradeMessage(raw: WebSocket.RawData): void {
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(toText(raw));
+    } catch {
+      return;
+    }
+    const rec = parsed as Record<string, unknown>;
+    if ("result" in rec && rec.result === null) return; // subscription ack
+    const eventType = String(rec.e ?? "");
+    if (eventType === "trade" || eventType === "aggTrade") {
+      this.onTrade(rec);
+    }
+  }
+
+  private scheduleTradeReconnect(): void {
+    if (!this.started || this.tradeReconnectTimer) return;
+    this.tradeReconnectAttempts += 1;
+    this.reconnects += 1;
+    this.tradeUrlIndex = (this.tradeUrlIndex + 1) % BINANCE_TRADE_URLS.length;
+    const waitMs = computeBackoff(this.tradeReconnectAttempts);
+    this.tradeReconnectTimer = setTimeout(() => {
+      this.tradeReconnectTimer = null;
+      this.connectTrade();
+    }, waitMs);
+  }
+
   private startHeartbeat(): void {
     if (this.heartbeatTimer) clearInterval(this.heartbeatTimer);
     this.heartbeatTimer = setInterval(() => {
@@ -427,6 +585,13 @@ export class BinanceFuturesMarketAdapter implements IExchangeMarketAdapter {
       if (this.depthWs && this.depthWs.readyState === WebSocket.OPEN) {
         try {
           this.depthWs.ping();
+        } catch {
+          // no-op
+        }
+      }
+      if (this.tradeWs && this.tradeWs.readyState === WebSocket.OPEN) {
+        try {
+          this.tradeWs.ping();
         } catch {
           // no-op
         }
@@ -451,6 +616,13 @@ export class BinanceFuturesMarketAdapter implements IExchangeMarketAdapter {
       if (this.depthWs) {
         try {
           this.depthWs.terminate();
+        } catch {
+          // no-op
+        }
+      }
+      if (this.tradeWs) {
+        try {
+          this.tradeWs.terminate();
         } catch {
           // no-op
         }
@@ -503,6 +675,78 @@ export class BinanceFuturesMarketAdapter implements IExchangeMarketAdapter {
     }, CONTRACT_REFRESH_INTERVAL_MS);
   }
 
+  /**
+   * Event loop lag monitor + message rate diagnostics.
+   * Detects what's blocking the Node.js event loop.
+   */
+  private startDiagnostics(): void {
+    // Event loop lag: measure timer drift every 200ms
+    this._lastElCheck = Date.now();
+    this._elLagTimer = setInterval(() => {
+      const now = Date.now();
+      const expected = 200; // timer interval
+      const lag = now - this._lastElCheck - expected;
+      this._lastElCheck = now;
+      // Log if event loop was blocked for > 50ms
+      if (lag > 50) {
+        console.log(`[EL_LAG] ${lag}ms event loop block detected`);
+      }
+    }, 200);
+
+    // Message rate diagnostics: every 30s log message counts
+    this._diagTimer = setInterval(() => {
+      console.log(`[MSG_RATE] 30s: kline=${this._diagKlineCount} trade=${this._diagTradeCount} depth=${this._diagDepthCount} tickerArr=${this._diagTickerCount} depthSymbols=${this.depthSymbols.size} snapshots=${this.snapshots.size}`);
+      this._diagKlineCount = 0;
+      this._diagTradeCount = 0;
+      this._diagDepthCount = 0;
+      this._diagTickerCount = 0;
+    }, 30_000);
+  }
+
+  /**
+   * 500ms batch flush for ticker + markPrice events.
+   * tickerArr/markPriceArr are CACHE-ONLY (update snapshots instantly, no emit).
+   * This timer emits ticker + mark_price events for depth symbols every 500ms.
+   * Result: event loop stays clean during !ticker@arr processing (300+ rows),
+   * and the hub/bridge still gets periodic updates for Redis live snapshot.
+   */
+  private startTickerFlush(): void {
+    if (this._tickerFlushTimer) clearInterval(this._tickerFlushTimer);
+    this._tickerFlushTimer = setInterval(() => {
+      if (!this.started) return;
+      const now = Date.now();
+      for (const symbol of this.depthSymbols) {
+        const snap = this.snapshots.get(symbol);
+        if (!snap) continue;
+        if (snap.price !== null) {
+          this.emit({
+            type: "ticker",
+            exchange: this.exchange,
+            symbol,
+            ts: snap.sourceTs ?? now,
+            recvTs: now,
+            price: snap.price,
+            change24hPct: snap.change24hPct ?? 0,
+            volume24hUsd: snap.volume24hUsd ?? 0,
+          });
+        }
+        if (snap.markPrice !== null) {
+          this.emit({
+            type: "mark_price",
+            exchange: this.exchange,
+            symbol,
+            ts: snap.sourceTs ?? now,
+            recvTs: now,
+            markPrice: snap.markPrice,
+            fundingRate: snap.fundingRate,
+            nextFundingTime: snap.nextFundingTime,
+          });
+        }
+      }
+    }, 500);
+  }
+
+  /** Subscribe depth + kline streams on the depth WS (NO trade — trade is on fast lane) */
   private subscribeDepthStreams(symbols: string[]): void {
     const ws = this.depthWs;
     if (!ws || ws.readyState !== WebSocket.OPEN || !symbols.length) return;
@@ -510,13 +754,38 @@ export class BinanceFuturesMarketAdapter implements IExchangeMarketAdapter {
     for (const symbol of symbols) {
       if (!this.isDepthEligible(symbol)) continue;
       const lower = symbol.toLowerCase();
-      params.push(`${lower}@depth@100ms`);
-      params.push(`${lower}@trade`);
+      params.push(`${lower}@depth@500ms`);
+      // NOTE: @trade removed from depth WS — now on dedicated tradeWs fast lane
       for (const frame of BINANCE_CANDLE_INTERVALS) {
         params.push(`${lower}@kline_${frame}`);
       }
     }
     const chunkSize = 120;
+    let messageId = Date.now();
+    for (let i = 0; i < params.length; i += chunkSize) {
+      const chunk = params.slice(i, i + chunkSize);
+      ws.send(
+        JSON.stringify({
+          method: "SUBSCRIBE",
+          params: chunk,
+          id: messageId,
+        }),
+      );
+      messageId += 1;
+    }
+  }
+
+  /** Subscribe ONLY trade streams on the dedicated fast-lane WS */
+  private subscribeTradeStreams(symbols: string[]): void {
+    const ws = this.tradeWs;
+    if (!ws || ws.readyState !== WebSocket.OPEN || !symbols.length) return;
+    const params: string[] = [];
+    for (const symbol of symbols) {
+      if (!this.isDepthEligible(symbol)) continue;
+      params.push(`${symbol.toLowerCase()}@trade`);
+    }
+    if (!params.length) return;
+    const chunkSize = 200; // trade-only: can use larger chunks
     let messageId = Date.now();
     for (let i = 0; i < params.length; i += chunkSize) {
       const chunk = params.slice(i, i + chunkSize);
@@ -543,64 +812,75 @@ export class BinanceFuturesMarketAdapter implements IExchangeMarketAdapter {
     const data = root.data;
     if (!stream || data === undefined) return;
 
+    // ══════════════════════════════════════════════════════════════
+    // tickerArr: CACHE-ONLY — direct mutate snapshots, NO emit.
+    // Ticker events are batched via 500ms flush timer (startTickerFlush).
+    // This keeps the event loop clean for trade latency.
+    // ══════════════════════════════════════════════════════════════
     if (stream.includes("!ticker@arr") && Array.isArray(data)) {
+      this._diagTickerCount += 1;
+      this.touchMessage(Date.now());
       for (const row of data) {
         const rec = row as Record<string, unknown>;
-        const symbol = ensureUsdtPair(rec.s);
-        if (!symbol) continue;
+        const rawSymbol = String(rec.s ?? "");
+        // Skip non-USDT pairs (COIN-margined futures like BTCUSD_PERP)
+        if (!rawSymbol || !rawSymbol.endsWith("USDT")) continue;
         const price = toNum(rec.c);
-        const change24hPct = toNum(rec.P);
-        const volume24hUsd = toNum(rec.q);
-        if (price === null || change24hPct === null || volume24hUsd === null) continue;
-        const ts = toNum(rec.E) ?? Date.now();
-        this.touchMessage(ts);
-        this.patchSnapshot(symbol, {
-          price,
-          change24hPct,
-          volume24hUsd,
-          sourceTs: ts,
-        });
-        this.emit({
-          type: "ticker",
-          exchange: this.exchange,
-          symbol,
-          ts,
-          recvTs: Date.now(),
-          price,
-          change24hPct,
-          volume24hUsd,
-        });
+        if (price === null) continue;
+        // Direct cache mutation — no patchSnapshot, no ensureUsdtPair, no intermediate object
+        let snap = this.snapshots.get(rawSymbol);
+        if (!snap) {
+          snap = {
+            exchange: this.exchange, symbol: rawSymbol, price: null,
+            change24hPct: null, volume24hUsd: null, topBid: null, topAsk: null,
+            bidQty: null, askQty: null, spreadBps: null, depthUsd: null,
+            imbalance: null, markPrice: null, fundingRate: null,
+            nextFundingTime: null, lastTradePrice: null, lastTradeQty: null,
+            lastTradeSide: null, sourceTs: null, updatedAt: Date.now(),
+          };
+          this.snapshots.set(rawSymbol, snap);
+        }
+        snap.price = price;
+        const change = toNum(rec.P);
+        if (change !== null) snap.change24hPct = change;
+        const vol = toNum(rec.q);
+        if (vol !== null) snap.volume24hUsd = vol;
+        snap.sourceTs = toNum(rec.E) ?? Date.now();
+        snap.updatedAt = Date.now();
       }
       return;
     }
 
+    // ══════════════════════════════════════════════════════════════
+    // markPriceArr: CACHE-ONLY — same strategy as tickerArr.
+    // ══════════════════════════════════════════════════════════════
     if (stream.includes("!markprice@arr") && Array.isArray(data)) {
+      this.touchMessage(Date.now());
       for (const row of data) {
         const rec = row as Record<string, unknown>;
-        const symbol = ensureUsdtPair(rec.s);
-        if (!symbol) continue;
+        const rawSymbol = String(rec.s ?? "");
+        if (!rawSymbol || !rawSymbol.endsWith("USDT")) continue;
         const markPrice = toNum(rec.p);
         if (markPrice === null) continue;
-        const fundingRate = toNum(rec.r);
-        const nextFundingTime = toNum(rec.T);
-        const ts = toNum(rec.E) ?? Date.now();
-        this.touchMessage(ts);
-        this.patchSnapshot(symbol, {
-          markPrice,
-          fundingRate,
-          nextFundingTime,
-          sourceTs: ts,
-        });
-        this.emit({
-          type: "mark_price",
-          exchange: this.exchange,
-          symbol,
-          ts,
-          recvTs: Date.now(),
-          markPrice,
-          fundingRate,
-          nextFundingTime,
-        });
+        let snap = this.snapshots.get(rawSymbol);
+        if (!snap) {
+          snap = {
+            exchange: this.exchange, symbol: rawSymbol, price: null,
+            change24hPct: null, volume24hUsd: null, topBid: null, topAsk: null,
+            bidQty: null, askQty: null, spreadBps: null, depthUsd: null,
+            imbalance: null, markPrice: null, fundingRate: null,
+            nextFundingTime: null, lastTradePrice: null, lastTradeQty: null,
+            lastTradeSide: null, sourceTs: null, updatedAt: Date.now(),
+          };
+          this.snapshots.set(rawSymbol, snap);
+        }
+        snap.markPrice = markPrice;
+        const fr = toNum(rec.r);
+        if (fr !== null) snap.fundingRate = fr;
+        const nft = toNum(rec.T);
+        if (nft !== null) snap.nextFundingTime = nft;
+        snap.sourceTs = toNum(rec.E) ?? Date.now();
+        snap.updatedAt = Date.now();
       }
       return;
     }
@@ -652,6 +932,7 @@ export class BinanceFuturesMarketAdapter implements IExchangeMarketAdapter {
     }
   }
 
+  /** Parse depth WS messages — handles ONLY kline + depthUpdate (trade moved to fast lane) */
   private parseDepthMessage(raw: WebSocket.RawData): void {
     let parsed: unknown;
     try {
@@ -662,10 +943,7 @@ export class BinanceFuturesMarketAdapter implements IExchangeMarketAdapter {
     const rec = parsed as Record<string, unknown>;
     if ("result" in rec && rec.result === null) return;
     const eventType = String(rec.e ?? "");
-    if (eventType === "trade") {
-      this.onTrade(rec);
-      return;
-    }
+    // NOTE: trade events are NO LONGER processed here — they arrive on the dedicated tradeWs
     if (eventType === "kline") {
       this.onKline(rec);
       return;
@@ -675,21 +953,39 @@ export class BinanceFuturesMarketAdapter implements IExchangeMarketAdapter {
     }
   }
 
+  /** Diagnostic counter for raw trade timestamp debugging */
+  private _rawTradeDiag = 0;
+
   private onTrade(rec: Record<string, unknown>): void {
-    const symbol = ensureUsdtPair(rec.s);
+    this._diagTradeCount += 1;
+    const raw = String(rec.s ?? "");
+    // Fast path: Binance sends uppercase USDT pairs — skip regex normalize
+    const symbol = raw.endsWith("USDT") ? raw : ensureUsdtPair(raw);
     if (!symbol) return;
     const price = toNum(rec.p);
     const qty = toNum(rec.q);
     if (price === null || qty === null || price <= 0 || qty <= 0) return;
     const ts = toNum(rec.T) ?? toNum(rec.E) ?? Date.now();
+
+    // Diagnostic: log raw timestamp fields for BTCUSDT (1 in 500)
+    if (symbol === "BTCUSDT" && ++this._rawTradeDiag % 500 === 0) {
+      const now = Date.now();
+      console.log(`[RAW_TRADE] BTCUSDT T=${rec.T} E=${rec.E} ts=${ts} now=${now} T-now=${now - ts}ms E-now=${now - (toNum(rec.E) ?? 0)}ms price=${price}`);
+    }
+
     this.touchMessage(ts);
     const side: "BUY" | "SELL" = rec.m === true ? "SELL" : "BUY";
-    this.patchSnapshot(symbol, {
-      lastTradePrice: price,
-      lastTradeQty: qty,
-      lastTradeSide: side,
-      sourceTs: ts,
-    });
+    // Inline snapshot patch — skip patchSnapshot overhead (ensureUsdtPair + for..in + object alloc)
+    const snap = this.snapshots.get(symbol);
+    if (snap) {
+      snap.lastTradePrice = price;
+      snap.lastTradeQty = qty;
+      snap.lastTradeSide = side;
+      snap.sourceTs = ts;
+      snap.updatedAt = Date.now();
+    } else {
+      this.patchSnapshot(symbol, { lastTradePrice: price, lastTradeQty: qty, lastTradeSide: side, sourceTs: ts });
+    }
     this.appendRecentTrade(symbol, { ts, price, amount: qty, side });
     const event: NormalizedTradeEvent = {
       type: "trade",
@@ -706,7 +1002,9 @@ export class BinanceFuturesMarketAdapter implements IExchangeMarketAdapter {
   }
 
   private onKline(rec: Record<string, unknown>): void {
-    const symbol = ensureUsdtPair(rec.s);
+    this._diagKlineCount += 1;
+    const raw = String(rec.s ?? "");
+    const symbol = raw.endsWith("USDT") ? raw : ensureUsdtPair(raw);
     if (!symbol) return;
     const k = (rec.k ?? {}) as Record<string, unknown>;
     const interval = String(k.i ?? "").toLowerCase();
@@ -728,12 +1026,18 @@ export class BinanceFuturesMarketAdapter implements IExchangeMarketAdapter {
       volume: Math.max(0, volume),
     };
     this.upsertCandle(symbol, interval, candle);
-    const ts = toNum(k.T) ?? toNum(rec.E) ?? Date.now();
+    // Use Binance event time (rec.E), NOT kline close time (k.T) which is in the future for open candles
+    const ts = toNum(rec.E) ?? Date.now();
     this.touchMessage(ts);
-    this.patchSnapshot(symbol, {
-      price: close,
-      sourceTs: ts,
-    });
+    // Inline snapshot patch for hot path
+    const snap = this.snapshots.get(symbol);
+    if (snap) {
+      snap.price = close;
+      snap.sourceTs = ts;
+      snap.updatedAt = Date.now();
+    } else {
+      this.patchSnapshot(symbol, { price: close, sourceTs: ts });
+    }
     // Emit canonical kline event for real-time candle push
     const klineEvent: NormalizedKlineEvent = {
       type: "kline",
@@ -754,6 +1058,7 @@ export class BinanceFuturesMarketAdapter implements IExchangeMarketAdapter {
   }
 
   private onDepthDelta(rec: Record<string, unknown>): void {
+    this._diagDepthCount += 1;
     const symbol = ensureUsdtPair(rec.s);
     if (!symbol) return;
     const startSeq = toNum(rec.U);
@@ -909,21 +1214,23 @@ export class BinanceFuturesMarketAdapter implements IExchangeMarketAdapter {
       this.snapshotFailures += 1;
       const statusMatch = message.match(/snapshot_http_(\d{3})/);
       const statusCode = statusMatch ? Number(statusMatch[1]) : null;
-      if (statusCode === 418 || statusCode === 429) {
+      if (statusCode === 403 || statusCode === 418 || statusCode === 429) {
+        // IP blocked or rate limited — stop ALL snapshot requests for cooldown period
+        // 403 = IP ban (common with Binance), 418/429 = rate limit
         this.snapshotBlockedUntil = Date.now() + SNAPSHOT_BLOCK_COOLDOWN_MS;
-        this.pushReason(`snapshot_rate_limited:${statusCode}`);
+        this.pushReason(`snapshot_blocked:${statusCode}`);
+        // Clear the entire snapshot queue to prevent cascade
+        this.snapshotQueue.length = 0;
+        this.snapshotQueueSet.clear();
+        console.log(`[BinanceFuturesAdapter] REST API ${statusCode} — blocking snapshots for ${SNAPSHOT_BLOCK_COOLDOWN_MS / 1000}s`);
       } else if (statusCode === 400 && currentFail >= 3) {
         this.excludedDepthSymbols.add(symbol);
         this.pushReason(`exclude_depth_symbol:${symbol}`);
       } else if (currentFail >= 6) {
-        this.pushReason(`snapshot_fail_threshold_reconnect:${symbol}`);
-        if (this.depthWs && this.depthWs.readyState === WebSocket.OPEN) {
-          try {
-            this.depthWs.terminate();
-          } catch {
-            // no-op
-          }
-        }
+        // Don't terminate WS on repeated snapshot failures — WS data is still valuable
+        // even without snapshots. The depth deltas are emitted and can be used client-side.
+        this.pushReason(`snapshot_fail_threshold:${symbol}`);
+        console.log(`[BinanceFuturesAdapter] Snapshot failed 6+ times for ${symbol} — skipping (WS still running)`);
       }
     } finally {
       if (timeout) clearTimeout(timeout);
@@ -1005,33 +1312,37 @@ export class BinanceFuturesMarketAdapter implements IExchangeMarketAdapter {
   private patchSnapshot(symbol: string, patch: Partial<AdapterSymbolSnapshot>): void {
     const key = ensureUsdtPair(symbol);
     if (!key) return;
-    const existing = this.snapshots.get(key);
-    const next: AdapterSymbolSnapshot = {
-      exchange: this.exchange,
-      symbol: key,
-      price: null,
-      change24hPct: null,
-      volume24hUsd: null,
-      topBid: null,
-      topAsk: null,
-      bidQty: null,
-      askQty: null,
-      spreadBps: null,
-      depthUsd: null,
-      imbalance: null,
-      markPrice: null,
-      fundingRate: null,
-      nextFundingTime: null,
-      lastTradePrice: null,
-      lastTradeQty: null,
-      lastTradeSide: null,
-      sourceTs: null,
-      updatedAt: Date.now(),
-      ...(existing ?? {}),
-      ...patch,
-      updatedAt: Date.now(),
-    };
-    this.snapshots.set(key, next);
+    let existing = this.snapshots.get(key);
+    if (!existing) {
+      existing = {
+        exchange: this.exchange,
+        symbol: key,
+        price: null,
+        change24hPct: null,
+        volume24hUsd: null,
+        topBid: null,
+        topAsk: null,
+        bidQty: null,
+        askQty: null,
+        spreadBps: null,
+        depthUsd: null,
+        imbalance: null,
+        markPrice: null,
+        fundingRate: null,
+        nextFundingTime: null,
+        lastTradePrice: null,
+        lastTradeQty: null,
+        lastTradeSide: null,
+        sourceTs: null,
+        updatedAt: Date.now(),
+      };
+      this.snapshots.set(key, existing);
+    }
+    // Mutate in place — avoid 300+ object allocations per !ticker@arr
+    for (const k in patch) {
+      (existing as Record<string, unknown>)[k] = (patch as Record<string, unknown>)[k];
+    }
+    existing.updatedAt = Date.now();
   }
 
   private appendRecentTrade(symbol: string, row: AdapterTradePoint): void {
@@ -1041,6 +1352,62 @@ export class BinanceFuturesMarketAdapter implements IExchangeMarketAdapter {
     current.push(row);
     if (current.length > TRADE_STORE_MAX) current.splice(0, current.length - TRADE_STORE_MAX);
     this.recentTradesBySymbol.set(key, current);
+  }
+
+  // ── Reconnect backfill: fetch last 2 candles per symbol via REST ──
+  private async backfillCandles(symbols: string[]): Promise<void> {
+    const intervals = BINANCE_CANDLE_INTERVALS;
+    for (const symbol of symbols) {
+      if (!this.started) return;
+      for (const interval of intervals) {
+        try {
+          const controller = new AbortController();
+          const timeout = setTimeout(() => controller.abort(), 4_000);
+          const res = await fetch(
+            `${BINANCE_DEPTH_SNAPSHOT_BASE}/fapi/v1/klines?symbol=${encodeURIComponent(symbol)}&interval=${interval}&limit=2`,
+            { signal: controller.signal },
+          );
+          clearTimeout(timeout);
+          if (!res.ok) continue;
+          const rows = (await res.json()) as unknown[];
+          if (!Array.isArray(rows)) continue;
+          for (const row of rows) {
+            if (!Array.isArray(row) || row.length < 6) continue;
+            const openTime = Number(row[0]);
+            const open = Number(row[1]);
+            const high = Number(row[2]);
+            const low = Number(row[3]);
+            const close = Number(row[4]);
+            const volume = Number(row[5]);
+            if (!Number.isFinite(openTime) || !Number.isFinite(close)) continue;
+            this.upsertCandle(symbol, interval, {
+              time: Math.floor(openTime / 1000),
+              open, high, low, close,
+              volume: Math.max(0, volume),
+            });
+            // Emit as kline event so gateway pushes it to clients
+            const closed = Number(row[6]) < Date.now(); // closeTime < now → closed
+            this.emit({
+              type: "kline",
+              exchange: this.exchange,
+              symbol,
+              ts: Date.now(),
+              recvTs: Date.now(),
+              interval,
+              openTime: Math.floor(openTime / 1000),
+              open, high, low, close,
+              volume: Math.max(0, volume),
+              closed,
+            });
+          }
+        } catch {
+          // backfill is best-effort; continue with next
+        }
+      }
+      // Tiny gap between symbols to avoid rate-limiting
+      await new Promise((resolve) => setTimeout(resolve, 100));
+    }
+    this.pushReason(`backfill_done:${symbols.length}_symbols`);
   }
 
   private upsertCandle(symbol: string, interval: string, row: AdapterCandlePoint): void {

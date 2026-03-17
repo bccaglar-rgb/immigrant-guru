@@ -6,8 +6,8 @@ export const ADMIN_CONFIG = {
     modeMinConfidence: {
       FLOW: 0.6,
       AGGRESSIVE: 0.68,
-      BALANCED: 0.7,
-      CAPITAL_GUARD: 0.75,
+      BALANCED: 0.62,
+      CAPITAL_GUARD: 0.55,
     } as Record<ScoringMode, number>,
   },
 } as const;

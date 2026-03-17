@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { CoinIcon } from "../components/CoinIcon";
+import { MarketDataRouter } from "../data/MarketDataRouter";
+import { useMarketListStore } from "../hooks/useMarketListStore";
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
@@ -90,10 +92,10 @@ const fmtPrice = (v: number) => {
   return `$${v.toLocaleString(undefined, { maximumFractionDigits: 8 })}`;
 };
 
-const pctChipCls = (v: number) => {
-  if (v > 0) return "bg-[#162016] text-[#4ade80] border-[#2a4a2a]";
-  if (v < 0) return "bg-[#201414] text-[#f87171] border-[#4a2a2a]";
-  return "bg-[#1A1B1F] text-[#8f95a3] border-white/10";
+const pctColor = (v: number) => {
+  if (v > 0) return "text-[#8fc9ab]";
+  if (v < 0) return "text-[#d49f9a]";
+  return "text-[#BFC2C7]";
 };
 
 const scoreChipCls = (v: number) => {
@@ -121,15 +123,16 @@ const rsiCls = (v: number) => {
 };
 
 const spreadCls = (v: number) => {
-  if (v <= 2) return "text-[#4ade80]";   // Tight
-  if (v <= 5) return "text-[#F5C542]";   // Moderate
-  return "text-[#f87171]";               // Wide
+  if (v <= 2) return "text-[#4ade80]";
+  if (v <= 5) return "text-[#F5C542]";
+  return "text-[#f87171]";
 };
 
-const REFRESH_MS = 15_000;
+/* Engine refresh: server refreshes every 60s, poll every 30s for safety */
+const ENGINE_REFRESH_MS = 30_000;
 
 /* ------------------------------------------------------------------ */
-/*  Hook                                                               */
+/*  Hook: Engine data (scores, ATR, RSI, S/R — 60s refresh)           */
 /* ------------------------------------------------------------------ */
 
 function useCoinUniverseEngine() {
@@ -165,7 +168,7 @@ function useCoinUniverseEngine() {
     const ctrl = new AbortController();
     abortRef.current = ctrl;
     void fetchData(ctrl.signal);
-    const timer = setInterval(() => void fetchData(ctrl.signal), REFRESH_MS);
+    const timer = setInterval(() => void fetchData(ctrl.signal), ENGINE_REFRESH_MS);
     return () => {
       ctrl.abort();
       clearInterval(timer);
@@ -214,7 +217,7 @@ function SortHeader({
   className?: string;
 }) {
   const isActive = sortKey === activeKey;
-  const arrow = isActive ? (dir === "desc" ? " ▼" : " ▲") : "";
+  const arrow = isActive ? (dir === "desc" ? " \u25BC" : " \u25B2") : "";
   return (
     <span
       className={`cursor-pointer select-none transition-colors hover:text-[#BFC2C7] ${isActive ? "text-[#E7E9ED]" : ""} ${className ?? ""}`}
@@ -263,10 +266,8 @@ function CoinRow({ c, idx, onClick }: { c: UniverseCoinRow; idx: number; onClick
       <span className="ml-auto w-24 text-right font-medium text-white">
         {fmtPrice(c.price)}
       </span>
-      <span className="w-20 text-right">
-        <span className={`inline-flex rounded-md border px-1.5 py-0.5 text-[11px] font-semibold ${pctChipCls(c.change24hPct)}`}>
-          {c.change24hPct >= 0 ? "+" : ""}{c.change24hPct.toFixed(2)}%
-        </span>
+      <span className={`w-20 text-right text-[11px] font-semibold ${pctColor(c.change24hPct)}`}>
+        {c.change24hPct >= 0 ? "+" : ""}{c.change24hPct.toFixed(2)}%
       </span>
       <span className="w-24 text-right text-[#BFC2C7]">
         {compactUsd(c.volume24hUsd)}
@@ -290,7 +291,7 @@ function CoinRow({ c, idx, onClick }: { c: UniverseCoinRow; idx: number; onClick
       </span>
       <span className={`hidden w-20 text-right text-xs xl:block ${c.srDistPct != null ? srDistCls(c.srDistPct) : "text-[#6B6F76]"}`}>
         {c.srDistPct != null && c.nearestSR
-          ? `${c.srDistPct.toFixed(1)}% ${c.nearestSR.type === "support" ? "↑S" : "↓R"}`
+          ? `${c.srDistPct.toFixed(1)}% ${c.nearestSR.type === "support" ? "\u2191S" : "\u2193R"}`
           : "---"}
       </span>
       <span className={`hidden w-12 text-right text-xs xl:block ${c.rsi14 != null ? rsiCls(c.rsi14) : "text-[#6B6F76]"}`}>
@@ -336,6 +337,15 @@ export default function CoinUniversePage() {
   const [sortDir, setSortDir] = useState<SortDir>("desc");
   const { activeCoins, cooldownCoins, loading, error, refreshedAt, round } = useCoinUniverseEngine();
 
+  // Pipeline 6: real-time price/change/volume overlay
+  const liveRows = useMarketListStore((s) => s.rows);
+  const lastPatchAt = useMarketListStore((s) => s.lastPatchAt);
+
+  useEffect(() => {
+    MarketDataRouter.subscribeMarketList();
+    return () => MarketDataRouter.unsubscribeMarketList();
+  }, []);
+
   const handleSort = useCallback((key: SortKey) => {
     setSortKey((prev) => {
       if (prev === key) {
@@ -347,8 +357,29 @@ export default function CoinUniversePage() {
     });
   }, []);
 
+  // Merge engine scores with Pipeline 6 live prices
+  const merged = useMemo(() => {
+    if (!activeCoins.length) return activeCoins;
+    if (!liveRows.size) return activeCoins; // no live data yet — use engine values
+
+    return activeCoins.map((coin) => {
+      const live = liveRows.get(coin.symbol);
+      if (!live) return coin;
+      return {
+        ...coin,
+        // Overlay real-time fields from Pipeline 6
+        price: live.price > 0 ? live.price : coin.price,
+        change24hPct: Number.isFinite(live.change24hPct) ? live.change24hPct : coin.change24hPct,
+        volume24hUsd: live.volume24hUsd > 0 ? live.volume24hUsd : coin.volume24hUsd,
+        fundingRate: live.fundingRate ?? coin.fundingRate,
+        spreadBps: live.spreadBps ?? coin.spreadBps,
+      };
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeCoins, liveRows, lastPatchAt]);
+
   const filtered = useMemo(() => {
-    let list = activeCoins;
+    let list = merged;
     if (search.trim()) {
       const q = search.trim().toLowerCase();
       list = list.filter(
@@ -356,7 +387,7 @@ export default function CoinUniversePage() {
       );
     }
     return sortCoins(list, sortKey, sortDir);
-  }, [activeCoins, search, sortKey, sortDir]);
+  }, [merged, search, sortKey, sortDir]);
 
   return (
     <main className="min-h-screen bg-[#0B0B0C] p-4 text-[#BFC2C7] md:p-6">
@@ -374,6 +405,7 @@ export default function CoinUniversePage() {
                 {round > 0 ? ` \u00b7 Round ${round}` : ""}
                 {refreshedAt ? ` \u00b7 ${new Date(refreshedAt).toLocaleTimeString()}` : ""}
                 {cooldownCoins.length > 0 ? ` \u00b7 ${cooldownCoins.length} cooling down` : ""}
+                {liveRows.size > 0 ? " \u00b7 Live" : ""}
               </p>
             </div>
           </div>

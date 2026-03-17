@@ -7,21 +7,26 @@ import { AppShell } from "./components/AppShell";
  * After a deploy, old JS chunk hashes no longer exist on the server (rsync --delete).
  * If a dynamic import fails (404), we force a full page reload so the browser
  * picks up the new index.html with fresh chunk references.
- * A sessionStorage flag prevents infinite reload loops.
+ * Uses per-URL sessionStorage flags so navigating to different pages retries independently.
  */
 function lazyRetry<T extends ComponentType<any>>(importFn: () => Promise<{ default: T }>) {
   return lazy(async () => {
-    const key = "chunk-retry";
+    const key = `chunk-retry:${window.location.pathname}`;
     try {
       const module = await importFn();
       sessionStorage.removeItem(key);
       return module;
     } catch {
       const retried = Number(sessionStorage.getItem(key) ?? 0);
-      if (retried < 1) {
+      if (retried < 2) {
         sessionStorage.setItem(key, String(retried + 1));
-        window.location.reload();
+        // Hard reload — bypass browser cache to pick up fresh index.html
+        window.location.href =
+          window.location.pathname + "?_r=" + Date.now();
+        // Return a placeholder while browser navigates
+        return { default: (() => null) as unknown as T };
       }
+      // All retries exhausted — render nothing (vite:preloadError handler may also catch this)
       return { default: (() => null) as unknown as T };
     }
   });

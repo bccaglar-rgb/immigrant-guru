@@ -7,6 +7,7 @@ import { useTickStore } from "../hooks/useTickStore";
 import { useDomStore } from "../hooks/useDomStore";
 import { useOrderflowStore } from "../hooks/useOrderflowStore";
 import { useLivePriceStore } from "../hooks/useLivePriceStore";
+import { useMarketListStore } from "../hooks/useMarketListStore";
 
 export interface MarketDatum<T> {
   sourceId: SourceId;
@@ -30,6 +31,9 @@ interface CandleUpdate {
   volume: number;
   closed: boolean;
   ts: number;
+  // ── latency debug timestamps ──
+  brt?: number; // backendRelayTs — when gateway sent the message
+  frt?: number; // frontendReceiveTs — when browser received it
 }
 
 interface RouterState {
@@ -86,6 +90,7 @@ const normalizeCandles = (input: FallbackLivePayload["ohlcv"] | undefined): Ohlc
   return [...dedup.values()].sort((a, b) => a.time - b.time);
 };
 
+let marketListSubscribed = false;
 let pollTimer: number | null = null;
 let staleTimer: number | null = null;
 let currentSource: SourceId | null = null;
@@ -169,9 +174,43 @@ const useMarketDataRouterStore = create<RouterState>((set) => ({
     const candles = normalizeCandles(packet.ohlcv);
     if (!candles.length) return;
     const close = candles.at(-1)?.close ?? 0;
+    // ── Canonical display price: lastTradePrice ONLY. Never candle close. ──
+    // Candle close is stale (up to 15min old on 15m TF) and causes $5-$15 discrepancy vs Binance.
+    // If lastTradePrice is unavailable, read from useLivePriceStore (which may have WS data).
+    const bundleLastTrade = Number(packet.lastTradePrice ?? NaN);
+    const liveStorePrice = useLivePriceStore.getState().bySymbol[symbol]?.price ?? 0;
+    const displayPrice = Number.isFinite(bundleLastTrade) && bundleLastTrade > 0
+      ? bundleLastTrade
+      : liveStorePrice > 0 ? liveStorePrice : close;
     const base = candles.length > 24 ? candles[candles.length - 25].close : candles[0]?.close ?? close;
-    const change24hPct = base > 0 ? ((close - base) / base) * 100 : 0;
+    const change24hPct = base > 0 ? ((displayPrice - base) / base) * 100 : 0;
     const volume24h = candles.slice(-96).reduce((sum, c) => sum + c.volume, 0);
+    // ── Bootstrap useLivePriceStore from REST when WS hasn't delivered yet ──
+    const lpState = useLivePriceStore.getState();
+    const existingLive = lpState.bySymbol[symbol];
+    // Feed REST lastTradePrice only if WS tick stream hasn't set a fresher value
+    if (Number.isFinite(bundleLastTrade) && bundleLastTrade > 0) {
+      if (!existingLive || existingLive.lastTradeEventTime === 0) {
+        lpState.setLivePrice(symbol, bundleLastTrade, ts);
+      }
+    }
+    // Feed REST-derived mark price into livePriceStore — ONLY if WS hasn't delivered yet
+    // REST mark price uses Date.now() as ts which is always "newer" than WS event time,
+    // so the out-of-order guard in setMarkPrice won't protect us. Explicit guard here.
+    const restMarkPrice = Number(packet.derivatives?.markPrice ?? NaN);
+    if (Number.isFinite(restMarkPrice) && restMarkPrice > 0) {
+      if (!existingLive || existingLive.lastMarkEventTime === 0) {
+        lpState.setMarkPrice(symbol, restMarkPrice, null, ts);
+      }
+    }
+    // Feed REST-derived bid/ask into livePriceStore — ONLY if WS hasn't delivered yet
+    const restTopBid = Number(packet.orderbook?.topBid ?? NaN);
+    const restTopAsk = Number(packet.orderbook?.topAsk ?? NaN);
+    if (Number.isFinite(restTopBid) && restTopBid > 0 && Number.isFinite(restTopAsk) && restTopAsk > 0) {
+      if (!existingLive || existingLive.lastBookEventTime === 0) {
+        lpState.setBookPrice(symbol, restTopBid, restTopAsk, ts);
+      }
+    }
     set((state) => {
       // ── Candle dedup: reuse existing reference if data unchanged ──
       // Without this, every WS push creates a new candle array reference which
@@ -217,10 +256,10 @@ const useMarketDataRouterStore = create<RouterState>((set) => ({
         existingDv.oiChange1h === packet.derivatives.oiChange1h;
       const stableDv = dvSame ? existingDv : packet.derivatives;
 
-      // ── Ticker dedup ──
+      // ── Ticker dedup — use lastTradePrice (not candle close) for display ──
       const existingTk = state.tickers[symbol]?.payload;
-      const tkSame = existingTk && existingTk.price === close && existingTk.change24hPct === change24hPct;
-      const stableTk = tkSame ? existingTk : { price: close, change24hPct, volume24h };
+      const tkSame = existingTk && existingTk.price === displayPrice && existingTk.change24hPct === change24hPct;
+      const stableTk = tkSame ? existingTk : { price: displayPrice, change24hPct, volume24h };
 
       return {
         lastUpdateAt: ts,
@@ -400,7 +439,12 @@ const connectWebSocket = () => {
       useDomStore.getState().clear();
       useOrderflowStore.getState().clear();
       useLivePriceStore.getState().clear();
+      useMarketListStore.getState().clear();
       sendWsSubscriptions();
+      // Re-subscribe to market list if active
+      if (marketListSubscribed) {
+        ws!.send(JSON.stringify({ type: "subscribe_market_list" }));
+      }
     };
     ws.onmessage = (event) => {
       try {
@@ -410,6 +454,9 @@ const connectWebSocket = () => {
             ? (msg.data as Partial<FallbackLivePayload>)
             : null;
         const symbol = String(msg?.symbol ?? payload?.symbol ?? "").toUpperCase();
+        // ── Debug: count WS message types ──
+        if (!(window as any).__wsMsgCounts) (window as any).__wsMsgCounts = {};
+        (window as any).__wsMsgCounts[msg.type] = ((window as any).__wsMsgCounts[msg.type] || 0) + 1;
         const intervalRaw = String(msg?.interval ?? payload?.interval ?? "");
         const interval =
           intervalRaw === "1m" ||
@@ -447,7 +494,8 @@ const connectWebSocket = () => {
           if (prevSource !== nextSource) sendWsSubscriptions();
         } else if (msg.type === "candle_update" && symbol) {
           // Canonical candle update from exchange kline stream
-          const cu = {
+          const frt = Date.now(); // frontendReceiveTs
+          const cu: CandleUpdate = {
             interval: String(msg.interval ?? ""),
             openTime: Number(msg.openTime ?? 0),
             open: Number(msg.open ?? 0),
@@ -457,9 +505,19 @@ const connectWebSocket = () => {
             volume: Number(msg.volume ?? 0),
             closed: Boolean(msg.closed),
             ts: Number(msg.ts ?? Date.now()),
+            brt: Number(msg.brt ?? 0) || undefined,
+            frt,
           };
           if (cu.interval && cu.openTime > 0 && cu.close > 0) {
             useMarketDataRouterStore.getState().ingestCandleUpdate(symbol, cu);
+            // ── Latency debug: expose to window for easy inspection ──
+            const binTs = cu.ts; const bkTs = cu.brt || 0; const feTs = cu.frt!;
+            const b2be = bkTs && binTs ? bkTs - binTs : null;
+            const be2fe = feTs && bkTs ? feTs - bkTs : null;
+            const total = binTs ? feTs - binTs : null;
+            (window as any).__lastCandleLatency = { symbol, interval: cu.interval, close: cu.close, b2be, be2fe, total, at: feTs };
+            if (!((window as any).__candleCount)) (window as any).__candleCount = 0;
+            (window as any).__candleCount++;
           }
         } else if (msg.type === "tick_batch" && symbol) {
           // Pipeline 2: Tick micro-batch from trade events
@@ -474,6 +532,19 @@ const connectWebSocket = () => {
                 last.price,
                 Number(last.ts ?? Date.now()),
                 last.side === "BUY" || last.side === "SELL" ? last.side : undefined,
+              );
+            }
+            // ── Latency telemetry (sampled 1 in 50 ticks) ──
+            if (typeof msg.serverTs === "number" && Math.random() < 0.02) {
+              const clientNow = Date.now();
+              const serverTs = msg.serverTs as number;
+              const binanceTs = Number((last as Record<string, unknown> | undefined)?.ts ?? 0);
+              const networkMs = clientNow - serverTs;
+              const pipelineMs = binanceTs > 0 ? serverTs - binanceTs : -1;
+              const totalMs = binanceTs > 0 ? clientNow - binanceTs : -1;
+              console.debug(
+                `[LATENCY] ${symbol} price=${(last as Record<string, unknown>)?.price} | ` +
+                `binance→server=${pipelineMs}ms server→client=${networkMs}ms total=${totalMs}ms`,
               );
             }
           }
@@ -524,6 +595,82 @@ const connectWebSocket = () => {
           };
           if (frame.windowStart > 0) {
             useOrderflowStore.getState().ingestFrame(symbol, frame);
+          }
+        } else if (msg.type === "derivatives_update" && symbol) {
+          // Pipeline 5: Real-time derivatives (mark_price from WS + OI/liquidation from 30s REST)
+          const derivs = msg.derivatives as Record<string, unknown> | undefined;
+          const trades = msg.trades as Record<string, unknown> | undefined;
+          const orderbook = msg.orderbook as Record<string, unknown> | undefined;
+          const store = useMarketDataRouterStore.getState();
+          const ts = Date.now();
+
+          // Update mark price in live price store
+          const markPrice = Number(derivs?.markPrice ?? NaN);
+          if (Number.isFinite(markPrice) && markPrice > 0) {
+            useLivePriceStore.getState().setMarkPrice(symbol, markPrice, Number(derivs?.fundingRate ?? NaN) || null, ts);
+          }
+
+          // Merge derivatives into store (keep existing fields, overwrite non-null incoming)
+          const existing = store.derivatives[symbol]?.payload;
+          const merged = {
+            fundingRate: derivs?.fundingRate != null ? Number(derivs.fundingRate) : existing?.fundingRate ?? null,
+            oiValue: derivs?.oiValue != null ? Number(derivs.oiValue) : existing?.oiValue ?? null,
+            oiChange1h: derivs?.oiChange1h != null ? Number(derivs.oiChange1h) : existing?.oiChange1h ?? null,
+            liquidationUsd: derivs?.liquidationUsd != null ? Number(derivs.liquidationUsd) : existing?.liquidationUsd ?? null,
+          };
+          useMarketDataRouterStore.setState((state) => ({
+            derivatives: {
+              ...state.derivatives,
+              [symbol]: { sourceId: state.activeSource, ts, payload: merged },
+            },
+            // Merge trade metrics if present
+            ...(trades ? {
+              trades: {
+                ...state.trades,
+                [symbol]: { sourceId: state.activeSource, ts, payload: trades as any },
+              },
+            } : {}),
+            // Merge orderbook metrics if present
+            ...(orderbook ? {
+              orderbook: {
+                ...state.orderbook,
+                [symbol]: { sourceId: state.activeSource, ts, payload: orderbook as any },
+              },
+            } : {}),
+          }));
+        } else if (msg.type === "ticker_update" && symbol) {
+          // Pipeline 5: Real-time ticker (price, 24h change, volume)
+          const price = Number(msg.price ?? NaN);
+          const change24hPct = Number(msg.change24hPct ?? NaN);
+          const volume24hUsd = Number(msg.volume24hUsd ?? NaN);
+          if (Number.isFinite(price) && price > 0) {
+            const ts = Date.now();
+            useMarketDataRouterStore.setState((state) => ({
+              tickers: {
+                ...state.tickers,
+                [symbol]: {
+                  sourceId: state.activeSource,
+                  ts,
+                  payload: {
+                    price,
+                    change24hPct: Number.isFinite(change24hPct) ? change24hPct : state.tickers[symbol]?.payload?.change24hPct ?? 0,
+                    volume24h: Number.isFinite(volume24hUsd) ? volume24hUsd : state.tickers[symbol]?.payload?.volume24h ?? 0,
+                  },
+                },
+              },
+            }));
+          }
+        } else if (msg.type === "market_snapshot") {
+          // Pipeline 6: Full universe snapshot for market list (300+ symbols)
+          const rows = Array.isArray(msg.rows) ? msg.rows : [];
+          if (rows.length) {
+            useMarketListStore.getState().ingestSnapshot(rows);
+          }
+        } else if (msg.type === "market_patch") {
+          // Pipeline 6: Dirty patch for market list (only changed fields)
+          const patch = msg.patch as Record<string, Record<string, number | null>> | undefined;
+          if (patch && typeof patch === "object") {
+            useMarketListStore.getState().ingestPatch(patch, Number(msg.ts ?? Date.now()));
           }
         } else if (msg.type === "market_error") {
           const state = useMarketDataRouterStore.getState();
@@ -712,6 +859,27 @@ export const MarketDataRouter = {
         }),
       );
     }
+  },
+  subscribeMarketList: () => {
+    if (marketListSubscribed) return;
+    marketListSubscribed = true;
+    // Ensure WS connection is running (mount/unmount are ref-counted)
+    mountCount += 1;
+    if (mountCount === 1) startRouter();
+    if (ws && wsConnected) {
+      ws.send(JSON.stringify({ type: "subscribe_market_list" }));
+    }
+  },
+  unsubscribeMarketList: () => {
+    if (!marketListSubscribed) return;
+    marketListSubscribed = false;
+    if (ws && wsConnected) {
+      ws.send(JSON.stringify({ type: "unsubscribe_market_list" }));
+    }
+    useMarketListStore.getState().clear();
+    // Decrement mount ref — stops WS if no other subscribers
+    mountCount = Math.max(0, mountCount - 1);
+    if (mountCount === 0) stopRouter();
   },
   useStore: useMarketDataRouterStore,
 };

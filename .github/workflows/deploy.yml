@@ -35,21 +35,21 @@ jobs:
           # Upload frontend build (Nginx serves from /var/www/bitrium/dist/)
           rsync -avz --delete dist/ root@${{ secrets.DROPLET_IP }}:/var/www/bitrium/dist/
 
-          # Upload server code (exclude data/ — now lives in PostgreSQL)
-          rsync -avz --delete --exclude='data/' server/ root@${{ secrets.DROPLET_IP }}:/var/www/bitrium/server/
+          # Upload server code to PM2 working directory (/root/Bitrium/)
+          rsync -avz --delete --exclude='data/' server/ root@${{ secrets.DROPLET_IP }}:/root/Bitrium/server/
 
           # Upload shared src (server imports from src/)
-          rsync -avz --delete src/ root@${{ secrets.DROPLET_IP }}:/var/www/bitrium/src/
+          rsync -avz --delete src/ root@${{ secrets.DROPLET_IP }}:/root/Bitrium/src/
 
           # Upload config files
-          rsync -avz package.json package-lock.json tsconfig.json ecosystem.config.cjs root@${{ secrets.DROPLET_IP }}:/var/www/bitrium/
+          rsync -avz package.json package-lock.json tsconfig.json ecosystem.config.cjs root@${{ secrets.DROPLET_IP }}:/root/Bitrium/
 
           # Upload deploy configs
-          rsync -avz deploy/ root@${{ secrets.DROPLET_IP }}:/var/www/bitrium/deploy/
+          rsync -avz deploy/ root@${{ secrets.DROPLET_IP }}:/root/Bitrium/deploy/
 
           # Install deps, run DB migrations if needed, zero-downtime reload
           ssh root@${{ secrets.DROPLET_IP }} << 'EOF'
-            cd /var/www/bitrium
+            cd /root/Bitrium
 
             # Install production dependencies
             npm ci --omit=dev

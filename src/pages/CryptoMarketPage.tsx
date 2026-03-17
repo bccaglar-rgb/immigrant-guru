@@ -1,15 +1,11 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { CryptoMarketTable } from "../components/CryptoMarketTable";
-import { SourceChip } from "../components/SourceChip";
-import { fetchCoinsPage } from "../hooks/useInfiniteCoins";
-import { useMarketData, usePageSourceChip } from "../hooks/useMarketData";
 import { MarketDataRouter } from "../data/MarketDataRouter";
-import type { CoinRow, CryptoFilterKey, CryptoSortKey } from "../types";
+import { useMarketListStore, useMarketListReady } from "../hooks/useMarketListStore";
+import type { FuturesSortKey, CryptoFilterKey } from "../types";
 
-const SCROLL_KEY = "crypto-market-scroll-y";
 const FAVORITES_KEY = "crypto-market-favorites-v1";
-const PAGE_SIZE = 100;
 
 const chipClass = (active: boolean) =>
   `rounded-full border px-3 py-1 text-xs font-semibold transition ${
@@ -19,149 +15,90 @@ const chipClass = (active: boolean) =>
 export default function CryptoMarketPage() {
   const navigate = useNavigate();
   const [search, setSearch] = useState("");
-  const [sortBy, setSortBy] = useState<CryptoSortKey>("marketCapUsd");
+  const [sortBy, setSortBy] = useState<FuturesSortKey>("volume24hUsd");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
   const [filter, setFilter] = useState<CryptoFilterKey>("all");
-  const [favoriteIds, setFavoriteIds] = useState<Set<string>>(() => new Set());
-  const [items, setItems] = useState<CoinRow[]>([]);
-  const [page, setPage] = useState(0);
-  const [infiniteMode, setInfiniteMode] = useState(false);
-  const [hasMore, setHasMore] = useState(true);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const sentinelRef = useRef<HTMLDivElement | null>(null);
-  const source = usePageSourceChip();
-  useMarketData({
-    symbol: "BTCUSDT",
-    interval: "15m",
-    lookback: 240,
-  });
+  const [favoriteSymbols, setFavoriteSymbols] = useState<Set<string>>(() => new Set());
+  const [visibleCount, setVisibleCount] = useState(100);
 
+  const ready = useMarketListReady();
+  const allRows = useMarketListStore((s) => s.rows);
+  const lastPatchAt = useMarketListStore((s) => s.lastPatchAt);
+
+  // Subscribe to market list on mount
+  useEffect(() => {
+    MarketDataRouter.subscribeMarketList();
+    return () => MarketDataRouter.unsubscribeMarketList();
+  }, []);
+
+  // Load favorites from localStorage
   useEffect(() => {
     try {
       const raw = window.localStorage.getItem(FAVORITES_KEY);
       if (!raw) return;
       const parsed = JSON.parse(raw) as string[];
-      setFavoriteIds(new Set(parsed));
+      setFavoriteSymbols(new Set(parsed));
     } catch {
       // ignore malformed storage
     }
   }, []);
 
+  // Persist favorites
   useEffect(() => {
-    window.localStorage.setItem(FAVORITES_KEY, JSON.stringify(Array.from(favoriteIds)));
-  }, [favoriteIds]);
+    window.localStorage.setItem(FAVORITES_KEY, JSON.stringify(Array.from(favoriteSymbols)));
+  }, [favoriteSymbols]);
 
-  useEffect(() => {
-    setPage(0);
-    setItems([]);
-  }, [search, sortBy, sortDir, filter, favoriteIds]);
+  // Derive filtered, sorted rows from the store
+  const displayRows = useMemo(() => {
+    let rows = [...allRows.values()];
 
-  useEffect(() => {
-    setPage(0);
-    setItems([]);
-  }, [infiniteMode]);
-
-  useEffect(() => {
-    let cancelled = false;
-    const run = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const result = await fetchCoinsPage(page, PAGE_SIZE, search, sortBy, sortDir, filter, favoriteIds);
-        if (cancelled) return;
-        setItems((prev) => {
-          if (!infiniteMode || page === 0) return result.items;
-          const merged = [...prev];
-          const seen = new Set(prev.map((row) => row.id));
-          result.items.forEach((row) => {
-            if (!seen.has(row.id)) merged.push(row);
-          });
-          return merged;
-        });
-        setHasMore(result.hasMore);
-      } catch {
-        if (cancelled) return;
-        setError("Unable to load market data.");
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    };
-    void run();
-    return () => {
-      cancelled = true;
-    };
-  }, [favoriteIds, filter, page, search, sortBy, sortDir]);
-
-  useEffect(() => {
-    if (!infiniteMode) return;
-    const target = sentinelRef.current;
-    if (!target) return;
-    const observer = new IntersectionObserver(
-      (entries) => {
-        const first = entries[0];
-        if (!first?.isIntersecting) return;
-        if (loading || !hasMore) return;
-        setPage((prev) => prev + 1);
-      },
-      { root: null, rootMargin: "180px 0px 180px 0px", threshold: 0.01 },
-    );
-    observer.observe(target);
-    return () => observer.disconnect();
-  }, [hasMore, infiniteMode, loading]);
-
-  const watchSymbols = useMemo(() => items.slice(0, 100).map((row) => `${row.symbol}USDT`), [items]);
-  const liveTickers = MarketDataRouter.useStore((state) => state.tickers);
-  const liveDerivatives = MarketDataRouter.useStore((state) => state.derivatives);
-
-  useEffect(() => {
-    watchSymbols.forEach((symbol) => MarketDataRouter.subscribe(symbol, "15m", 240));
-    return () => {
-      watchSymbols.forEach((symbol) => MarketDataRouter.unsubscribe(symbol, "15m"));
-    };
-  }, [watchSymbols]);
-
-  const mergedItems = useMemo(
-    () =>
-      items.map((row) => {
-        const symbol = `${row.symbol}USDT`;
-        const ticker = liveTickers[symbol]?.payload;
-        const deriv = liveDerivatives[symbol]?.payload;
-        if (!ticker && !deriv) return row;
-        return {
-          ...row,
-          price: ticker?.price ?? row.price,
-          priceChange24hPct: ticker?.change24hPct ?? row.priceChange24hPct,
-          volume24hUsd: ticker?.volume24h ?? row.volume24hUsd,
-          fundingRatePct:
-            typeof deriv?.fundingRate === "number" ? deriv.fundingRate * 100 : row.fundingRatePct,
-          oiUsd: deriv?.oiValue ?? row.oiUsd,
-          oiChange1hPct: deriv?.oiChange1h ?? row.oiChange1hPct,
-          liquidation24hUsd: deriv?.liquidationUsd ?? row.liquidation24hUsd,
-        };
-      }),
-    [items, liveDerivatives, liveTickers],
-  );
-
-  useEffect(() => {
-    const saved = window.sessionStorage.getItem(SCROLL_KEY);
-    if (saved) {
-      window.scrollTo({ top: Number(saved), behavior: "auto" });
+    // Search filter
+    if (search.trim()) {
+      const q = search.trim().toLowerCase();
+      rows = rows.filter(
+        (r) =>
+          r.symbol.toLowerCase().includes(q) ||
+          r.baseAsset.toLowerCase().includes(q),
+      );
     }
-    return () => {
-      window.sessionStorage.setItem(SCROLL_KEY, String(window.scrollY));
-    };
-  }, []);
 
-  const titleMeta = useMemo(
-    () => `Showing ${items.length} coins · Page ${page + 1}`,
-    [items.length, page],
-  );
+    // Gainers/losers filter
+    if (filter === "gainers") rows = rows.filter((r) => r.change24hPct > 0);
+    if (filter === "losers") rows = rows.filter((r) => r.change24hPct < 0);
 
-  const pageButtons = useMemo(() => {
-    const nums = [Math.max(0, page - 1), page, page + 1];
-    return nums.filter((v, idx, arr) => arr.indexOf(v) === idx);
-  }, [page]);
+    // Sort
+    rows.sort((a, b) => {
+      // Favorites first
+      const aFav = favoriteSymbols.has(a.symbol) ? 1 : 0;
+      const bFav = favoriteSymbols.has(b.symbol) ? 1 : 0;
+      if (aFav !== bFav) return bFav - aFav;
+
+      if (sortBy === "symbol") {
+        const cmp = a.symbol.localeCompare(b.symbol);
+        return sortDir === "asc" ? cmp : -cmp;
+      }
+      const aVal = (a as unknown as Record<string, unknown>)[sortBy];
+      const bVal = (b as unknown as Record<string, unknown>)[sortBy];
+      const aNum = typeof aVal === "number" && Number.isFinite(aVal) ? aVal : 0;
+      const bNum = typeof bVal === "number" && Number.isFinite(bVal) ? bVal : 0;
+      return sortDir === "asc" ? aNum - bNum : bNum - aNum;
+    });
+
+    return rows;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [allRows, search, filter, sortBy, sortDir, favoriteSymbols, lastPatchAt]);
+
+  // Reset visible count when filters change
+  useEffect(() => {
+    setVisibleCount(100);
+  }, [search, filter, sortBy, sortDir]);
+
+  const visibleRows = useMemo(() => displayRows.slice(0, visibleCount), [displayRows, visibleCount]);
+  const hasMore = displayRows.length > visibleCount;
+
+  const titleMeta = ready
+    ? `${visibleRows.length} of ${displayRows.length} Binance Futures symbols \u00B7 Live`
+    : "Connecting to Binance Futures...";
 
   return (
     <main className="min-h-screen bg-[#0B0B0C] p-4 text-[#BFC2C7] md:p-6">
@@ -172,7 +109,12 @@ export default function CryptoMarketPage() {
               <h1 className="text-lg font-semibold text-white">Crypto Market</h1>
               <p className="text-xs text-[#6B6F76]">{titleMeta}</p>
             </div>
-            <SourceChip sourceName={source.sourceName} />
+            {ready && (
+              <div className="flex items-center gap-2">
+                <span className="h-2 w-2 rounded-full bg-[#4caf50] animate-pulse" />
+                <span className="text-xs text-[#6B6F76]">Real-time</span>
+              </div>
+            )}
           </div>
 
           <div className="mt-3 grid gap-2 md:grid-cols-[1fr_180px_auto]">
@@ -186,32 +128,35 @@ export default function CryptoMarketPage() {
               className="rounded-lg border border-white/15 bg-[#0F1012] px-3 py-2 text-sm text-[#E7E9ED] outline-none focus:border-[#F5C542]/50"
               value={sortBy}
               onChange={(e) => {
-                setSortBy(e.target.value as CryptoSortKey);
+                setSortBy(e.target.value as FuturesSortKey);
                 setSortDir("desc");
               }}
             >
-              <option value="marketCapUsd">Market Cap</option>
               <option value="volume24hUsd">Volume</option>
-              <option value="priceChange24hPct">24h %</option>
+              <option value="change24hPct">24h %</option>
               <option value="price">Price</option>
+              <option value="fundingRate">Funding Rate</option>
+              <option value="spreadBps">Spread</option>
+              <option value="depthUsd">Depth</option>
+              <option value="imbalance">Imbalance</option>
             </select>
             <div className="flex gap-2">
               <button type="button" className={chipClass(filter === "all")} onClick={() => setFilter("all")}>
                 All
               </button>
               <button type="button" className={chipClass(filter === "gainers")} onClick={() => setFilter("gainers")}>
-                Top Gainers
+                Gainers
               </button>
               <button type="button" className={chipClass(filter === "losers")} onClick={() => setFilter("losers")}>
-                Top Losers
+                Losers
               </button>
             </div>
           </div>
         </section>
 
         <CryptoMarketTable
-          items={mergedItems}
-          loading={loading}
+          items={visibleRows}
+          loading={!ready}
           sortBy={sortBy}
           sortDir={sortDir}
           onSort={(key) => {
@@ -222,98 +167,43 @@ export default function CryptoMarketPage() {
               setSortDir("desc");
             }
           }}
-          onToggleFavorite={(id) =>
-            setFavoriteIds((prev) => {
+          onToggleFavorite={(symbol) =>
+            setFavoriteSymbols((prev) => {
               const next = new Set(prev);
-              if (next.has(id)) next.delete(id);
-              else next.add(id);
+              if (next.has(symbol)) next.delete(symbol);
+              else next.add(symbol);
               return next;
             })
           }
-          onRowClick={(row) => navigate(`/quant-engine?symbol=${row.symbol}USDT`)}
+          onRowClick={(row) => navigate(`/quant-engine?symbol=${row.symbol}`)}
+          favoriteSymbols={favoriteSymbols}
         />
 
-        {error ? (
-          <div className="rounded-xl border border-[#704844] bg-[#271a19] p-3 text-sm text-[#d6b3af]">
-            <p>{error}</p>
+        {hasMore && (
+          <div className="flex items-center justify-center gap-3 py-3">
             <button
               type="button"
-              onClick={async () => {
-                setLoading(true);
-                setError(null);
-                try {
-                  const result = await fetchCoinsPage(page, PAGE_SIZE, search, sortBy, sortDir, filter, favoriteIds);
-                  setItems(result.items);
-                  setHasMore(result.hasMore);
-                } catch {
-                  setError("Unable to load market data.");
-                } finally {
-                  setLoading(false);
-                }
-              }}
-              className="mt-2 rounded border border-[#704844] px-2 py-1 text-xs"
+              onClick={() => setVisibleCount((prev) => prev + 100)}
+              className="rounded-lg border border-[#F5C542]/50 bg-[#2b2417] px-5 py-2 text-sm font-semibold text-[#F5C542] transition hover:bg-[#3a3020]"
             >
-              Retry
+              Show more ({displayRows.length - visibleCount} remaining)
+            </button>
+            <button
+              type="button"
+              onClick={() => setVisibleCount(displayRows.length)}
+              className="rounded-lg border border-white/15 bg-[#111215] px-5 py-2 text-sm font-semibold text-[#BFC2C7] transition hover:bg-[#17191d]"
+            >
+              Show all
             </button>
           </div>
-        ) : null}
+        )}
 
-        <section className="rounded-xl border border-white/10 bg-[#121316] p-3">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <p className="text-xs text-[#8e95a3]">
-              {loading
-                ? "Loading page..."
-                : infiniteMode
-                  ? `${items.length} rows loaded${hasMore ? " · auto loading enabled" : " · end of list"}`
-                  : `Page ${page + 1} · ${items.length} rows`}
-            </p>
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => setInfiniteMode((prev) => !prev)}
-                className={`rounded-md border px-3 py-1.5 text-xs font-semibold ${
-                  infiniteMode
-                    ? "border-[#F5C542]/60 bg-[#2b2417] text-[#F5C542]"
-                    : "border-white/15 bg-[#0F1012] text-[#BFC2C7] hover:bg-[#17191d]"
-                }`}
-              >
-                Infinite Scroll {infiniteMode ? "ON" : "OFF"}
-              </button>
-              <button
-                type="button"
-                disabled={infiniteMode || page === 0 || loading}
-                onClick={() => setPage((prev) => Math.max(0, prev - 1))}
-                className="rounded-md border border-white/15 bg-[#0F1012] px-3 py-1.5 text-xs text-[#BFC2C7] disabled:cursor-not-allowed disabled:opacity-45 hover:bg-[#17191d]"
-              >
-                Prev
-              </button>
-              {pageButtons.map((p) => (
-                <button
-                  key={p}
-                  type="button"
-                  disabled={infiniteMode || (p > page && !hasMore) || loading}
-                  onClick={() => setPage(p)}
-                  className={`rounded-md border px-2.5 py-1.5 text-xs ${
-                    p === page
-                      ? "border-[#F5C542]/60 bg-[#2b2417] text-[#F5C542]"
-                      : "border-white/15 bg-[#0F1012] text-[#BFC2C7] hover:bg-[#17191d]"
-                  } disabled:cursor-not-allowed disabled:opacity-45`}
-                >
-                  {p + 1}
-                </button>
-              ))}
-              <button
-                type="button"
-                disabled={infiniteMode || !hasMore || loading}
-                onClick={() => setPage((prev) => prev + 1)}
-                className="rounded-md border border-white/15 bg-[#0F1012] px-3 py-1.5 text-xs text-[#BFC2C7] disabled:cursor-not-allowed disabled:opacity-45 hover:bg-[#17191d]"
-              >
-                Next
-              </button>
-            </div>
+        {!ready && (
+          <div className="flex items-center justify-center gap-2 py-8">
+            <div className="h-4 w-4 animate-spin rounded-full border-2 border-[#F5C542] border-t-transparent" />
+            <span className="text-sm text-[#6B6F76]">Loading Binance Futures data...</span>
           </div>
-        </section>
-        <div ref={sentinelRef} className="h-2 w-full" />
+        )}
       </div>
     </main>
   );

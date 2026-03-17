@@ -458,6 +458,27 @@ export type CryptoSortKey =
   | "liquidation24hUsd";
 export type CryptoFilterKey = "all" | "gainers" | "losers";
 
+/** Real-time Binance Futures market row — maps to BinanceFuturesUniverseRow from hub. */
+export interface FuturesMarketRow {
+  symbol: string;           // e.g. "BTCUSDT"
+  baseAsset: string;        // e.g. "BTC"
+  price: number;
+  change24hPct: number;
+  volume24hUsd: number;
+  markPrice: number | null;
+  fundingRate: number | null;
+  nextFundingTime: number | null;
+  topBid: number | null;
+  topAsk: number | null;
+  spreadBps: number | null;
+  depthUsd: number | null;
+  imbalance: number | null;
+}
+
+export type FuturesSortKey =
+  | "symbol" | "price" | "change24hPct" | "volume24hUsd"
+  | "markPrice" | "fundingRate" | "spreadBps" | "depthUsd" | "imbalance";
+
 export interface ProviderConfig {
   id: string;
   name: string;

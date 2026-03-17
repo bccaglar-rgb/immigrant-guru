@@ -12,6 +12,7 @@ import type { BinanceFuturesHub } from "../services/binanceFuturesHub.ts";
 import type { ExchangeMarketHub } from "../services/marketHub/index.ts";
 import type { SystemScannerService } from "../services/systemScannerService.ts";
 import type { CoinUniverseEngine } from "../services/coinUniverseEngine.ts";
+import type { HubEventBridge } from "../services/marketHub/HubEventBridge.ts";
 import { computeEnhancedScore } from "../services/coinScoring.ts";
 
 type JsonValue = string | number | boolean | null | JsonValue[] | { [k: string]: JsonValue };
@@ -694,7 +695,7 @@ const makeModeBreakdown = (
       edgeAdj: Number.isFinite(consensusCore.edgeNetR) ? consensusCore.edgeNetR : 0,
       riskAdj: Number.isFinite(consensusCore.riskAdjustment) ? consensusCore.riskAdjustment : 0,
       gatingFlags,
-      decision: Math.round(out.finalScore) >= 64 && out.gates.data === "PASS" && out.gates.safety === "PASS" ? "TRADE" : Math.round(out.finalScore) >= 48 ? "WATCH" : "NO_TRADE",
+      decision: Math.round(out.finalScore) >= 58 && out.gates.data === "PASS" && out.gates.safety === "PASS" ? "TRADE" : Math.round(out.finalScore) >= 40 ? "WATCH" : "NO_TRADE",
     };
   }
 
@@ -748,7 +749,7 @@ const makeModeBreakdown = (
     edgeAdj: Number.isFinite(consensusCore.edgeNetR) ? consensusCore.edgeNetR : 0,
     riskAdj: Number.isFinite(consensusCore.riskAdjustment) ? consensusCore.riskAdjustment : 0,
     gatingFlags,
-    decision: Math.round(out.finalScore) >= 65 && out.gates.data === "PASS" && out.gates.safety === "PASS" ? "TRADE" : Math.round(out.finalScore) >= 55 ? "WATCH" : "NO_TRADE",
+    decision: Math.round(out.finalScore) >= 52 && out.gates.data === "PASS" && out.gates.safety === "PASS" ? "TRADE" : Math.round(out.finalScore) >= 35 ? "WATCH" : "NO_TRADE",
   };
 };
 
@@ -832,6 +833,7 @@ const ONCHAIN_CACHE_MS = 60_000;
 let marketProviderStore: AdminProviderStore | undefined;
 let marketBinanceFuturesHub: BinanceFuturesHub | undefined;
 let marketExchangeHub: ExchangeMarketHub | undefined;
+let marketHubEventBridge: HubEventBridge | undefined;
 const onChainCache = new Map<string, { ts: number; providerName: string; metrics: OnChainMetricsSnapshot }>();
 const LIVE_BUNDLE_CACHE_MAX = 800;
 const LIVE_BUNDLE_EXCHANGE_TTL_MS = 450;
@@ -853,6 +855,10 @@ const setMarketBinanceHub = (hub?: BinanceFuturesHub) => {
 
 const setMarketExchangeHub = (hub?: ExchangeMarketHub) => {
   marketExchangeHub = hub;
+};
+
+const setMarketHubEventBridge = (bridge?: HubEventBridge) => {
+  marketHubEventBridge = bridge;
 };
 
 const getCachedComponent = <T,>(key: string, ttlMs: number): T | null => {
@@ -1622,7 +1628,65 @@ const fetchBinanceLive = async (
   const routerLive = marketExchangeHub?.getLiveRow(normalizedSymbol, "Binance") ?? null;
   const liveHubRow = routerLive?.row;
   const legacyHubRow = liveHubRow ? null : marketBinanceFuturesHub?.getLiveRow(normalizedSymbol) ?? null;
-  const hubRow = liveHubRow ?? legacyHubRow;
+  let hubRow = liveHubRow ?? legacyHubRow;
+
+  // ── Redis enrichment for Binance-specific fields ──
+  // Primary writes lastTradePrice/markPrice/bookTicker to Redis from Binance WS.
+  // Case 1: secondary workers have no hub → hubRow is null → build full hubRow from Redis.
+  // Case 2: primary hub routes to Gate.io (Binance REST 418) → hubRow exists but lacks
+  //         lastTradePrice/markPrice → enrich from Redis.
+  if (marketHubEventBridge) {
+    const redisSnap = await marketHubEventBridge.getLiveSnapshot(normalizedSymbol);
+    if (redisSnap) {
+      if (!hubRow) {
+        // Case 1: no hub data at all → use Redis as full hubRow
+        hubRow = {
+          exchange: "BINANCE" as const,
+          symbol: normalizedSymbol,
+          price: redisSnap.lastTradePrice,
+          change24hPct: redisSnap.change24hPct,
+          volume24hUsd: redisSnap.volume24hUsd,
+          topBid: redisSnap.topBid,
+          topAsk: redisSnap.topAsk,
+          bidQty: redisSnap.bidQty,
+          askQty: redisSnap.askQty,
+          spreadBps: null,
+          depthUsd: null,
+          imbalance: null,
+          markPrice: redisSnap.markPrice,
+          fundingRate: redisSnap.fundingRate,
+          nextFundingTime: redisSnap.nextFundingTime,
+          lastTradePrice: redisSnap.lastTradePrice,
+          lastTradeQty: redisSnap.lastTradeQty,
+          lastTradeSide: redisSnap.lastTradeSide,
+          sourceTs: redisSnap.sourceTs,
+          updatedAt: redisSnap.updatedAt,
+        };
+      } else {
+        // Case 2: hub returned data (e.g. Gate.io fallback) — ALWAYS overwrite price fields
+        // with Binance WS data from Redis. Redis snapshot is now Binance-only (Gate.io trades
+        // are filtered out in HubEventBridge). Gate.io's lastTradePrice/markPrice differ from
+        // Binance by $5-$30 on BTC, causing "phantom prices BTC never reached".
+        const asAny = hubRow as Record<string, unknown>;
+        if (redisSnap.lastTradePrice && redisSnap.lastTradePrice > 0) {
+          asAny.lastTradePrice = redisSnap.lastTradePrice;
+          asAny.lastTradeQty = redisSnap.lastTradeQty;
+          asAny.lastTradeSide = redisSnap.lastTradeSide;
+          asAny.price = redisSnap.lastTradePrice; // also overwrite display price
+        }
+        if (redisSnap.markPrice && redisSnap.markPrice > 0) {
+          asAny.markPrice = redisSnap.markPrice;
+          asAny.fundingRate = redisSnap.fundingRate;
+          asAny.nextFundingTime = redisSnap.nextFundingTime;
+        }
+        if (redisSnap.topBid && redisSnap.topBid > 0) {
+          asAny.topBid = redisSnap.topBid;
+          asAny.topAsk = redisSnap.topAsk;
+        }
+      }
+    }
+  }
+
   const feedExchange = routerLive?.exchangeUsed ? hubExchangeToName(routerLive.exchangeUsed) : "Binance";
   const wsCandles = marketExchangeHub?.getCandlesFromExchange(normalizedSymbol, "Binance", interval, safeLimit) ?? [];
   const wsTrades = marketExchangeHub?.getRecentTradesFromExchange(normalizedSymbol, "Binance", 240) ?? [];
@@ -1694,16 +1758,8 @@ const fetchBinanceLive = async (
     .map((row) => parseBinanceBookRow(row))
     .filter((row): row is [string, string] => Boolean(row));
   const orderbookBase = buildOrderbookMetrics(bids, asks);
-  // Prefer last trade price over midPrice for accurate "Live Price" display
-  const hubLastPrice = parsedTrades.length > 0
-    ? parsedTrades[parsedTrades.length - 1].price
-    : (hubRow as { lastTradePrice?: number | null } | null)?.lastTradePrice
-      ?? (hubRow as { price?: number } | null)?.price
-      ?? null;
-  const orderbook = { ...orderbookBase, lastPrice: hubLastPrice };
-  const bidLevels = normalizeBookLevels(bids, "bid", safeBookLimit, bookStep);
-  const askLevels = normalizeBookLevels(asks, "ask", safeBookLimit, bookStep);
 
+  // Parse trades BEFORE computing hubLastPrice (fix declaration order)
   const parsedTrades = wsTrades.length
     ? wsTrades
       .map((row) => ({
@@ -1721,6 +1777,16 @@ const fetchBinanceLive = async (
           side: hubRow.lastTradeSide === "SELL" ? "SELL" as const : "BUY" as const,
         }]
       : [];
+
+  // Prefer last trade price over midPrice for accurate "Live Price" display
+  const hubLastPrice = parsedTrades.length > 0
+    ? parsedTrades[parsedTrades.length - 1].price
+    : (hubRow as { lastTradePrice?: number | null } | null)?.lastTradePrice
+      ?? (hubRow as { price?: number } | null)?.price
+      ?? null;
+  const orderbook = { ...orderbookBase, lastPrice: hubLastPrice };
+  const bidLevels = normalizeBookLevels(bids, "bid", safeBookLimit, bookStep);
+  const askLevels = normalizeBookLevels(asks, "ask", safeBookLimit, bookStep);
   const tradesMetrics = buildTradesMetrics(
     parsedTrades.map((t) => ({ ts: t.tsMs, qty: t.qty, side: t.side === "BUY" ? 1 : -1 })),
   );
@@ -1748,6 +1814,7 @@ const fetchBinanceLive = async (
     recentTrades,
     derivatives: {
       fundingRate: pickNumberFromRecord(premiumIndex, ["lastFundingRate", "fundingRate", "funding_rate"]) ?? 0,
+      markPrice: pickNumberFromRecord(premiumIndex, ["markPrice", "mark_price"]) ?? null,
       oiValue:
         pickNumberFromRecord(openInterest, [
           "openInterest",
@@ -1759,11 +1826,18 @@ const fetchBinanceLive = async (
       oiChange1h: null,
       liquidationUsd,
     },
+    lastTradePrice: hubLastPrice ?? null,
     feedExchange,
-    feedSource: "WS_HUB",
+    feedSource: liveHubRow ? "WS_HUB" : (hubRow ? "REDIS_SNAPSHOT" : "REST"),
     sourceTs: Date.now(),
   };
-  if (!payload.ohlcv.length) throw new Error(`Binance returned empty candles for ${normalizedSymbol}`);
+  // Only throw "empty candles" if we have NO price data at all.
+  // On secondary workers with Redis-backed hubRow, candles may be empty
+  // (all Binance REST endpoints are 403/418 from this datacenter IP).
+  // The client gets candles from WS (bridged via Redis) and from polls that hit Worker 0.
+  if (!payload.ohlcv.length && !hubLastPrice) {
+    throw new Error(`Binance returned empty candles for ${normalizedSymbol}`);
+  }
   return payload;
 };
 
@@ -2875,30 +2949,77 @@ const fetchIndicatorsSnapshot = async () => {
 
 export const registerMarketRoutes = (
   app: Express,
-  options?: { providerStore?: AdminProviderStore; binanceFuturesHub?: BinanceFuturesHub; exchangeMarketHub?: ExchangeMarketHub; systemScanner?: SystemScannerService; coinUniverseEngine?: CoinUniverseEngine },
+  options?: { providerStore?: AdminProviderStore; binanceFuturesHub?: BinanceFuturesHub; exchangeMarketHub?: ExchangeMarketHub; hubEventBridge?: HubEventBridge; systemScanner?: SystemScannerService; coinUniverseEngine?: CoinUniverseEngine },
 ) => {
   setMarketProviderStore(options?.providerStore);
   setMarketBinanceHub(options?.binanceFuturesHub);
   setMarketExchangeHub(options?.exchangeMarketHub);
+  setMarketHubEventBridge(options?.hubEventBridge);
   const binanceFuturesHub = options?.binanceFuturesHub;
   const exchangeMarketHub = options?.exchangeMarketHub;
   const systemScanner = options?.systemScanner;
   const coinUniverseEngine = options?.coinUniverseEngine;
 
-  // ---- Coin Universe Engine endpoint ----
-  app.get("/api/market/universe-engine", (_req, res) => {
-    if (!coinUniverseEngine) {
-      res.status(503).json({ ok: false, error: "COIN_UNIVERSE_ENGINE_UNAVAILABLE" });
-      return;
+  const hubBridge = options?.hubEventBridge;
+
+  // ---- Lightweight Binance Futures universe (for gateway secondary worker snapshot) ----
+  // Worker 0 has live WS hub data; Workers 1-2 read from Redis snapshot.
+  app.get("/api/market/futures-universe", async (_req, res) => {
+    // Try local hub first (Worker 0 — has live WS connections)
+    if (binanceFuturesHub) {
+      const rows = binanceFuturesHub.getUniverseRows();
+      if (rows.length > 0) {
+        res.json({ ok: true, rows, count: rows.length });
+        return;
+      }
     }
-    const snapshot = coinUniverseEngine.getSnapshot();
-    res.json({
-      ok: true,
-      round: snapshot.round,
-      refreshedAt: snapshot.refreshedAt,
-      activeCoins: snapshot.activeCoins,
-      cooldownCoins: snapshot.cooldownCoins,
-    });
+    // Fallback: read from Redis (Workers 1-2 or before hub is ready)
+    if (hubBridge) {
+      try {
+        const json = await hubBridge.getFuturesUniverse();
+        if (json) {
+          res.setHeader("Content-Type", "application/json");
+          res.send(json);
+          return;
+        }
+      } catch {
+        // fall through
+      }
+    }
+    res.json({ ok: true, rows: [], count: 0 });
+  });
+
+  // ---- Coin Universe Engine endpoint ----
+  // Worker 0 has live engine data; Workers 1-2 read from Redis snapshot.
+  app.get("/api/market/universe-engine", async (_req, res) => {
+    // Try local engine first (Worker 0)
+    if (coinUniverseEngine) {
+      const snapshot = coinUniverseEngine.getSnapshot();
+      if (snapshot.activeCoins.length > 0) {
+        res.json({
+          ok: true,
+          round: snapshot.round,
+          refreshedAt: snapshot.refreshedAt,
+          activeCoins: snapshot.activeCoins,
+          cooldownCoins: snapshot.cooldownCoins,
+        });
+        return;
+      }
+    }
+    // Fallback: read from Redis (secondary workers or before first refresh)
+    if (hubBridge) {
+      try {
+        const json = await hubBridge.getUniverseSnapshot();
+        if (json) {
+          res.setHeader("Content-Type", "application/json");
+          res.send(json);
+          return;
+        }
+      } catch {
+        // fall through
+      }
+    }
+    res.json({ ok: true, round: 0, refreshedAt: "", activeCoins: [], cooldownCoins: [] });
   });
 
   app.get("/api/market/binance-futures-hub", (_req, res) => {
@@ -3812,21 +3933,21 @@ export const registerMarketRoutes = (
         const modeMultiplier: Record<ScoringMode, number> = {
           FLOW: 1.3,
           AGGRESSIVE: 1.1,
-          BALANCED: 0.95,
-          CAPITAL_GUARD: 0.85,
+          BALANCED: 1.15,
+          CAPITAL_GUARD: 1.1,
         };
         // Per-mode TRADE decision thresholds — must stay aligned with consensus functions
         const modeTradeThreshold: Record<ScoringMode, number> = {
           FLOW: 55,
           AGGRESSIVE: 60,
-          BALANCED: 64,
-          CAPITAL_GUARD: 65,
+          BALANCED: 58,
+          CAPITAL_GUARD: 52,
         };
         const modeWatchThreshold: Record<ScoringMode, number> = {
           FLOW: 35,
           AGGRESSIVE: 40,
-          BALANCED: 48,
-          CAPITAL_GUARD: 55,
+          BALANCED: 40,
+          CAPITAL_GUARD: 35,
         };
         for (const mode of SCORING_MODES) {
           const boost = srBoostBase * modeMultiplier[mode];
@@ -3848,10 +3969,10 @@ export const registerMarketRoutes = (
       // Only in borderline zone: [tradeThreshold - 15, tradeThreshold + 5)
       {
         const confluenceTradeThreshold: Record<ScoringMode, number> = {
-          FLOW: 55, AGGRESSIVE: 60, BALANCED: 64, CAPITAL_GUARD: 65,
+          FLOW: 55, AGGRESSIVE: 60, BALANCED: 58, CAPITAL_GUARD: 52,
         };
         const confluenceWatchThreshold: Record<ScoringMode, number> = {
-          FLOW: 35, AGGRESSIVE: 40, BALANCED: 48, CAPITAL_GUARD: 55,
+          FLOW: 35, AGGRESSIVE: 40, BALANCED: 40, CAPITAL_GUARD: 35,
         };
         for (const targetMode of SCORING_MODES) {
           const tradeTh = confluenceTradeThreshold[targetMode];

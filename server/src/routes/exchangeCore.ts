@@ -17,9 +17,9 @@ export const registerExchangeCoreRoutes = (app: Express, core: ExchangeCoreServi
     });
   });
 
-  app.get("/api/exchange-core/intents", (req, res) => {
+  app.get("/api/exchange-core/intents", async (req, res) => {
     const userId = readUserId(req);
-    const items = core.listIntentsByUser(userId);
+    const items = await core.listIntentsByUser(userId);
     res.json({
       ok: true,
       items,

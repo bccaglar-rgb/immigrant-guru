@@ -19,8 +19,12 @@ try {
 
 module.exports = {
   apps: [
+    // ═══════════════════════════════════════════════════════════════
+    // Market Worker: Binance WS ingest → normalize → gateway broadcast
+    // Rule: NO CPU-heavy work (no scanner, no coin analysis, no RSI/ATR)
+    // ═══════════════════════════════════════════════════════════════
     {
-      name: "bitrium-server",
+      name: "market-worker",
       script: "server/src/index.ts",
       interpreter: "node",
       interpreter_args: "--experimental-strip-types",
@@ -32,13 +36,31 @@ module.exports = {
         PORT: 8090,
         ...envFromFile,
       },
-      // Graceful shutdown: 10s to close connections
       kill_timeout: 10000,
-      // Auto-restart if a worker exceeds memory budget
       max_memory_restart: "1500M",
-      // Merge logs from all workers
       merge_logs: true,
-      // Log timestamps
+      time: true,
+    },
+    // ═══════════════════════════════════════════════════════════════
+    // Scanner Worker: SystemScanner + CoinUniverseEngine + TradeIdeaTracker
+    // CPU-heavy analysis isolated from market data pipeline
+    // Makes HTTP requests to market-worker for trade idea evaluation
+    // ═══════════════════════════════════════════════════════════════
+    {
+      name: "scanner-worker",
+      script: "server/src/scannerProcess.ts",
+      interpreter: "node",
+      interpreter_args: "--experimental-strip-types",
+      instances: 1,
+      exec_mode: "fork",
+      env: {
+        NODE_ENV: "production",
+        MARKET_WORKER_PORT: 8090,
+        ...envFromFile,
+      },
+      kill_timeout: 10000,
+      max_memory_restart: "1000M",
+      merge_logs: true,
       time: true,
     },
   ],

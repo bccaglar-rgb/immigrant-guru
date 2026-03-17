@@ -88,6 +88,7 @@ export const ChartPanel = ({
   const autoFitPendingRef = useRef(true);
   const livePriceLineRef = useRef<IPriceLine | null>(null);
   const closedCandlesRef = useRef<Set<number>>(new Set());
+  const lastCandleRef = useRef<{ symbol: string; openTime: number; open: number; high: number; low: number; close: number } | null>(null);
   const lastSetDataSigRef = useRef("");
   const coinMenuRef = useRef<HTMLDivElement | null>(null);
   const [coinMenuOpen, setCoinMenuOpen] = useState(false);
@@ -299,40 +300,66 @@ export const ChartPanel = ({
     }
   }, [blockedMessage, liveCandles]);
 
-  // ── Live candle incremental update: series.update() for real-time kline events ──
-  // This uses series.update() instead of setData() for performance —
-  // no flicker, no full re-render, instant chart refresh (~250ms Binance kline rate).
-  // Closed candle immutable guard: once a candle is marked closed, it is never updated again.
+  // ═══════════════════════════════════════════════════════════════════
+  // KLINE HANDLER — canonical roles:
+  //   • CLOSED candle → finalize with authoritative Binance OHLCV
+  //   • FORMING candle → seed open/structure on FIRST arrival only;
+  //     trade stream owns close/high/low for live candles
+  // ═══════════════════════════════════════════════════════════════════
   useEffect(() => {
     if (blockedMessage) return;
     if (!seriesRef.current) return;
     if (!liveCandleUpdate || liveCandleUpdate.openTime <= 0 || liveCandleUpdate.close <= 0) return;
 
     const ot = liveCandleUpdate.openTime;
-    // Immutable guard: skip updates for candles already marked as closed
     if (closedCandlesRef.current.has(ot)) return;
 
-    try {
-      seriesRef.current.update({
-        time: ot as UTCTimestamp,
+    const prev = lastCandleRef.current;
+    const sameCandle = prev && prev.symbol === rawSymbol && prev.openTime === ot;
+
+    if (liveCandleUpdate.closed) {
+      // ── CLOSED: kline is authoritative — finalize ──
+      const final = {
+        symbol: rawSymbol,
+        openTime: ot,
         open: liveCandleUpdate.open,
         high: liveCandleUpdate.high,
         low: liveCandleUpdate.low,
         close: liveCandleUpdate.close,
-      });
-    } catch {
-      // noop — chart may not be ready yet
-    }
+      };
+      lastCandleRef.current = final;
+      try {
+        seriesRef.current.update({
+          time: ot as UTCTimestamp, open: final.open, high: final.high, low: final.low, close: final.close,
+        });
+      } catch { /* chart not ready */ }
 
-    // Mark candle as immutable once closed
-    if (liveCandleUpdate.closed) {
       closedCandlesRef.current.add(ot);
-      // Prune set to avoid unbounded growth: keep only last 5 entries
       if (closedCandlesRef.current.size > 10) {
         const entries = [...closedCandlesRef.current].sort((a, b) => a - b);
         closedCandlesRef.current = new Set(entries.slice(-5));
       }
+    } else if (!sameCandle) {
+      // ── NEW forming candle — seed with kline, trade takes over ──
+      const lp = useLivePriceStore.getState().bySymbol[rawSymbol];
+      const tradeClose = lp && lp.price > 0 ? lp.price : liveCandleUpdate.close;
+      const seeded = {
+        symbol: rawSymbol,
+        openTime: ot,
+        open: liveCandleUpdate.open,
+        high: Math.max(liveCandleUpdate.high, tradeClose),
+        low: Math.min(liveCandleUpdate.low, tradeClose),
+        close: tradeClose,
+      };
+      lastCandleRef.current = seeded;
+      try {
+        seriesRef.current.update({
+          time: ot as UTCTimestamp, open: seeded.open, high: seeded.high, low: seeded.low, close: seeded.close,
+        });
+      } catch { /* chart not ready */ }
     }
+    // else: forming candle already seeded — kline does NOT overwrite.
+    // Trade subscribe handler (below) owns close/high/low for live candles.
   }, [blockedMessage, liveCandleUpdate]);
 
   // ── Live price line overlay: tick-derived micro price (ghost close) ──
@@ -380,7 +407,36 @@ export const ChartPanel = ({
     updatePriceLine(useLivePriceStore.getState());
 
     // Subscribe to future changes — bypasses React render cycle
-    const unsub = useLivePriceStore.subscribe(updatePriceLine);
+    const unsub = useLivePriceStore.subscribe((state) => {
+      // 1. Update price line
+      updatePriceLine(state);
+
+      // 2. Trade → candle close mutation (trade stream owns forming candle close)
+      const lp = state.bySymbol[rawSymbol];
+      if (!lp?.price || lp.price <= 0) return;
+      const candle = lastCandleRef.current;
+      const cs = seriesRef.current;
+      if (
+        candle &&
+        candle.symbol === rawSymbol &&
+        cs &&
+        !closedCandlesRef.current.has(candle.openTime)
+      ) {
+        try {
+          const price = lp.price;
+          const newHigh = Math.max(candle.high, price);
+          const newLow = Math.min(candle.low, price);
+          cs.update({
+            time: candle.openTime as UTCTimestamp,
+            open: candle.open,
+            high: newHigh,
+            low: newLow,
+            close: price,
+          });
+          lastCandleRef.current = { ...candle, close: price, high: newHigh, low: newLow };
+        } catch { /* chart not ready */ }
+      }
+    });
     return unsub;
   }, [blockedMessage, rawSymbol]);
 
@@ -527,6 +583,7 @@ export const ChartPanel = ({
     hasUserInteractedRef.current = false;
     autoFitPendingRef.current = true;
     closedCandlesRef.current = new Set();
+    lastCandleRef.current = null; // prevent phantom prices on symbol change
     livePriceLineRef.current = null;
     lastSetDataSigRef.current = ""; // force setData on next candle load
   }, [selectedSymbol]);

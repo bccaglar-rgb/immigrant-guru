@@ -75,4 +75,10 @@ export interface TraderHubMetrics {
   errorTraders: number;
   maxConcurrentJobs: number;
   shardCount: number;
+  /** BullMQ queue: jobs waiting to be processed */
+  queueWaiting?: number;
+  /** BullMQ queue: jobs scheduled for future execution */
+  queueDelayed?: number;
+  /** BullMQ queue: failed jobs */
+  queueFailed?: number;
 }

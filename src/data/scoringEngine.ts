@@ -81,17 +81,17 @@ export const SCORING_CONFIG: Record<ScoringMode, ScoringConfig> = {
     },
     gates: { minFillProb: 0.08, minEdgeR: -0.05, minCapacity: 0.08 },
   },
-  // ~80% accuracy target: moderate gates, balanced risk/reward.
-  // Requires solid execution conditions and directional conviction.
+  // Slightly more conservative than AGGRESSIVE: moderate gates, balanced risk/reward.
+  // Relaxed enough to produce ideas, tighter risk penalty than AGG.
   BALANCED: {
-    sigmoidK: 6.0,
-    edgeBaselineR: 0.18,
-    minFloor: 8,
+    sigmoidK: 7.0,
+    edgeBaselineR: 0.14,
+    minFloor: 3,
     riskModel: "LINEAR",
     penaltyModel: "MULTIPLY",
-    linearRiskSlope: 0.55,
-    linearRiskFloor: 0.30,
-    gates: { minFillProb: 0.48, minEdgeR: 0.01, minCapacity: 0.32 },
+    linearRiskSlope: 0.44,
+    linearRiskFloor: 0.42,
+    gates: { minFillProb: 0.12, minEdgeR: -0.03, minCapacity: 0.12 },
   },
   // User-configurable mode — all tuning via FlowScoringTuning panel.
   // Default: permissive — users tighten via Flow Settings.
@@ -105,17 +105,17 @@ export const SCORING_CONFIG: Record<ScoringMode, ScoringConfig> = {
     linearRiskFloor: 0.45,
     gates: { minFillProb: 0.08, minEdgeR: -0.05, minCapacity: 0.08 },
   },
-  // Based on BALANCED with one extra layer of selectivity.
-  // Slightly tighter gates and risk params — protective but not fortress-level.
+  // Slightly tighter than BALANCED — one extra layer of selectivity.
+  // Still relaxed enough to produce ideas, with a bit more risk protection.
   CAPITAL_GUARD: {
-    sigmoidK: 6.5,
-    edgeBaselineR: 0.19,
-    minFloor: 8,
+    sigmoidK: 6.8,
+    edgeBaselineR: 0.15,
+    minFloor: 4,
     riskModel: "LINEAR",
     penaltyModel: "MULTIPLY",
-    linearRiskSlope: 0.58,
-    linearRiskFloor: 0.28,
-    gates: { minFillProb: 0.52, minEdgeR: 0.02, minCapacity: 0.36 },
+    linearRiskSlope: 0.46,
+    linearRiskFloor: 0.40,
+    gates: { minFillProb: 0.15, minEdgeR: -0.02, minCapacity: 0.15 },
   },
 };
 

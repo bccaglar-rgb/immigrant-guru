@@ -224,6 +224,30 @@ const consensusGuidance = (pct: number): { text: string; className: string } => 
   };
 };
 
+const cardDecisionTone = (validity: string) => {
+  if (validity === "VALID") return {
+    boxClass: "border-[#2e7a5e]/80 bg-[#103326] shadow-[0_0_0_1px_rgba(46,122,94,0.2)]",
+    textClass: "text-[#b9f5dc]",
+    titleClass: "text-[#8fd4b8]",
+    label: "TRADE",
+    badgeClass: "border-[#2e7a5e]/80 bg-[#103326] text-[#b9f5dc]",
+  };
+  if (validity === "WEAK") return {
+    boxClass: "border-[#9a7b2e]/80 bg-[#3a2c13] shadow-[0_0_0_1px_rgba(154,123,46,0.2)]",
+    textClass: "text-[#f7e2a4]",
+    titleClass: "text-[#d9c47e]",
+    label: "WATCH",
+    badgeClass: "border-[#9a7b2e]/80 bg-[#3a2c13] text-[#f7e2a4]",
+  };
+  return {
+    boxClass: "border-[#31415b]/70 bg-[#121a27] shadow-[0_0_0_1px_rgba(49,65,91,0.2)]",
+    textClass: "text-[#cdd8ec]",
+    titleClass: "text-[#a8b8d0]",
+    label: "NO TRADE",
+    badgeClass: "border-[#31415b]/70 bg-[#121a27] text-[#cdd8ec]",
+  };
+};
+
 const copy = async (value: string) => {
   try {
     await navigator.clipboard.writeText(value);
@@ -1669,8 +1693,8 @@ export default function TradeIdeasPage() {
             const primaryModeKey: ScoringMode = (plan.scoringMode as ScoringMode) ?? "BALANCED";
             const consensusPct = Math.round((plan.confidence ?? 0) * 100);
             const primaryModeLabel = scoringModeLabel(primaryModeKey);
-            const modeStyle = modeConsensusTone(primaryModeKey);
             const consensusHint = consensusGuidance(consensusPct);
+            const decision = cardDecisionTone(plan.tradeValidity);
             return (
               <article key={plan.id} className="rounded-xl border border-white/10 bg-[#121316] p-3">
                 <div className="mb-2 flex flex-wrap items-start justify-between gap-2">
@@ -1716,11 +1740,11 @@ export default function TradeIdeasPage() {
                     <button
                       type="button"
                       onClick={() => navigate("/quant-engine", { state: { selectedCoin: toDashboardCoin(plan.symbol) } })}
-                      className={`w-full rounded-xl border px-3 py-2 text-center transition hover:brightness-110 ${modeStyle.boxClass}`}
+                      className={`w-full rounded-xl border px-3 py-2 text-center transition hover:brightness-110 ${decision.boxClass}`}
                       title={`Open Bitrium Quant Engine for ${toDashboardCoin(plan.symbol)}`}
                     >
-                      <p className={`text-[10px] uppercase tracking-[0.12em] ${modeStyle.titleClass}`}>{primaryModeLabel} Consensus</p>
-                      <p className={`text-2xl font-bold leading-none ${modeStyle.textClass}`}>{consensusPct}%</p>
+                      <p className={`text-[10px] uppercase tracking-[0.12em] ${decision.titleClass}`}>{primaryModeLabel} · {decision.label}</p>
+                      <p className={`text-2xl font-bold leading-none ${decision.textClass}`}>{consensusPct}%</p>
                     </button>
                     <p className={`mt-1 text-center text-[10px] font-medium ${consensusHint.className}`}>{consensusHint.text}</p>
                   </div>

@@ -2,7 +2,7 @@ import express from "express";
 import http from "node:http";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { randomBytes } from "node:crypto";
+import { randomBytes, createHash } from "node:crypto";
 import { ensureDbConnection } from "./db/pool.ts";
 import { ensureRedisConnection } from "./db/redis.ts";
 import { registerConnectionRoutes } from "./routes/connections.ts";
@@ -30,7 +30,11 @@ import { ExchangeCoreService } from "./services/exchangeCore/exchangeCoreService
 import { ExchangeMarketHub } from "./services/marketHub/index.ts";
 import { TraderHubStore } from "./services/traderHub/traderHubStore.ts";
 import { TraderHubEngine } from "./services/traderHub/traderHubEngine.ts";
+import { BotScheduler } from "./services/traderHub/botScheduler.ts";
+import { writeFeatureCache } from "./services/traderHub/featureCache.ts";
+import { markFeaturesRefreshed } from "./services/traderHub/featureFreshness.ts";
 import { createGateway } from "./ws/gateway.ts";
+import { HubEventBridge } from "./services/marketHub/HubEventBridge.ts";
 import { PaymentStore } from "./payments/storage.ts";
 import { AuthService } from "./payments/authService.ts";
 import { PaymentService } from "./payments/paymentService.ts";
@@ -53,7 +57,29 @@ app.get("/api/health", (_req, res) => {
 
 const audit = new AuditLogService();
 const connections = new ConnectionService();
-const encryptionKey = randomBytes(32);
+
+// ── Persistent Encryption Key ──────────────────────────────────
+// CRITICAL: Must survive restarts. Without a stable key, encrypted
+// exchange credentials become unrecoverable after PM2 restart.
+const encryptionKey = (() => {
+  const envKey = process.env.ENCRYPTION_KEY;
+  if (envKey) {
+    const buf = Buffer.from(envKey, "hex");
+    if (buf.length !== 32) {
+      throw new Error("ENCRYPTION_KEY must be 64 hex chars (32 bytes)");
+    }
+    console.log(`[Worker ${WORKER_ID}] Using persistent ENCRYPTION_KEY from env`);
+    return buf;
+  }
+  // Dev fallback: deterministic key from DB password so it survives restarts
+  if (process.env.NODE_ENV !== "production") {
+    const seed = process.env.DB_PASSWORD ?? process.env.ADMIN_PASSWORD ?? "dev-key-not-for-prod";
+    const buf = createHash("sha256").update(seed).digest();
+    console.warn(`[Worker ${WORKER_ID}] WARNING: Using dev-fallback encryption key (set ENCRYPTION_KEY for production)`);
+    return buf;
+  }
+  throw new Error("ENCRYPTION_KEY env var required in production");
+})();
 const exchangeManager = new ExchangeManager(connections, encryptionKey);
 const paymentStore = new PaymentStore();
 const authService = new AuthService(paymentStore, encryptionKey);
@@ -67,9 +93,11 @@ const adminProviderStore = new AdminProviderStore();
 const aiProviderStore = new AiProviderStore();
 const binanceFuturesHub = new BinanceFuturesHub();
 const exchangeMarketHub = new ExchangeMarketHub();
-const exchangeCore = new ExchangeCoreService(connections);
+const hubEventBridge = new HubEventBridge();
+const exchangeCore = new ExchangeCoreService(connections, encryptionKey);
 const traderHubStore = new TraderHubStore();
-const traderHubEngine = new TraderHubEngine(traderHubStore, exchangeMarketHub, { exchangeCore });
+const botScheduler = new BotScheduler(traderHubStore);
+const traderHubEngine = new TraderHubEngine(traderHubStore, botScheduler, { exchangeCore });
 const serverPort = Number(process.env.PORT ?? 8090);
 const coinUniverseEngine = new CoinUniverseEngine({ binanceFuturesHub });
 const systemScanner = new SystemScannerService({
@@ -96,7 +124,7 @@ async function bootstrap() {
 registerConnectionRoutes(app, connections, encryptionKey);
 registerExchangeRoutes(app, exchangeManager);
 registerTradeRoutes(app, audit, connections);
-registerMarketRoutes(app, { providerStore: adminProviderStore, binanceFuturesHub, exchangeMarketHub, systemScanner, coinUniverseEngine });
+registerMarketRoutes(app, { providerStore: adminProviderStore, binanceFuturesHub, exchangeMarketHub, hubEventBridge, systemScanner, coinUniverseEngine });
 registerAuthRoutes(app, authService);
 registerUserSettingsRoutes(app);
 registerTradeIdeasRoutes(app, tradeIdeaStore, systemScanner);
@@ -121,7 +149,7 @@ if (process.env.NODE_ENV === "production") {
 }
 
 const server = http.createServer(app);
-createGateway(server, { exchangeMarketHub });
+createGateway(server, { exchangeMarketHub, hubEventBridge, binanceFuturesHub, isPrimary: IS_PRIMARY });
 
 const host = process.env.HOST ?? "127.0.0.1";
 const port = Number(process.env.PORT ?? 8090);
@@ -129,18 +157,78 @@ const port = Number(process.env.PORT ?? 8090);
 bootstrap()
   .then(() => {
     server.listen(port, host, () => {
+      // Redis bridge subscriber: ALL workers receive hub events via Redis pub/sub
+      hubEventBridge.startSubscriber();
+
       if (IS_PRIMARY) {
-        // Singleton services — only Worker 0
+        // Singleton services — only Worker 0 (1 Binance WS → Redis → N workers)
         binanceFuturesHub.start();
         exchangeMarketHub.start();
+        hubEventBridge.startPublisher(exchangeMarketHub);
         exchangeCore.start();
-        traderHubEngine.start();
+        void traderHubEngine.start();
         tronMonitor.start();
-        tradeIdeaTracker.start();
-        systemScanner.start();
-        console.log(`[Worker ${WORKER_ID}] PRIMARY — singleton services started`);
+        // ══════════════════════════════════════════════════════════════
+        // Scanner + TradeIdeaTracker run in scanner-worker (scannerProcess.ts).
+        // CoinUniverseEngine refresh runs HERE on Worker 0 because it needs
+        // live WS hub data (scanner-worker has stub hub → empty).
+        // ══════════════════════════════════════════════════════════════
+        // tradeIdeaTracker.start();   // → scanner-worker
+        // systemScanner.start();       // → scanner-worker
+
+        // CoinUniverseEngine: refresh every 60s on Worker 0 (needs live WS hub data)
+        // After refresh, store snapshot in Redis so Workers 1-2 can serve the endpoint too.
+        const COIN_UNIVERSE_REFRESH_MS = 60_000;
+        const COIN_UNIVERSE_INITIAL_DELAY_MS = 30_000; // wait for hub to accumulate data
+        setTimeout(() => {
+          const doRefresh = async () => {
+            try {
+              // ── BinanceFuturesHub universe → Redis (so Workers 1-2 and scanner-worker can read it) ──
+              const hubRows = binanceFuturesHub.getUniverseRows();
+              if (hubRows.length > 0) {
+                hubEventBridge.storeFuturesUniverse(JSON.stringify({
+                  ok: true, rows: hubRows, count: hubRows.length,
+                }));
+              }
+
+              await coinUniverseEngine.refresh();
+              const snapshot = coinUniverseEngine.getSnapshot();
+              if (snapshot.activeCoins.length > 0) {
+                hubEventBridge.storeUniverseSnapshot(JSON.stringify({
+                  ok: true,
+                  round: snapshot.round,
+                  refreshedAt: snapshot.refreshedAt,
+                  activeCoins: snapshot.activeCoins,
+                  cooldownCoins: snapshot.cooldownCoins,
+                }));
+
+                // ── Shared Feature Engine: write per-symbol features to Redis ──
+                // Bot decision workers read these via featureCache.readFeature()
+                const allCoins = [...snapshot.activeCoins, ...snapshot.cooldownCoins];
+                // Enrich with BinanceFuturesHub depth/imbalance data
+                const enriched = allCoins.map((coin: Record<string, unknown>) => {
+                  const hubRow = binanceFuturesHub.getLiveRow(String(coin.symbol ?? ""));
+                  return {
+                    ...coin,
+                    depthUsd: hubRow?.depthUsd ?? null,
+                    imbalance: hubRow?.imbalance ?? null,
+                  };
+                });
+                await writeFeatureCache(enriched as any);
+                await markFeaturesRefreshed();
+              }
+            } catch (err: any) {
+              console.error("[CoinUniverseEngine] Refresh error:", err?.message ?? err);
+            }
+          };
+          void doRefresh(); // first refresh
+          setInterval(() => void doRefresh(), COIN_UNIVERSE_REFRESH_MS);
+          console.log(`[Worker ${WORKER_ID}] CoinUniverseEngine refresh started (every ${COIN_UNIVERSE_REFRESH_MS / 1000}s)`);
+        }, COIN_UNIVERSE_INITIAL_DELAY_MS);
+
+        console.log(`[Worker ${WORKER_ID}] PRIMARY — market data + hub publisher (scanner in separate process)`);
       } else {
-        console.log(`[Worker ${WORKER_ID}] HTTP-only worker`);
+        console.log(`[Worker ${WORKER_ID}] HTTP worker (hub events via Redis bridge)`);
       }
       console.log(`[Worker ${WORKER_ID}] Exchange terminal backend on http://${host}:${port}`);
     });

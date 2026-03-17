@@ -27,20 +27,29 @@ const BINANCE_FUTURES_BASES = [
 ];
 const GATE_FUTURES_BASE = "https://fx-api.gateio.ws/api/v4";
 
+const FETCH_TIMEOUT_MS = 5000;
+
 const fetchJson = async <T>(url: string): Promise<T | null> => {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
   try {
-    const res = await fetch(url);
+    const res = await fetch(url, { signal: controller.signal });
     if (!res.ok) return null;
     return (await res.json()) as T;
   } catch {
     return null;
+  } finally {
+    clearTimeout(timer);
   }
 };
 
 const fetchBinanceFuturesJson = async <T>(path: string): Promise<T | null> => {
-  for (const base of BINANCE_FUTURES_BASES) {
-    const body = await fetchJson<T>(`${base}${path}`);
-    if (body) return body;
+  // Fire all bases in parallel and return first successful result
+  const results = await Promise.allSettled(
+    BINANCE_FUTURES_BASES.map((base) => fetchJson<T>(`${base}${path}`)),
+  );
+  for (const result of results) {
+    if (result.status === "fulfilled" && result.value !== null) return result.value;
   }
   return null;
 };
@@ -166,9 +175,10 @@ const fetchSymbolHistory = async (symbol: string, startMs: number, endMs: number
     fetchHistoryFromBybit,
     fetchHistoryFromBinanceSpot,
   ];
-  for (const fetcher of fetchers) {
-    const candles = await fetcher(symbol, safeStart, safeEnd);
-    if (candles.length) return candles;
+  // Fire all in parallel, return first non-empty result
+  const results = await Promise.allSettled(fetchers.map((f) => f(symbol, safeStart, safeEnd)));
+  for (const result of results) {
+    if (result.status === "fulfilled" && result.value.length > 0) return result.value;
   }
   return [];
 };
@@ -179,6 +189,10 @@ const isEntryTouchedByRange = (entryLow: number, entryHigh: number, candleLow: n
   return candleHigh >= low && candleLow <= high;
 };
 
+/**
+ * Race all exchange fetchers in parallel — return the first valid price.
+ * This avoids sequential 5s timeouts when some exchanges are unreachable (e.g. Binance 403).
+ */
 const fetchSymbolPrice = async (symbol: string): Promise<number | null> => {
   const fetchers: Array<(s: string) => Promise<number | null>> = [
     fetchFromBinanceFutures,
@@ -188,9 +202,12 @@ const fetchSymbolPrice = async (symbol: string): Promise<number | null> => {
     fetchFromGate,
   ];
 
-  for (const fetcher of fetchers) {
-    const price = await fetcher(symbol);
-    if (typeof price === "number" && Number.isFinite(price)) return price;
+  // Fire all in parallel — first one to resolve with a valid price wins
+  const results = await Promise.allSettled(fetchers.map((f) => f(symbol)));
+  for (const result of results) {
+    if (result.status === "fulfilled" && typeof result.value === "number" && Number.isFinite(result.value)) {
+      return result.value;
+    }
   }
   return null;
 };
@@ -226,7 +243,7 @@ export class TradeIdeaTracker {
     if (this.running) return;
     this.running = true;
     void this.reconcileHistoryOnStartup();
-    const pollMs = Math.max(1000, this.options?.pollMs ?? 2000);
+    const pollMs = Math.max(5000, this.options?.pollMs ?? 10_000);
     this.timer = setInterval(() => {
       void this.tick();
     }, pollMs);

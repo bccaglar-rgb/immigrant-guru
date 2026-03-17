@@ -43,10 +43,15 @@ export interface FallbackLivePayload {
   };
   derivatives: {
     fundingRate: number | null;
+    markPrice?: number | null;
     oiValue: number | null;
     oiChange1h: number | null;
     liquidationUsd: number | null;
   };
+  /** Last trade execution price from exchange — canonical display price */
+  lastTradePrice?: number | null;
+  feedExchange?: string;
+  feedSource?: string;
   feedLatencyMs?: number;
   fetchedAt: string;
 }

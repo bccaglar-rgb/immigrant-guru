@@ -48,7 +48,7 @@ interface ExchangeTerminalState {
   setAccountMode: (mode: AccountMode) => void;
   connectWithInput: (input: ExchangeConnectionInput) => void;
   disconnect: () => void;
-  setMarketData: (payload: Pick<ExchangeTerminalState, "tickers" | "bids" | "asks" | "trades">) => void;
+  setMarketData: (payload: Partial<Pick<ExchangeTerminalState, "tickers" | "bids" | "asks" | "trades">>) => void;
   setAccountData: (payload: Partial<Pick<ExchangeTerminalState, "balances" | "positions" | "openOrders" | "orderHistory" | "tradeHistory" | "transactionHistory" | "positionHistory" | "assetsHistory" | "botsHistory">>) => void;
   setActiveSignal: (payload: ExchangeTradeSignal) => void;
   clearActiveSignal: () => void;
@@ -171,7 +171,13 @@ export const useExchangeTerminalStore = create<ExchangeTerminalState>((set) => (
       connectionError: undefined,
     }),
   disconnect: () => set({ connectionStatus: "DISCONNECTED", connectionError: undefined }),
-  setMarketData: ({ tickers, bids, asks, trades }) => set({ tickers, bids, asks, trades }),
+  setMarketData: (payload) =>
+    set((state) => ({
+      tickers: payload.tickers ?? state.tickers,
+      bids: payload.bids ?? state.bids,
+      asks: payload.asks ?? state.asks,
+      trades: payload.trades ?? state.trades,
+    })),
   setAccountData: (payload) =>
     set((state) => ({
       balances: payload.balances ?? state.balances,

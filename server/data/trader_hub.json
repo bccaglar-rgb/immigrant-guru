@@ -15,43 +15,43 @@
       "scanIntervalSec": 30,
       "status": "RUNNING",
       "createdAt": "2026-03-02T04:04:49.746Z",
-      "updatedAt": "2026-03-07T22:40:21.870Z",
-      "nextRunAt": "2026-03-07T22:40:51.869Z",
-      "lastRunAt": "2026-03-07T22:40:21.870Z",
+      "updatedAt": "2026-03-17T01:56:56.116Z",
+      "nextRunAt": "2026-03-17T01:57:26.106Z",
+      "lastRunAt": "2026-03-17T01:56:56.116Z",
       "lastError": "",
       "failStreak": 0,
       "stats": {
-        "runs": 16402,
-        "tradeCount": 398,
-        "watchCount": 2549,
-        "noTradeCount": 13455,
-        "pnlPct": 18.698
+        "runs": 22171,
+        "tradeCount": 526,
+        "watchCount": 2739,
+        "noTradeCount": 18906,
+        "pnlPct": 28.65
       },
       "lastResult": {
-        "ts": "2026-03-07T22:40:21.870Z",
-        "sourceExchange": "Gate.io",
-        "scorePct": 68.01,
+        "ts": "2026-03-17T01:56:56.116Z",
+        "sourceExchange": "Binance",
+        "scorePct": 70.63,
         "decision": "NO_TRADE",
         "bias": "SHORT",
         "reason": "CHATGPT rejected setup due to weak edge/quality.",
-        "price": 67208.3,
+        "price": 75610.9,
         "plan": {
-          "entryLow": 67153.7378,
-          "entryHigh": 67364.192,
-          "sl1": 67402.9103,
-          "sl2": 67480.7544,
-          "tp1": 66698.8076,
-          "tp2": 66469.536
+          "entryLow": 75551.9355,
+          "entryHigh": 75779.3699,
+          "sl1": 75824.3113,
+          "sl2": 75909.6758,
+          "tp1": 75025.8596,
+          "tp2": 74762.5914
         },
         "dataStale": false,
         "execution": {
           "state": "REJECTED",
           "venue": "N/A",
-          "intentId": "186c9b56-a1ff-4891-84e1-4d69d5b3fa4b",
+          "intentId": "3322f46d-91f0-4d7c-8c4b-138d75f343ce",
           "message": "No connected exchange account found. Connect Binance or Gate.io in Settings."
         }
       }
     }
   ],
-  "updatedAt": "2026-03-07T22:40:21.870Z"
+  "updatedAt": "2026-03-17T01:56:56.116Z"
 }

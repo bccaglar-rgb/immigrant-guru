@@ -11,6 +11,8 @@ import {
   type UTCTimestamp,
 } from "lightweight-charts";
 import { calculateEma, calculateVwap } from "../data/liveConsensusEngine";
+import { MarketDataRouter } from "../data/MarketDataRouter";
+import { useLivePriceStore } from "../hooks/useLivePriceStore";
 import type { Coin, IndicatorsState, KeyLevel, OhlcvPoint, Timeframe, TimeframeConfig, TradeIdea } from "../types";
 import { CoinSelector } from "./CoinSelector";
 import { TimeframeBar } from "./TimeframeBar";
@@ -144,10 +146,26 @@ export const ChartPanel = ({
   const tradeLinesRef = useRef<IPriceLine[]>([]);
   const livePriceLineRef = useRef<IPriceLine | null>(null);
   const shouldAutoFitRef = useRef(true);
+  const closedCandlesRef = useRef<Set<number>>(new Set());
   const viewportContextRef = useRef("");
+  const priceBadgeRef = useRef<HTMLDivElement | null>(null);
+  const priceBadgeTextRef = useRef<HTMLParagraphElement | null>(null);
+  const lastCandleRef = useRef<{ symbol: string; openTime: number; open: number; high: number; low: number; close: number } | null>(null);
   const [entryBand, setEntryBand] = useState<BandRect | null>(null);
+  // ── Real-time candle update from WS kline stream ──
+  const routerSymbol = symbol.replace("/", "").toUpperCase();
+  const candleUpdateKey = `${routerSymbol}:${timeframe.primary}`;
+  const liveCandleUpdate = MarketDataRouter.useStore((s) => s.candleUpdates[candleUpdateKey]);
+
+  // NOTE: tickPrice is NOT subscribed via React hook — we use useLivePriceStore.subscribe()
+  // below to bypass React re-renders and write directly to DOM + chart API.
+
   const featuredPlan = selectedTradeIdea ?? tradeIdeas[0] ?? null;
-  const lastClose = data[data.length - 1]?.close ?? 0;
+  // Kline-based close for initial render + key level calculations (low-frequency React path)
+  const lastClose =
+    liveCandleUpdate && liveCandleUpdate.close > 0
+      ? liveCandleUpdate.close
+      : data[data.length - 1]?.close ?? 0;
   const highLevel = Math.max(...keyLevels.map((level) => level.price), lastClose);
   const lowLevel = Math.min(...keyLevels.map((level) => level.price), lastClose);
   const pricePos = highLevel === lowLevel ? 50 : ((lastClose - lowLevel) / (highLevel - lowLevel)) * 100;
@@ -165,8 +183,17 @@ export const ChartPanel = ({
         vertLines: { color: "rgba(255,255,255,0.035)" },
         horzLines: { color: "rgba(255,255,255,0.035)" },
       },
-      rightPriceScale: { borderColor: "rgba(255,255,255,0.08)" },
-      timeScale: { borderColor: "rgba(255,255,255,0.08)" },
+      rightPriceScale: {
+        borderColor: "rgba(255,255,255,0.08)",
+        autoScale: true,
+        scaleMargins: { top: 0.1, bottom: 0.08 },
+      },
+      timeScale: {
+        borderColor: "rgba(255,255,255,0.08)",
+        rightOffset: 8,
+        barSpacing: 6,
+        minBarSpacing: 2,
+      },
       crosshair: {
         vertLine: { color: "rgba(245,197,66,0.28)" },
         horzLine: { color: "rgba(245,197,66,0.28)" },
@@ -203,6 +230,18 @@ export const ChartPanel = ({
     if (viewportContextRef.current !== nextContext) {
       viewportContextRef.current = nextContext;
       shouldAutoFitRef.current = true;
+      closedCandlesRef.current = new Set(); // reset on symbol/timeframe change
+
+      // ── Critical: clear stale candle ref to prevent phantom prices ──
+      // Without this, old symbol's candle data would be updated with new symbol's
+      // trade prices, creating candles at impossible price levels.
+      lastCandleRef.current = null;
+
+      // Remove stale price line (will be recreated by first tick/kline of new symbol)
+      if (livePriceLineRef.current && candleSeriesRef.current) {
+        try { candleSeriesRef.current.removePriceLine(livePriceLineRef.current); } catch { /* noop */ }
+      }
+      livePriceLineRef.current = null;
     }
   }, [symbol, timeframe.primary, timeframe.lookbackBars]);
 
@@ -214,26 +253,200 @@ export const ChartPanel = ({
     }
     candleSeriesRef.current.setData(toCandles(data));
     if (shouldAutoFitRef.current) {
-      chartRef.current.timeScale().fitContent();
+      // Show last ~120 candles with proper spacing (Binance-style zoom).
+      // fitContent() shows ALL candles which makes charts unreadably compressed.
+      const barsToShow = 120;
+      const ts = chartRef.current.timeScale();
+      if (data.length > barsToShow) {
+        ts.setVisibleLogicalRange({
+          from: data.length - barsToShow,
+          to: data.length + 8,
+        });
+      } else {
+        ts.fitContent();
+      }
       shouldAutoFitRef.current = false;
     }
   }, [data]);
 
+  // ═══════════════════════════════════════════════════════════════════
+  // KLINE HANDLER — canonical role:
+  //   • CLOSED candle → finalize with authoritative Binance OHLCV, mark immutable
+  //   • FORMING candle → only seed open/structure on FIRST arrival;
+  //     trade stream owns close/high/low for live candles (no oscillation)
+  // ═══════════════════════════════════════════════════════════════════
+  useEffect(() => {
+    if (!candleSeriesRef.current) return;
+    if (!liveCandleUpdate || liveCandleUpdate.openTime <= 0 || liveCandleUpdate.close <= 0) return;
+
+    const ot = liveCandleUpdate.openTime;
+    // Immutable guard: already finalized — skip
+    if (closedCandlesRef.current.has(ot)) return;
+
+    const prev = lastCandleRef.current;
+    const sameCandle = prev && prev.symbol === routerSymbol && prev.openTime === ot;
+
+    if (liveCandleUpdate.closed) {
+      // ── CLOSED: kline is authoritative — finalize candle with Binance OHLCV ──
+      const final = {
+        symbol: routerSymbol,
+        openTime: ot,
+        open: liveCandleUpdate.open,
+        high: liveCandleUpdate.high,
+        low: liveCandleUpdate.low,
+        close: liveCandleUpdate.close,
+      };
+      lastCandleRef.current = final;
+
+      try {
+        candleSeriesRef.current.update({
+          time: ot as UTCTimestamp,
+          open: final.open,
+          high: final.high,
+          low: final.low,
+          close: final.close,
+        });
+      } catch { /* chart not ready */ }
+
+      // Mark immutable — never update this candle again
+      closedCandlesRef.current.add(ot);
+      if (closedCandlesRef.current.size > 10) {
+        const entries = [...closedCandlesRef.current].sort((a, b) => a - b);
+        closedCandlesRef.current = new Set(entries.slice(-5));
+      }
+    } else if (!sameCandle) {
+      // ── NEW forming candle (first kline for this openTime) ──
+      // Seed with kline structure; trade will take over close/high/low immediately
+      const lp = useLivePriceStore.getState().bySymbol[routerSymbol];
+      const tradeClose = lp && lp.price > 0 && lp.ts > 0 ? lp.price : liveCandleUpdate.close;
+      const seeded = {
+        symbol: routerSymbol,
+        openTime: ot,
+        open: liveCandleUpdate.open,
+        high: Math.max(liveCandleUpdate.high, tradeClose),
+        low: Math.min(liveCandleUpdate.low, tradeClose),
+        close: tradeClose,
+      };
+      lastCandleRef.current = seeded;
+
+      try {
+        candleSeriesRef.current.update({
+          time: ot as UTCTimestamp,
+          open: seeded.open,
+          high: seeded.high,
+          low: seeded.low,
+          close: seeded.close,
+        });
+      } catch { /* chart not ready */ }
+    }
+    // else: forming candle already tracked — kline does NOT overwrite.
+    // Trade subscribe handler (below) owns close/high/low for live candles.
+  }, [liveCandleUpdate]);
+
+  // ── React-driven price line: initial + kline-based (low-frequency fallback) ──
   useEffect(() => {
     if (!candleSeriesRef.current || !Number.isFinite(lastClose) || lastClose <= 0) return;
     if (livePriceLineRef.current) {
-      candleSeriesRef.current.removePriceLine(livePriceLineRef.current);
-      livePriceLineRef.current = null;
+      livePriceLineRef.current.applyOptions({ price: lastClose });
+    } else {
+      livePriceLineRef.current = candleSeriesRef.current.createPriceLine({
+        price: lastClose,
+        color: "rgba(74, 186, 132, 0.95)",
+        lineWidth: 1,
+        lineStyle: 2,
+        axisLabelVisible: true,
+        title: "",
+      });
     }
-    livePriceLineRef.current = candleSeriesRef.current.createPriceLine({
-      price: lastClose,
-      color: "rgba(74, 186, 132, 0.95)",
-      lineWidth: 1,
-      lineStyle: 0,
-      axisLabelVisible: true,
-      title: "",
-    });
   }, [lastClose]);
+
+  // ═══════════════════════════════════════════════════════════════════
+  // HIGH-FREQUENCY PATH: Direct DOM + chart API (bypasses React entirely)
+  // useLivePriceStore fires 15-40x/sec — React re-render would be too heavy.
+  // Instead we subscribe directly and write to DOM refs + chart API.
+  // ═══════════════════════════════════════════════════════════════════
+  useEffect(() => {
+    // Binance-style throttle: buffer latest price, flush to DOM at ~4 Hz.
+    // Raw trades arrive 15-40x/sec — displaying every one looks jittery.
+    // Binance UI updates ~3-4x/sec with a smooth, confident cadence.
+    let pendingPrice = 0;
+    let pendingIsUp = true;
+    let rafScheduled = false;
+    let lastFlushTs = 0;
+    const THROTTLE_MS = 100; // 10 updates/sec — fast like Binance, shows latest price
+
+    const flushToDOM = () => {
+      rafScheduled = false;
+      if (pendingPrice <= 0) return;
+      lastFlushTs = performance.now();
+
+      // 1. Price badge — direct DOM write
+      if (priceBadgeTextRef.current) {
+        priceBadgeTextRef.current.textContent = formatPrice(pendingPrice);
+        priceBadgeTextRef.current.style.color = pendingIsUp ? "#7fe0b6" : "#f6465d";
+      }
+
+      // 2. Chart price line
+      const lineColor = pendingIsUp ? "rgba(74, 186, 132, 0.95)" : "rgba(246, 70, 93, 0.95)";
+      if (livePriceLineRef.current) {
+        livePriceLineRef.current.applyOptions({ price: pendingPrice, color: lineColor });
+      } else if (candleSeriesRef.current) {
+        livePriceLineRef.current = candleSeriesRef.current.createPriceLine({
+          price: pendingPrice, color: lineColor, lineWidth: 1, lineStyle: 2, axisLabelVisible: true, title: "",
+        });
+      }
+    };
+
+    const unsub = useLivePriceStore.subscribe((state) => {
+      const lp = state.bySymbol[routerSymbol];
+      if (!lp || !lp.price || lp.price <= 0) return;
+      const price = lp.price;
+      const isUp = lp.prevPrice != null && lp.prevPrice > 0 ? price >= lp.prevPrice : true;
+
+      // Always buffer latest values (never lose the most recent trade)
+      pendingPrice = price;
+      pendingIsUp = isUp;
+
+      // Throttle DOM writes to THROTTLE_MS intervals
+      const now = performance.now();
+      if (now - lastFlushTs >= THROTTLE_MS) {
+        // Enough time passed — flush immediately on next frame
+        if (!rafScheduled) {
+          rafScheduled = true;
+          requestAnimationFrame(flushToDOM);
+        }
+      } else if (!rafScheduled) {
+        // Schedule flush after remaining throttle time
+        const remaining = THROTTLE_MS - (now - lastFlushTs);
+        rafScheduled = true;
+        setTimeout(() => requestAnimationFrame(flushToDOM), remaining);
+      }
+
+      // 3. Last candle close — update from trade price (makes candle track trades)
+      // Safety: only update if candle belongs to the SAME symbol (prevents phantom prices)
+      const candle = lastCandleRef.current;
+      if (
+        candle &&
+        candle.symbol === routerSymbol &&
+        candleSeriesRef.current &&
+        !closedCandlesRef.current.has(candle.openTime)
+      ) {
+        try {
+          const newHigh = Math.max(candle.high, price);
+          const newLow = Math.min(candle.low, price);
+          candleSeriesRef.current.update({
+            time: candle.openTime as UTCTimestamp,
+            open: candle.open,
+            high: newHigh,
+            low: newLow,
+            close: price,
+          });
+          lastCandleRef.current = { ...candle, close: price, high: newHigh, low: newLow };
+        } catch { /* chart not ready */ }
+      }
+    });
+    return unsub;
+  }, [routerSymbol]);
 
   useEffect(() => {
     if (!chartRef.current) return;
@@ -474,7 +687,7 @@ export const ChartPanel = ({
         lineWidth: 1,
         lineStyle: 2,
         axisLabelVisible: true,
-        title: level.label,
+        title: "", // keep axis label only — chart-area titles obscure candles
       }),
     );
   }, [keyLevels, overlays.keyLevels]);
@@ -502,7 +715,7 @@ export const ChartPanel = ({
         lineWidth: 1,
         lineStyle: 2,
         axisLabelVisible: true,
-        title: line.title,
+        title: "", // keep axis label only — chart-area titles obscure candles
       }),
     );
 
@@ -533,9 +746,9 @@ export const ChartPanel = ({
           <p className="text-xs text-[#6B6F76]">Structure + execution overlays</p>
         </div>
 
-        <div className="rounded-lg border border-[#4aba84]/45 bg-[#13231b] px-3 py-1.5 text-right shadow-[0_0_18px_rgba(74,186,132,0.2)]">
-          <p className="text-lg font-semibold leading-none text-[#7fe0b6]">{formatPrice(lastClose)}</p>
-          <p className="text-[10px] text-[#9ad7bc]">Live Price</p>
+        <div ref={priceBadgeRef} className="px-3 py-1.5 text-right">
+          <p ref={priceBadgeTextRef} className="text-lg font-semibold leading-none text-[#7fe0b6]">{formatPrice(lastClose)}</p>
+          <p className="text-[10px] text-[#6B6F76]">Live Price</p>
         </div>
 
         <select className="rounded-lg border border-white/15 bg-[#16181C] px-3 py-1.5 text-sm text-[#BFC2C7]" value={timeframe.lookbackBars} onChange={(e) => onLookbackChange(Number(e.target.value))}>

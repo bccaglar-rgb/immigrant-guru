@@ -23,6 +23,7 @@ import type { ExchangeTradeSignal } from "../types/exchange";
 import type { TradeTick } from "../types/exchange";
 import type { TickerItem } from "../types/exchange";
 import { useDataSourceManager } from "../data/DataSourceManager";
+import { useDisplayPrice, useMarkPrice } from "../hooks/useLivePriceStore";
 
 const normalizeCandlesForChart = (
   rows: Array<{ time: number; open: number; high: number; low: number; close: number }> | undefined,
@@ -86,6 +87,13 @@ export default function ExchangeTerminalPage() {
   );
   const exchangeBlocked = !hasEnabledAccounts || !hasSelectedAccount;
   const routerSymbol = useMemo(() => selectedSymbol.replace("/", ""), [selectedSymbol]);
+
+  // ── Canonical prices — useLivePriceStore is the SINGLE SOURCE OF TRUTH ──
+  // MarketDataRouter bootstraps from REST, WS streams update in real-time.
+  // UI reads ONLY from these selector hooks, never from raw backend objects.
+  const displayPrice = useDisplayPrice(routerSymbol);
+  const liveMarkPrice = useMarkPrice(routerSymbol);
+
   const [chartBundle, setChartBundle] = useState<FallbackLivePayload | null>(null);
   const [strictBookBundle, setStrictBookBundle] = useState<FallbackLivePayload | null>(null);
   const [liveError, setLiveError] = useState<string | null>(null);
@@ -419,26 +427,59 @@ export default function ExchangeTerminalPage() {
     setStableOhlcv([]);
   }, [routerSymbol, apiInterval]);
 
+  // ── EFFECT A: Lightweight price-only ticker + PnL update ──
+  // Fires on every WS tick (displayPrice/liveMarkPrice change).
+  // MUST be fast (<2ms): only patches ticker.lastPrice and position.pnl.
+  // Does NOT recalculate bids/asks/trades (that's the heavy bundle effect).
+  useEffect(() => {
+    if (exchangeBlocked) return;
+    const base = displayPrice ?? 0;
+    if (base <= 0) return;
+    const markPriceDisplay = liveMarkPrice ?? base;
+    const state = useExchangeTerminalStore.getState();
+    const { tickers, balances, positions, openOrders } = state;
+    const sourceOhlcv = chartBundle?.ohlcv ?? [];
+    const prev = sourceOhlcv.length > 24
+      ? sourceOhlcv[sourceOhlcv.length - 25]?.close ?? base
+      : sourceOhlcv[0]?.close ?? base;
+    const change24hPct = prev > 0 ? ((base - prev) / prev) * 100 : 0;
+    const nextTickers = tickers.map((t) =>
+      t.symbol === selectedSymbol
+        ? {
+            ...t,
+            lastPrice: base,
+            change24hPct: Number(change24hPct.toFixed(2)),
+            markPrice: markPriceDisplay > 0 ? markPriceDisplay : t.markPrice,
+            indexPrice: markPriceDisplay > 0 ? markPriceDisplay : t.indexPrice,
+          }
+        : t,
+    );
+    const nextPositions = positions.map((p) => {
+      const mark = markPriceDisplay > 0 ? markPriceDisplay : p.mark ?? p.entry;
+      const pnl = Number(((p.side === "BUY" ? mark - p.entry : p.entry - mark) * p.size).toFixed(2));
+      return { ...p, mark, pnl };
+    });
+    setMarketData({ tickers: nextTickers });
+    setAccountData({ balances, positions: nextPositions, openOrders });
+  }, [displayPrice, liveMarkPrice, selectedSymbol, exchangeBlocked, setMarketData, setAccountData, chartBundle]);
+
+  // ── EFFECT B: Heavy bundle update (candle data, orderbook, trades, derivatives) ──
+  // Fires only when REST chartBundle or strictBookBundle changes (~every 5s).
+  // Does the heavy array mapping for bids/asks/trades that was previously in every tick.
   useEffect(() => {
     if (exchangeBlocked) return;
     const sourceOhlcv = chartBundle?.ohlcv ?? [];
     if (!sourceOhlcv.length) return;
     const state = useExchangeTerminalStore.getState();
-    const { tickers, balances, positions, openOrders } = state;
-    const midPrice = Number(chartBundle?.orderbook?.midPrice ?? NaN);
-    const base = Number.isFinite(midPrice) && midPrice > 0 ? midPrice : (sourceOhlcv[sourceOhlcv.length - 1]?.close ?? 0);
-    const prev = sourceOhlcv[Math.max(0, sourceOhlcv.length - 25)]?.close ?? base;
-    const change24hPct = prev > 0 ? ((base - prev) / prev) * 100 : 0;
+    const { tickers } = state;
+    const base = displayPrice ?? 0;
     const volume24h = sourceOhlcv.slice(-96).reduce((sum, row) => sum + (row.volume ?? 0), 0);
+    // Update volume and derivatives in tickers (not price — that's in effect A)
     const nextTickers = tickers.map((t) =>
       t.symbol === selectedSymbol
         ? {
             ...t,
-            lastPrice: Number(base.toFixed(2)),
-            change24hPct: Number(change24hPct.toFixed(2)),
             volume24h: volume24h || t.volume24h,
-            markPrice: Number(base.toFixed(2)),
-            indexPrice: Number(base.toFixed(2)),
             fundingRate8h: chartBundle?.derivatives?.fundingRate ?? t.fundingRate8h,
             openInterestUsd: chartBundle?.derivatives?.oiValue ?? t.openInterestUsd,
           }
@@ -485,21 +526,13 @@ export default function ExchangeTerminalPage() {
       : [];
 
     setMarketData({ tickers: nextTickers, bids: nextBids, asks: nextAsks, trades: nextTrades });
-
-    const nextPositions = positions.map((p) => {
-      const mark = Number(base.toFixed(2));
-      const pnl = Number(((p.side === "BUY" ? mark - p.entry : p.entry - mark) * p.size).toFixed(2));
-      return { ...p, mark, pnl };
-    });
-    setAccountData({ balances, positions: nextPositions, openOrders });
   }, [
     chartBundle,
     strictBookBundle,
     selectedSymbol,
-    setAccountData,
     setMarketData,
     exchangeBlocked,
-    setConnectionStatus,
+    displayPrice,
   ]);
 
   useEffect(() => {

@@ -289,6 +289,44 @@ CREATE TABLE IF NOT EXISTS traders (
 );
 CREATE INDEX IF NOT EXISTS idx_traders_user   ON traders (user_id);
 CREATE INDEX IF NOT EXISTS idx_traders_status ON traders (status);
+CREATE INDEX IF NOT EXISTS idx_traders_due    ON traders (next_run_at ASC) WHERE status = 'RUNNING';
+
+-- ── Order Intents ──────────────────────────────────────────────
+
+CREATE TABLE IF NOT EXISTS order_intents (
+  id                  TEXT PRIMARY KEY,
+  client_order_id     TEXT NOT NULL,
+  source              TEXT NOT NULL DEFAULT 'AI',
+  priority            TEXT NOT NULL DEFAULT 'BATCH',
+  user_id             TEXT NOT NULL,
+  run_id              TEXT NOT NULL DEFAULT '',
+  exchange_account_id TEXT NOT NULL DEFAULT '',
+  venue               TEXT NOT NULL,
+  market_type         TEXT NOT NULL DEFAULT 'FUTURES',
+  symbol_internal     TEXT NOT NULL,
+  symbol_venue        TEXT NOT NULL,
+  side                TEXT NOT NULL,
+  order_type          TEXT NOT NULL DEFAULT 'MARKET',
+  time_in_force       TEXT,
+  qty                 NUMERIC(20,8),
+  notional_usdt       NUMERIC(14,6),
+  price               NUMERIC(20,8),
+  reduce_only         BOOLEAN NOT NULL DEFAULT false,
+  leverage            INT,
+  tp                  JSONB,
+  sl                  JSONB,
+  state               TEXT NOT NULL DEFAULT 'PENDING',
+  reject_code         TEXT NOT NULL DEFAULT '',
+  reject_reason       TEXT NOT NULL DEFAULT '',
+  exchange_order_id   TEXT,
+  fill_qty            NUMERIC(20,8),
+  avg_fill_price      NUMERIC(20,8),
+  created_at          TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at          TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS idx_order_intents_user  ON order_intents (user_id);
+CREATE INDEX IF NOT EXISTS idx_order_intents_state ON order_intents (state);
+CREATE INDEX IF NOT EXISTS idx_order_intents_run   ON order_intents (run_id);
 
 -- ── Scan Counts ──────────────────────────────────────────────
 

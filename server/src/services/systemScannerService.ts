@@ -16,11 +16,15 @@
 
 import { randomUUID } from "node:crypto";
 import { pool } from "../db/pool.ts";
+import { redis } from "../db/redis.ts";
 import type { TradeIdeaStore } from "./tradeIdeaStore.ts";
 import type { TradeIdeaRecord } from "./tradeIdeaTypes.ts";
 import type { ScoringMode } from "./scoringMode.ts";
 import { computeEnhancedScore } from "./coinScoring.ts";
 import type { CoinUniverseEngine } from "./coinUniverseEngine.ts";
+
+const SCAN_CACHE_REDIS_KEY = "scanner:scan_cache";
+const SCAN_CACHE_REDIS_TTL = 120; // 2 minutes — scanner cycles every 60s
 
 const ALL_MODES: ScoringMode[] = ["FLOW", "AGGRESSIVE", "BALANCED", "CAPITAL_GUARD"];
 const SYSTEM_USER_ID = "system-scanner";
@@ -33,21 +37,21 @@ const UNIVERSE_REFRESH_MS = 4 * 60 * 60 * 1000; // Refresh universe every 4 hour
 const SELECTED_COINS = 28; // 4 modes × 7 coins = 28 coins for output
 const TOP_FIXED_SLOTS = 20; // Top 20 by enhanced score always scanned
 const DIVERSITY_SLOTS = 20; // 20 rotated from remaining pool for diversity
-const SCAN_CONCURRENCY = 8;
-const SCAN_INTERVAL_MS = 15_000; // 15 seconds between cycles
+const SCAN_CONCURRENCY = 4;
+const SCAN_INTERVAL_MS = 60_000; // 60 seconds between cycles (was 15s — CPU relief)
 const STARTUP_DELAY_MS = 20_000; // Wait for WS hubs to connect
 const IDEA_MIN_SCORE_PCT = 55;
 const IDEA_MIN_SCORE_BY_MODE: Record<string, number> = {
-  FLOW: 55,
-  AGGRESSIVE: 60,
-  BALANCED: 64,
-  CAPITAL_GUARD: 65,
+  FLOW: 58,
+  AGGRESSIVE: 66,
+  BALANCED: 60,
+  CAPITAL_GUARD: 55,
 };
 const MAX_TRADE_PER_MODE: Record<string, number> = {
   FLOW: 4,
   AGGRESSIVE: 4,
-  BALANCED: 4,
-  CAPITAL_GUARD: 4,
+  BALANCED: 6,
+  CAPITAL_GUARD: 6,
 };
 
 // Stablecoins to exclude from universe
@@ -216,6 +220,27 @@ export class SystemScannerService {
     };
   }
 
+  /** Store scan cache to Redis for cross-process sharing (scanner → market-workers). */
+  private storeScanCacheToRedis(): void {
+    try {
+      const payload = JSON.stringify(this.getCache());
+      redis.set(SCAN_CACHE_REDIS_KEY, payload, "EX", SCAN_CACHE_REDIS_TTL).catch(() => {});
+    } catch {
+      // best-effort
+    }
+  }
+
+  /** Read scan cache from Redis (for market-workers that don't run the scanner). */
+  static async readScanCacheFromRedis(): Promise<SystemScanCache | null> {
+    try {
+      const json = await redis.get(SCAN_CACHE_REDIS_KEY);
+      if (!json) return null;
+      return JSON.parse(json) as SystemScanCache;
+    } catch {
+      return null;
+    }
+  }
+
   /** Read persisted scan counts from PostgreSQL (for time-range filtered reports) */
   static async readScanCounts(): Promise<ScanCountRecord[]> {
     try {
@@ -269,16 +294,30 @@ export class SystemScannerService {
 
   // ---- internal ----
 
+  /** CoinUniverseEngine is heavy (klines fetch + S/R + 6-bucket discovery).
+   *  Only refresh every UNIVERSE_REFRESH_EVERY_N_CYCLES cycles to save CPU. */
+  private static readonly UNIVERSE_REFRESH_EVERY_N_CYCLES = 4;
+
   private async scanLoop(): Promise<void> {
     if (!this.running) return;
 
     const cycleStart = Date.now();
     try {
       await this.ensureUniverse();
-      // Refresh CoinUniverseEngine scoring before scan (uses WS data + klines for top 60)
+
+      // CoinUniverseEngine refresh: only every Nth cycle to reduce CPU load.
+      // Klines are cached for 5 min anyway, so refreshing every 4 × 60s = 4 min is adequate.
       if (this.deps.coinUniverseEngine) {
-        await this.deps.coinUniverseEngine.refresh();
+        const shouldRefreshUniverse = this.scanRound % SystemScannerService.UNIVERSE_REFRESH_EVERY_N_CYCLES === 0
+          || this.scanRound <= 1; // always refresh on first cycle
+        if (shouldRefreshUniverse) {
+          await this.deps.coinUniverseEngine.refresh();
+        }
       }
+
+      // Yield to event loop before heavy scan — let queued WS events drain
+      await new Promise<void>((r) => setImmediate(r));
+
       await this.runFullScan();
     } catch (err) {
       console.error("[SystemScanner] Scan cycle error:", err instanceof Error ? err.message : err);
@@ -287,8 +326,9 @@ export class SystemScannerService {
     if (this.running) {
       // Schedule next cycle so total cycle time = SCAN_INTERVAL_MS (scan included)
       const elapsed = Date.now() - cycleStart;
-      const delay = Math.max(1000, SCAN_INTERVAL_MS - elapsed);
+      const delay = Math.max(2000, SCAN_INTERVAL_MS - elapsed);
       this.timer = setTimeout(() => void this.scanLoop(), delay);
+      console.log(`[SystemScanner] Cycle took ${(elapsed / 1000).toFixed(1)}s, next in ${(delay / 1000).toFixed(1)}s`);
     }
   }
 
@@ -318,7 +358,23 @@ export class SystemScannerService {
       console.error("[SystemScanner] Binance REST API failed:", err instanceof Error ? err.message : err);
     }
 
-    // Fallback: use WS hub data
+    // Fallback 1: fetch from market-worker HTTP API (which has live WS hub data)
+    try {
+      const enriched = await this.fetchUniverseFromMarketWorker();
+      if (enriched.length >= 50) {
+        this.enhancedUniverse = enriched;
+        this.lockedUniverse = enriched.map((c) => c.symbol);
+        this.universeSize = enriched.length;
+        this.universeLockedAt = now;
+        this.rotationIndex = 0;
+        console.log(`[SystemScanner] Locked universe: ${enriched.length} coins from market-worker API (fallback)`);
+        return;
+      }
+    } catch (err) {
+      console.error("[SystemScanner] Market-worker API failed:", err instanceof Error ? err.message : err);
+    }
+
+    // Fallback 2: use WS hub data (stub returns empty in scanner-worker)
     try {
       const enriched = this.fetchUniverseFromWsHub();
       if (enriched.length >= 10) {
@@ -390,6 +446,62 @@ export class SystemScannerService {
           }),
         };
       });
+    } finally {
+      clearTimeout(timeout);
+    }
+  }
+
+  /**
+   * Fallback: get universe from market-worker's /api/market/futures-universe endpoint.
+   * Market-worker has live WS hub data (BinanceFuturesHub) that scanner-worker doesn't have.
+   * This works even when Binance REST API returns 418 (IP ban).
+   */
+  private async fetchUniverseFromMarketWorker(): Promise<EnhancedUniverseCoin[]> {
+    const port = this.deps.serverPort;
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 10_000);
+
+    try {
+      const res = await fetch(`http://127.0.0.1:${port}/api/market/futures-universe`, {
+        signal: controller.signal,
+      });
+      clearTimeout(timeout);
+
+      if (!res.ok) throw new Error(`Market-worker API ${res.status}`);
+
+      const data = (await res.json()) as { ok: boolean; rows: Array<{
+        symbol: string; baseAsset: string; price: number;
+        volume24hUsd: number; change24hPct: number;
+        spreadBps: number | null; fundingRate: number | null;
+      }> };
+
+      if (!data.ok || !Array.isArray(data.rows)) throw new Error("Invalid response");
+
+      const filtered = data.rows
+        .filter((r) => {
+          if (!r.symbol || !r.symbol.endsWith("USDT")) return false;
+          if (EXCLUDED_BASE_ASSETS.has(r.baseAsset)) return false;
+          return r.volume24hUsd > 0;
+        })
+        .sort((a, b) => b.volume24hUsd - a.volume24hUsd)
+        .slice(0, UNIVERSE_SIZE);
+
+      return filtered.map((r) => ({
+        symbol: r.symbol,
+        baseAsset: r.baseAsset,
+        price: r.price,
+        volume24hUsd: r.volume24hUsd,
+        change24hPct: r.change24hPct,
+        spreadBps: r.spreadBps,
+        fundingRate: r.fundingRate,
+        enhancedScore: computeEnhancedScore({
+          volume24hUsd: r.volume24hUsd,
+          absChange24hPct: Math.abs(r.change24hPct),
+          marketCapRank: null,
+          fundingRate: r.fundingRate,
+          spreadBps: r.spreadBps,
+        }),
+      }));
     } finally {
       clearTimeout(timeout);
     }
@@ -468,9 +580,14 @@ export class SystemScannerService {
    */
   private pickScoredBatch(): string[] {
     // Source: CoinUniverseEngine (primary) or own enhancedUniverse (fallback)
-    const rankedSymbols = this.deps.coinUniverseEngine
-      ? this.deps.coinUniverseEngine.getActiveSymbolsRanked()
-      : this.enhancedUniverse.map((c) => c.symbol);
+    let rankedSymbols: string[] = [];
+    if (this.deps.coinUniverseEngine) {
+      rankedSymbols = this.deps.coinUniverseEngine.getActiveSymbolsRanked();
+    }
+    // Fallback to own enhancedUniverse if engine has no data (e.g. scanner-worker with stub hub)
+    if (!rankedSymbols.length) {
+      rankedSymbols = this.enhancedUniverse.map((c) => c.symbol);
+    }
 
     if (!rankedSymbols.length) return [];
 
@@ -519,7 +636,8 @@ export class SystemScannerService {
     // 2. Refresh open ideas to avoid duplicates
     await this.refreshOpenIdeas();
 
-    // 3. Scan all symbols — 1 API call per coin (random tf from 3m/5m/15m), 8 coins in parallel
+    // 3. Scan all symbols — 1 API call per coin (random tf from 3m/5m/15m), SCAN_CONCURRENCY in parallel
+    //    Yield between batches so WS events can drain (prevents event loop starvation)
     const allResults: EnrichedScanResult[] = [];
 
     for (let i = 0; i < batch.length; i += SCAN_CONCURRENCY) {
@@ -535,6 +653,8 @@ export class SystemScannerService {
           }
         }
       }
+      // Yield to event loop between batches — critical for WS event draining
+      await new Promise<void>((r) => setImmediate(r));
     }
 
     // 4. Select top 28 coins by CoinUniverseEngine composite score (or scan score fallback)
@@ -548,8 +668,9 @@ export class SystemScannerService {
         .getActiveSymbolsRanked()
         .filter((s) => scannedSymbolSet.has(s))
         .slice(0, SELECTED_COINS);
-    } else {
-      // Fallback: rank by best Quant Engine scan score
+    }
+    // Fallback: rank by best Quant Engine scan score (when engine has no data, e.g. scanner-worker)
+    if (!rankedSymbols.length) {
       const bestScoreBySymbol = new Map<string, number>();
       for (const r of allResults) {
         const current = bestScoreBySymbol.get(r.symbol) ?? 0;
@@ -564,10 +685,9 @@ export class SystemScannerService {
     const selectedSet = new Set(rankedSymbols);
     const filteredResults = allResults.filter((r) => selectedSet.has(r.symbol));
 
-    // 5. Assign coins to modes using fixed distribution pattern based on composite rank:
-    //    AGG(3) → BAL(3) → CG(3) → FLOW(3) → AGG(2) → BAL(2) → CG(2) → FLOW(2) → AGG(2) → BAL(2) → CG(2) → FLOW(2)
-    //    Total: 7 per mode = 28
-    const assigned = this.assignCoinsToModes(filteredResults, rankedSymbols);
+    // 5. Assign each coin to exactly ONE mode — the mode where it scores highest.
+    //    Greedy assignment: highest-scoring coins pick first; max 7 per mode.
+    const assigned = this.assignCoinsToBestMode(filteredResults);
 
     // 5b. Increment cumulative scan counts per mode + persist to disk
     const cycleCounts: Record<string, number> = {};
@@ -609,6 +729,10 @@ export class SystemScannerService {
     this.cache = assigned.map(({ text, ...publicFields }) => publicFields);
     this.lastScanAt = Date.now();
 
+    // 9b. Store scan cache in Redis so market-workers can serve it
+    //     (scanner runs in separate process, market-workers need to read from Redis)
+    this.storeScanCacheToRedis();
+
     // 10. Notify CoinUniverseEngine: mark selected coins for cooldown & scanner badge
     if (this.deps.coinUniverseEngine) {
       this.deps.coinUniverseEngine.markAsSentToQuant(rankedSymbols);
@@ -617,63 +741,50 @@ export class SystemScannerService {
   }
 
   /**
-   * Assign coins to modes using a fixed distribution pattern based on composite score rank.
+   * Assign each coin to exactly ONE mode — the mode where it scores highest.
    *
-   * Pattern (by CoinUniverseEngine composite score, highest first):
-   *   Rank  1-3  → AGGRESSIVE     (3)
-   *   Rank  4-6  → BALANCED       (3)
-   *   Rank  7-9  → CAPITAL_GUARD  (3)
-   *   Rank 10-12 → FLOW           (3)
-   *   Rank 13-14 → AGGRESSIVE     (2)
-   *   Rank 15-16 → BALANCED       (2)
-   *   Rank 17-18 → CAPITAL_GUARD  (2)
-   *   Rank 19-20 → FLOW           (2)
-   *   Rank 21-22 → AGGRESSIVE     (2)
-   *   Rank 23-24 → BALANCED       (2)
-   *   Rank 25-26 → CAPITAL_GUARD  (2)
-   *   Rank 27-28 → FLOW           (2)
+   * Uses greedy assignment with MAX_PER_MODE=7 cap to balance across 4 modes (28 coins total).
+   * Highest-scoring coins get their preferred mode first; overflow spills to second-best mode.
    *
-   * Total: 7 per mode = 28 coins.
-   * Best coins → most aggressive mode (AGGRESSIVE), then BALANCED, CAPITAL_GUARD, FLOW.
+   * This ensures:
+   *   - Each coin appears in only ONE mode (no duplicates across FLOW/AGG/BAL/CG)
+   *   - High-scoring coins get their best mode
+   *   - All 4 modes get coins (balanced distribution)
+   *   - BAL/CG get coins that actually score well in those modes
    */
-  private assignCoinsToModes(results: EnrichedScanResult[], rankedSymbols: string[]): EnrichedScanResult[] {
-    // Fixed distribution: [mode, count] blocks in order
-    const MODE_ORDER: ScoringMode[] = ["AGGRESSIVE", "BALANCED", "CAPITAL_GUARD", "FLOW"];
-    const DISTRIBUTION = [3, 3, 3, 3, 2, 2, 2, 2, 2, 2, 2, 2]; // 12 blocks = 28 total
+  private assignCoinsToBestMode(results: EnrichedScanResult[]): EnrichedScanResult[] {
+    const MAX_PER_MODE = 7;
 
-    // Build symbol → mode assignment map using ranked order
-    const assignedCoins = new Map<string, ScoringMode>();
-    let symbolIdx = 0;
-
-    for (let block = 0; block < DISTRIBUTION.length; block++) {
-      const mode = MODE_ORDER[block % MODE_ORDER.length];
-      const count = DISTRIBUTION[block];
-      for (let i = 0; i < count && symbolIdx < rankedSymbols.length; i++) {
-        assignedCoins.set(rankedSymbols[symbolIdx], mode);
-        symbolIdx++;
-      }
-    }
-
-    // Build final results: for each assigned (symbol, mode) pair,
-    // pick the scan result matching that mode (or best available if mode wasn't scanned)
-    const resultsBySymbol = new Map<string, EnrichedScanResult[]>();
+    // Group results by symbol
+    const bySymbol = new Map<string, EnrichedScanResult[]>();
     for (const r of results) {
-      const arr = resultsBySymbol.get(r.symbol) ?? [];
+      const arr = bySymbol.get(r.symbol) ?? [];
       arr.push(r);
-      resultsBySymbol.set(r.symbol, arr);
+      bySymbol.set(r.symbol, arr);
     }
 
+    // Build preference list: for each coin, modes sorted by score descending
+    const coinPrefs: Array<{ symbol: string; prefs: EnrichedScanResult[] }> = [];
+    for (const [symbol, symbolResults] of bySymbol) {
+      coinPrefs.push({ symbol, prefs: [...symbolResults].sort((a, b) => b.scorePct - a.scorePct) });
+    }
+
+    // Sort coins by best score descending — highest-scoring coins pick first
+    coinPrefs.sort((a, b) => (b.prefs[0]?.scorePct ?? 0) - (a.prefs[0]?.scorePct ?? 0));
+
+    // Greedy assignment
+    const modeCounts: Record<string, number> = {};
     const assigned: EnrichedScanResult[] = [];
-    for (const [symbol, mode] of assignedCoins) {
-      const symbolResults = resultsBySymbol.get(symbol);
-      if (!symbolResults?.length) continue;
 
-      // Prefer the result for the assigned mode; fall back to highest-scoring result
-      const modeResult = symbolResults.find((r) => r.mode === mode);
-      const bestResult = modeResult ?? symbolResults.sort((a, b) => b.scorePct - a.scorePct)[0];
-
-      // Override mode to the assigned mode
-      assigned.push({ ...bestResult, mode });
+    for (const coin of coinPrefs) {
+      for (const pref of coin.prefs) {
+        const count = modeCounts[pref.mode] ?? 0;
+        if (count < MAX_PER_MODE) {
+          assigned.push(pref);
+          modeCounts[pref.mode] = count + 1;
+          break;
+        }
+      }
     }
 
     return assigned;
@@ -746,13 +857,16 @@ export class SystemScannerService {
         const breakdown = modeBreakdown?.[mode];
         const decision = String(breakdown?.decision ?? "NO_TRADE");
 
+        // Derive tradeValidity PER MODE from the mode's own decision (not shared AGGRESSIVE-based text)
+        const modeTradeValidity = decision === "TRADE" ? "VALID" : decision === "WATCH" ? "WEAK" : "NO-TRADE";
+
         results.push({
           symbol,
           mode,
           scorePct,
           decision,
           direction,
-          tradeValidity,
+          tradeValidity: modeTradeValidity,
           entryWindow,
           slippageRisk,
           setup,

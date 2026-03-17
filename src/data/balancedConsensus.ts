@@ -568,24 +568,24 @@ export const computeBalancedConsensus = (
     risk.total;
   const baseScore = roundTo2(clamp(rawTradeScore, 0, 100));
 
-  // ── Sub-score guardrails ──
+  // ── Sub-score guardrails (relaxed — slightly tighter than AGG) ──
   const guardrails = {
-    oppPass: opp.score >= 70,
-    dirPass: dir.score >= 56,
-    execPass: exec.score >= 58,
-    liqPass: liq.score >= 60,
-    structPass: struct.score >= 55,
+    oppPass: opp.score >= 45,
+    dirPass: dir.score >= 35,
+    execPass: exec.score >= 35,
+    liqPass: liq.score >= 38,
+    structPass: struct.score >= 30,
     allPass: false as boolean,
   };
   guardrails.allPass =
     guardrails.oppPass && guardrails.dirPass && guardrails.execPass &&
     guardrails.liqPass && guardrails.structPass;
 
-  if (!guardrails.oppPass) addReason(reasons, `Guardrail: Opp ${opp.score} < 70`, 85);
-  if (!guardrails.dirPass) addReason(reasons, `Guardrail: Dir ${dir.score} < 56`, 80);
-  if (!guardrails.execPass) addReason(reasons, `Guardrail: Exec ${exec.score} < 58`, 75);
-  if (!guardrails.liqPass) addReason(reasons, `Guardrail: Liq ${liq.score} < 60`, 70);
-  if (!guardrails.structPass) addReason(reasons, `Guardrail: Struct ${struct.score} < 55`, 65);
+  if (!guardrails.oppPass) addReason(reasons, `Guardrail: Opp ${opp.score} < 45`, 85);
+  if (!guardrails.dirPass) addReason(reasons, `Guardrail: Dir ${dir.score} < 35`, 80);
+  if (!guardrails.execPass) addReason(reasons, `Guardrail: Exec ${exec.score} < 35`, 75);
+  if (!guardrails.liqPass) addReason(reasons, `Guardrail: Liq ${liq.score} < 38`, 70);
+  if (!guardrails.structPass) addReason(reasons, `Guardrail: Struct ${struct.score} < 30`, 65);
 
   // ── Direction uncertain cap — moderate direction caps score at 82 ──
   let adjustedScore = baseScore;
@@ -617,10 +617,9 @@ export const computeBalancedConsensus = (
   const dataGate: "PASS" | "BLOCK" = dataGateBlocked ? "BLOCK" : "PASS";
   if (dataGateBlocked) addReason(reasons, "Data gate blocked", 10_000);
 
-  // ── Safety Gate ──
+  // ── Safety Gate (relaxed — only blocks on extreme combined risk) ──
   const safetyGateBlocked =
-    (input.stressLevel === "HIGH" && input.cascadeRisk === "HIGH") ||
-    (input.depthQuality === "POOR" && input.spreadRegime === "WIDE" && input.slippageLevel === "HIGH");
+    (input.stressLevel === "HIGH" && input.cascadeRisk === "HIGH" && input.depthQuality === "POOR");
   const safetyGate: "PASS" | "BLOCK" = safetyGateBlocked ? "BLOCK" : "PASS";
   if (safetyGateBlocked) addReason(reasons, "Safety block", 9_000);
 
@@ -649,10 +648,10 @@ export const computeBalancedConsensus = (
   if (safetyGate === "BLOCK") finalScore = Math.min(finalScore, 44);
   if (dataGate === "BLOCK") finalScore = 0;
 
-  // Guardrail cap — sub-score threshold not met → cap below TRADE threshold
-  if (!guardrails.allPass && finalScore >= 64) {
-    finalScore = 63;
-    addReason(reasons, "Guardrail block: sub-score threshold not met", 88);
+  // Guardrail cap — sub-score threshold not met → mild penalty instead of hard block
+  if (!guardrails.allPass && finalScore >= 72) {
+    finalScore = Math.max(finalScore - 8, 64);
+    addReason(reasons, "Guardrail penalty: sub-score threshold not met", 88);
   }
 
   finalScore = roundTo2(clamp(finalScore, 0, 100));

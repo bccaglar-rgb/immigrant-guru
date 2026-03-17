@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { useExchangeTerminalStore } from "../../hooks/useExchangeTerminalStore";
 import { useDomBids, useDomAsks } from "../../hooks/useDomStore";
+import { useLivePriceStore } from "../../hooks/useLivePriceStore";
 
 interface Props {
   maxHeightClass?: string;
@@ -47,10 +48,17 @@ export const OrderbookPanel = ({ maxHeightClass = "max-h-[690px]", fullHeight = 
     return fallbackAsks;
   }, [domAsks, fallbackAsks]);
 
+  // Use real last trade price from live price store (same as chart badge)
+  const livePrice = useLivePriceStore((s) => s.bySymbol[symbol]);
   const hasData = bids.length > 0 || asks.length > 0;
   const asksDisplay = useMemo(() => [...asks].reverse(), [asks]);
   const topAskPrice = typeof asks[0]?.price === "number" ? asks[0].price.toFixed(2) : "-";
-  const markPrice = typeof bids[0]?.price === "number" ? bids[0].price.toFixed(2) : "-";
+  // Show last trade price between ask/bid; fallback to top bid
+  const lastTradeStr = livePrice?.price && livePrice.price > 0
+    ? livePrice.price.toFixed(2)
+    : (typeof bids[0]?.price === "number" ? bids[0].price.toFixed(2) : "-");
+  const lastTradeIsUp = livePrice?.prevPrice != null && livePrice.prevPrice > 0
+    ? livePrice.price >= livePrice.prevPrice : true;
   const fmtCompact = (value: number) => {
     if (!Number.isFinite(value)) return "-";
     if (value >= 1_000_000) return `${(value / 1_000_000).toFixed(2)}M`;
@@ -147,9 +155,9 @@ export const OrderbookPanel = ({ maxHeightClass = "max-h-[690px]", fullHeight = 
             </div>
             ) : null}
             <div className="my-1 shrink-0 rounded border border-white/10 bg-[#111418] px-2 py-0.5">
-              <span className="text-[23px] font-semibold leading-none text-[#f6465d]">{topAskPrice}</span>
-              <span className="ml-1 text-xs text-[#d49f9a]">↓</span>
-              <span className="ml-1 text-xs text-[#6B6F76]">{markPrice}</span>
+              <span className={`text-[23px] font-semibold leading-none ${lastTradeIsUp ? "text-[#2bc48a]" : "text-[#f6465d]"}`}>{lastTradeStr}</span>
+              <span className={`ml-1 text-xs ${lastTradeIsUp ? "text-[#8fc9ab]" : "text-[#d49f9a]"}`}>{lastTradeIsUp ? "↑" : "↓"}</span>
+              <span className="ml-1 text-xs text-[#6B6F76]">{topAskPrice}</span>
             </div>
             {(viewMode === "both" || viewMode === "split") ? (
               <div className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-[#d8decf]">Buy Orders</div>

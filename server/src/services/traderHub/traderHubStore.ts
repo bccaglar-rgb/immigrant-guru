@@ -146,4 +146,77 @@ export class TraderHubStore {
     const result = await pool.query(`DELETE FROM traders WHERE id = $1`, [id]);
     return (result.rowCount ?? 0) > 0;
   }
+
+  // ── New efficient methods for BullMQ scheduler ──
+
+  /** Fetch a single trader by ID. */
+  async getById(id: string): Promise<TraderRecord | null> {
+    const { rows } = await pool.query(`SELECT * FROM traders WHERE id = $1`, [id]);
+    if (!rows[0]) return null;
+    return rowToTrader(rows[0]);
+  }
+
+  /** Count bots for a user (for per-user limits). */
+  async countByUser(userId: string): Promise<number> {
+    const { rows } = await pool.query(
+      `SELECT COUNT(*)::int AS cnt FROM traders WHERE user_id = $1`,
+      [userId],
+    );
+    return rows[0]?.cnt ?? 0;
+  }
+
+  /**
+   * Fetch RUNNING traders whose next_run_at is due.
+   * Uses the idx_traders_due partial index for O(log n) lookup.
+   */
+  async listDue(limit: number): Promise<TraderRecord[]> {
+    const { rows } = await pool.query(
+      `SELECT * FROM traders
+       WHERE status = 'RUNNING' AND next_run_at <= NOW()
+       ORDER BY next_run_at ASC
+       LIMIT $1`,
+      [limit],
+    );
+    return rows.map(rowToTrader);
+  }
+
+  /** Lightweight schedule update — avoids full upsert. */
+  async patchSchedule(id: string, nextRunAt: string): Promise<void> {
+    await pool.query(
+      `UPDATE traders SET next_run_at = $1, updated_at = NOW() WHERE id = $2`,
+      [nextRunAt, id],
+    );
+  }
+
+  /** Atomic result update after a bot run — avoids read-modify-write race. */
+  async patchRunResult(
+    id: string,
+    patch: {
+      lastRunAt: string;
+      lastError: string;
+      failStreak: number;
+      status: string;
+      stats: Record<string, unknown>;
+      lastResult: Record<string, unknown> | null;
+      nextRunAt: string;
+    },
+  ): Promise<void> {
+    await pool.query(
+      `UPDATE traders SET
+         last_run_at = $1, last_error = $2, fail_streak = $3,
+         status = $4, stats = $5, last_result = $6,
+         next_run_at = $7, updated_at = NOW()
+       WHERE id = $8`,
+      [
+        patch.lastRunAt,
+        patch.lastError,
+        patch.failStreak,
+        patch.status,
+        JSON.stringify(patch.stats),
+        patch.lastResult ? JSON.stringify(patch.lastResult) : null,
+        patch.nextRunAt,
+        id,
+      ],
+    );
+  }
 }

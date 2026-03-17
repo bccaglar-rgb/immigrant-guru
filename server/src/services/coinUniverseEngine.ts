@@ -118,7 +118,7 @@ const KLINES_BARS = 100;                      // 100 candles
 const KLINES_INTERVAL = "15m";               // 15-minute candles
 const KLINES_CONCURRENT = 10;                // Max concurrent klines fetches
 const TIER2_TOP_N = 60;                      // Compute Tier 2 for top 60 coins
-const COOLDOWN_ROUNDS = 3;                   // Minimum 3 cycles cooldown
+const COOLDOWN_ROUNDS = 2;                   // Minimum 2 cycles cooldown
 const SELECTED_TOP_28 = 28;                  // Output: top 28 active coins for Quant Engine
 const MIN_VOLUME_USD = 3_000_000;            // Minimum $3M daily volume to enter universe
 
@@ -944,7 +944,7 @@ export class CoinUniverseEngine {
 
     if (!needFetch.length) return;
 
-    // Fetch with concurrency limit
+    // Fetch with concurrency limit; yield between chunks to keep event loop responsive
     for (let i = 0; i < needFetch.length; i += KLINES_CONCURRENT) {
       const chunk = needFetch.slice(i, i + KLINES_CONCURRENT);
       const results = await Promise.allSettled(
@@ -959,6 +959,8 @@ export class CoinUniverseEngine {
           });
         }
       }
+      // Yield to event loop between klines fetch chunks
+      await new Promise<void>((r) => setImmediate(r));
     }
   }
 
