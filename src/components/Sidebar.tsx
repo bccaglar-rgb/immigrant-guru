@@ -32,12 +32,14 @@ const CreatorIcon = () => <Icon><circle cx="7" cy="7" r="3" /><circle cx="17" cy
 const ToolsIcon = () => <Icon><path d="M4 7h16" /><path d="M4 12h16" /><path d="M4 17h10" /><circle cx="18" cy="17" r="2" /></Icon>;
 const UniverseIcon = () => <Icon><circle cx="12" cy="12" r="9" /><ellipse cx="12" cy="12" rx="9" ry="4" /><path d="M12 3v18" /></Icon>;
 const PricingIcon = () => <Icon><rect x="3" y="5" width="18" height="14" rx="2" /><path d="M7 11h10" /><path d="M7 15h6" /></Icon>;
+const AiTradeIdeasIcon = () => <Icon><rect x="4" y="6" width="16" height="12" rx="3" /><path d="M9 10h6" /><path d="M9 14h3" /><path d="M12 4v2" /><path d="M8 4.8 9 6.6" /><path d="m16 4.8-1 1.8" /></Icon>;
 const SettingsIcon = () => <Icon><path d="M12 3l2.2 1.1 2.4-.3.9 2.2 1.9 1.5-.9 2.2.4 2.3-1.9 1.5-.9 2.2-2.4-.3L12 21l-2.2-1.1-2.4.3-.9-2.2-1.9-1.5.9-2.2-.4-2.3 1.9-1.5.9-2.2 2.4.3z" /><circle cx="12" cy="12" r="2.2" /></Icon>;
 const AdminIcon = () => <Icon><path d="M12 3l3 2 4-1 1 4 3 3-3 3-1 4-4-1-3 2-3-2-4 1-1-4-3-3 3-3 1-4 4 1z" /><circle cx="12" cy="12" r="2.5" /></Icon>;
 
 const menuItems = [
   { label: "Bitrium Quant Engine", to: "/quant-engine", accent: "var(--menu-accent-1)", icon: () => <DashboardIcon /> },
   { label: "Quant Trade Ideas", to: "/quant-trade-ideas", accent: "var(--menu-accent-2)", icon: () => <TradeIcon /> },
+  { label: "AI Trade Ideas", to: "/ai-trade-ideas", accent: "var(--menu-accent-9)", icon: () => <AiTradeIdeasIcon /> },
   { label: "Exchanges", to: "/exchanges", accent: "var(--menu-accent-3)", icon: () => <ExchangeIcon /> },
   { label: "Crypto Market", to: "/crypto-market", accent: "var(--menu-accent-4)", icon: () => <MarketIcon /> },
   { label: "Coin Universe", to: "/coin-universe", accent: "var(--menu-accent-8)", icon: () => <UniverseIcon /> },
