@@ -2029,7 +2029,7 @@ export const registerAiTradeIdeasRoutes = (
         const failed = activatedIdeas.filter((i) => i.result === "FAIL").length;
         const resolved = success + failed;
 
-        const scanCount = (scanState.scansByModule[moduleId] ?? []).length;
+        const scanCount = (scanState.scansByModule[moduleId] ?? []).filter((r) => r.ok).length;
 
         statsByModule[moduleId] = {
           totalScan: scanCount,

@@ -468,7 +468,8 @@ export default function TradeIdeasPage() {
   const aiFilteredRows = useMemo(() => {
     const q = search.trim().toLowerCase();
     const selected = effectiveAiModules;
-    const rows = selected.flatMap((moduleId) => aiScansByModule[moduleId] ?? []);
+    const rows = selected.flatMap((moduleId) => aiScansByModule[moduleId] ?? [])
+      .filter((row) => row.ok !== false); // Hide provider error rows (HTTP_402 etc.)
     const recentRows = rows
       .slice()
       .sort((a, b) => new Date(b.scannedAt).getTime() - new Date(a.scannedAt).getTime())
