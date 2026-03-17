@@ -962,6 +962,20 @@ export class SystemScannerService {
         continue;
       }
 
+      // RR filter: skip ideas with Risk/Reward < 1.5 on the primary TP/SL pair
+      const entryMid = (result.entryLow + result.entryHigh) / 2;
+      const sl1 = result.slLevels[0];
+      const tp1 = result.tpLevels[0];
+      if (sl1 && tp1 && Number.isFinite(entryMid) && Number.isFinite(sl1) && Number.isFinite(tp1)) {
+        const risk = Math.abs(entryMid - sl1);
+        const reward = Math.abs(tp1 - entryMid);
+        const rr = risk > 0 ? reward / risk : 0;
+        if (rr < 1.5) {
+          console.log(`[SystemScanner] SKIP ${result.symbol} ${result.mode}: RR ${rr.toFixed(2)} < 1.5`);
+          continue;
+        }
+      }
+
       // Skip if already has an open idea for this symbol+mode
       const openModes = this.openIdeasBySymbol.get(result.symbol);
       if (openModes?.has(result.mode)) {

@@ -4121,30 +4121,46 @@ export const registerMarketRoutes = (
         .filter((l) => (l.type === "resistance" || l.price > close) && l.price > 0 && l.price > close)
         .sort((a, b) => a.price - b.price); // closest first
 
-      let sl1: number, sl2: number, tp1: number, tp2: number, entryLow: number, entryHigh: number;
-      const buffer = atrValue * 0.15; // small buffer beyond S/R levels
+      // ── Symmetric entry zone: ±ATR*0.15 around close ──
+      let entryLow = close - atrValue * 0.15;
+      let entryHigh = close + atrValue * 0.15;
+      if (entryLow > entryHigh) [entryLow, entryHigh] = [entryHigh, entryLow];
+      const entryWidth = entryHigh - entryLow;
+
+      // ── SL buffer: max(ATR*0.25, entry zone width) for adequate breathing room ──
+      const buffer = Math.max(atrValue * 0.25, entryWidth);
+
+      let sl1: number, sl2: number, tp1: number, tp2: number;
 
       if (direction === "LONG") {
+        // SL below nearest supports; fallback keeps 1:2 RR consistency
         sl1 = supports.length >= 1 ? supports[0].price - buffer : close - atrValue * 1.0;
-        sl2 = supports.length >= 2 ? supports[1].price - buffer : close - atrValue * 1.5;
-        tp1 = resistances.length >= 1 ? resistances[0].price : close + atrValue * 1.5;
-        tp2 = resistances.length >= 2 ? resistances[1].price : close + atrValue * 2.5;
-        entryLow = close - atrValue * 0.2;
-        entryHigh = close + atrValue * 0.1;
+        sl2 = supports.length >= 2 ? supports[1].price - buffer : close - atrValue * 2.0;
+
+        // Hybrid TP: max(structure level, RR target) → ensures minimum 1:2 RR
+        const risk1 = close - sl1;
+        const risk2 = close - sl2;
+        const rrTp1 = close + risk1 * 2;
+        const rrTp2 = close + risk2 * 2.5;
+        tp1 = resistances.length >= 1 ? Math.max(resistances[0].price, rrTp1) : rrTp1;
+        tp2 = resistances.length >= 2 ? Math.max(resistances[1].price, rrTp2) : rrTp2;
       } else {
+        // SHORT
         sl1 = resistances.length >= 1 ? resistances[0].price + buffer : close + atrValue * 1.0;
-        sl2 = resistances.length >= 2 ? resistances[1].price + buffer : close + atrValue * 1.5;
-        tp1 = supports.length >= 1 ? supports[0].price : close - atrValue * 1.5;
-        tp2 = supports.length >= 2 ? supports[1].price : close - atrValue * 2.5;
-        entryLow = close + atrValue * 0.2;
-        entryHigh = close - atrValue * 0.1;
+        sl2 = resistances.length >= 2 ? resistances[1].price + buffer : close + atrValue * 2.0;
+
+        const risk1 = sl1 - close;
+        const risk2 = sl2 - close;
+        const rrTp1 = close - risk1 * 2;
+        const rrTp2 = close - risk2 * 2.5;
+        tp1 = supports.length >= 1 ? Math.min(supports[0].price, rrTp1) : rrTp1;
+        tp2 = supports.length >= 2 ? Math.min(supports[1].price, rrTp2) : rrTp2;
       }
 
-      // Ensure correct ordering
-      if (entryLow > entryHigh) [entryLow, entryHigh] = [entryHigh, entryLow];
+      // Ensure correct ordering (sl1 closest to price, tp1 closest to price)
       if (direction === "LONG") {
-        if (sl2 > sl1) [sl1, sl2] = [sl2, sl1]; // sl1 closer to price
-        if (tp2 < tp1) [tp1, tp2] = [tp2, tp1]; // tp1 closer to price
+        if (sl2 > sl1) [sl1, sl2] = [sl2, sl1];
+        if (tp2 < tp1) [tp1, tp2] = [tp2, tp1];
       } else {
         if (sl2 < sl1) [sl1, sl2] = [sl2, sl1];
         if (tp2 > tp1) [tp1, tp2] = [tp2, tp1];
