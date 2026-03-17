@@ -70,29 +70,23 @@ jobs:
               ln -sf /etc/nginx/sites-available/bitrium /etc/nginx/sites-enabled/bitrium
 
               if nginx -t 2>&1; then
-                systemctl reload nginx
-                echo "✓ Nginx config updated and reloaded"
+                # Full restart to kill stale workers from previous broken reloads
+                systemctl restart nginx
+                echo "✓ Nginx config updated and restarted"
               else
                 echo "✗ Nginx test failed — restoring backup"
                 cp /etc/nginx/sites-available/bitrium.bak /etc/nginx/sites-available/bitrium 2>/dev/null || true
-                nginx -t 2>&1 && systemctl reload nginx 2>/dev/null || echo "Backup also invalid — nginx unchanged"
+                nginx -t 2>&1 && systemctl restart nginx 2>/dev/null || echo "Backup also invalid — nginx unchanged"
               fi
             fi
 
-            # Diagnose: nginx process state
-            echo "=== Nginx processes ==="
-            ps aux | grep nginx | grep -v grep
-            echo "=== What listens on 443 ==="
-            ss -tlnp | grep 443 || netstat -tlnp | grep 443 2>/dev/null || echo "(ss/netstat unavailable)"
-            echo "=== Systemctl status ==="
-            systemctl status nginx --no-pager | head -15
-            echo "=== File size on disk ==="
-            ls -la /var/www/bitrium/dist/index.html
+            # Verify nginx state
+            echo "=== Nginx workers ==="
+            ps aux | grep "nginx: worker" | grep -v grep
+            echo "=== File on disk ==="
             wc -c /var/www/bitrium/dist/index.html
             echo "=== Curl localhost:443 ==="
-            curl -skI "https://127.0.0.1/" -H "Host: bitrium.com" 2>/dev/null | head -10
-            echo "=== nginx -T full server block (first 80 lines) ==="
-            nginx -T 2>/dev/null | head -80
+            curl -skI "https://127.0.0.1/" -H "Host: bitrium.com" 2>/dev/null | grep -E "(content-length|x-deploy)"
 
             # Zero-downtime reload: PM2 restarts workers one by one
             pm2 reload ecosystem.config.cjs || pm2 start ecosystem.config.cjs
