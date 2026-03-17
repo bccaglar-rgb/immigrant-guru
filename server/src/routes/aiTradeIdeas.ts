@@ -2,6 +2,9 @@ import express, { type Express } from "express";
 import type { AiProviderStore, AiProviderRecord } from "../services/aiProviderStore.ts";
 import type { BinanceFuturesHub, BinanceFuturesUniverseRow } from "../services/binanceFuturesHub.ts";
 import type { CoinUniverseEngine } from "../services/coinUniverseEngine.ts";
+import { redis } from "../db/redis.ts";
+
+const AI_STATE_REDIS_KEY = "bitrium:ai-trade-ideas:state";
 
 const maskKey = (key?: string) => {
   const raw = String(key ?? "").trim();
@@ -98,7 +101,7 @@ const resolveProviderEndpoint = (provider: AiProviderRecord): string => {
 };
 
 const AI_SCAN_INTERVAL_MS = 60_000;
-const AI_SCAN_BATCH_SIZE = 2;
+const AI_SCAN_COINS_PER_MODULE = 2;
 const AI_SCAN_ROW_LIMIT = 80;
 const AI_MIN_CONSENSUS = 60;
 const AI_MODE_BUFFER: Record<string, number> = {
@@ -1451,6 +1454,52 @@ const callProvider = async (
   }
 };
 
+/** Publish AI state to Redis so all cluster workers can serve it */
+const publishAiStateToRedis = async () => {
+  try {
+    const payload = JSON.stringify({
+      updatedAt: sharedAiState.updatedAt,
+      universeCount: sharedAiState.universeCount,
+      inFlight: sharedAiState.inFlight,
+      moduleStatus: sharedAiState.moduleStatus,
+      scansByModule: sharedAiState.scansByModule,
+      lastProviderDebug: sharedAiState.lastProviderDebug,
+      ts: Date.now(),
+    });
+    await redis.set(AI_STATE_REDIS_KEY, payload, "EX", 300); // 5 min TTL
+  } catch {
+    // Non-critical — secondary workers just show stale state
+  }
+};
+
+/** Read AI state from Redis (for non-primary workers) */
+const readAiStateFromRedis = async (): Promise<SharedAiState | null> => {
+  try {
+    const raw = await redis.get(AI_STATE_REDIS_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as {
+      updatedAt: string;
+      universeCount: number;
+      inFlight: boolean;
+      moduleStatus: Record<AiModuleId, AiModuleStatus>;
+      scansByModule: Record<AiModuleId, AiScanRow[]>;
+      lastProviderDebug: Record<AiModuleId, AiProviderDebug | null>;
+    };
+    return {
+      started: true,
+      inFlight: parsed.inFlight,
+      updatedAt: parsed.updatedAt,
+      universeCount: parsed.universeCount,
+      cursor: { CHATGPT: 0, QWEN: 0, QWEN2: 0 },
+      moduleStatus: parsed.moduleStatus,
+      scansByModule: parsed.scansByModule,
+      lastProviderDebug: parsed.lastProviderDebug,
+    };
+  } catch {
+    return null;
+  }
+};
+
 export const registerAiTradeIdeasRoutes = (
   app: Express,
   store: AiProviderStore,
@@ -1458,6 +1507,7 @@ export const registerAiTradeIdeasRoutes = (
     binanceFuturesHub: BinanceFuturesHub;
     coinUniverseEngine?: CoinUniverseEngine;
     serverPort?: number;
+    isPrimary?: boolean;
   },
 ) => {
   const runSharedScan = async () => {
@@ -1467,20 +1517,22 @@ export const registerAiTradeIdeasRoutes = (
     const port = deps.serverPort ?? 8090;
     try {
       const providers = (await store.getAll()).filter((row) => row.enabled);
+      const enabledModuleIds = ALL_MODULE_IDS.filter((id) => providers.some((p) => p.id === id));
+      const totalCoinsNeeded = enabledModuleIds.length * AI_SCAN_COINS_PER_MODULE;
 
-      // ── Coin selection: top 2 from CoinUniverseEngine composite score ──
-      let topSymbols: string[] = [];
+      // ── Coin selection: top N from CoinUniverseEngine (unique per module) ──
+      let rankedSymbols: string[] = [];
       if (deps.coinUniverseEngine) {
-        topSymbols = deps.coinUniverseEngine.getActiveSymbolsRanked().slice(0, AI_SCAN_BATCH_SIZE);
+        rankedSymbols = deps.coinUniverseEngine.getActiveSymbolsRanked().slice(0, totalCoinsNeeded);
       }
       // Fallback: volume-sorted universe rows
-      if (!topSymbols.length) {
+      if (!rankedSymbols.length) {
         const liveRows = deps.binanceFuturesHub
           .getUniverseRows()
           .filter((row) => Number.isFinite(Number(row.price)) && Number(row.price) > 0)
           .sort((a, b) => Number(b.volume24hUsd ?? 0) - Number(a.volume24hUsd ?? 0));
-        topSymbols = liveRows
-          .slice(0, AI_SCAN_BATCH_SIZE)
+        rankedSymbols = liveRows
+          .slice(0, totalCoinsNeeded)
           .map((row) => String(row.symbol ?? "").toUpperCase())
           .filter(Boolean);
       }
@@ -1489,9 +1541,8 @@ export const registerAiTradeIdeasRoutes = (
       const rowBySymbol = new Map(liveRows.map((row) => [String(row.symbol ?? "").toUpperCase(), row]));
       sharedAiState.universeCount = liveRows.length;
 
-      if (!topSymbols.length) {
-        const moduleIds = ALL_MODULE_IDS;
-        for (const moduleId of moduleIds) {
+      if (!rankedSymbols.length) {
+        for (const moduleId of ALL_MODULE_IDS) {
           sharedAiState.moduleStatus[moduleId] = {
             ...sharedAiState.moduleStatus[moduleId],
             running: false,
@@ -1503,11 +1554,21 @@ export const registerAiTradeIdeasRoutes = (
           };
         }
         sharedAiState.updatedAt = nowIso;
+        await publishAiStateToRedis();
         return;
       }
 
-      const moduleIds = ALL_MODULE_IDS;
-      for (const moduleId of moduleIds) {
+      // ── Distribute unique coins to each module ──
+      // ChatGPT → rank 0,1  |  QWEN → rank 2,3  |  QWEN2 → rank 4,5
+      const symbolsByModule: Record<AiModuleId, string[]> = { CHATGPT: [], QWEN: [], QWEN2: [] };
+      for (let i = 0; i < enabledModuleIds.length; i++) {
+        const moduleId = enabledModuleIds[i];
+        const start = i * AI_SCAN_COINS_PER_MODULE;
+        const end = start + AI_SCAN_COINS_PER_MODULE;
+        symbolsByModule[moduleId] = rankedSymbols.slice(start, end);
+      }
+
+      for (const moduleId of ALL_MODULE_IDS) {
         const provider = providers.find((row) => row.id === moduleId);
         const status = sharedAiState.moduleStatus[moduleId];
         status.running = true;
@@ -1520,11 +1581,20 @@ export const registerAiTradeIdeasRoutes = (
           status.updatedAt = nowIso;
           continue;
         }
+        const moduleSymbols = symbolsByModule[moduleId];
+        if (!moduleSymbols.length) {
+          status.running = false;
+          status.error = "no_coins_assigned";
+          status.errorDetail = "Not enough ranked coins for this module";
+          status.lastRunAt = nowIso;
+          status.updatedAt = nowIso;
+          continue;
+        }
         const rows: AiScanRow[] = [];
         let firstError = "";
         let firstErrorDetail = "";
 
-        for (const symbol of topSymbols) {
+        for (const symbol of moduleSymbols) {
           // ── Fetch full quant engine snapshot via internal API ──
           const marketData = await fetchMarketSnapshot(symbol, port);
           const universeRow = rowBySymbol.get(symbol);
@@ -1570,7 +1640,6 @@ export const registerAiTradeIdeasRoutes = (
           rows.push(toScanRow(moduleId, symbol, response, compactFallback));
         }
 
-        // No cursor rotation needed — always scan top 2 from engine
         sharedAiState.scansByModule[moduleId] = [...rows, ...(sharedAiState.scansByModule[moduleId] ?? [])]
           .slice(0, AI_SCAN_ROW_LIMIT)
           .sort((a, b) => {
@@ -1579,15 +1648,15 @@ export const registerAiTradeIdeasRoutes = (
         status.running = false;
         status.lastRunAt = nowIso;
         status.updatedAt = nowIso;
-        status.scanned = topSymbols.length;
+        status.scanned = moduleSymbols.length;
         status.error = firstError;
         status.errorDetail = firstErrorDetail;
       }
       sharedAiState.updatedAt = nowIso;
+      await publishAiStateToRedis();
     } catch (error) {
       const message = error instanceof Error ? error.message : "scan_failed";
-      const moduleIds = ALL_MODULE_IDS;
-      for (const moduleId of moduleIds) {
+      for (const moduleId of ALL_MODULE_IDS) {
         sharedAiState.moduleStatus[moduleId] = {
           ...sharedAiState.moduleStatus[moduleId],
           running: false,
@@ -1610,7 +1679,11 @@ export const registerAiTradeIdeasRoutes = (
     }, AI_SCAN_INTERVAL_MS);
   };
 
-  ensureScannerStarted();
+  // Only primary worker runs the AI scan loop (it has BinanceFuturesHub WS data).
+  // Non-primary workers read scan state from Redis via the state endpoint.
+  if (deps.isPrimary !== false) {
+    ensureScannerStarted();
+  }
 
   app.get("/api/admin/ai-providers/config", async (_req, res) => {
     try {
@@ -1703,11 +1776,16 @@ export const registerAiTradeIdeasRoutes = (
 
   app.get("/api/ai-trade-ideas/state", async (_req, res) => {
     try {
-      // Self-heal: if timer missed a beat or process resumed after sleep,
-      // kick a scan so UI does not stay empty.
-      if (!sharedAiState.inFlight && !hasRecentAiScan()) {
+      // Primary worker: self-heal if timer missed a beat
+      if (deps.isPrimary !== false && !sharedAiState.inFlight && !hasRecentAiScan()) {
         void runSharedScan();
       }
+
+      // Non-primary workers: read state from Redis (primary publishes after each scan)
+      const state = (deps.isPrimary === false && !sharedAiState.updatedAt)
+        ? (await readAiStateFromRedis()) ?? sharedAiState
+        : sharedAiState;
+
       const providers = await store.getAll();
       const enabled = providers.filter((row) => row.enabled).map((row) => row.id);
       const moduleIds = ALL_MODULE_IDS;
@@ -1715,16 +1793,16 @@ export const registerAiTradeIdeasRoutes = (
         ok: true,
         ts: new Date().toISOString(),
         intervalSec: Math.round(AI_SCAN_INTERVAL_MS / 1000),
-        inFlight: sharedAiState.inFlight,
-        updatedAt: sharedAiState.updatedAt,
-        universeCount: sharedAiState.universeCount,
+        inFlight: state.inFlight,
+        updatedAt: state.updatedAt,
+        universeCount: state.universeCount,
         modules: moduleIds.map((id) => ({
           id,
           enabled: enabled.includes(id),
-          ...sharedAiState.moduleStatus[id],
-          debug: sharedAiState.lastProviderDebug[id],
+          ...state.moduleStatus[id],
+          debug: state.lastProviderDebug[id],
         })),
-        scansByModule: sharedAiState.scansByModule,
+        scansByModule: state.scansByModule,
       });
     } catch (error) {
       return res.status(500).json({
