@@ -4,6 +4,7 @@ import { getAuthToken } from "../services/authClient";
 import { createInvoice } from "../services/paymentsApi";
 
 const MEMBERSHIP_EXPIRES_KEY = "membership.expiresAt";
+const MEMBERSHIP_PLAN_KEY = "membership.planId";
 
 type BillingPeriod = "1m" | "3m" | "6m" | "12m";
 
@@ -128,29 +129,59 @@ const BILLING_OPTIONS: { key: BillingPeriod; label: string }[] = [
   { key: "12m", label: "12 Months" },
 ];
 
-const tierBorder = (highlight?: boolean) =>
-  highlight
-    ? "border-[#F5C542]/50 shadow-[0_0_24px_rgba(245,197,66,0.08)]"
-    : "border-white/10";
+const PERIOD_LABELS: Record<BillingPeriod, string> = {
+  "1m": "1 Month",
+  "3m": "3 Months",
+  "6m": "6 Months",
+  "12m": "12 Months",
+};
+
+const tierBorder = (highlight?: boolean, isCurrentTier?: boolean) => {
+  if (isCurrentTier) return "border-[#4caf50]/50 shadow-[0_0_24px_rgba(76,175,80,0.08)]";
+  if (highlight) return "border-[#F5C542]/50 shadow-[0_0_24px_rgba(245,197,66,0.08)]";
+  return "border-white/10";
+};
+
+/** Parse "explorer-3m" → { prefix: "explorer", period: "3m" } */
+const parsePlanId = (planId: string | null): { prefix: string; period: BillingPeriod } | null => {
+  if (!planId) return null;
+  const match = planId.match(/^(.+)-(1m|3m|6m|12m)$/);
+  if (!match) return null;
+  return { prefix: match[1], period: match[2] as BillingPeriod };
+};
 
 export default function PricingPage() {
   const nav = useNavigate();
-  const [selectedPeriods, setSelectedPeriods] = useState<Record<string, BillingPeriod>>({});
   const [err, setErr] = useState("");
   const [busyTier, setBusyTier] = useState("");
 
+  // ── Current membership ──
   const expiryRaw = typeof window !== "undefined" ? window.localStorage.getItem(MEMBERSHIP_EXPIRES_KEY) : null;
   const expiryDate = expiryRaw ? new Date(expiryRaw) : null;
   const hasMembership = Boolean(expiryDate && !Number.isNaN(expiryDate.getTime()) && expiryDate.getTime() > Date.now());
   const daysRemaining = hasMembership && expiryDate ? Math.max(0, Math.ceil((expiryDate.getTime() - Date.now()) / (24 * 60 * 60 * 1000))) : 0;
   const expiryLabel = expiryDate ? expiryDate.toLocaleDateString("en-US") : "";
 
-  const selectPeriod = (tierName: string, period: BillingPeriod) => {
-    setSelectedPeriods((prev) => ({ ...prev, [tierName]: period }));
+  // ── Current plan ──
+  const currentPlanRaw = typeof window !== "undefined" ? window.localStorage.getItem(MEMBERSHIP_PLAN_KEY) : null;
+  const currentPlan = hasMembership ? parsePlanId(currentPlanRaw) : null;
+  const currentTierPrefix = currentPlan?.prefix ?? null;
+  const currentPeriod = currentPlan?.period ?? null;
+
+  // ── Single selection state: only one tier+period at a time ──
+  const [selection, setSelection] = useState<{ tierName: string; period: BillingPeriod } | null>(null);
+
+  const selectPlan = (tierName: string, period: BillingPeriod) => {
+    // Toggle off if same selection
+    if (selection?.tierName === tierName && selection?.period === period) {
+      setSelection(null);
+    } else {
+      setSelection({ tierName, period });
+    }
   };
 
   const handleSubscribe = async (tier: Tier) => {
-    const period = selectedPeriods[tier.name];
+    const period = selection?.tierName === tier.name ? selection.period : null;
     if (!period) return;
 
     if (!getAuthToken()) {
@@ -160,6 +191,8 @@ export default function PricingPage() {
     try {
       setBusyTier(tier.name);
       const planId = `${tier.planIdPrefix}-${period}`;
+      // Persist selected plan so pricing page shows it on return
+      window.localStorage.setItem(MEMBERSHIP_PLAN_KEY, planId);
       const res = await createInvoice(planId);
       nav(`/checkout/${res.invoice.id}`);
     } catch (error: any) {
@@ -180,6 +213,13 @@ export default function PricingPage() {
           {hasMembership ? (
             <div className="mx-auto mt-4 max-w-xl rounded-lg border border-white/10 bg-[#0F1012] p-4">
               <p className="text-lg font-semibold text-[#F5C542]">You are a Premium Member</p>
+              {currentPlan ? (
+                <p className="mt-1.5 text-sm text-[#9ba3b4]">
+                  Current plan: <span className="font-semibold text-white">{TIERS.find((t) => t.planIdPrefix === currentPlan.prefix)?.name ?? currentPlan.prefix}</span>
+                  {" · "}
+                  <span className="text-[#6B6F76]">{PERIOD_LABELS[currentPlan.period]}</span>
+                </p>
+              ) : null}
               <p className="mt-1.5 text-sm text-[#9ba3b4]">Your subscription expires on: <span className="text-white">{expiryLabel}</span></p>
               <p className="mt-1 text-sm text-[#6B6F76]">({daysRemaining} days remaining)</p>
             </div>
@@ -189,14 +229,23 @@ export default function PricingPage() {
         {/* Tier cards */}
         <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
           {TIERS.map((tier) => {
-            const activePeriod = selectedPeriods[tier.name] as BillingPeriod | undefined;
+            const isCurrentTier = currentTierPrefix === tier.planIdPrefix;
+            const tierSelected = selection?.tierName === tier.name;
+            const activePeriod = tierSelected ? selection.period : undefined;
+
             return (
               <article
                 key={tier.name}
-                className={`relative flex flex-col rounded-xl border bg-[#121316] p-5 ${tierBorder(tier.highlight)}`}
+                className={`relative flex flex-col rounded-xl border bg-[#121316] p-5 ${tierBorder(tier.highlight, isCurrentTier)}`}
               >
+                {/* Badges */}
+                {isCurrentTier ? (
+                  <span className="absolute left-3 top-0 -translate-y-1/2 rounded-md bg-[#4caf50] px-2.5 py-0.5 text-[10px] font-bold uppercase text-white">
+                    Your Plan
+                  </span>
+                ) : null}
                 {tier.badge ? (
-                  <span className="absolute right-3 top-0 -translate-y-1/2 rounded-md bg-[#F5C542] px-2.5 py-0.5 text-[10px] font-bold uppercase text-black">
+                  <span className={`absolute ${isCurrentTier ? "right-3" : "right-3"} top-0 -translate-y-1/2 rounded-md bg-[#F5C542] px-2.5 py-0.5 text-[10px] font-bold uppercase text-black`}>
                     {tier.badge}
                   </span>
                 ) : null}
@@ -224,32 +273,42 @@ export default function PricingPage() {
                   {BILLING_OPTIONS.map(({ key, label }) => {
                     const p = tier.pricing[key];
                     const isSelected = activePeriod === key;
+                    const isCurrentPlan = isCurrentTier && currentPeriod === key;
                     const isMonthly = key === "1m";
                     return (
                       <button
                         key={key}
                         type="button"
-                        onClick={() => selectPeriod(tier.name, key)}
+                        onClick={() => selectPlan(tier.name, key)}
                         className={`flex w-full items-center justify-between rounded-lg border px-3 py-2.5 text-left text-sm transition ${
-                          isSelected
-                            ? "border-[#F5C542]/70 bg-[#2b2417] text-white"
-                            : "border-white/10 bg-[#0F1012] text-[#BFC2C7] hover:border-white/20 hover:bg-[#17191d]"
+                          isCurrentPlan
+                            ? "border-[#4caf50]/50 bg-[#162016] text-white"
+                            : isSelected
+                              ? "border-[#F5C542]/70 bg-[#2b2417] text-white"
+                              : "border-white/10 bg-[#0F1012] text-[#BFC2C7] hover:border-white/20 hover:bg-[#17191d]"
                         }`}
                       >
                         <div className="flex items-center gap-2">
                           <span className={`flex h-4 w-4 items-center justify-center rounded-full border ${
-                            isSelected ? "border-[#F5C542] bg-[#F5C542]" : "border-white/30"
+                            isCurrentPlan
+                              ? "border-[#4caf50] bg-[#4caf50]"
+                              : isSelected
+                                ? "border-[#F5C542] bg-[#F5C542]"
+                                : "border-white/30"
                           }`}>
-                            {isSelected ? <span className="h-1.5 w-1.5 rounded-full bg-black" /> : null}
+                            {isCurrentPlan || isSelected ? <span className={`h-1.5 w-1.5 rounded-full ${isCurrentPlan ? "bg-white" : "bg-black"}`} /> : null}
                           </span>
                           <span className="font-medium">{label}</span>
+                          {isCurrentPlan ? (
+                            <span className="rounded bg-[#4caf50]/20 px-1.5 py-0.5 text-[10px] font-semibold text-[#4caf50]">Active</span>
+                          ) : null}
                         </div>
                         <div className="text-right">
                           {isMonthly ? (
-                            <span className={`font-bold ${isSelected ? "text-[#F5C542]" : "text-white"}`}>${p.total}</span>
+                            <span className={`font-bold ${isCurrentPlan ? "text-[#4caf50]" : isSelected ? "text-[#F5C542]" : "text-white"}`}>${p.total}</span>
                           ) : (
                             <div className="flex items-baseline gap-1.5">
-                              <span className={`font-bold ${isSelected ? "text-[#F5C542]" : "text-white"}`}>${p.total}</span>
+                              <span className={`font-bold ${isCurrentPlan ? "text-[#4caf50]" : isSelected ? "text-[#F5C542]" : "text-white"}`}>${p.total}</span>
                               <span className="text-[11px] text-[#6B6F76]">(${p.monthly}/mo)</span>
                             </div>
                           )}
@@ -263,9 +322,9 @@ export default function PricingPage() {
                 <button
                   type="button"
                   onClick={() => void handleSubscribe(tier)}
-                  disabled={!activePeriod || busyTier === tier.name}
+                  disabled={!tierSelected || busyTier === tier.name}
                   className={`mt-4 w-full rounded-lg px-4 py-2.5 text-sm font-semibold transition ${
-                    !activePeriod
+                    !tierSelected
                       ? "cursor-not-allowed border border-white/10 bg-[#17191d] text-[#6B6F76]"
                       : tier.highlight
                         ? "bg-[#F5C542] text-black hover:bg-[#e5b632]"
@@ -274,10 +333,12 @@ export default function PricingPage() {
                 >
                   {busyTier === tier.name
                     ? "Creating invoice..."
-                    : !activePeriod
+                    : !tierSelected
                       ? "Select a plan"
                       : hasMembership
-                        ? "Extend Subscription"
+                        ? isCurrentTier
+                          ? "Extend Subscription"
+                          : "Upgrade Subscription"
                         : "Subscribe Now"}
                 </button>
               </article>

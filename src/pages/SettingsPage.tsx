@@ -142,6 +142,9 @@ const readMembershipExpiry = (): Date => {
   const fallback = new Date();
   fallback.setMonth(fallback.getMonth() + 6);
   window.localStorage.setItem(MEMBERSHIP_EXPIRES_KEY, fallback.toISOString());
+  if (!window.localStorage.getItem("membership.planId")) {
+    window.localStorage.setItem("membership.planId", "explorer-6m");
+  }
   return fallback;
 };
 
