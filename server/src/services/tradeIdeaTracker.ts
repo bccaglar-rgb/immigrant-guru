@@ -457,12 +457,23 @@ export class TradeIdeaTracker {
       const openIdeas = await this.store.listOpenIdeas();
       if (!openIdeas.length) return;
       const nowMs = Date.now();
+      const GRACE_MS = 2 * 60_000; // Skip ideas created less than 2 minutes ago
       for (const idea of openIdeas) {
         const createdMs = Date.parse(idea.created_at);
         if (!Number.isFinite(createdMs)) continue;
+        // Skip very fresh ideas — they'll be handled by tick() with proper prevPrice seeding
+        if (nowMs - createdMs < GRACE_MS) {
+          // Seed prevPrice for fresh ideas so tick() can detect entry/SL/TP
+          this.lastPriceByIdeaId.set(idea.id, (idea.entry_low + idea.entry_high) / 2);
+          continue;
+        }
         const fromMs = Math.max(0, createdMs - 60_000);
         const candles = await fetchSymbolHistory(idea.symbol, fromMs, nowMs);
-        if (!candles.length) continue;
+        if (!candles.length) {
+          // No candle data — seed prevPrice from entry zone so tick() works
+          this.lastPriceByIdeaId.set(idea.id, (idea.entry_low + idea.entry_high) / 2);
+          continue;
+        }
         await this.reconcileIdeaWithHistory(idea, candles);
       }
 
@@ -521,8 +532,15 @@ export class TradeIdeaTracker {
 
       for (const idea of openIdeas) {
         const currentPrice = symbolPrices.get(idea.symbol.toUpperCase());
-        const prevPrice = this.lastPriceByIdeaId.get(idea.id) ?? null;
+        let prevPrice = this.lastPriceByIdeaId.get(idea.id) ?? null;
         const nowIso = new Date().toISOString();
+
+        // Seed prevPrice for ideas we haven't tracked yet — use entry zone midpoint
+        // so that price movement away from the zone is detected as a crossing
+        if (typeof prevPrice !== "number" && typeof currentPrice === "number") {
+          prevPrice = (idea.entry_low + idea.entry_high) / 2;
+          this.lastPriceByIdeaId.set(idea.id, prevPrice);
+        }
 
         if (idea.status === "PENDING") {
           const ttl = this.ttlMinutes(idea.horizon);

@@ -1596,6 +1596,16 @@ const aiScanToTradeIdea = (row: AiScanRow, moduleId: AiModuleId, nowIso: string)
   const entryLow = Math.min(zone[0], zone[1]);
   const entryHigh = Math.max(zone[0], zone[1]);
   if (!Number.isFinite(entryLow) || entryLow <= 0) return null;
+  if (!Number.isFinite(entryHigh) || entryHigh <= 0) return null;
+
+  // Filter out zero/negative SL/TP levels
+  const slFiltered = sl.filter((v: number) => Number.isFinite(v) && v > 0);
+  const tpFiltered = tp.filter((v: number) => Number.isFinite(v) && v > 0);
+  if (!slFiltered.length || !tpFiltered.length) return null;
+
+  // TRADE decisions = "enter now" → start as ACTIVE (entry zone is at market price)
+  // WATCH decisions = "wait for entry zone" → start as PENDING
+  const isTrade = row.decision === "TRADE";
 
   return {
     id: randomUUID(),
@@ -1608,14 +1618,14 @@ const aiScanToTradeIdea = (row: AiScanRow, moduleId: AiModuleId, nowIso: string)
     mode_scores: {},
     entry_low: entryLow,
     entry_high: entryHigh,
-    sl_levels: sl.filter(Number.isFinite),
-    tp_levels: tp.filter(Number.isFinite),
-    status: "PENDING",
+    sl_levels: slFiltered,
+    tp_levels: tpFiltered,
+    status: isTrade ? "ACTIVE" : "PENDING",
     result: "NONE",
     hit_level_type: null,
     hit_level_index: null,
     hit_level_price: null,
-    minutes_to_entry: null,
+    minutes_to_entry: isTrade ? 0 : null,
     minutes_to_exit: null,
     minutes_total: null,
     horizon: "INTRADAY",
@@ -1641,7 +1651,7 @@ const aiScanToTradeIdea = (row: AiScanRow, moduleId: AiModuleId, nowIso: string)
     incomplete: false,
     price_precision: undefined,
     created_at: nowIso,
-    activated_at: null,
+    activated_at: isTrade ? nowIso : null,
     resolved_at: null,
   };
 };
@@ -1808,6 +1818,16 @@ export const registerAiTradeIdeasRoutes = (
               if (!idea) continue;
               const initialPrice = (idea.entry_low + idea.entry_high) / 2;
               await deps.tradeIdeaStore.createIdea(idea, initialPrice);
+              // For TRADE ideas that start ACTIVE, also log ENTRY_TOUCHED event
+              if (idea.status === "ACTIVE") {
+                await deps.tradeIdeaStore.appendEvent({
+                  idea_id: idea.id,
+                  event_type: "ENTRY_TOUCHED",
+                  ts: nowIso,
+                  price: initialPrice,
+                  meta: { entry_low: idea.entry_low, entry_high: idea.entry_high, auto_active: true },
+                });
+              }
             } catch {
               // Non-critical — scan results still shown in UI without DB tracking
             }
