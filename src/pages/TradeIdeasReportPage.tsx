@@ -653,7 +653,17 @@ export default function TradeIdeasReportPage() {
                   const entryLevel = `${fmtLevel(Math.min(p.entry_low, p.entry_high))} - ${fmtLevel(Math.max(p.entry_low, p.entry_high))}`;
                   const slWasHit = p.result !== "NONE" && p.hit_level_type === "SL";
                   const tpWasHit = p.result !== "NONE" && p.hit_level_type === "TP";
-                  const timeToExit = typeof p.minutes_to_exit === "number" ? p.minutes_to_exit.toFixed(2) : "-";
+                  const timeToExit = (() => {
+                    if (typeof p.minutes_to_exit === "number") {
+                      const m = Math.round(p.minutes_to_exit);
+                      return m >= 60 ? `${Math.floor(m / 60)}h ${m % 60}m` : `${m}m`;
+                    }
+                    if (p.status === "ACTIVE" && p.activated_at) {
+                      const elapsed = Math.floor((now - Date.parse(p.activated_at)) / 60000);
+                      return elapsed >= 60 ? `${Math.floor(elapsed / 60)}h ${elapsed % 60}m ⏱` : `${elapsed}m ⏱`;
+                    }
+                    return "-";
+                  })();
                   const aiModule = isAiReport && p.user_id?.startsWith("ai-") ? p.user_id.replace("ai-", "").toUpperCase() : null;
                   const aiModuleLabel = aiModule === "CHATGPT" ? "ChatGPT" : aiModule === "QWEN2" ? "Bitrium Axiom" : aiModule === "QWEN" ? "Qwen" : null;
                   const aiModuleClass = aiModule === "CHATGPT" ? "border-[#3d5f8f]/70 bg-[#132033] text-[#b8d3ff]" : aiModule === "QWEN2" ? "border-[#c4893d]/70 bg-[#2a1f0f] text-[#ffd699]" : "border-[#6b4fa8]/70 bg-[#241a3c] text-[#dbcdfd]";
@@ -726,7 +736,7 @@ export default function TradeIdeasReportPage() {
                           )}
                         </div>
                       </td>
-                      <td className="px-2 py-1.5 text-right text-[#BFC2C7]">{timeToExit}</td>
+                      <td className={`px-2 py-1.5 text-right ${p.status === "ACTIVE" && p.activated_at ? "text-[#F5C542]" : "text-[#BFC2C7]"}`}>{timeToExit}</td>
                       <td className="px-2 py-1.5">
                         <span className={`whitespace-nowrap rounded-md border px-2 py-1 text-[11px] font-semibold ${resultStyle(p)}`}>
                           {label}
