@@ -51,10 +51,6 @@ jobs:
           # Upload deploy configs
           rsync -avz deploy/ root@${{ secrets.DROPLET_IP }}:/var/www/bitrium/deploy/
 
-          # Debug: check nginx config root + sync dist to nginx root if different
-          echo "=== Checking nginx root ==="
-          ssh root@${{ secrets.DROPLET_IP }} 'NGINX_ROOT=$(nginx -T 2>/dev/null | grep -m1 "root " | sed "s/.*root //;s/;//;s/ //g"); echo "Nginx root: $NGINX_ROOT"; echo "Deploy root: /var/www/bitrium/dist"; if [ "$NGINX_ROOT" != "/var/www/bitrium/dist" ] && [ -n "$NGINX_ROOT" ]; then echo "MISMATCH! Syncing to nginx root..."; rsync -av --delete /var/www/bitrium/dist/ "$NGINX_ROOT/"; echo "Synced."; else echo "Roots match or nginx root empty"; fi'
-
           # Install deps, run DB migrations if needed, zero-downtime reload
           ssh root@${{ secrets.DROPLET_IP }} << 'EOF'
             cd /var/www/bitrium
@@ -65,10 +61,22 @@ jobs:
             # Run schema migration (idempotent — CREATE IF NOT EXISTS)
             PGPASSWORD="${DB_PASSWORD}" psql -U bitrium_app -d bitrium_db -f server/src/db/schema.sql || true
 
-            # Update Nginx config if changed, then reload
+            # Update Nginx config — backup first, restore on failure
             if [ -f deploy/nginx/bitrium.conf ]; then
-              cp deploy/nginx/bitrium.conf /etc/nginx/sites-available/bitrium 2>/dev/null || true
-              nginx -t 2>/dev/null && systemctl reload nginx 2>/dev/null || echo "Nginx reload skipped"
+              cp /etc/nginx/sites-available/bitrium /etc/nginx/sites-available/bitrium.bak 2>/dev/null || true
+              cp deploy/nginx/bitrium.conf /etc/nginx/sites-available/bitrium
+
+              # Ensure symlink exists
+              ln -sf /etc/nginx/sites-available/bitrium /etc/nginx/sites-enabled/bitrium
+
+              if nginx -t 2>&1; then
+                systemctl reload nginx
+                echo "✓ Nginx config updated and reloaded"
+              else
+                echo "✗ Nginx test failed — restoring backup"
+                cp /etc/nginx/sites-available/bitrium.bak /etc/nginx/sites-available/bitrium 2>/dev/null || true
+                nginx -t 2>&1 && systemctl reload nginx 2>/dev/null || echo "Backup also invalid — nginx unchanged"
+              fi
             fi
 
             # Zero-downtime reload: PM2 restarts workers one by one
