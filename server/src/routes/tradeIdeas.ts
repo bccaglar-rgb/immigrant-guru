@@ -172,9 +172,9 @@ export const registerTradeIdeasRoutes = (app: Express, store: TradeIdeaStore, sy
     // Report includes ideas above each mode's TRADE threshold
     const REPORT_MIN_SCORE: Record<string, number> = {
       FLOW: 55,
-      AGGRESSIVE: 60,
-      BALANCED: 65,
-      CAPITAL_GUARD: 68,
+      AGGRESSIVE: 58,
+      BALANCED: 55,
+      CAPITAL_GUARD: 48,
     };
 
     // Only count system-scanner ideas in the report — demo-user ideas are excluded

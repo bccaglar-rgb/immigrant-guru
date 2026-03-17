@@ -18,17 +18,17 @@
  *   - Breakout setups get -3 penalty (fake breakout risk in crypto)
  *
  * Win rate filters:
- *   - Signal alignment ≥ 4/8 required for TRADE
+ *   - Signal alignment ≥ 2/8 required for TRADE
  *   - Execution certainty ≥ MEDIUM
  *   - Risk gate = OPEN
  *   - Signal conflict ≤ LOW
  *
  * Decision levels:
- *   85+   High conviction TRADE  (sizeHint 1.00)
- *   70-84 Normal TRADE           (sizeHint 0.70)
- *   55-69 Small size TRADE       (sizeHint 0.40)
- *   42-54 WATCH                  (sizeHint 0.15)
- *   <42   NO_TRADE               (sizeHint 0.00)
+ *   82+   High conviction TRADE  (sizeHint 1.00)
+ *   66-81 Normal TRADE           (sizeHint 0.70)
+ *   48-65 Small size TRADE       (sizeHint 0.40)
+ *   36-47 WATCH                  (sizeHint 0.15)
+ *   <36   NO_TRADE               (sizeHint 0.00)
  */
 
 // ── Type aliases ─────────────────────────────────────────────
@@ -373,7 +373,7 @@ const score8Signals = (input: CapitalGuardConsensusInput, dir: TradeDirection): 
   scores.push(s8);
   labels.push("VolSpike");
 
-  const aligned = scores.filter((s) => s >= 50).length;
+  const aligned = scores.filter((s) => s >= 45).length;
   return { scores, aligned, labels };
 };
 
@@ -556,9 +556,9 @@ const detectStrategyBias = (input: CapitalGuardConsensusInput): { bonus: number;
     input.volumeSpike === "ON" &&
     input.atrRegime === "HIGH";
 
-  if (isPullback) return { bonus: 5, type: "PULLBACK" };
-  if (isRange) return { bonus: 3, type: "RANGE_CONT" };
-  if (isBreakout) return { bonus: -3, type: "BREAKOUT" };
+  if (isPullback) return { bonus: 7, type: "PULLBACK" };
+  if (isRange) return { bonus: 4, type: "RANGE_CONT" };
+  if (isBreakout) return { bonus: -2, type: "BREAKOUT" };
   return { bonus: 0, type: "NEUTRAL" };
 };
 
@@ -583,10 +583,10 @@ export const computeCapitalGuardConsensus = (
   const riskEvents = computeRiskEvents(input);
 
   // ── 4. Layer alignment check (relaxed for trade generation) ──
-  const structureAligned = structure.score >= 48;
-  const positioningAligned = positioning.score >= 45;
-  const executionAligned = execution.score >= 40;
-  const flowAligned = flow.score >= 45;
+  const structureAligned = structure.score >= 38;
+  const positioningAligned = positioning.score >= 36;
+  const executionAligned = execution.score >= 32;
+  const flowAligned = flow.score >= 36;
   const alignedLayers = [structureAligned, positioningAligned, executionAligned, flowAligned].filter(Boolean).length;
 
   // ── 5. Base score = equal-weight 4 layers ──
@@ -594,20 +594,22 @@ export const computeCapitalGuardConsensus = (
 
   // ── 6. Signal alignment bonus (more generous for trade generation) ──
   let alignmentBonus = 0;
-  if (signals.aligned >= 8) alignmentBonus = 16;
-  else if (signals.aligned >= 7) alignmentBonus = 12;
-  else if (signals.aligned >= 6) alignmentBonus = 8;
-  else if (signals.aligned >= 5) alignmentBonus = 5;
-  else if (signals.aligned >= 4) alignmentBonus = 2;
-  else if (signals.aligned >= 3) alignmentBonus = 0;
-  else alignmentBonus = -6;
+  if (signals.aligned >= 8) alignmentBonus = 18;
+  else if (signals.aligned >= 7) alignmentBonus = 14;
+  else if (signals.aligned >= 6) alignmentBonus = 10;
+  else if (signals.aligned >= 5) alignmentBonus = 7;
+  else if (signals.aligned >= 4) alignmentBonus = 4;
+  else if (signals.aligned >= 3) alignmentBonus = 2;
+  else if (signals.aligned >= 2) alignmentBonus = 0;
+  else alignmentBonus = -4;
 
   // ── 7. Layer alignment bonus (more generous) ──
   let layerBonus = 0;
-  if (alignedLayers >= 4) layerBonus = 10;
-  else if (alignedLayers >= 3) layerBonus = 6;
-  else if (alignedLayers >= 2) layerBonus = 2;
-  else layerBonus = -4;
+  if (alignedLayers >= 4) layerBonus = 12;
+  else if (alignedLayers >= 3) layerBonus = 8;
+  else if (alignedLayers >= 2) layerBonus = 4;
+  else if (alignedLayers >= 1) layerBonus = 1;
+  else layerBonus = -2;
 
   // ── 8. Strategy bias (pullback = good, breakout = risky) ──
   const strategy = detectStrategyBias(input);
@@ -656,12 +658,12 @@ export const computeCapitalGuardConsensus = (
 
   let finalScore = adjustedScore;
 
-  // Win rate filter: need ≥ 3/8 aligned signals for TRADE (relaxed from 4)
-  // If < 3 aligned, cap at WATCH zone (max 54)
-  const winRatePass = signals.aligned >= 3 && input.conflictLevel !== "HIGH";
-  if (!winRatePass && finalScore >= 55) {
-    finalScore = 54;
-    addReason(reasons, `Win rate filter: ${signals.aligned}/8 aligned (need 3+)`, 90);
+  // Win rate filter: need ≥ 2/8 aligned signals for TRADE (relaxed for more ideas)
+  // If < 2 aligned, cap at WATCH zone (max 47)
+  const winRatePass = signals.aligned >= 2 && input.conflictLevel !== "HIGH";
+  if (!winRatePass && finalScore >= 48) {
+    finalScore = 47;
+    addReason(reasons, `Win rate filter: ${signals.aligned}/8 aligned (need 2+)`, 90);
   }
 
   // Quant engine confidence boost: if edge + pWin are strong, add small uplift
@@ -673,17 +675,17 @@ export const computeCapitalGuardConsensus = (
     if (confidenceBoost > 1) addReason(reasons, `Quant confidence boost +${confidenceBoost.toFixed(1)}`, 40);
   }
 
-  // A+ floor: high conviction setups keep minimum 68 (lowered from 72 for more trades)
+  // A+ floor: high conviction setups keep minimum 62 (lowered for more trades)
   let floorsApplied = false;
   if (isAPlus && dataGate === "PASS" && safetyGate === "PASS") {
-    const floored = Math.max(finalScore, 68);
+    const floored = Math.max(finalScore, 62);
     floorsApplied = floored > finalScore;
     finalScore = floored;
     if (floorsApplied) addReason(reasons, "High conviction floor applied", 150);
   }
 
   // Gate enforcement
-  if (safetyGate === "BLOCK") finalScore = Math.min(finalScore, 42);
+  if (safetyGate === "BLOCK") finalScore = Math.min(finalScore, 36);
   if (dataGate === "BLOCK") finalScore = 0;
   finalScore = roundTo2(clamp(finalScore, 0, 100));
 
@@ -691,13 +693,13 @@ export const computeCapitalGuardConsensus = (
   let sizeHint: number;
   if (dataGate === "BLOCK" || safetyGate === "BLOCK") {
     sizeHint = 0;
-  } else if (finalScore >= 85) {
+  } else if (finalScore >= 82) {
     sizeHint = 1.0;
-  } else if (finalScore >= 70) {
+  } else if (finalScore >= 66) {
     sizeHint = 0.70;
-  } else if (finalScore >= 55) {
+  } else if (finalScore >= 48) {
     sizeHint = 0.40;
-  } else if (finalScore >= 42) {
+  } else if (finalScore >= 36) {
     sizeHint = 0.15;
   } else {
     sizeHint = 0;

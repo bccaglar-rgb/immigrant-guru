@@ -53,9 +53,9 @@ const AI_MODULE_THEME: Record<AiProviderId, { label: string; labelClass: string;
     chipClass: "border-[#6b4fa8]/70 bg-[#241a3c] text-[#dbcdfd]",
   },
   QWEN2: {
-    label: "Qwen-2",
-    labelClass: "border-[#8b4fa8]/80 bg-[#2e1a3c] text-[#e8cdfd]",
-    chipClass: "border-[#8b4fa8]/70 bg-[#2e1a3c] text-[#e8cdfd]",
+    label: "Bitrium Axiom",
+    labelClass: "border-[#c4893d]/80 bg-[#2a1f0f] text-[#ffd699]",
+    chipClass: "border-[#c4893d]/70 bg-[#2a1f0f] text-[#ffd699]",
   },
 };
 
@@ -927,9 +927,9 @@ export default function TradeIdeasPage() {
                         const moduleColors: Record<string, string> = {
                           CHATGPT: "border-[#3d5f8f]/50 text-[#b8d3ff]",
                           QWEN: "border-[#6b4fa8]/50 text-[#dbcdfd]",
-                          QWEN2: "border-[#8b4fa8]/50 text-[#e8cdfd]",
+                          QWEN2: "border-[#c4893d]/50 text-[#ffd699]",
                         };
-                        const moduleLabels: Record<string, string> = { CHATGPT: "ChatGPT", QWEN: "Qwen", QWEN2: "Qwen-2" };
+                        const moduleLabels: Record<string, string> = { CHATGPT: "ChatGPT", QWEN: "Qwen", QWEN2: "Bitrium Axiom" };
                         return (
                           <tr key={mod} className="border-t border-white/5">
                             <td className="py-1 pl-2">

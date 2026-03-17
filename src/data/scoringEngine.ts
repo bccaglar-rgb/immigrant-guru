@@ -82,16 +82,16 @@ export const SCORING_CONFIG: Record<ScoringMode, ScoringConfig> = {
     gates: { minFillProb: 0.08, minEdgeR: -0.05, minCapacity: 0.08 },
   },
   // Slightly more conservative than AGGRESSIVE: moderate gates, balanced risk/reward.
-  // Relaxed enough to produce ideas, tighter risk penalty than AGG.
+  // Tuned to produce more trade ideas while maintaining quality.
   BALANCED: {
-    sigmoidK: 7.0,
-    edgeBaselineR: 0.14,
-    minFloor: 3,
+    sigmoidK: 7.2,
+    edgeBaselineR: 0.12,
+    minFloor: 1,
     riskModel: "LINEAR",
     penaltyModel: "MULTIPLY",
-    linearRiskSlope: 0.44,
-    linearRiskFloor: 0.42,
-    gates: { minFillProb: 0.12, minEdgeR: -0.03, minCapacity: 0.12 },
+    linearRiskSlope: 0.40,
+    linearRiskFloor: 0.46,
+    gates: { minFillProb: 0.08, minEdgeR: -0.06, minCapacity: 0.08 },
   },
   // User-configurable mode — all tuning via FlowScoringTuning panel.
   // Default: permissive — users tighten via Flow Settings.
@@ -106,16 +106,16 @@ export const SCORING_CONFIG: Record<ScoringMode, ScoringConfig> = {
     gates: { minFillProb: 0.08, minEdgeR: -0.05, minCapacity: 0.08 },
   },
   // Slightly tighter than BALANCED — one extra layer of selectivity.
-  // Still relaxed enough to produce ideas, with a bit more risk protection.
+  // Tuned to produce more trade ideas with better risk protection.
   CAPITAL_GUARD: {
-    sigmoidK: 6.8,
-    edgeBaselineR: 0.15,
-    minFloor: 4,
+    sigmoidK: 7.0,
+    edgeBaselineR: 0.13,
+    minFloor: 2,
     riskModel: "LINEAR",
     penaltyModel: "MULTIPLY",
-    linearRiskSlope: 0.46,
-    linearRiskFloor: 0.40,
-    gates: { minFillProb: 0.15, minEdgeR: -0.02, minCapacity: 0.15 },
+    linearRiskSlope: 0.42,
+    linearRiskFloor: 0.44,
+    gates: { minFillProb: 0.10, minEdgeR: -0.05, minCapacity: 0.10 },
   },
 };
 
@@ -450,17 +450,17 @@ export const computeScore = (input: ComputeScoreInput): ComputeScoreResult => {
   const inputModifierFloor = isAggressiveMode
     ? 0.92
     : isBalancedMode
-      ? 0.86
+      ? 0.90
       : isCapitalGuardMode
-        ? 0.84
+        ? 0.88
         : 0.84;
   const effectiveInputModifier = clamp(input.inputModifier, inputModifierFloor, 1.05);
   const modeBiasBase = isAggressiveMode
     ? 1.30
     : isBalancedMode
-      ? 1.08
+      ? 1.18
       : isCapitalGuardMode
-        ? 1.04
+        ? 1.14
         : 1;
   const modeFlowMultiplier = isAggressiveMode
     ? clamp(1 + (0.36 * flowBonus), 0.99, 1.26)
@@ -469,9 +469,9 @@ export const computeScore = (input: ComputeScoreInput): ComputeScoreResult => {
   const modeOffset = isAggressiveMode
     ? 14
     : isBalancedMode
-      ? 4
+      ? 8
       : isCapitalGuardMode
-        ? 2
+        ? 6
         : 0;
   const baseAfterMode = clamp((baseScoreCore * modeBias * effectiveInputModifier) + modeOffset, 0, 100);
   const riskAdj = clamp(tradeabilityMultiplier * reliabilityMultiplier, 0, 1.05);
@@ -491,12 +491,12 @@ export const computeScore = (input: ComputeScoreInput): ComputeScoreResult => {
   if (input.capacity < cfg.gates.minCapacity) gatingFlags.push("LOW_CAPACITY");
   const aPlusSetup = (
     (isCapitalGuardMode
-      ? structureScore >= 76 && positioningScore >= 74 && riskAdjustedEdgeR >= 0.095
+      ? structureScore >= 70 && positioningScore >= 68 && riskAdjustedEdgeR >= 0.07
       : isBalancedMode
-        ? structureScore >= 74 && positioningScore >= 72 && riskAdjustedEdgeR >= 0.09
+        ? structureScore >= 68 && positioningScore >= 66 && riskAdjustedEdgeR >= 0.06
         : structureScore >= 70 && positioningScore >= 68 && riskAdjustedEdgeR >= 0.08) &&
-    executionMultiplier >= (isCapitalGuardMode ? 0.90 : isBalancedMode ? 0.88 : 0.85) &&
-    riskMultiplier >= (isCapitalGuardMode ? 0.90 : isBalancedMode ? 0.88 : 0.85) &&
+    executionMultiplier >= (isCapitalGuardMode ? 0.86 : isBalancedMode ? 0.84 : 0.85) &&
+    riskMultiplier >= (isCapitalGuardMode ? 0.86 : isBalancedMode ? 0.84 : 0.85) &&
     gatingFlags.length === 0
   );
 
@@ -514,7 +514,7 @@ export const computeScore = (input: ComputeScoreInput): ComputeScoreResult => {
     ? 1
     : (spoofSeverity <= 0 ? 1 : spoofSeverity < 1 ? 0.94 : (profile === "SCALP" ? 0.88 : 0.93));
   const basePenaltyMultiplier = latencyMul * slippageMul * stressMul * entryMul * spoofMul;
-  const minPenaltyMultiplier = isAggressiveMode ? 1 : isCapitalGuardMode ? (profile === "SCALP" ? 0.70 : 0.78) : (profile === "SCALP" ? 0.72 : 0.80);
+  const minPenaltyMultiplier = isAggressiveMode ? 1 : isCapitalGuardMode ? (profile === "SCALP" ? 0.76 : 0.84) : (profile === "SCALP" ? 0.78 : 0.86);
   const penaltyMultiplier = clamp(basePenaltyMultiplier, minPenaltyMultiplier, 1);
   const penaltyRate = clamp(1 - penaltyMultiplier, 0, 0.45);
   const penaltyApplied = baseAfterMode * penaltyRate;
@@ -522,28 +522,28 @@ export const computeScore = (input: ComputeScoreInput): ComputeScoreResult => {
   const gateMultiplier = (() => {
     let mul = 1;
     if (hardBlocked || gatingFlags.includes("LOW_FILL_PROB")) {
-      mul *= isCapitalGuardMode ? 0.79 : isBalancedMode ? 0.82 : 0.94;
+      mul *= isCapitalGuardMode ? 0.86 : isBalancedMode ? 0.88 : 0.94;
     }
     if (gatingFlags.includes("LOW_EDGE")) {
-      mul *= isCapitalGuardMode ? 0.86 : isBalancedMode ? 0.88 : 0.96;
+      mul *= isCapitalGuardMode ? 0.90 : isBalancedMode ? 0.92 : 0.96;
     }
     if (gatingFlags.includes("LOW_CAPACITY")) {
-      mul *= isCapitalGuardMode ? 0.88 : isBalancedMode ? 0.90 : 0.98;
+      mul *= isCapitalGuardMode ? 0.92 : isBalancedMode ? 0.94 : 0.98;
     }
     if (stressFailure >= 1 || cascadeFailure >= 1) {
-      mul *= isCapitalGuardMode ? 0.86 : isBalancedMode ? 0.88 : 0.97;
+      mul *= isCapitalGuardMode ? 0.90 : isBalancedMode ? 0.92 : 0.97;
     }
     return clamp(mul, 0.52, 1);
   })();
 
   let finalPreFloor = baseAfterMode * penaltyMultiplier * gateMultiplier;
 
-  const aPlusFloorLevel = isCapitalGuardMode ? 56 : isBalancedMode ? 54 : isAggressiveMode ? 52 : 58;
+  const aPlusFloorLevel = isCapitalGuardMode ? 60 : isBalancedMode ? 58 : isAggressiveMode ? 52 : 58;
   const aPlusFloorApplied = aPlusSetup && !hardBlocked && finalPreFloor < aPlusFloorLevel;
   const withAPlusFloor = aPlusFloorApplied ? aPlusFloorLevel : finalPreFloor;
   const displayScore = Boolean(input.dataHealthFail)
     ? 0
-    : compressUpperTail(withAPlusFloor, isCapitalGuardMode ? 78 : isBalancedMode ? 80 : 86, isCapitalGuardMode ? 16 : isBalancedMode ? 14 : 12);
+    : compressUpperTail(withAPlusFloor, isCapitalGuardMode ? 82 : isBalancedMode ? 84 : 86, isCapitalGuardMode ? 20 : isBalancedMode ? 18 : 12);
   const penalizedScore = clamp(Number.isFinite(displayScore) ? displayScore : cfg.minFloor, cfg.minFloor, 100);
   const finalScore = penalizedScore;
 

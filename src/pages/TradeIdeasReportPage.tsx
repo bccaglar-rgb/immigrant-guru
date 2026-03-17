@@ -379,7 +379,7 @@ export default function TradeIdeasReportPage() {
                   <span className="text-[11px] text-[#8A8F98]">AI</span>
                   {(["ALL", "CHATGPT", "QWEN", "QWEN2"] as AiModelFilter[]).map((item) => {
                     const active = aiModelFilter === item;
-                    const label = item === "ALL" ? "All" : item === "CHATGPT" ? "ChatGPT" : item === "QWEN" ? "Qwen" : "Qwen-2";
+                    const label = item === "ALL" ? "All" : item === "CHATGPT" ? "ChatGPT" : item === "QWEN" ? "Qwen" : "Bitrium Axiom";
                     return (
                       <button
                         key={item}
@@ -440,7 +440,7 @@ export default function TradeIdeasReportPage() {
               <>
                 AI Model:{" "}
                 <span className="font-semibold text-[#F5C542]">
-                  {aiModelFilter === "CHATGPT" ? "ChatGPT" : aiModelFilter === "QWEN" ? "Qwen" : "Qwen-2"}
+                  {aiModelFilter === "CHATGPT" ? "ChatGPT" : aiModelFilter === "QWEN" ? "Qwen" : "Bitrium Axiom"}
                 </span>{" "}
                 ·{" "}
               </>
@@ -626,10 +626,10 @@ export default function TradeIdeasReportPage() {
                               p.module === "CHATGPT"
                                 ? "border-[#3d5f8f]/70 bg-[#132033] text-[#b8d3ff]"
                                 : p.module === "QWEN2"
-                                  ? "border-[#8b4fa8]/70 bg-[#2e1a3c] text-[#e8cdfd]"
+                                  ? "border-[#c4893d]/70 bg-[#2a1f0f] text-[#ffd699]"
                                   : "border-[#6b4fa8]/70 bg-[#241a3c] text-[#dbcdfd]"
                             }`}>
-                              {p.module === "CHATGPT" ? "ChatGPT" : p.module === "QWEN2" ? "Qwen-2" : "Qwen"}
+                              {p.module === "CHATGPT" ? "ChatGPT" : p.module === "QWEN2" ? "Bitrium Axiom" : "Qwen"}
                             </span>
                           </div>
                         </td>
@@ -692,8 +692,8 @@ export default function TradeIdeasReportPage() {
                   const tpWasHit = p.result !== "NONE" && p.hit_level_type === "TP";
                   const timeToExit = typeof p.minutes_to_exit === "number" ? p.minutes_to_exit.toFixed(2) : "-";
                   const aiModule = isAiReport && p.user_id?.startsWith("ai-") ? p.user_id.replace("ai-", "").toUpperCase() : null;
-                  const aiModuleLabel = aiModule === "CHATGPT" ? "ChatGPT" : aiModule === "QWEN2" ? "Qwen-2" : aiModule === "QWEN" ? "Qwen" : null;
-                  const aiModuleClass = aiModule === "CHATGPT" ? "border-[#3d5f8f]/70 bg-[#132033] text-[#b8d3ff]" : aiModule === "QWEN2" ? "border-[#8b4fa8]/70 bg-[#2e1a3c] text-[#e8cdfd]" : "border-[#6b4fa8]/70 bg-[#241a3c] text-[#dbcdfd]";
+                  const aiModuleLabel = aiModule === "CHATGPT" ? "ChatGPT" : aiModule === "QWEN2" ? "Bitrium Axiom" : aiModule === "QWEN" ? "Qwen" : null;
+                  const aiModuleClass = aiModule === "CHATGPT" ? "border-[#3d5f8f]/70 bg-[#132033] text-[#b8d3ff]" : aiModule === "QWEN2" ? "border-[#c4893d]/70 bg-[#2a1f0f] text-[#ffd699]" : "border-[#6b4fa8]/70 bg-[#241a3c] text-[#dbcdfd]";
                   return (
                     <tr key={p.id} className="border-t border-white/10">
                       <td className="px-2 py-1.5 text-[#BFC2C7]">{fmtDate(p.created_at)}</td>

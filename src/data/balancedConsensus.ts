@@ -17,16 +17,16 @@
  *   Signal Conflict HIGH, Trap Probability HIGH, News Risk ON,
  *   Fake Breakout HIGH, Execution Certainty LOW
  *
- * Sub-score guardrails (any failing applies -8 penalty):
- *   Struct >= 40, Liq >= 38, Pos >= 35, Exec >= 35, Vol >= 30, Conf >= 25
+ * Sub-score guardrails (any failing applies -5 penalty):
+ *   Struct >= 32, Liq >= 30, Pos >= 28, Exec >= 28, Vol >= 22, Conf >= 18
  *
  * Decision levels:
- *   85+    Full conviction TRADE    (sizeHint 1.00)
- *   78-84  High TRADE               (sizeHint 0.90)
- *   72-77  Normal TRADE             (sizeHint 0.70)
- *   64-71  Small size TRADE         (sizeHint 0.40)
- *   56-63  WATCH                    (sizeHint 0.00)
- *   <56    NO_TRADE                 (sizeHint 0.00)
+ *   82+    Full conviction TRADE    (sizeHint 1.00)
+ *   74-81  High TRADE               (sizeHint 0.90)
+ *   66-73  Normal TRADE             (sizeHint 0.70)
+ *   56-65  Small size TRADE         (sizeHint 0.40)
+ *   48-55  WATCH                    (sizeHint 0.00)
+ *   <48    NO_TRADE                 (sizeHint 0.00)
  *
  * Caps:
  *   Positioning uncertain (Pos < 55) → max 82
@@ -669,7 +669,7 @@ const checkNoTradeRule = (input: BalancedConsensusInput): { blocked: boolean; da
   const dangerCount = Object.values(signals).filter(Boolean).length;
 
   return {
-    blocked: dangerCount >= 2,
+    blocked: dangerCount >= 3,
     dangerCount,
     signals,
   };
@@ -721,12 +721,12 @@ export const computeBalancedConsensus = (
 
   // ── Sub-score guardrails (aligned with new weights) ──
   const guardrails = {
-    structPass: struct.score >= 40,
-    liqPass: liq.score >= 38,
-    posPass: pos.score >= 35,
-    execPass: exec.score >= 35,
-    volPass: vol.score >= 30,
-    confPass: conf.score >= 25,
+    structPass: struct.score >= 32,
+    liqPass: liq.score >= 30,
+    posPass: pos.score >= 28,
+    execPass: exec.score >= 28,
+    volPass: vol.score >= 22,
+    confPass: conf.score >= 18,
     // Backward-compat aliases
     oppPass: vol.score >= 30,
     dirPass: pos.score >= 35,
@@ -736,24 +736,24 @@ export const computeBalancedConsensus = (
     guardrails.structPass && guardrails.liqPass && guardrails.posPass &&
     guardrails.execPass && guardrails.volPass && guardrails.confPass;
 
-  if (!guardrails.structPass) addReason(reasons, `Guardrail: Struct ${struct.score} < 40`, 85);
-  if (!guardrails.liqPass) addReason(reasons, `Guardrail: Liq ${liq.score} < 38`, 80);
-  if (!guardrails.posPass) addReason(reasons, `Guardrail: Pos ${pos.score} < 35`, 75);
-  if (!guardrails.execPass) addReason(reasons, `Guardrail: Exec ${exec.score} < 35`, 70);
-  if (!guardrails.volPass) addReason(reasons, `Guardrail: Vol ${vol.score} < 30`, 65);
-  if (!guardrails.confPass) addReason(reasons, `Guardrail: Conf ${conf.score} < 25`, 60);
+  if (!guardrails.structPass) addReason(reasons, `Guardrail: Struct ${struct.score} < 32`, 85);
+  if (!guardrails.liqPass) addReason(reasons, `Guardrail: Liq ${liq.score} < 30`, 80);
+  if (!guardrails.posPass) addReason(reasons, `Guardrail: Pos ${pos.score} < 28`, 75);
+  if (!guardrails.execPass) addReason(reasons, `Guardrail: Exec ${exec.score} < 28`, 70);
+  if (!guardrails.volPass) addReason(reasons, `Guardrail: Vol ${vol.score} < 22`, 65);
+  if (!guardrails.confPass) addReason(reasons, `Guardrail: Conf ${conf.score} < 18`, 60);
 
-  // ── Model Agreement gate: need >= 3/6 (50% agreement) ──
+  // ── Model Agreement gate: need >= 2/6 (33% agreement) ──
   const modelAgreementRatio = safeNumber(input.alignedCount, 0) / Math.max(1, Math.floor(safeNumber(input.totalModels, 6)));
-  if (modelAgreementRatio < 0.5 && adjustedScore > 64) {
-    adjustedScore = Math.min(adjustedScore, 64);
-    addReason(reasons, "Model agreement below 3/6 threshold", 70);
+  if (modelAgreementRatio < 0.33 && adjustedScore > 66) {
+    adjustedScore = Math.min(adjustedScore, 66);
+    addReason(reasons, "Model agreement below 2/6 threshold", 70);
   }
 
-  // ── Positioning uncertain cap — weak positioning caps score at 82 ──
-  if (pos.score < 55 && adjustedScore > 82) {
-    adjustedScore = 82;
-    addReason(reasons, "Positioning uncertain cap (82)", 60);
+  // ── Positioning uncertain cap — weak positioning caps score at 86 ──
+  if (pos.score < 50 && adjustedScore > 86) {
+    adjustedScore = 86;
+    addReason(reasons, "Positioning uncertain cap (86)", 60);
   }
 
   // ── Hard no-trade conditions ──
@@ -797,10 +797,10 @@ export const computeBalancedConsensus = (
   // ── Final score ──
   let finalScore = roundTo2(clamp(adjustedScore * (1 - clamp(penaltyRate, 0, 1)), 0, 100));
 
-  // A+ floor: high conviction setups keep minimum 78
+  // A+ floor: high conviction setups keep minimum 72
   let floorsApplied = false;
   if (isAPlus && dataGate === "PASS" && safetyGate === "PASS") {
-    const floored = Math.max(finalScore, 78);
+    const floored = Math.max(finalScore, 72);
     floorsApplied = floored > finalScore;
     finalScore = floored;
     if (floorsApplied) addReason(reasons, "A+ floor applied", 150);
@@ -811,8 +811,8 @@ export const computeBalancedConsensus = (
   if (dataGate === "BLOCK") finalScore = 0;
 
   // Guardrail cap — sub-score threshold not met → mild penalty instead of hard block
-  if (!guardrails.allPass && finalScore >= 72) {
-    finalScore = Math.max(finalScore - 8, 64);
+  if (!guardrails.allPass && finalScore >= 66) {
+    finalScore = Math.max(finalScore - 5, 56);
     addReason(reasons, "Guardrail penalty: sub-score threshold not met", 88);
   }
 
@@ -822,13 +822,13 @@ export const computeBalancedConsensus = (
   let sizeHint: number;
   if (dataGate === "BLOCK" || safetyGate === "BLOCK") {
     sizeHint = 0;
-  } else if (finalScore >= 85) {
+  } else if (finalScore >= 82) {
     sizeHint = 1.00;
-  } else if (finalScore >= 78) {
+  } else if (finalScore >= 74) {
     sizeHint = 0.90;
-  } else if (finalScore >= 72) {
+  } else if (finalScore >= 66) {
     sizeHint = 0.70;
-  } else if (finalScore >= 64) {
+  } else if (finalScore >= 56) {
     sizeHint = 0.40;
   } else {
     sizeHint = 0;

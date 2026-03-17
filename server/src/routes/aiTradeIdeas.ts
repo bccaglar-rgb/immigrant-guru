@@ -1506,7 +1506,7 @@ const readAiStateFromRedis = async (): Promise<SharedAiState | null> => {
 /** Map AI module ID to user_id for trade_ideas DB table */
 const aiModuleUserId = (moduleId: AiModuleId): string => `ai-${moduleId.toLowerCase()}`;
 const AI_USER_ID_PREFIX = "ai-";
-const AI_MODULE_LABELS: Record<AiModuleId, string> = { CHATGPT: "ChatGPT", QWEN: "Qwen", QWEN2: "Qwen2" };
+const AI_MODULE_LABELS: Record<AiModuleId, string> = { CHATGPT: "ChatGPT", QWEN: "Qwen", QWEN2: "Bitrium Axiom" };
 
 /** Convert an AI scan row with TRADE decision into a TradeIdeaRecord for DB tracking */
 const aiScanToTradeIdea = (row: AiScanRow, moduleId: AiModuleId, nowIso: string): TradeIdeaRecord | null => {

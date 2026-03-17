@@ -40,18 +40,18 @@ const DIVERSITY_SLOTS = 20; // 20 rotated from remaining pool for diversity
 const SCAN_CONCURRENCY = 4;
 const SCAN_INTERVAL_MS = 60_000; // 60 seconds between cycles (was 15s — CPU relief)
 const STARTUP_DELAY_MS = 20_000; // Wait for WS hubs to connect
-const IDEA_MIN_SCORE_PCT = 55;
+const IDEA_MIN_SCORE_PCT = 48;
 const IDEA_MIN_SCORE_BY_MODE: Record<string, number> = {
-  FLOW: 52,
-  AGGRESSIVE: 66,
-  BALANCED: 56,
-  CAPITAL_GUARD: 50,
+  FLOW: 48,
+  AGGRESSIVE: 60,
+  BALANCED: 48,
+  CAPITAL_GUARD: 42,
 };
 const MAX_TRADE_PER_MODE: Record<string, number> = {
-  FLOW: 8,
-  AGGRESSIVE: 4,
-  BALANCED: 8,
-  CAPITAL_GUARD: 8,
+  FLOW: 10,
+  AGGRESSIVE: 6,
+  BALANCED: 12,
+  CAPITAL_GUARD: 12,
 };
 
 // Stablecoins to exclude from universe
