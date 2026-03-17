@@ -170,35 +170,6 @@ const resolveModeScoreForFilterPct = (plan: TradePlan, mode: ScoringMode): numbe
   return resolveModeScorePct(plan, mode);
 };
 
-const modeConsensusTone = (mode: ScoringMode) => {
-  if (mode === "FLOW") {
-    return {
-      boxClass: "border-[#3d5f8f]/80 bg-[#132033] shadow-[0_0_0_1px_rgba(120,170,255,0.16)]",
-      textClass: "text-[#b8d3ff]",
-      titleClass: "text-[#9ebfe8]",
-    };
-  }
-  if (mode === "AGGRESSIVE") {
-    return {
-      boxClass: "border-[#6b4fa8]/80 bg-[#241a3c] shadow-[0_0_0_1px_rgba(190,150,255,0.16)]",
-      textClass: "text-[#dbcdfd]",
-      titleClass: "text-[#c9b6f5]",
-    };
-  }
-  if (mode === "BALANCED") {
-    return {
-      boxClass: "border-[#7a6840]/80 bg-[#2a2418] shadow-[0_0_0_1px_rgba(245,197,66,0.16)]",
-      textClass: "text-[#f0d89e]",
-      titleClass: "text-[#d9c289]",
-    };
-  }
-  return {
-    boxClass: "border-[#46546a]/80 bg-[#1a212d] shadow-[0_0_0_1px_rgba(170,190,220,0.16)]",
-    textClass: "text-[#d8e1ef]",
-    titleClass: "text-[#b8c7dc]",
-  };
-};
-
 const consensusGuidance = (pct: number): { text: string; className: string } => {
   if (pct >= 90) {
     return {
