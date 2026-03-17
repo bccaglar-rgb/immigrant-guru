@@ -57,6 +57,12 @@ jobs:
             # Run schema migration (idempotent — CREATE IF NOT EXISTS)
             PGPASSWORD="${DB_PASSWORD}" psql -U bitrium_app -d bitrium_db -f server/src/db/schema.sql || true
 
+            # Update Nginx config if changed, then reload
+            if [ -f deploy/nginx/bitrium.conf ]; then
+              cp deploy/nginx/bitrium.conf /etc/nginx/sites-available/bitrium 2>/dev/null || true
+              nginx -t 2>/dev/null && systemctl reload nginx 2>/dev/null || echo "Nginx reload skipped"
+            fi
+
             # Zero-downtime reload: PM2 restarts workers one by one
             pm2 reload ecosystem.config.cjs || pm2 start ecosystem.config.cjs
             pm2 save
