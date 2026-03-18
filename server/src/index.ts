@@ -62,6 +62,8 @@ import { ConfidenceCalibrator } from "./services/optimizer/confidenceCalibrator.
 import { SelfThrottleEngine } from "./services/optimizer/selfThrottleEngine.ts";
 import { FeatureWeightTuner } from "./services/optimizer/featureWeightTuner.ts";
 import { registerOptimizerStatsRoutes } from "./routes/optimizerStats.ts";
+import { AITradeIdeaEngine } from "./engines/aiTradeIdeas/AITradeIdeaEngine.ts";
+import { registerAiEngineV2Routes } from "./routes/aiEngineV2.ts";
 
 // PM2 cluster mode: Worker 0 = primary (runs singleton services + HTTP)
 // Worker 1, 2 = HTTP-only
@@ -162,6 +164,9 @@ const systemScanner = new SystemScannerService({
   serverPort,
   coinUniverseEngine: coinUniverseEngineV2 as any,
 });
+const aiTradeIdeaEngine = new AITradeIdeaEngine({
+  systemScanner, tradeIdeaStore, aiProviderStore,
+});
 
 // bootstrap: DB connection + payment store + admin user
 async function bootstrap() {
@@ -194,6 +199,7 @@ registerPaymentsRoutes(app, authService, paymentService);
 registerTokenCreatorRoutes(app, authService, tokenCreatorService);
 registerMLRoutes(app);
 registerMetricsRoute(app, {});
+registerAiEngineV2Routes(app, aiTradeIdeaEngine);
 
 // In production, serve the Vite-built frontend
 if (process.env.NODE_ENV === "production") {
@@ -321,6 +327,10 @@ bootstrap()
           systemScanner.start();
           console.log(`[Worker ${WORKER_ID}] SystemScanner started`);
         }, 45_000);
+
+        // AITradeIdeaEngine V2: starts with its own internal 90s delay
+        aiTradeIdeaEngine.start();
+        console.log(`[Worker ${WORKER_ID}] AITradeIdeaEngine V2 initialized`);
 
         // CoinUniverseEngine: refresh every 60s on Worker 0
         // In HUB_EXTERNAL mode, reads universe from Redis cache (redisBinanceHubStub)
