@@ -57,6 +57,10 @@ import { ModePerformanceTracker } from "./services/optimizer/modePerformanceTrac
 import { TradeOutcomeAttributor } from "./services/optimizer/tradeOutcomeAttributor.ts";
 import { DynamicSlTpOptimizer } from "./services/optimizer/dynamicSlTpOptimizer.ts";
 import { RegimeParameterEngine } from "./services/optimizer/regimeParameterEngine.ts";
+import { MetaLabelingFilter } from "./services/optimizer/metaLabelingFilter.ts";
+import { ConfidenceCalibrator } from "./services/optimizer/confidenceCalibrator.ts";
+import { SelfThrottleEngine } from "./services/optimizer/selfThrottleEngine.ts";
+import { FeatureWeightTuner } from "./services/optimizer/featureWeightTuner.ts";
 import { registerOptimizerStatsRoutes } from "./routes/optimizerStats.ts";
 
 // PM2 cluster mode: Worker 0 = primary (runs singleton services + HTTP)
@@ -112,6 +116,10 @@ const modePerformanceTracker = new ModePerformanceTracker();
 const tradeOutcomeAttributor = new TradeOutcomeAttributor(modePerformanceTracker);
 const dynamicSlTpOptimizer = new DynamicSlTpOptimizer();
 const regimeParameterEngine = new RegimeParameterEngine();
+const metaLabelingFilter = new MetaLabelingFilter(modePerformanceTracker, regimeParameterEngine);
+const confidenceCalibrator = new ConfidenceCalibrator();
+const selfThrottleEngine = new SelfThrottleEngine(modePerformanceTracker);
+const featureWeightTuner = new FeatureWeightTuner();
 const tradeIdeaTracker = new TradeIdeaTracker(tradeIdeaStore);
 const adminProviderStore = new AdminProviderStore();
 const aiProviderStore = new AiProviderStore();
@@ -181,7 +189,7 @@ registerAiTradeIdeasRoutes(app, aiProviderStore, { binanceFuturesHub, coinUniver
 registerExchangeCoreRoutes(app, exchangeCore);
 registerTraderHubRoutes(app, traderHubEngine);
 registerCoinUniverseRoutes(app, coinUniverseEngineV2);
-registerOptimizerStatsRoutes(app, modePerformanceTracker, tradeOutcomeAttributor, dynamicSlTpOptimizer, regimeParameterEngine);
+registerOptimizerStatsRoutes(app, modePerformanceTracker, tradeOutcomeAttributor, dynamicSlTpOptimizer, regimeParameterEngine, confidenceCalibrator, selfThrottleEngine, featureWeightTuner);
 registerPaymentsRoutes(app, authService, paymentService);
 registerTokenCreatorRoutes(app, authService, tokenCreatorService);
 registerMLRoutes(app);
@@ -252,14 +260,20 @@ bootstrap()
         tradeIdeaTracker.start();
         console.log(`[Worker ${WORKER_ID}] TradeIdeaTracker started`);
 
-        // Optimizer Evolution: P1-P4
+        // Optimizer Evolution: P1-P10
         void modePerformanceTracker.loadFromRedis();
         void dynamicSlTpOptimizer.loadFromRedis();
         void regimeParameterEngine.loadFromRedis();
-        setInterval(() => void modePerformanceTracker.saveDailySnapshot(), 3600_000); // hourly
-        setInterval(() => void dynamicSlTpOptimizer.optimize(), 1800_000); // every 30min
-        setInterval(() => void regimeParameterEngine.autoAdjust(), 1800_000); // every 30min
-        console.log(`[Worker ${WORKER_ID}] Optimizer P1-P4 started (ModeTracker, Attributor, SL/TP, RegimeParams)`);
+        void confidenceCalibrator.loadFromRedis();
+        void selfThrottleEngine.loadFromRedis();
+        void featureWeightTuner.loadFromRedis();
+        setInterval(() => void modePerformanceTracker.saveDailySnapshot(), 3600_000);
+        setInterval(() => void dynamicSlTpOptimizer.optimize(), 1800_000);
+        setInterval(() => void regimeParameterEngine.autoAdjust(), 1800_000);
+        setInterval(() => void confidenceCalibrator.calibrate(), 3600_000);
+        setInterval(() => { selfThrottleEngine.evaluate(); }, 300_000); // every 5min
+        setInterval(() => void featureWeightTuner.tune(), 3600_000);
+        console.log(`[Worker ${WORKER_ID}] Optimizer P1-P10 started (all 10 modules active)`);
 
         // SystemScanner: start after 45s delay to let CoinUniverseEngine warm up
         setTimeout(() => {
