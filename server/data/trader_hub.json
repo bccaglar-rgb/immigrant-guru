@@ -15,43 +15,43 @@
       "scanIntervalSec": 30,
       "status": "RUNNING",
       "createdAt": "2026-03-02T04:04:49.746Z",
-      "updatedAt": "2026-03-17T01:56:56.116Z",
-      "nextRunAt": "2026-03-17T01:57:26.106Z",
-      "lastRunAt": "2026-03-17T01:56:56.116Z",
+      "updatedAt": "2026-03-18T00:11:24.003Z",
+      "nextRunAt": "2026-03-18T00:11:53.999Z",
+      "lastRunAt": "2026-03-18T00:11:24.003Z",
       "lastError": "",
       "failStreak": 0,
       "stats": {
-        "runs": 22171,
-        "tradeCount": 526,
-        "watchCount": 2739,
-        "noTradeCount": 18906,
-        "pnlPct": 28.65
+        "runs": 24836,
+        "tradeCount": 579,
+        "watchCount": 3217,
+        "noTradeCount": 21040,
+        "pnlPct": 33.747
       },
       "lastResult": {
-        "ts": "2026-03-17T01:56:56.116Z",
+        "ts": "2026-03-18T00:11:24.003Z",
         "sourceExchange": "Binance",
-        "scorePct": 70.63,
+        "scorePct": 88.87,
         "decision": "NO_TRADE",
-        "bias": "SHORT",
+        "bias": "LONG",
         "reason": "CHATGPT rejected setup due to weak edge/quality.",
-        "price": 75610.9,
+        "price": 73985.7,
         "plan": {
-          "entryLow": 75551.9355,
-          "entryHigh": 75779.3699,
-          "sl1": 75824.3113,
-          "sl2": 75909.6758,
-          "tp1": 75025.8596,
-          "tp2": 74762.5914
+          "entryLow": 73868.0924,
+          "entryHigh": 74026.8627,
+          "sl1": 73814.6688,
+          "sl2": 73746.2563,
+          "tp1": 74639.1503,
+          "tp2": 74933.2029
         },
         "dataStale": false,
         "execution": {
           "state": "REJECTED",
           "venue": "N/A",
-          "intentId": "3322f46d-91f0-4d7c-8c4b-138d75f343ce",
+          "intentId": "24023068-199c-4300-adbd-1eb13264e18a",
           "message": "No connected exchange account found. Connect Binance or Gate.io in Settings."
         }
       }
     }
   ],
-  "updatedAt": "2026-03-17T01:56:56.116Z"
+  "updatedAt": "2026-03-18T00:11:24.003Z"
 }

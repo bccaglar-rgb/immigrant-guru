@@ -37,7 +37,7 @@ module.exports = {
         // ── Database ───────────────────────────────────────
         // Point to PgBouncer, NOT PostgreSQL directly
         DB_HOST: "127.0.0.1",
-        DB_PORT: 5432,        // PgBouncer port
+        DB_PORT: 6432,
         DB_NAME: "bitrium",
         // DB_USER, DB_PASSWORD set via environment or .env
 

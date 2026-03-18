@@ -206,7 +206,7 @@ unset PGPASSWORD
 echo "[11/12] PM2 başlatılıyor..."
 cd "$APP_DIR"
 pm2 delete all 2>/dev/null || true
-pm2 start deploy/pm2.ecosystem.config.js
+pm2 start deploy/pm2.ecosystem.config.cjs
 pm2 save
 
 # PM2 systemd servis
