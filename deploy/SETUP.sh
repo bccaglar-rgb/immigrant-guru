@@ -108,7 +108,7 @@ sed -i "s|^bitrium.*|bitrium = host=127.0.0.1 port=5432 dbname=bitrium|" /etc/pg
 
 # Log ve pid dizinleri (paket oluşturmayabiliyor)
 mkdir -p /var/log/pgbouncer /var/run/pgbouncer
-chown pgbouncer:pgbouncer /var/log/pgbouncer /var/run/pgbouncer
+chmod 777 /var/log/pgbouncer /var/run/pgbouncer
 
 systemctl enable pgbouncer
 systemctl restart pgbouncer
