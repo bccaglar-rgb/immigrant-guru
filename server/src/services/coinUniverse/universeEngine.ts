@@ -264,14 +264,16 @@ function computeDataQuality(coin: RawCoinData, hasKlines: boolean): DataQuality 
 /* ------------------------------------------------------------------ */
 
 function enrichCoin(raw: RawCoinData, bars: OhlcvBar[]): CoinUniverseData {
+  const regimeData = detectRegime(bars);
   return {
     ...raw,
     atrPct: computeAtrPct(bars),
     rsi14: computeRsi14(bars),
     srDistPct: null, nearestSR: null, // set below
     srLevels: deriveKeyLevels(bars),
-    ...detectRegime(bars),
-    expansionProbability: detectRegime(bars).expansionProb,
+    regime: regimeData.regime,
+    trendStrength: regimeData.trendStrength,
+    expansionProbability: regimeData.expansionProb,
     volumeSpike: detectVolumeSpike(bars),
     oiChange: estimateOiChange(bars),
     aggressorFlow: detectAggressorFlow(bars),

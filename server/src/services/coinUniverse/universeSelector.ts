@@ -18,8 +18,8 @@
 
 import type { UniverseCoinRow } from "./types.ts";
 
-const MIN_SCORE_WITH_KLINES = 60;
-const MIN_SCORE_NO_KLINES = 25;  // Lower threshold when klines unavailable (no ATR/RSI/S/R data)
+const MIN_SCORE_WITH_KLINES = 45;  // Klines add structure/trend data but max realistic score ~65-75
+const MIN_SCORE_NO_KLINES = 25;   // Without klines max possible ~49
 
 export interface SelectionResult {
   selected: UniverseCoinRow[];
