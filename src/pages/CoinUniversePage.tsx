@@ -332,7 +332,8 @@ function ScoreBreakdown({ score }: { score: UniverseScoreDetail }) {
 /*  Coin Row (V2 with new columns)                                     */
 /* ------------------------------------------------------------------ */
 
-const ROW_GRID = "2rem 2.2rem 2fr 0.8fr 1.4fr 1fr 1.4fr 0.7fr 1fr 0.9fr 0.7fr 1.2fr 0.7fr 0.7fr 0.6fr 0.6fr 0.6fr";
+// #  Icon  Coin  Score  Liq  Str  Mom  Pos  Price  24h  Volume  Trend  Regime  OI%  Spike  Funding  Spread  Entry  Fake  Confl  Trap
+const ROW_GRID = "1.8rem 2rem 1.8fr 0.7fr 0.5fr 0.5fr 0.5fr 0.5fr 1.2fr 0.8fr 1.1fr 0.6fr 0.9fr 0.7fr 0.6fr 1fr 0.6fr 0.6fr 0.5fr 0.5fr 0.5fr";
 
 function CoinRow({ c, idx, onClick }: { c: UniverseCoinRow; idx: number; onClick: () => void }) {
   const [showBreakdown, setShowBreakdown] = useState(false);
@@ -376,6 +377,12 @@ function CoinRow({ c, idx, onClick }: { c: UniverseCoinRow; idx: number; onClick
         </span>
         {showBreakdown && hasV2 && <ScoreBreakdown score={c.universeScore} />}
       </span>
+
+      {/* Sub-scores: Liq / Str / Mom / Pos */}
+      <span className="text-right text-[10px] text-[#60a5fa]">{hasV2 ? c.universeScore.liquidity.total.toFixed(0) : "---"}</span>
+      <span className="text-right text-[10px] text-[#c084fc]">{hasV2 ? c.universeScore.structure.total.toFixed(0) : "---"}</span>
+      <span className="text-right text-[10px] text-[#F5C542]">{hasV2 ? c.universeScore.momentum.total.toFixed(0) : "---"}</span>
+      <span className="text-right text-[10px] text-[#8fc9ab]">{hasV2 ? c.universeScore.positioning.total.toFixed(0) : "---"}</span>
 
       <span className="text-right font-medium text-white">{fmtPrice(c.price)}</span>
 
@@ -596,6 +603,10 @@ export default function CoinUniversePage() {
             <span />
             <span>Coin</span>
             <SortHeader label="Score" sortKey="compositeScore" activeKey={sortKey} dir={sortDir} onSort={handleSort} className="text-right" />
+            <span className="text-right text-[8px]">Liq</span>
+            <span className="text-right text-[8px]">Str</span>
+            <span className="text-right text-[8px]">Mom</span>
+            <span className="text-right text-[8px]">Pos</span>
             <SortHeader label="Price" sortKey="price" activeKey={sortKey} dir={sortDir} onSort={handleSort} className="text-right" />
             <SortHeader label="24h" sortKey="change24hPct" activeKey={sortKey} dir={sortDir} onSort={handleSort} className="text-right" />
             <SortHeader label="Volume" sortKey="volume24hUsd" activeKey={sortKey} dir={sortDir} onSort={handleSort} className="text-right" />

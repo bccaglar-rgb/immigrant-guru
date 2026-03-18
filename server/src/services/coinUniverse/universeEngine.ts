@@ -500,9 +500,10 @@ export class CoinUniverseEngineV2 {
       cooldownRoundsLeft: null, scanner_selected: false,
     }));
 
-    // Combine
-    const allActive = [...selection.selected, ...selection.watchlist]
-      .sort((a, b) => b.compositeScore - a.compositeScore || b.volume24hUsd - a.volume24hUsd);
+    // Combine all scored coins (selected + watchlist + score-rejected) — top 100
+    const allActive = [...selection.selected, ...selection.watchlist, ...selection.rejected]
+      .sort((a, b) => b.compositeScore - a.compositeScore || b.volume24hUsd - a.volume24hUsd)
+      .slice(0, 100);
 
     this.rankedActive = allActive;
     this.rankedCooldown = cooldownPool.sort((a, b) => b.compositeScore - a.compositeScore);
