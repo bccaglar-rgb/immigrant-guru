@@ -23,7 +23,7 @@ module.exports = {
       name: "api",
       script: "./server/src/index.ts",
       interpreter: "node",
-      interpreter_args: "--import tsx/esm",
+      interpreter_args: "--env-file=.env --import tsx/esm",
       instances: 3,
       exec_mode: "cluster",
       // Worker 0 = IS_PRIMARY (runs scheduler, hub, etc.)
@@ -75,7 +75,7 @@ module.exports = {
       name: "market-hub",
       script: "./server/market-hub/index.ts",
       interpreter: "node",
-      interpreter_args: "--import tsx/esm",
+      interpreter_args: "--env-file=.env --import tsx/esm",
       instances: 1,
       exec_mode: "fork",
 
