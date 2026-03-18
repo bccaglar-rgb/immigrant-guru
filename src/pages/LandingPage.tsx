@@ -234,23 +234,10 @@ export default function LandingPage() {
                     onClick={goSignup}
                     className="lp-cta-primary inline-flex items-center justify-center gap-2 rounded-xl bg-[var(--accent)] px-8 py-3.5 text-sm font-semibold text-black transition-all duration-200 hover:bg-[#e5b632] hover:shadow-[0_0_30px_rgba(245,197,66,0.3)]"
                   >
-                    Get Started — It's Free
+                    Get Started
                     <IconArrowRight />
                   </button>
-                  <button
-                    type="button"
-                    onClick={() => navigate("/quant-engine")}
-                    className="inline-flex items-center justify-center gap-2 rounded-xl border border-[var(--accent)]/30 bg-[color-mix(in_srgb,var(--accent)_6%,transparent)] px-6 py-3 text-sm font-medium text-[var(--accent)] transition-all duration-200 hover:bg-[color-mix(in_srgb,var(--accent)_12%,transparent)]"
-                  >
-                    Explore Platform
-                  </button>
                 </div>
-              </Reveal>
-
-              <Reveal delay={320}>
-                <p className="mt-4 text-xs text-[var(--textSubtle)]">
-                  No credit card required &middot; Free forever plan available
-                </p>
               </Reveal>
             </div>
 
@@ -632,13 +619,13 @@ export default function LandingPage() {
                 onClick={goSignup}
                 className="lp-cta-primary inline-flex items-center gap-2 rounded-xl bg-[var(--accent)] px-10 py-4 text-base font-bold text-black transition-all duration-200 hover:bg-[#e5b632] hover:shadow-[0_0_40px_rgba(245,197,66,0.35)]"
               >
-                Get Started — Free Forever
+                Get Started
                 <IconArrowRight />
               </button>
             </Reveal>
             <Reveal delay={220}>
               <p className="mt-4 text-xs text-[var(--textSubtle)]">
-                No credit card required &middot; Cancel anytime
+                Join the future of crypto trading
               </p>
             </Reveal>
           </div>
@@ -667,7 +654,7 @@ export default function LandingPage() {
           onClick={goSignup}
           className="flex w-full items-center justify-center gap-2 rounded-xl bg-[var(--accent)] py-3 text-sm font-semibold text-black"
         >
-          Get Started — It's Free
+          Get Started
           <IconArrowRight />
         </button>
       </div>

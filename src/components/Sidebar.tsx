@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import { readAdminConfigFromStorage, ADMIN_CONFIG_STORAGE_KEY } from "../hooks/useAdminConfig";
+import { useAuthStore } from "../hooks/useAuthStore";
 import { NavItem } from "./NavItem";
 import { SidebarHeader } from "./SidebarHeader";
 
@@ -151,6 +152,9 @@ export const Sidebar = ({
   onToggleMode,
 }: Props) => {
   const location = useLocation();
+  const authUser = useAuthStore((s) => s.user);
+  const isAdmin = authUser?.role === "ADMIN";
+  const isAuthenticated = authUser !== null;
   const aiTraderActive = location.pathname.startsWith("/ai-trader/");
   const [branding, setBranding] = useState(() => readAdminConfigFromStorage().branding);
   const [showText, setShowText] = useState(expanded || mobile);
@@ -237,25 +241,29 @@ export const Sidebar = ({
   const versionBlock = useMemo(
     () => (
       <div className={`mt-auto border-t border-[var(--borderSoft)] pt-2 ${showText ? "px-2" : "px-0"}`}>
-        <NavItem
-          to={settingsItem.to}
-          label={settingsItem.label}
-          accent={settingsItem.accent}
-          icon={settingsItem.icon}
-          expanded={showText}
-          onNavigate={onNavigate}
-        />
-        <NavItem
-          to={adminItem.to}
-          label={adminItem.label}
-          accent={adminItem.accent}
-          icon={adminItem.icon}
-          expanded={showText}
-          onNavigate={onNavigate}
-        />
+        {isAuthenticated ? (
+          <NavItem
+            to={settingsItem.to}
+            label={settingsItem.label}
+            accent={settingsItem.accent}
+            icon={settingsItem.icon}
+            expanded={showText}
+            onNavigate={onNavigate}
+          />
+        ) : null}
+        {isAdmin ? (
+          <NavItem
+            to={adminItem.to}
+            label={adminItem.label}
+            accent={adminItem.accent}
+            icon={adminItem.icon}
+            expanded={showText}
+            onNavigate={onNavigate}
+          />
+        ) : null}
       </div>
     ),
-    [onNavigate, showText],
+    [onNavigate, showText, isAdmin, isAuthenticated],
   );
 
   useEffect(() => {
@@ -304,6 +312,9 @@ export const Sidebar = ({
     toolsCloseTimerRef.current = window.setTimeout(() => setToolsOpen(false), 120);
   };
 
+  // Public paths that don't require auth
+  const publicPaths = new Set(["/crypto-market", "/bitrium-token", "/pricing"]);
+
   const topMenu = menuItems.slice(0, 3);
   // Items between AI Trader and Tools: Exchanges..Indicators (index 3-7)
   const midMenu = menuItems.slice(3, 8);
@@ -326,7 +337,7 @@ export const Sidebar = ({
       />
 
       <nav className="space-y-1">
-        {topMenu.map((item) => (
+        {topMenu.filter((item) => isAuthenticated || publicPaths.has(item.to)).map((item) => (
           <NavItem
             key={item.label}
             to={item.to}
@@ -338,7 +349,7 @@ export const Sidebar = ({
           />
         ))}
 
-        <div
+        {isAuthenticated ? <div
           ref={aiTraderRef}
           className="relative"
           onMouseEnter={openAiTrader}
@@ -417,9 +428,9 @@ export const Sidebar = ({
               </NavLink>
             ))}
           </div>
-        </div>
+        </div> : null}
 
-        {midMenu.map((item) => (
+        {midMenu.filter((item) => isAuthenticated || publicPaths.has(item.to)).map((item) => (
           <NavItem
             key={item.label}
             to={item.to}
@@ -431,7 +442,7 @@ export const Sidebar = ({
           />
         ))}
 
-        <div
+        {isAuthenticated ? <div
           ref={toolsRef}
           className="relative"
           onMouseEnter={openTools}
@@ -496,9 +507,9 @@ export const Sidebar = ({
               </NavLink>
             ))}
           </div>
-        </div>
+        </div> : null}
 
-        {bottomMenu.map((item) => (
+        {bottomMenu.filter((item) => isAuthenticated || publicPaths.has(item.to)).map((item) => (
           <NavItem
             key={item.label}
             to={item.to}
