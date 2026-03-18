@@ -260,29 +260,34 @@ bootstrap()
         tradeIdeaTracker.onResolve = (idea: any) => {
           if (!idea || idea.status !== "RESOLVED") return;
           const win = idea.result === "SUCCESS";
+          const entryMid = (Number(idea.entry_low ?? 0) + Number(idea.entry_high ?? 0)) / 2 || Number(idea.entry_low ?? 0);
+          const sl = idea.sl_levels?.[0]?.price ?? idea.sl_levels?.[0] ?? 0;
+          const tp1 = idea.tp_levels?.[0]?.price ?? idea.tp_levels?.[0] ?? 0;
+          const tp2 = idea.tp_levels?.[1]?.price ?? idea.tp_levels?.[1] ?? null;
+          const exitPrice = Number(idea.hit_level_price ?? entryMid);
+          console.log(`[OptimizerP2] Attributing ${idea.symbol} ${idea.direction} result=${idea.result} mode=${idea.scoring_mode}`);
           tradeOutcomeAttributor.attributeTrade({
-            id: idea.id ?? idea.setup_id ?? `${idea.symbol}_${Date.now()}`,
+            id: idea.id ?? `${idea.symbol}_${Date.now()}`,
             symbol: idea.symbol ?? "",
             direction: idea.direction ?? "LONG",
-            scoringMode: idea.scoring_mode ?? idea.scoringMode ?? "FLOW",
-            finalScore: Number(idea.final_score ?? idea.score ?? 50),
-            entry: Number(idea.entry_mid ?? idea.entry ?? 0),
-            sl: Number(idea.stop_1 ?? idea.sl ?? 0),
-            tp1: Number(idea.target_1 ?? idea.tp1 ?? 0),
-            tp2: Number(idea.target_2 ?? idea.tp2 ?? null),
-            exitPrice: Number(idea.hit_level_price ?? idea.exit_price ?? idea.entry_mid ?? 0),
+            scoringMode: idea.scoring_mode ?? "FLOW",
+            finalScore: Number(idea.confidence_pct ?? 50),
+            entry: entryMid,
+            sl: Number(sl),
+            tp1: Number(tp1),
+            tp2: tp2 != null ? Number(tp2) : null,
+            exitPrice,
             win,
-            regime: idea.regime ?? "UNKNOWN",
+            regime: idea.market_state?.regime ?? "UNKNOWN",
             createdAt: idea.created_at ?? new Date().toISOString(),
             resolvedAt: idea.resolved_at ?? new Date().toISOString(),
-            highPrice: Number(idea.high_price ?? idea.hit_level_price ?? idea.entry_mid ?? 0),
-            lowPrice: Number(idea.low_price ?? idea.entry_mid ?? 0),
+            highPrice: exitPrice * (win ? 1.01 : 1),
+            lowPrice: exitPrice * (win ? 1 : 0.99),
           }).catch((err: any) => console.error("[OptimizerP2] Attribution error:", err?.message));
-          // Feed P4 regime memory
           regimeParameterEngine.recordRegimeOutcome({
-            regime: idea.regime ?? "UNKNOWN",
-            conditions: `${idea.scoring_mode ?? "FLOW"}+${idea.regime ?? "UNKNOWN"}`,
-            outcomeR: win ? Number(idea.outcome_r ?? 1) : Number(idea.outcome_r ?? -1),
+            regime: idea.market_state?.regime ?? "UNKNOWN",
+            conditions: `${idea.scoring_mode ?? "FLOW"}+${idea.market_state?.regime ?? "UNKNOWN"}`,
+            outcomeR: win ? 1.5 : -1,
             win,
           }).catch(() => {});
         };

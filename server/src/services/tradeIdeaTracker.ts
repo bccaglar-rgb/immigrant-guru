@@ -286,7 +286,10 @@ export class TradeIdeaTracker {
     store.updateIdea = async (id: string, updates: any) => {
       await originalUpdate(id, updates);
       if (updates?.status === "RESOLVED" && this.onResolve) {
-        try { this.onResolve({ id, ...updates }); } catch { /* ignore */ }
+        try {
+          const fullIdea = await store.getIdea(id);
+          if (fullIdea) this.onResolve(fullIdea);
+        } catch { /* ignore */ }
       }
     };
   }
