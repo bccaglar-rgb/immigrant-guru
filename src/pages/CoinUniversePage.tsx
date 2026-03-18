@@ -58,6 +58,15 @@ interface UniverseCoinRow {
   tier2Score?: number | null;
 }
 
+interface EngineHealth {
+  engine: string;
+  mode: "full" | "degraded";
+  klinesAvailable: boolean;
+  klinesSource: string;
+  dataQuality: "full" | "degraded" | "minimal";
+  binanceStatus?: string;
+}
+
 interface UniverseEngineResponse {
   ok: boolean;
   round: number;
@@ -65,6 +74,7 @@ interface UniverseEngineResponse {
   activeCoins: UniverseCoinRow[];
   cooldownCoins: UniverseCoinRow[];
   stats?: { totalScanned: number; hardFiltered: number; scored: number; selected: number; cooldown: number };
+  health?: EngineHealth;
   error?: string;
 }
 
@@ -186,6 +196,7 @@ function useCoinUniverseEngine() {
   const [refreshedAt, setRefreshedAt] = useState<string | null>(null);
   const [round, setRound] = useState(0);
   const [stats, setStats] = useState<UniverseEngineResponse["stats"] | null>(null);
+  const [health, setHealth] = useState<EngineHealth | null>(null);
 
   const fetchData = useCallback(async (signal?: AbortSignal) => {
     try {
@@ -204,6 +215,7 @@ function useCoinUniverseEngine() {
       setRefreshedAt(body.refreshedAt ?? new Date().toISOString());
       setRound(body.round ?? 0);
       setStats(body.stats ?? null);
+      setHealth(body.health ?? null);
       setError(null);
     } catch (err) {
       if ((err as Error).name === "AbortError") return;
@@ -223,7 +235,7 @@ function useCoinUniverseEngine() {
     };
   }, [fetchData]);
 
-  return { activeCoins, cooldownCoins, loading, error, refreshedAt, round, stats };
+  return { activeCoins, cooldownCoins, loading, error, refreshedAt, round, stats, health };
 }
 
 /* ------------------------------------------------------------------ */
@@ -527,7 +539,7 @@ export default function CoinUniversePage() {
   const [search, setSearch] = useState("");
   const [sortKey, setSortKey] = useState<SortKey>("compositeScore");
   const [sortDir, setSortDir] = useState<SortDir>("desc");
-  const { activeCoins, cooldownCoins, loading, error, refreshedAt, round, stats } = useCoinUniverseEngine();
+  const { activeCoins, cooldownCoins, loading, error, refreshedAt, round, stats, health } = useCoinUniverseEngine();
 
   // Pipeline 6: real-time price/change/volume overlay
   const liveRows = useMarketListStore((s) => s.rows);
@@ -600,6 +612,7 @@ export default function CoinUniversePage() {
                 {cooldownCoins.length > 0 ? ` \u00b7 ${cooldownCoins.length} cooling down` : ""}
                 {liveRows.size > 0 ? " \u00b7 Live" : ""}
                 {hasV2 ? " \u00b7 V2" : ""}
+                {health?.mode === "degraded" ? " \u00b7 Degraded" : ""}
               </p>
               {stats && <StatsBar stats={stats} />}
             </div>
@@ -620,6 +633,13 @@ export default function CoinUniversePage() {
             {error}
           </div>
         ) : null}
+
+        {/* Degraded mode warning */}
+        {health?.mode === "degraded" && !error && (
+          <div className="rounded-xl border border-[#705c28] bg-[#27210f] p-3 text-sm text-[#d6c68f]">
+            Reduced confidence — klines unavailable ({health.binanceStatus === "rate_limited" ? "Binance rate-limited" : "market data source down"}). Scores based on volume/spread/funding only.
+          </div>
+        )}
 
         {/* Active Coin list */}
         <section className="overflow-hidden rounded-2xl border border-white/10 bg-[#121316]">

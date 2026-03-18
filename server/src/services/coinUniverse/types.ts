@@ -170,6 +170,9 @@ export interface UniverseCoinRow {
   universeScore: UniverseScore;
   compositeScore: number;       // alias for universeScore.final
 
+  // Data quality
+  dataQuality: DataQuality;
+
   // Selection
   selected: boolean;            // passed top 10% filter
   rejectedReason: string | null; // reason for hard filter rejection
@@ -178,6 +181,57 @@ export interface UniverseCoinRow {
   status: "ACTIVE" | "COOLDOWN" | "NEW" | "REJECTED";
   cooldownRoundsLeft: number | null;
   scanner_selected: boolean;
+}
+
+/* ------------------------------------------------------------------ */
+/*  Data Quality per coin                                              */
+/* ------------------------------------------------------------------ */
+
+export interface DataQuality {
+  hasKlines: boolean;
+  hasOi: boolean;
+  hasFunding: boolean;
+  hasOrderbook: boolean;
+  score: number;  // 0-100 — how complete is the data
+}
+
+/* ------------------------------------------------------------------ */
+/*  Engine Mode                                                        */
+/* ------------------------------------------------------------------ */
+
+export type EngineMode = "full" | "degraded";
+
+/* ------------------------------------------------------------------ */
+/*  Engine Health (included in API response)                           */
+/* ------------------------------------------------------------------ */
+
+export interface EngineHealth {
+  engine: "v2";
+  mode: EngineMode;
+  klinesAvailable: boolean;
+  klinesSource: "binance" | "bybit" | "cache" | "none";
+  klinesSuccessCount: number;
+  klinesFailCount: number;
+  dataQuality: "full" | "degraded" | "minimal";
+  binanceStatus: "ok" | "rate_limited" | "error" | "unknown";
+}
+
+/* ------------------------------------------------------------------ */
+/*  Rejection Telemetry                                                */
+/* ------------------------------------------------------------------ */
+
+export interface RejectionTelemetry {
+  hard_reject_volume: number;
+  hard_reject_spread: number;
+  hard_reject_stablecoin: number;
+  hard_reject_missing_data: number;
+  reject_score_below_threshold: number;
+  reject_weak_trend: number;
+  reject_range_low_expansion: number;
+  reject_declining_oi: number;
+  reject_below_top_10pct: number;
+  selected_count: number;
+  watchlist_count: number;
 }
 
 /* ------------------------------------------------------------------ */
@@ -197,6 +251,8 @@ export interface UniverseSnapshot {
     selected: number;
     cooldown: number;
   };
+  health: EngineHealth;
+  telemetry: RejectionTelemetry;
 }
 
 /* ------------------------------------------------------------------ */

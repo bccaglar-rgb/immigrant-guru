@@ -1,24 +1,33 @@
 /**
- * Coin Universe Engine — Orchestrator
+ * Coin Universe Engine V2 — Orchestrator
  *
- * Pre-filter layer before quant engine.
- * 4-stage pipeline on each tick (60s):
+ * 4-stage pipeline (60s tick):
  *   1. Hard Filter → remove untradeable
- *   2. Universe Score → 100-point scoring (5 sub-scores)
- *   3. False Filter → penalty up to 30 points
- *   4. Top 10% Selection → send to quant engine
+ *   2. Universe Score → 100-point (5 sub-scores)
+ *   3. False Filter → penalty 0-30
+ *   4. Top 10% Selection → quant engine
  *
- * Backward-compatible: exposes same getSnapshot() / getTop28() API
- * as the old CoinUniverseEngine.
+ * Features:
+ *   - Redis persistence (all workers see same data)
+ *   - Degraded mode when klines unavailable
+ *   - Data quality tracking per coin
+ *   - Bybit klines fallback when Binance rate-limited
+ *   - Candle cache in Redis (5min TTL)
+ *   - Rejection telemetry
+ *   - Engine health metadata
  */
 
 import type {
   BinanceFuturesHubLike,
   CoinUniverseData,
   CooldownEntry,
+  DataQuality,
+  EngineHealth,
+  EngineMode,
   MarketRegime,
   OhlcvBar,
   RawCoinData,
+  RejectionTelemetry,
   SRLevel,
   UniverseCoinRow,
   UniverseSnapshot,
@@ -38,8 +47,25 @@ const KLINES_CONCURRENT = 10;
 const COOLDOWN_ROUNDS = 2;
 const SELECTED_TOP_28 = 28;
 
+const REDIS_SNAPSHOT_KEY = "coin_universe_v2:snapshot";
+const REDIS_SNAPSHOT_TTL = 90; // seconds
+const REDIS_CANDLE_PREFIX = "coin_universe_v2:candle:";
+const REDIS_CANDLE_TTL = 300; // 5 min
+
 /* ------------------------------------------------------------------ */
-/*  Technical analysis helpers (ported from old engine)                 */
+/*  Redis import (lazy — may not be available in all envs)             */
+/* ------------------------------------------------------------------ */
+
+let redis: any = null;
+try {
+  const mod = await import("../../db/redis.ts");
+  redis = mod.redis;
+} catch {
+  // Redis unavailable — engine works without persistence
+}
+
+/* ------------------------------------------------------------------ */
+/*  Technical analysis helpers                                         */
 /* ------------------------------------------------------------------ */
 
 function computeAtrPct(bars: OhlcvBar[], period = 14): number | null {
@@ -80,7 +106,6 @@ function deriveKeyLevels(bars: OhlcvBar[]): SRLevel[] {
 
   const rawLevels: Array<{ price: number; type: "support" | "resistance"; source: string }> = [];
 
-  // Swing High/Low
   const SWING_LB = 5;
   for (let i = SWING_LB; i < bars.length - SWING_LB; i++) {
     const bar = bars[i];
@@ -93,7 +118,6 @@ function deriveKeyLevels(bars: OhlcvBar[]): SRLevel[] {
     if (isLow) rawLevels.push({ price: bar.low, type: bar.low < close ? "support" : "resistance", source: "swing" });
   }
 
-  // Pivot Points
   const pivotBars = bars.slice(-Math.min(80, bars.length));
   const pH = Math.max(...pivotBars.map((b) => b.high));
   const pL = Math.min(...pivotBars.map((b) => b.low));
@@ -106,14 +130,12 @@ function deriveKeyLevels(bars: OhlcvBar[]): SRLevel[] {
   if (S2 < close) rawLevels.push({ price: S2, type: "support", source: "pivot" });
   rawLevels.push({ price: P, type: P > close ? "resistance" : "support", source: "pivot" });
 
-  // Range
   const recent = bars.slice(-20);
   const rH = Math.max(...recent.map((b) => b.high));
   const rL = Math.min(...recent.map((b) => b.low));
   if (rH > close) rawLevels.push({ price: rH, type: "resistance", source: "range" });
   if (rL < close) rawLevels.push({ price: rL, type: "support", source: "range" });
 
-  // Cluster
   const CLUSTER_PCT = 0.003;
   const sorted = rawLevels.filter((l) => Number.isFinite(l.price) && l.price > 0).sort((a, b) => a.price - b.price);
   const clusters: Array<{ price: number; type: "support" | "resistance"; touchCount: number }> = [];
@@ -130,19 +152,16 @@ function deriveKeyLevels(bars: OhlcvBar[]): SRLevel[] {
   }
 
   const toStrength = (tc: number): "STRONG" | "MID" | "WEAK" => tc >= 3 ? "STRONG" : tc >= 2 ? "MID" : "WEAK";
-
   const supports = clusters
     .filter((c) => c.type === "support" && Math.abs(c.price - close) / close > 0.001)
     .sort((a, b) => Math.abs(a.price - close) - Math.abs(b.price - close))
     .slice(0, 2)
     .map((c): SRLevel => ({ price: c.price, type: "support", strength: toStrength(c.touchCount), touchCount: c.touchCount }));
-
   const resistances = clusters
     .filter((c) => c.type === "resistance" && Math.abs(c.price - close) / close > 0.001)
     .sort((a, b) => Math.abs(a.price - close) - Math.abs(b.price - close))
     .slice(0, 2)
     .map((c): SRLevel => ({ price: c.price, type: "resistance", strength: toStrength(c.touchCount), touchCount: c.touchCount }));
-
   return [...resistances, ...supports];
 }
 
@@ -157,72 +176,40 @@ function findNearestSR(price: number, levels: SRLevel[]): { distPct: number; lev
   return nearest ? { distPct: Math.round(minDist * 100) / 100, level: nearest } : null;
 }
 
-/* ------------------------------------------------------------------ */
-/*  Market regime detection                                            */
-/* ------------------------------------------------------------------ */
-
 function detectRegime(bars: OhlcvBar[]): { regime: MarketRegime; trendStrength: number; expansionProb: number } {
   if (bars.length < 20) return { regime: "UNKNOWN", trendStrength: 0, expansionProb: 0.5 };
-
   const recent = bars.slice(-20);
   const closes = recent.map((b) => b.close);
-
-  // ADX-like trend strength: slope of closes
   const first5Avg = closes.slice(0, 5).reduce((s, v) => s + v, 0) / 5;
   const last5Avg = closes.slice(-5).reduce((s, v) => s + v, 0) / 5;
   const trendPct = first5Avg > 0 ? ((last5Avg - first5Avg) / first5Avg) * 100 : 0;
   const absTrend = Math.abs(trendPct);
-
-  // Range detection: high-low range vs ATR
   const rangeHigh = Math.max(...recent.map((b) => b.high));
   const rangeLow = Math.min(...recent.map((b) => b.low));
   const rangeSize = rangeHigh > 0 ? ((rangeHigh - rangeLow) / rangeHigh) * 100 : 0;
-
-  // Volume expansion check
   const avgVol = recent.slice(0, 15).reduce((s, b) => s + b.volume, 0) / 15;
   const recentVol = recent.slice(-5).reduce((s, b) => s + b.volume, 0) / 5;
   const volExpansion = avgVol > 0 ? recentVol / avgVol : 1;
-
-  // Trend strength 0-100
   const trendStrength = Math.min(100, Math.round(absTrend * 12 + (volExpansion > 1.3 ? 15 : 0)));
-
-  // Expansion probability
   const expansionProb = Math.min(1, Math.max(0,
     (volExpansion > 1.5 ? 0.3 : volExpansion > 1.2 ? 0.15 : 0) +
     (absTrend > 3 ? 0.3 : absTrend > 1.5 ? 0.15 : 0) +
-    (rangeSize < 3 ? 0.25 : rangeSize < 5 ? 0.1 : 0) +
-    0.2, // base
+    (rangeSize < 3 ? 0.25 : rangeSize < 5 ? 0.1 : 0) + 0.2,
   ));
-
   let regime: MarketRegime;
-  if (absTrend > 3 && trendStrength > 50) {
-    regime = "TREND";
-  } else if (rangeSize < 3 && volExpansion > 1.4) {
-    regime = "BREAKOUT";
-  } else if (rangeSize < 5 && absTrend < 2) {
-    regime = "RANGE";
-  } else {
-    regime = "UNKNOWN";
-  }
-
+  if (absTrend > 3 && trendStrength > 50) regime = "TREND";
+  else if (rangeSize < 3 && volExpansion > 1.4) regime = "BREAKOUT";
+  else if (rangeSize < 5 && absTrend < 2) regime = "RANGE";
+  else regime = "UNKNOWN";
   return { regime, trendStrength, expansionProb };
 }
-
-/* ------------------------------------------------------------------ */
-/*  Volume spike detection                                             */
-/* ------------------------------------------------------------------ */
 
 function detectVolumeSpike(bars: OhlcvBar[]): boolean {
   if (bars.length < 20) return false;
   const recent = bars.slice(-20);
   const avgVol = recent.slice(0, 15).reduce((s, b) => s + b.volume, 0) / 15;
-  const lastBar = recent[recent.length - 1];
-  return avgVol > 0 && lastBar.volume > avgVol * 2;
+  return avgVol > 0 && recent[recent.length - 1].volume > avgVol * 2;
 }
-
-/* ------------------------------------------------------------------ */
-/*  Aggressor flow proxy (from klines)                                 */
-/* ------------------------------------------------------------------ */
 
 function detectAggressorFlow(bars: OhlcvBar[]): "BUY" | "SELL" | "NEUTRAL" {
   if (bars.length < 5) return "NEUTRAL";
@@ -243,81 +230,132 @@ function detectAggressorFlow(bars: OhlcvBar[]): "BUY" | "SELL" | "NEUTRAL" {
   return "NEUTRAL";
 }
 
-/* ------------------------------------------------------------------ */
-/*  OI change proxy (from volume + price action)                       */
-/* ------------------------------------------------------------------ */
-
 function estimateOiChange(bars: OhlcvBar[]): number | null {
   if (bars.length < 10) return null;
   const recent = bars.slice(-10);
   const older = bars.slice(-20, -10);
   if (older.length < 5) return null;
-
   const recentAvgVol = recent.reduce((s, b) => s + b.volume, 0) / recent.length;
   const olderAvgVol = older.reduce((s, b) => s + b.volume, 0) / older.length;
-
   if (olderAvgVol === 0) return null;
-  // Volume increase + price movement in same direction suggests OI increase
-  const volChange = ((recentAvgVol - olderAvgVol) / olderAvgVol) * 100;
-  return Math.round(volChange * 100) / 100;
+  return Math.round(((recentAvgVol - olderAvgVol) / olderAvgVol) * 100 * 100) / 100;
 }
 
 /* ------------------------------------------------------------------ */
-/*  Enrich raw coin data with klines                                   */
+/*  Data quality computation                                           */
+/* ------------------------------------------------------------------ */
+
+function computeDataQuality(coin: RawCoinData, hasKlines: boolean): DataQuality {
+  const hasFunding = coin.fundingRate !== null;
+  const hasOrderbook = coin.depthUsd !== null && coin.imbalance !== null;
+  const hasOi = false; // OI is estimated from klines, true OI requires separate feed
+
+  let score = 0;
+  if (hasKlines) score += 40;    // klines = ATR, RSI, S/R, regime
+  if (hasFunding) score += 20;
+  if (hasOrderbook) score += 25;
+  if (coin.spreadBps !== null) score += 15;
+
+  return { hasKlines, hasOi, hasFunding, hasOrderbook, score };
+}
+
+/* ------------------------------------------------------------------ */
+/*  Enrich raw coin data                                               */
 /* ------------------------------------------------------------------ */
 
 function enrichCoin(raw: RawCoinData, bars: OhlcvBar[]): CoinUniverseData {
-  const atrPct = computeAtrPct(bars);
-  const rsi14 = computeRsi14(bars);
-  const srLevels = deriveKeyLevels(bars);
-  const nearest = findNearestSR(raw.price, srLevels);
-  const regimeData = detectRegime(bars);
-  const volumeSpike = detectVolumeSpike(bars);
-  const aggressorFlow = detectAggressorFlow(bars);
-  const oiChange = estimateOiChange(bars);
-
   return {
     ...raw,
-    atrPct,
-    rsi14,
-    srDistPct: nearest?.distPct ?? null,
-    nearestSR: nearest?.level ?? null,
-    srLevels,
-    regime: regimeData.regime,
-    trendStrength: regimeData.trendStrength,
-    expansionProbability: regimeData.expansionProb,
-    volumeSpike,
-    oiChange,
-    aggressorFlow,
+    atrPct: computeAtrPct(bars),
+    rsi14: computeRsi14(bars),
+    srDistPct: null, nearestSR: null, // set below
+    srLevels: deriveKeyLevels(bars),
+    ...detectRegime(bars),
+    expansionProbability: detectRegime(bars).expansionProb,
+    volumeSpike: detectVolumeSpike(bars),
+    oiChange: estimateOiChange(bars),
+    aggressorFlow: detectAggressorFlow(bars),
     bars,
   };
 }
 
+function enrichCoinFull(raw: RawCoinData, bars: OhlcvBar[]): CoinUniverseData {
+  const enriched = enrichCoin(raw, bars);
+  const nearest = findNearestSR(raw.price, enriched.srLevels);
+  enriched.srDistPct = nearest?.distPct ?? null;
+  enriched.nearestSR = nearest?.level ?? null;
+  return enriched;
+}
+
 function enrichCoinNoKlines(raw: RawCoinData): CoinUniverseData {
   return {
-    ...raw,
-    atrPct: null,
-    rsi14: null,
-    srDistPct: null,
-    nearestSR: null,
-    srLevels: [],
-    regime: "UNKNOWN",
-    trendStrength: 0,
-    expansionProbability: 0.5,
-    volumeSpike: false,
-    oiChange: null,
-    aggressorFlow: "NEUTRAL",
-    bars: [],
+    ...raw, atrPct: null, rsi14: null, srDistPct: null, nearestSR: null,
+    srLevels: [], regime: "UNKNOWN", trendStrength: 0, expansionProbability: 0.5,
+    volumeSpike: false, oiChange: null, aggressorFlow: "NEUTRAL", bars: [],
   };
 }
 
 /* ------------------------------------------------------------------ */
-/*  Klines cache                                                       */
+/*  Klines cache (in-memory + Redis)                                   */
 /* ------------------------------------------------------------------ */
 
-interface KlinesCache {
-  bars: OhlcvBar[];
-  fetchedAt: number;
+interface KlinesCache { bars: OhlcvBar[]; fetchedAt: number; source: "binance" | "bybit"; }
+
+async function getRedisCandle(symbol: string): Promise<OhlcvBar[] | null> {
+  if (!redis) return null;
+  try {
+    const raw = await redis.get(`${REDIS_CANDLE_PREFIX}${symbol}`);
+    if (!raw) return null;
+    return JSON.parse(raw);
+  } catch { return null; }
+}
+
+async function setRedisCandle(symbol: string, bars: OhlcvBar[], source: string): Promise<void> {
+  if (!redis) return;
+  try {
+    await redis.set(`${REDIS_CANDLE_PREFIX}${symbol}`, JSON.stringify(bars), "EX", REDIS_CANDLE_TTL);
+  } catch { /* ignore */ }
+}
+
+/* ------------------------------------------------------------------ */
+/*  Klines fetchers                                                    */
+/* ------------------------------------------------------------------ */
+
+async function fetchBinanceKlines(symbol: string): Promise<OhlcvBar[] | null> {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 8_000);
+  try {
+    const url = `https://fapi.binance.com/fapi/v1/klines?symbol=${symbol}&interval=${KLINES_INTERVAL}&limit=${KLINES_BARS}`;
+    const res = await fetch(url, { signal: controller.signal });
+    clearTimeout(timeout);
+    if (!res.ok) return null;
+    const raw = (await res.json()) as Array<[number, string, string, string, string, string, ...any]>;
+    if (!Array.isArray(raw)) return null;
+    return raw.map((k) => ({ time: k[0], open: +k[1], high: +k[2], low: +k[3], close: +k[4], volume: +k[5] }));
+  } catch { return null; } finally { clearTimeout(timeout); }
+}
+
+async function fetchBybitKlines(symbol: string): Promise<OhlcvBar[] | null> {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 8_000);
+  try {
+    // Bybit linear USDT perps use same symbol format
+    const url = `https://api.bybit.com/v5/market/kline?category=linear&symbol=${symbol}&interval=15&limit=${KLINES_BARS}`;
+    const res = await fetch(url, { signal: controller.signal });
+    clearTimeout(timeout);
+    if (!res.ok) return null;
+    const body = (await res.json()) as { retCode: number; result?: { list?: string[][] } };
+    if (body.retCode !== 0 || !body.result?.list?.length) return null;
+    // Bybit returns newest first — reverse
+    return body.result.list.reverse().map((k) => ({
+      time: Number(k[0]),
+      open: Number(k[1]),
+      high: Number(k[2]),
+      low: Number(k[3]),
+      close: Number(k[4]),
+      volume: Number(k[5]),
+    }));
+  } catch { return null; } finally { clearTimeout(timeout); }
 }
 
 /* ------------------------------------------------------------------ */
@@ -339,12 +377,14 @@ export class CoinUniverseEngineV2 {
   private refreshedAt = "";
   private previousActiveSymbols = new Set<string>();
   private lastStats = { totalScanned: 0, hardFiltered: 0, scored: 0, selected: 0, cooldown: 0 };
+  private lastHealth: EngineHealth = { engine: "v2", mode: "degraded", klinesAvailable: false, klinesSource: "none", klinesSuccessCount: 0, klinesFailCount: 0, dataQuality: "minimal", binanceStatus: "unknown" };
+  private lastTelemetry: RejectionTelemetry = { hard_reject_volume: 0, hard_reject_spread: 0, hard_reject_stablecoin: 0, hard_reject_missing_data: 0, reject_score_below_threshold: 0, reject_weak_trend: 0, reject_range_low_expansion: 0, reject_declining_oi: 0, reject_below_top_10pct: 0, selected_count: 0, watchlist_count: 0 };
 
   constructor(deps: CoinUniverseEngineV2Deps) {
     this.deps = deps;
   }
 
-  /* ---- Public API (backward-compatible) ---- */
+  /* ---- Public API ---- */
 
   async refresh(): Promise<void> {
     this.currentRound += 1;
@@ -360,147 +400,161 @@ export class CoinUniverseEngineV2 {
     // 2. Stage 1: Hard Filter
     const { passed, rejected: hardRejected } = applyHardFilter(wsRows);
     if (!passed.length) {
-      console.log(`[CoinUniverseV2] Refresh #${this.currentRound}: All ${wsRows.length} coins hard-filtered`);
+      console.log(`[CoinUniverseV2] Refresh #${this.currentRound}: All ${wsRows.length} hard-filtered`);
       return;
     }
 
-    // 3. Fetch klines for top coins (sorted by volume descending as rough priority)
+    // Build rejection telemetry from hard filter
+    const telemetry: RejectionTelemetry = {
+      hard_reject_volume: 0, hard_reject_spread: 0, hard_reject_stablecoin: 0, hard_reject_missing_data: 0,
+      reject_score_below_threshold: 0, reject_weak_trend: 0, reject_range_low_expansion: 0,
+      reject_declining_oi: 0, reject_below_top_10pct: 0, selected_count: 0, watchlist_count: 0,
+    };
+    for (const r of hardRejected) {
+      if (r.reason.startsWith("volume")) telemetry.hard_reject_volume++;
+      else if (r.reason.startsWith("spread")) telemetry.hard_reject_spread++;
+      else if (r.reason === "stablecoin") telemetry.hard_reject_stablecoin++;
+      else telemetry.hard_reject_missing_data++;
+    }
+
+    // 3. Fetch klines with Binance → Bybit → Redis cache fallback
     const sortedByVol = [...passed].sort((a, b) => b.volume24hUsd - a.volume24hUsd);
     const klinesSymbols = sortedByVol.slice(0, 80).map((c) => c.symbol);
-    await this.fetchKlinesBatch(klinesSymbols);
+    const { successCount, failCount, source: klinesSource, binanceStatus } = await this.fetchKlinesBatchWithFallback(klinesSymbols);
 
-    // 4. Enrich coins with klines data
+    // 4. Enrich coins
     const now = Date.now();
+    let klinesHitCount = 0;
     const enriched: CoinUniverseData[] = passed.map((raw) => {
       const cached = this.klinesCache.get(raw.symbol);
       if (cached && now - cached.fetchedAt < KLINES_CACHE_TTL_MS && cached.bars.length >= 20) {
-        return enrichCoin(raw, cached.bars);
+        klinesHitCount++;
+        return enrichCoinFull(raw, cached.bars);
       }
       return enrichCoinNoKlines(raw);
     });
 
-    // 5. Stage 2 + 3: Universe Score (includes false penalty)
+    // Determine engine mode
+    const mode: EngineMode = klinesHitCount > 0 ? "full" : "degraded";
+    const dataQualityLevel = klinesHitCount >= 40 ? "full" : klinesHitCount > 0 ? "degraded" : "minimal";
+
+    // 5. Score + select
     const expansionProbs = new Map<string, number>();
     const scoredRows: UniverseCoinRow[] = enriched.map((coin) => {
       const score = computeUniverseScore(coin);
       expansionProbs.set(coin.symbol, coin.expansionProbability);
-
-      // Cooldown check
       const cooldownEntry = this.cooldownMap.get(coin.symbol);
       const isCooling = cooldownEntry != null && this.currentRound < cooldownEntry.cooldownUntilRound;
       const cooldownRoundsLeft = isCooling ? cooldownEntry!.cooldownUntilRound - this.currentRound : null;
       const isNew = !this.previousActiveSymbols.has(coin.symbol) && this.currentRound > 1;
+      const hasKlines = coin.regime !== "UNKNOWN";
+      const dq = computeDataQuality(coin, hasKlines);
 
       return {
-        symbol: coin.symbol,
-        baseAsset: coin.baseAsset,
-        price: coin.price,
-        change24hPct: coin.change24hPct,
-        volume24hUsd: coin.volume24hUsd,
-        fundingRate: coin.fundingRate,
-        spreadBps: coin.spreadBps,
-        atrPct: coin.atrPct,
-        rsi14: coin.rsi14,
-        srDistPct: coin.srDistPct,
-        nearestSR: coin.nearestSR,
-        regime: coin.regime,
-        trendStrength: coin.trendStrength,
-        volumeSpike: coin.volumeSpike,
-        oiChange: coin.oiChange,
-        aggressorFlow: coin.aggressorFlow,
-        universeScore: score,
-        compositeScore: score.final,
-        selected: false,
-        rejectedReason: null,
-        status: isCooling ? "COOLDOWN" : isNew ? "NEW" : "ACTIVE",
-        cooldownRoundsLeft,
-        scanner_selected: false,
+        symbol: coin.symbol, baseAsset: coin.baseAsset, price: coin.price,
+        change24hPct: coin.change24hPct, volume24hUsd: coin.volume24hUsd,
+        fundingRate: coin.fundingRate, spreadBps: coin.spreadBps,
+        atrPct: coin.atrPct, rsi14: coin.rsi14, srDistPct: coin.srDistPct,
+        nearestSR: coin.nearestSR, regime: coin.regime, trendStrength: coin.trendStrength,
+        volumeSpike: coin.volumeSpike, oiChange: coin.oiChange, aggressorFlow: coin.aggressorFlow,
+        universeScore: score, compositeScore: score.final, dataQuality: dq,
+        selected: false, rejectedReason: null,
+        status: isCooling ? "COOLDOWN" as const : isNew ? "NEW" as const : "ACTIVE" as const,
+        cooldownRoundsLeft, scanner_selected: false,
       };
     });
 
-    // Separate cooldown coins
     const activePool = scoredRows.filter((c) => c.status !== "COOLDOWN");
     const cooldownPool = scoredRows.filter((c) => c.status === "COOLDOWN");
 
-    // 6. Stage 4: Top 10% Selection
+    // 6. Top 10% Selection
     const selection = selectTopCoins(activePool, expansionProbs);
 
-    // Mark status on rejected from selection
-    const rejectedFromHardFilter: UniverseCoinRow[] = hardRejected.map((r) => ({
-      symbol: r.coin.symbol,
-      baseAsset: r.coin.baseAsset,
-      price: r.coin.price,
-      change24hPct: r.coin.change24hPct,
-      volume24hUsd: r.coin.volume24hUsd,
-      fundingRate: r.coin.fundingRate,
-      spreadBps: r.coin.spreadBps,
-      atrPct: null,
-      rsi14: null,
-      srDistPct: null,
-      nearestSR: null,
-      regime: "UNKNOWN" as const,
-      trendStrength: 0,
-      volumeSpike: false,
-      oiChange: null,
-      aggressorFlow: "NEUTRAL" as const,
+    // Build selection telemetry
+    for (const c of selection.rejected) {
+      if (c.rejectedReason?.startsWith("score_below")) telemetry.reject_score_below_threshold++;
+      else if (c.rejectedReason === "weak_trend_no_volume") telemetry.reject_weak_trend++;
+      else if (c.rejectedReason === "range_low_expansion") telemetry.reject_range_low_expansion++;
+      else if (c.rejectedReason === "declining_oi_neutral_flow") telemetry.reject_declining_oi++;
+      else if (c.rejectedReason === "below_top_10pct") telemetry.reject_below_top_10pct++;
+    }
+    for (const c of selection.watchlist) {
+      if (c.rejectedReason === "below_top_10pct") telemetry.reject_below_top_10pct++;
+    }
+    telemetry.selected_count = selection.selected.length;
+    telemetry.watchlist_count = selection.watchlist.length;
+
+    // Build rejected list (minimal — no heavy data)
+    const rejectedFromHardFilter: UniverseCoinRow[] = hardRejected.slice(0, 20).map((r) => ({
+      symbol: r.coin.symbol, baseAsset: r.coin.baseAsset, price: r.coin.price,
+      change24hPct: r.coin.change24hPct, volume24hUsd: r.coin.volume24hUsd,
+      fundingRate: r.coin.fundingRate, spreadBps: r.coin.spreadBps,
+      atrPct: null, rsi14: null, srDistPct: null, nearestSR: null,
+      regime: "UNKNOWN" as const, trendStrength: 0, volumeSpike: false,
+      oiChange: null, aggressorFlow: "NEUTRAL" as const,
       universeScore: { raw: 0, penalty: 0, final: 0, liquidity: { total: 0, volumeScore: 0, depthScore: 0, spreadScore: 0 }, structure: { total: 0, srProximity: 0, regimeScore: 0, trendScore: 0 }, momentum: { total: 0, priceChange: 0, rsiScore: 0, volumeSpikeScore: 0 }, positioning: { total: 0, fundingScore: 0, oiScore: 0, flowScore: 0 }, execution: { total: 0, spreadQuality: 0, depthQuality: 0, imbalanceScore: 0 }, falsePenalty: { total: 0, fakeBreakout: 0, signalConflict: 0, trapProbability: 0, cascadeRisk: 0, newsRisk: 0 } },
-      compositeScore: 0,
-      selected: false,
-      rejectedReason: r.reason,
-      status: "REJECTED" as const,
-      cooldownRoundsLeft: null,
-      scanner_selected: false,
+      compositeScore: 0, dataQuality: { hasKlines: false, hasOi: false, hasFunding: false, hasOrderbook: false, score: 0 },
+      selected: false, rejectedReason: r.reason, status: "REJECTED" as const,
+      cooldownRoundsLeft: null, scanner_selected: false,
     }));
 
-    // Combine selected + watchlist as active
+    // Combine
     const allActive = [...selection.selected, ...selection.watchlist]
       .sort((a, b) => b.compositeScore - a.compositeScore || b.volume24hUsd - a.volume24hUsd);
 
     this.rankedActive = allActive;
     this.rankedCooldown = cooldownPool.sort((a, b) => b.compositeScore - a.compositeScore);
-    this.rankedRejected = [...selection.rejected, ...rejectedFromHardFilter];
+    this.rankedRejected = [...selection.rejected.slice(0, 20), ...rejectedFromHardFilter];
     this.refreshedAt = new Date().toISOString();
     this.previousActiveSymbols = new Set(allActive.map((c) => c.symbol));
 
-    // Clean expired cooldowns
     for (const [sym, entry] of this.cooldownMap) {
-      if (this.currentRound >= entry.cooldownUntilRound) {
-        this.cooldownMap.delete(sym);
-      }
+      if (this.currentRound >= entry.cooldownUntilRound) this.cooldownMap.delete(sym);
     }
 
     this.lastStats = {
-      totalScanned: wsRows.length,
-      hardFiltered: hardRejected.length,
-      scored: passed.length,
-      selected: selection.selected.length,
-      cooldown: cooldownPool.length,
+      totalScanned: wsRows.length, hardFiltered: hardRejected.length,
+      scored: passed.length, selected: selection.selected.length, cooldown: cooldownPool.length,
     };
+    this.lastHealth = {
+      engine: "v2", mode, klinesAvailable: klinesHitCount > 0,
+      klinesSource, klinesSuccessCount: successCount, klinesFailCount: failCount,
+      dataQuality: dataQualityLevel, binanceStatus,
+    };
+    this.lastTelemetry = telemetry;
+
+    // 7. Persist to Redis (so workers 1-2 can read)
+    await this.persistToRedis();
 
     const elapsed = ((Date.now() - t0) / 1000).toFixed(1);
     console.log(
       `[CoinUniverseV2] Refresh #${this.currentRound}: ${wsRows.length} scanned, ` +
       `${hardRejected.length} hard-filtered, ${passed.length} scored, ` +
-      `${selection.selected.length} selected (top 10%), ${cooldownPool.length} cooling — ${elapsed}s`,
+      `${selection.selected.length} selected, ${klinesHitCount} klines (${klinesSource}) — ${mode} — ${elapsed}s`,
     );
   }
 
   getSnapshot(): UniverseSnapshot {
     return {
-      activeCoins: this.rankedActive,
-      cooldownCoins: this.rankedCooldown,
-      rejectedCoins: this.rankedRejected,
-      round: this.currentRound,
-      refreshedAt: this.refreshedAt,
-      stats: this.lastStats,
+      activeCoins: this.rankedActive, cooldownCoins: this.rankedCooldown,
+      rejectedCoins: this.rankedRejected, round: this.currentRound,
+      refreshedAt: this.refreshedAt, stats: this.lastStats,
+      health: this.lastHealth, telemetry: this.lastTelemetry,
     };
   }
 
+  /** Read snapshot from Redis (for secondary workers) */
+  async getSnapshotFromRedis(): Promise<UniverseSnapshot | null> {
+    if (!redis) return null;
+    try {
+      const raw = await redis.get(REDIS_SNAPSHOT_KEY);
+      if (!raw) return null;
+      return JSON.parse(raw);
+    } catch { return null; }
+  }
+
   getTop28(): string[] {
-    return this.rankedActive
-      .filter((c) => c.selected)
-      .slice(0, SELECTED_TOP_28)
-      .map((c) => c.symbol);
+    return this.rankedActive.filter((c) => c.selected).slice(0, SELECTED_TOP_28).map((c) => c.symbol);
   }
 
   getActiveSymbolsRanked(): string[] {
@@ -509,18 +563,13 @@ export class CoinUniverseEngineV2 {
 
   markAsSentToQuant(symbols: string[]): void {
     for (const s of symbols) {
-      this.cooldownMap.set(s, {
-        sentAtRound: this.currentRound,
-        cooldownUntilRound: this.currentRound + COOLDOWN_ROUNDS,
-      });
+      this.cooldownMap.set(s, { sentAtRound: this.currentRound, cooldownUntilRound: this.currentRound + COOLDOWN_ROUNDS });
     }
   }
 
   markScannerSelected(symbols: string[]): void {
     const set = new Set(symbols);
-    for (const coin of this.rankedActive) {
-      coin.scanner_selected = set.has(coin.symbol);
-    }
+    for (const coin of this.rankedActive) coin.scanner_selected = set.has(coin.symbol);
   }
 
   isCoolingDown(symbol: string): boolean {
@@ -528,53 +577,104 @@ export class CoinUniverseEngineV2 {
     return entry != null && this.currentRound < entry.cooldownUntilRound;
   }
 
-  /* ---- Private: Klines fetching ---- */
+  /* ---- Private: Redis persistence ---- */
 
-  private async fetchKlinesBatch(symbols: string[]): Promise<void> {
+  private async persistToRedis(): Promise<void> {
+    if (!redis) return;
+    try {
+      const snapshot: UniverseSnapshot = {
+        activeCoins: this.rankedActive, cooldownCoins: this.rankedCooldown,
+        rejectedCoins: [], // Don't store full rejected in Redis (too large)
+        round: this.currentRound, refreshedAt: this.refreshedAt,
+        stats: this.lastStats, health: this.lastHealth, telemetry: this.lastTelemetry,
+      };
+      await redis.set(REDIS_SNAPSHOT_KEY, JSON.stringify(snapshot), "EX", REDIS_SNAPSHOT_TTL);
+    } catch (err: any) {
+      console.error("[CoinUniverseV2] Redis persist error:", err?.message);
+    }
+  }
+
+  /* ---- Private: Klines with fallback chain ---- */
+
+  private async fetchKlinesBatchWithFallback(symbols: string[]): Promise<{
+    successCount: number; failCount: number;
+    source: "binance" | "bybit" | "cache" | "none";
+    binanceStatus: "ok" | "rate_limited" | "error" | "unknown";
+  }> {
     const now = Date.now();
     const needFetch = symbols.filter((s) => {
       const cached = this.klinesCache.get(s);
       return !cached || now - cached.fetchedAt >= KLINES_CACHE_TTL_MS;
     });
-    if (!needFetch.length) return;
+    if (!needFetch.length) {
+      const cachedCount = symbols.filter((s) => this.klinesCache.has(s)).length;
+      return { successCount: cachedCount, failCount: 0, source: "cache", binanceStatus: "unknown" };
+    }
 
-    for (let i = 0; i < needFetch.length; i += KLINES_CONCURRENT) {
-      const chunk = needFetch.slice(i, i + KLINES_CONCURRENT);
-      const results = await Promise.allSettled(chunk.map((symbol) => this.fetchKlines(symbol)));
+    let successCount = 0;
+    let failCount = 0;
+    let primarySource: "binance" | "bybit" | "cache" | "none" = "none";
+    let binanceStatus: "ok" | "rate_limited" | "error" | "unknown" = "unknown";
+
+    // Try Binance first (first 3 symbols as probe)
+    const probeSymbols = needFetch.slice(0, 3);
+    let binanceWorks = false;
+    for (const symbol of probeSymbols) {
+      const bars = await fetchBinanceKlines(symbol);
+      if (bars && bars.length >= 20) {
+        binanceWorks = true;
+        binanceStatus = "ok";
+        this.klinesCache.set(symbol, { bars, fetchedAt: Date.now(), source: "binance" });
+        await setRedisCandle(symbol, bars, "binance");
+        successCount++;
+        break;
+      }
+    }
+
+    if (!binanceWorks) {
+      binanceStatus = "rate_limited";
+    }
+
+    // Determine source for remaining
+    const fetchFn = binanceWorks ? fetchBinanceKlines : fetchBybitKlines;
+    primarySource = binanceWorks ? "binance" : "bybit";
+    const remaining = needFetch.filter((s) => !this.klinesCache.has(s) || now - this.klinesCache.get(s)!.fetchedAt >= KLINES_CACHE_TTL_MS);
+
+    for (let i = 0; i < remaining.length; i += KLINES_CONCURRENT) {
+      const chunk = remaining.slice(i, i + KLINES_CONCURRENT);
+      const results = await Promise.allSettled(chunk.map(async (symbol) => {
+        // Try Redis cache first
+        const cached = await getRedisCandle(symbol);
+        if (cached && cached.length >= 20) return { bars: cached, source: "cache" as const };
+        // Fetch from exchange
+        const bars = await fetchFn(symbol);
+        if (bars && bars.length >= 20) {
+          await setRedisCandle(symbol, bars, primarySource);
+          return { bars, source: primarySource };
+        }
+        // Bybit fallback if Binance was primary
+        if (binanceWorks) {
+          const bybitBars = await fetchBybitKlines(symbol);
+          if (bybitBars && bybitBars.length >= 20) {
+            await setRedisCandle(symbol, bybitBars, "bybit");
+            return { bars: bybitBars, source: "bybit" as const };
+          }
+        }
+        return null;
+      }));
       for (let j = 0; j < results.length; j++) {
         const result = results[j];
         if (result.status === "fulfilled" && result.value) {
-          this.klinesCache.set(chunk[j], { bars: result.value, fetchedAt: Date.now() });
+          this.klinesCache.set(chunk[j], { bars: result.value.bars, fetchedAt: Date.now(), source: result.value.source as any });
+          successCount++;
+        } else {
+          failCount++;
         }
       }
       await new Promise<void>((r) => setImmediate(r));
     }
-  }
 
-  private async fetchKlines(symbol: string): Promise<OhlcvBar[] | null> {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 8_000);
-    try {
-      const url = `https://fapi.binance.com/fapi/v1/klines?symbol=${symbol}&interval=${KLINES_INTERVAL}&limit=${KLINES_BARS}`;
-      const res = await fetch(url, { signal: controller.signal });
-      clearTimeout(timeout);
-      if (!res.ok) return null;
-      const raw = (await res.json()) as Array<
-        [number, string, string, string, string, string, number, string, number, string, string, string]
-      >;
-      if (!Array.isArray(raw)) return null;
-      return raw.map((k) => ({
-        time: k[0],
-        open: Number(k[1]),
-        high: Number(k[2]),
-        low: Number(k[3]),
-        close: Number(k[4]),
-        volume: Number(k[5]),
-      }));
-    } catch {
-      return null;
-    } finally {
-      clearTimeout(timeout);
-    }
+    if (successCount === 0) primarySource = "none";
+    return { successCount, failCount, source: primarySource, binanceStatus };
   }
 }
