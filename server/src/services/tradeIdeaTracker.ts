@@ -268,6 +268,9 @@ export class TradeIdeaTracker {
     pendingTtlMinutes?: Partial<Record<Horizon, number>>;
   };
 
+  /** Callback fired when a trade idea is resolved (win/loss) */
+  onResolve: ((idea: any) => void) | null = null;
+
   constructor(
     store: TradeIdeaStore,
     options?: {
@@ -277,6 +280,15 @@ export class TradeIdeaTracker {
   ) {
     this.store = store;
     this.options = options;
+
+    // Monkey-patch store.updateIdea to fire onResolve callback
+    const originalUpdate = store.updateIdea.bind(store);
+    store.updateIdea = async (id: string, updates: any) => {
+      await originalUpdate(id, updates);
+      if (updates?.status === "RESOLVED" && this.onResolve) {
+        try { this.onResolve({ id, ...updates }); } catch { /* ignore */ }
+      }
+    };
   }
 
   start() {

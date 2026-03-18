@@ -256,9 +256,38 @@ bootstrap()
         optimizationScheduler.start();
         tickOrchestrator.start();
 
-        // TradeIdeaTracker: resolve active ideas (entry hit, TP/SL hit, expiry)
+        // TradeIdeaTracker: resolve active ideas → feed into Optimizer P2
+        tradeIdeaTracker.onResolve = (idea: any) => {
+          if (!idea || idea.status !== "RESOLVED") return;
+          const win = idea.result === "SUCCESS";
+          tradeOutcomeAttributor.attributeTrade({
+            id: idea.id ?? idea.setup_id ?? `${idea.symbol}_${Date.now()}`,
+            symbol: idea.symbol ?? "",
+            direction: idea.direction ?? "LONG",
+            scoringMode: idea.scoring_mode ?? idea.scoringMode ?? "FLOW",
+            finalScore: Number(idea.final_score ?? idea.score ?? 50),
+            entry: Number(idea.entry_mid ?? idea.entry ?? 0),
+            sl: Number(idea.stop_1 ?? idea.sl ?? 0),
+            tp1: Number(idea.target_1 ?? idea.tp1 ?? 0),
+            tp2: Number(idea.target_2 ?? idea.tp2 ?? null),
+            exitPrice: Number(idea.hit_level_price ?? idea.exit_price ?? idea.entry_mid ?? 0),
+            win,
+            regime: idea.regime ?? "UNKNOWN",
+            createdAt: idea.created_at ?? new Date().toISOString(),
+            resolvedAt: idea.resolved_at ?? new Date().toISOString(),
+            highPrice: Number(idea.high_price ?? idea.hit_level_price ?? idea.entry_mid ?? 0),
+            lowPrice: Number(idea.low_price ?? idea.entry_mid ?? 0),
+          }).catch((err: any) => console.error("[OptimizerP2] Attribution error:", err?.message));
+          // Feed P4 regime memory
+          regimeParameterEngine.recordRegimeOutcome({
+            regime: idea.regime ?? "UNKNOWN",
+            conditions: `${idea.scoring_mode ?? "FLOW"}+${idea.regime ?? "UNKNOWN"}`,
+            outcomeR: win ? Number(idea.outcome_r ?? 1) : Number(idea.outcome_r ?? -1),
+            win,
+          }).catch(() => {});
+        };
         tradeIdeaTracker.start();
-        console.log(`[Worker ${WORKER_ID}] TradeIdeaTracker started`);
+        console.log(`[Worker ${WORKER_ID}] TradeIdeaTracker started + linked to Optimizer P2/P4`);
 
         // Optimizer Evolution: P1-P10
         void modePerformanceTracker.loadFromRedis();
@@ -303,6 +332,9 @@ bootstrap()
               await coinUniverseEngineV2.refresh().catch((err: any) =>
                 console.error("[CoinUniverseV2] Refresh error:", err?.message ?? err),
               );
+              // Feed V2 regime to P4 RegimeParameterEngine
+              const v2snap = coinUniverseEngineV2.getSnapshot();
+              if (v2snap.health) regimeParameterEngine.setCurrentRegime(v2snap.health.mode === "full" ? (v2snap.activeCoins[0]?.regime ?? "UNKNOWN") : "UNKNOWN");
               const snapshot = coinUniverseEngine.getSnapshot();
               if (snapshot.activeCoins.length > 0) {
                 hubEventBridge.storeUniverseSnapshot(JSON.stringify({
