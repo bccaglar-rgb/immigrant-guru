@@ -147,7 +147,8 @@ const resolveProviderEndpoint = (provider: AiProviderRecord): string => {
 };
 
 const AI_SCAN_INTERVAL_MS = 60_000;
-const AI_SCAN_COINS_PER_MODULE = 2;
+const AI_SCAN_COINS_PER_MODULE = 3;
+const AI_MODULE_STAGGER_MS = 20_000; // 20s delay between modules
 const AI_SCAN_ROW_LIMIT = 80;
 const AI_MIN_CONSENSUS = 48;
 const AI_MODE_BUFFER: Record<string, number> = {
@@ -1708,19 +1709,10 @@ export const registerAiTradeIdeasRoutes = (
       const enabledModuleIds = ALL_MODULE_IDS.filter((id) => providers.some((p) => p.id === id));
       const totalCoinsNeeded = enabledModuleIds.length * AI_SCAN_COINS_PER_MODULE;
 
-      // ── Coin selection: rotating window from CoinUniverseEngine (unique per module, new each cycle) ──
+      // ── Coin selection: top N from CoinUniverseEngine by compositeScore ──
       let rankedSymbols: string[] = [];
       if (deps.coinUniverseEngine) {
-        const allRanked = deps.coinUniverseEngine.getActiveSymbolsRanked();
-        // Rotate through the ranked list — each cycle picks a different slice
-        const poolSize = Math.max(allRanked.length, 1);
-        const offset = (sharedAiState.aiRotationIndex ?? 0) * totalCoinsNeeded;
-        const rotated: string[] = [];
-        for (let i = 0; i < totalCoinsNeeded && i < poolSize; i++) {
-          rotated.push(allRanked[(offset + i) % poolSize]);
-        }
-        rankedSymbols = rotated;
-        sharedAiState.aiRotationIndex = ((sharedAiState.aiRotationIndex ?? 0) + 1) % Math.max(1, Math.ceil(poolSize / totalCoinsNeeded));
+        rankedSymbols = deps.coinUniverseEngine.getActiveSymbolsRanked().slice(0, AI_SCAN_COINS_PER_MODULE);
       }
       // Fallback: volume-sorted universe rows
       if (!rankedSymbols.length) {
@@ -1755,14 +1747,10 @@ export const registerAiTradeIdeasRoutes = (
         return;
       }
 
-      // ── Distribute unique coins to each module ──
-      // ChatGPT → rank 0,1  |  QWEN → rank 2,3  |  QWEN2 → rank 4,5
+      // ── All modules get the SAME top coins (each evaluates independently) ──
       const symbolsByModule: Record<AiModuleId, string[]> = { CHATGPT: [], QWEN: [], QWEN2: [] };
-      for (let i = 0; i < enabledModuleIds.length; i++) {
-        const moduleId = enabledModuleIds[i];
-        const start = i * AI_SCAN_COINS_PER_MODULE;
-        const end = start + AI_SCAN_COINS_PER_MODULE;
-        symbolsByModule[moduleId] = rankedSymbols.slice(start, end);
+      for (const moduleId of enabledModuleIds) {
+        symbolsByModule[moduleId] = [...rankedSymbols];
       }
 
       // Get CHATGPT provider from ALL stored providers (not just enabled) so key is always available for QWEN2
@@ -1772,7 +1760,15 @@ export const registerAiTradeIdeasRoutes = (
       const openAiKey = (chatgptProvider?.apiKey ?? "").trim() || (process.env.OPENAI_API_KEY ?? "").trim();
       const openAiModel = (chatgptProvider?.model ?? "").trim() || "gpt-4o-mini";
 
-      for (const moduleId of ALL_MODULE_IDS) {
+      // Staggered execution: QWEN2 (Axiom) → 20s → CHATGPT → 20s → QWEN
+      const moduleOrder: AiModuleId[] = ["QWEN2", "CHATGPT", "QWEN"];
+      for (let moduleIdx = 0; moduleIdx < moduleOrder.length; moduleIdx++) {
+        const moduleId = moduleOrder[moduleIdx];
+        if (!enabledModuleIds.includes(moduleId)) continue;
+        // Stagger: wait 20s between modules (skip first)
+        if (moduleIdx > 0) {
+          await new Promise<void>((r) => setTimeout(r, AI_MODULE_STAGGER_MS));
+        }
         let provider = providers.find((row) => row.id === moduleId);
         // QWEN2 (Bitrium Axiom) uses OpenAI API with ChatGPT's key + model
         if (moduleId === "QWEN2" && provider && openAiKey) {
