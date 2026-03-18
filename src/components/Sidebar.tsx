@@ -316,15 +316,14 @@ export const Sidebar = ({
       onMouseLeave={mobile ? undefined : onMouseLeave}
       className={`relative z-[80] flex h-full ${boxSize} flex-col overflow-visible border-r border-[var(--borderSoft)] bg-[var(--panel)] p-2 transition-[width] duration-[180ms] ease-[cubic-bezier(0.215,0.61,0.355,1)]`}
     >
-      <NavLink to="/quant-engine" onClick={onNavigate} title="Bitrium Quant Engine">
-        <SidebarHeader
-          logoUrl={displayLogo}
-          collapsed={collapsed}
-          mobile={mobile}
-          mode={mode}
-          onModeToggle={onToggleMode}
-        />
-      </NavLink>
+      <SidebarHeader
+        logoUrl={displayLogo}
+        collapsed={collapsed}
+        mobile={mobile}
+        mode={mode}
+        onModeToggle={onToggleMode}
+        onLogoNavigate={onNavigate}
+      />
 
       <nav className="space-y-1">
         {topMenu.map((item) => (

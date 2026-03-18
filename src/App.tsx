@@ -32,6 +32,7 @@ function lazyRetry<T extends ComponentType<any>>(importFn: () => Promise<{ defau
   });
 }
 
+const LandingPage = lazyRetry(() => import("./pages/LandingPage"));
 const MarketDashboardPage = lazyRetry(() => import("./pages/MarketDashboardPage"));
 const ExchangeTerminalPage = lazyRetry(() => import("./pages/ExchangeTerminalPage"));
 const CryptoMarketPage = lazyRetry(() => import("./pages/CryptoMarketPage"));
@@ -104,8 +105,8 @@ function App() {
         <Route path="/settings" element={<Suspense fallback={<PageLoader />}><SettingsPage /></Suspense>} />
         <Route path="/ai-exchange-manager" element={<Navigate to="/admin" replace />} />
         <Route path="/admin" element={<Suspense fallback={<PageLoader />}><AdminPage /></Suspense>} />
-        <Route path="/" element={<Navigate to="/quant-engine" replace />} />
-        <Route path="*" element={<Navigate to="/quant-engine" replace />} />
+        <Route path="/" element={<Suspense fallback={<PageLoader />}><LandingPage /></Suspense>} />
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Route>
     </Routes>
   );

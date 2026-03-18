@@ -27,6 +27,7 @@ const titleForPath = (path: string) => {
   if (path.startsWith("/token-creator")) return "Token Creator";
   if (path.startsWith("/pricing")) return "Pricing";
   if (path.startsWith("/settings")) return "Settings";
+  if (path === "/") return "Bitrium";
   return "Bitrium Quant Engine";
 };
 

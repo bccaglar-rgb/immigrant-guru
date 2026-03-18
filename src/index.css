@@ -103,3 +103,47 @@ body {
     background-color: color-mix(in srgb, var(--accent) 20%, var(--panel)) !important;
   }
 }
+
+/* ─────────── Landing Page Animations ─────────── */
+
+.lp-reveal {
+  opacity: 0;
+  transform: translateY(18px);
+  transition: opacity 0.5s ease-out, transform 0.5s ease-out;
+}
+
+.lp-reveal.lp-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.lp-pulse {
+  animation: lpPulse 2s ease-in-out infinite;
+}
+
+@keyframes lpPulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(1.5); }
+}
+
+.lp-cta-primary {
+  position: relative;
+  overflow: hidden;
+}
+
+.lp-cta-primary::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(105deg, transparent 40%, rgba(255,255,255,0.2) 45%, rgba(255,255,255,0.25) 50%, transparent 55%);
+  transform: translateX(-100%);
+  transition: none;
+}
+
+.lp-cta-primary:hover::after {
+  animation: lpShine 0.6s ease-out forwards;
+}
+
+@keyframes lpShine {
+  to { transform: translateX(100%); }
+}

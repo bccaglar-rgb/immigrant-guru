@@ -55,7 +55,7 @@ export const SidebarHeader = ({
 
   return (
     <div className="mb-3">
-      <NavLink to="/quant-engine" onClick={onLogoNavigate} title="Bitrium Quant Engine" className="block">
+      <NavLink to="/" onClick={onLogoNavigate} title="Bitrium" className="block">
         <div className={`w-full ${collapsed ? "mx-auto h-[68px] w-[68px]" : "h-28"}`}>
           {showImage ? (
             <img
