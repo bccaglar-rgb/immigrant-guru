@@ -1784,7 +1784,6 @@ export const registerAiTradeIdeasRoutes = (
       const openAiModel = (chatgptProvider?.model ?? "").trim() || "gpt-4o-mini";
 
       // Staggered execution: QWEN2 (Axiom) → 20s → CHATGPT → 20s → QWEN
-      const moduleOrder: AiModuleId[] = ["QWEN2", "CHATGPT", "QWEN"];
       for (let moduleIdx = 0; moduleIdx < moduleOrder.length; moduleIdx++) {
         const moduleId = moduleOrder[moduleIdx];
         if (!enabledModuleIds.includes(moduleId)) continue;
