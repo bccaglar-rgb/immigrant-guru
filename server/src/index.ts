@@ -238,6 +238,12 @@ bootstrap()
         optimizationScheduler.start();
         tickOrchestrator.start();
 
+        // SystemScanner: start after 45s delay to let CoinUniverseEngine warm up
+        setTimeout(() => {
+          systemScanner.start();
+          console.log(`[Worker ${WORKER_ID}] SystemScanner started`);
+        }, 45_000);
+
         // CoinUniverseEngine: refresh every 60s on Worker 0
         // In HUB_EXTERNAL mode, reads universe from Redis cache (redisBinanceHubStub)
         // In LOCAL mode, reads from live WS hub (binanceFuturesHub)
