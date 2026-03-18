@@ -332,50 +332,42 @@ function ScoreBreakdown({ score }: { score: UniverseScoreDetail }) {
 /*  Coin Row (V2 with new columns)                                     */
 /* ------------------------------------------------------------------ */
 
+const ROW_GRID = "2rem 2.2rem 2fr 0.8fr 1.4fr 1fr 1.4fr 0.7fr 1fr 0.9fr 0.7fr 1.2fr 0.7fr 0.7fr 0.6fr 0.6fr 0.6fr";
+
 function CoinRow({ c, idx, onClick }: { c: UniverseCoinRow; idx: number; onClick: () => void }) {
   const [showBreakdown, setShowBreakdown] = useState(false);
   const hasV2 = !!c.universeScore;
 
   return (
     <div
-      className={`flex cursor-pointer items-center border-b border-white/5 px-4 py-2 text-sm transition hover:bg-[#17191d] ${c.selected ? "bg-[#0d1a0d]/30" : ""}`}
-      style={{ minWidth: 1320 }}
+      className={`grid cursor-pointer items-center border-b border-white/5 px-4 py-2 text-sm transition hover:bg-[#17191d] gap-1 ${c.selected ? "bg-[#0d1a0d]/30" : ""}`}
+      style={{ gridTemplateColumns: ROW_GRID }}
       onClick={onClick}
     >
-      {/* # */}
-      <span className="w-8 text-center text-xs text-[#6B6F76]">{idx + 1}</span>
+      <span className="text-center text-xs text-[#6B6F76]">{idx + 1}</span>
 
-      {/* Icon */}
-      <span className="w-9 flex-shrink-0">
+      <span className="flex-shrink-0">
         <CoinIcon symbol={c.symbol} className="h-7 w-7" />
       </span>
 
-      {/* Coin name + badges */}
-      <div className="w-28 min-w-0">
+      <div className="min-w-0">
         <div className="flex items-center gap-1">
-          <span className="font-semibold text-white">{c.baseAsset}</span>
+          <span className="font-semibold text-white truncate">{c.baseAsset}</span>
           <span className="text-[11px] text-[#6B6F76]">/USDT</span>
           {c.selected && (
-            <span className="inline-flex items-center rounded-full bg-[#4ade80]/15 px-1 py-px text-[8px] font-bold text-[#4ade80] border border-[#4ade80]/30 leading-tight">
-              TOP
-            </span>
+            <span className="inline-flex items-center rounded-full bg-[#4ade80]/15 px-1 py-px text-[8px] font-bold text-[#4ade80] border border-[#4ade80]/30 leading-tight">TOP</span>
           )}
           {c.scanner_selected && (
-            <span className="inline-flex items-center rounded-full bg-[#F5C542]/15 px-1 py-px text-[8px] font-bold text-[#F5C542] border border-[#F5C542]/30 leading-tight">
-              SCAN
-            </span>
+            <span className="inline-flex items-center rounded-full bg-[#F5C542]/15 px-1 py-px text-[8px] font-bold text-[#F5C542] border border-[#F5C542]/30 leading-tight">SCAN</span>
           )}
           {c.status === "NEW" && (
-            <span className="inline-flex items-center rounded-full bg-[#60a5fa]/15 px-1 py-px text-[8px] font-bold text-[#60a5fa] border border-[#60a5fa]/30 leading-tight">
-              NEW
-            </span>
+            <span className="inline-flex items-center rounded-full bg-[#60a5fa]/15 px-1 py-px text-[8px] font-bold text-[#60a5fa] border border-[#60a5fa]/30 leading-tight">NEW</span>
           )}
         </div>
       </div>
 
-      {/* Universe Score (with hover breakdown) */}
       <span
-        className="relative w-14 text-right text-xs"
+        className="relative text-right text-xs"
         onMouseEnter={() => setShowBreakdown(true)}
         onMouseLeave={() => setShowBreakdown(false)}
       >
@@ -385,106 +377,57 @@ function CoinRow({ c, idx, onClick }: { c: UniverseCoinRow; idx: number; onClick
         {showBreakdown && hasV2 && <ScoreBreakdown score={c.universeScore} />}
       </span>
 
-      {/* Price */}
-      <span className="w-24 text-right font-medium text-white">
-        {fmtPrice(c.price)}
-      </span>
+      <span className="text-right font-medium text-white">{fmtPrice(c.price)}</span>
 
-      {/* 24h Change */}
-      <span className={`w-20 text-right text-[11px] font-semibold ${pctColor(c.change24hPct)}`}>
+      <span className={`text-right text-[11px] font-semibold ${pctColor(c.change24hPct)}`}>
         {c.change24hPct >= 0 ? "+" : ""}{c.change24hPct.toFixed(2)}%
       </span>
 
-      {/* Volume */}
-      <span className="w-24 text-right text-[#BFC2C7]">
-        {compactUsd(c.volume24hUsd)}
-      </span>
+      <span className="text-right text-[#BFC2C7]">{compactUsd(c.volume24hUsd)}</span>
 
-      {/* Trend Strength */}
-      <span className={`w-12 text-right text-xs ${
-        c.trendStrength >= 60 ? "text-[#4ade80]" : c.trendStrength >= 30 ? "text-[#F5C542]" : "text-[#6B6F76]"
-      }`}>
+      <span className={`text-right text-xs ${c.trendStrength >= 60 ? "text-[#4ade80]" : c.trendStrength >= 30 ? "text-[#F5C542]" : "text-[#6B6F76]"}`}>
         {c.trendStrength ?? "---"}
       </span>
 
-      {/* Regime */}
-      <span className="w-16 text-right text-xs">
+      <span className="text-center text-xs">
         {c.regime ? (
-          <span className={`inline-flex rounded px-1 py-px text-[9px] font-semibold ${regimeChipCls(c.regime)}`}>
-            {c.regime}
-          </span>
+          <span className={`inline-flex rounded px-1.5 py-0.5 text-[9px] font-semibold ${regimeChipCls(c.regime)}`}>{c.regime}</span>
         ) : "---"}
       </span>
 
-      {/* OI Change */}
-      <span className={`w-14 text-right text-xs ${
-        c.oiChange != null
-          ? c.oiChange > 0 ? "text-[#8fc9ab]" : c.oiChange < 0 ? "text-[#d49f9a]" : "text-[#6B6F76]"
-          : "text-[#6B6F76]"
-      }`}>
+      <span className={`text-right text-xs ${c.oiChange != null ? c.oiChange > 0 ? "text-[#8fc9ab]" : c.oiChange < 0 ? "text-[#d49f9a]" : "text-[#6B6F76]" : "text-[#6B6F76]"}`}>
         {c.oiChange != null ? `${c.oiChange > 0 ? "+" : ""}${c.oiChange.toFixed(1)}%` : "---"}
       </span>
 
-      {/* Volume Spike */}
-      <span className="w-12 text-center text-xs">
+      <span className="text-center text-xs">
         {c.volumeSpike ? (
-          <span className="inline-flex rounded bg-[#F5C542]/15 px-1 py-px text-[9px] font-bold text-[#F5C542]">
-            SPIKE
-          </span>
-        ) : (
-          <span className="text-[#6B6F76]">-</span>
-        )}
+          <span className="inline-flex rounded bg-[#F5C542]/15 px-1.5 py-0.5 text-[9px] font-bold text-[#F5C542]">SPIKE</span>
+        ) : <span className="text-[#6B6F76]">-</span>}
       </span>
 
-      {/* Funding */}
-      <span
-        className={`w-20 text-right text-xs ${
-          c.fundingRate != null
-            ? c.fundingRate > 0 ? "text-[#8fc9ab]" : c.fundingRate < 0 ? "text-[#d49f9a]" : "text-[#8f95a3]"
-            : "text-[#6B6F76]"
-        }`}
-      >
-        {c.fundingRate != null
-          ? `${c.fundingRate >= 0 ? "+" : ""}${(c.fundingRate * 100).toFixed(4)}%`
-          : "---"}
+      <span className={`text-right text-xs ${c.fundingRate != null ? c.fundingRate > 0 ? "text-[#8fc9ab]" : c.fundingRate < 0 ? "text-[#d49f9a]" : "text-[#8f95a3]" : "text-[#6B6F76]"}`}>
+        {c.fundingRate != null ? `${c.fundingRate >= 0 ? "+" : ""}${(c.fundingRate * 100).toFixed(4)}%` : "---"}
       </span>
 
-      {/* Spread */}
-      <span className={`w-14 text-right text-xs ${c.spreadBps != null ? spreadCls(c.spreadBps) : "text-[#6B6F76]"}`}>
-        {c.spreadBps != null ? `${c.spreadBps.toFixed(1)}` : "---"}
+      <span className={`text-right text-xs ${c.spreadBps != null ? spreadCls(c.spreadBps) : "text-[#6B6F76]"}`}>
+        {c.spreadBps != null ? c.spreadBps.toFixed(1) : "---"}
       </span>
 
-      {/* Entry Quality (Execution score) */}
-      {hasV2 && (
-        <span className={`w-12 text-right text-xs ${
-          c.universeScore.execution.total >= 10 ? "text-[#4ade80]"
-            : c.universeScore.execution.total >= 6 ? "text-[#F5C542]"
-            : "text-[#6B6F76]"
-        }`}>
-          {c.universeScore.execution.total.toFixed(1)}
-        </span>
-      )}
+      <span className={`text-right text-xs ${hasV2 ? c.universeScore.execution.total >= 10 ? "text-[#4ade80]" : c.universeScore.execution.total >= 6 ? "text-[#F5C542]" : "text-[#6B6F76]" : "text-[#6B6F76]"}`}>
+        {hasV2 ? c.universeScore.execution.total.toFixed(1) : "---"}
+      </span>
 
-      {/* Fake Breakout Risk */}
-      {hasV2 && (
-        <span className={`w-12 text-right text-xs ${penaltyCls(c.universeScore.falsePenalty.fakeBreakout)}`}>
-          {c.universeScore.falsePenalty.fakeBreakout}
-        </span>
-      )}
+      <span className={`text-right text-xs ${hasV2 ? penaltyCls(c.universeScore.falsePenalty.fakeBreakout) : "text-[#6B6F76]"}`}>
+        {hasV2 ? c.universeScore.falsePenalty.fakeBreakout : "---"}
+      </span>
 
-      {/* Signal Conflict */}
-      {hasV2 && (
-        <span className={`w-12 text-right text-xs ${penaltyCls(c.universeScore.falsePenalty.signalConflict)}`}>
-          {c.universeScore.falsePenalty.signalConflict}
-        </span>
-      )}
+      <span className={`text-right text-xs ${hasV2 ? penaltyCls(c.universeScore.falsePenalty.signalConflict) : "text-[#6B6F76]"}`}>
+        {hasV2 ? c.universeScore.falsePenalty.signalConflict : "---"}
+      </span>
 
-      {/* Trap Probability */}
-      {hasV2 && (
-        <span className={`w-12 text-right text-xs ${penaltyCls(c.universeScore.falsePenalty.trapProbability)}`}>
-          {c.universeScore.falsePenalty.trapProbability}
-        </span>
-      )}
+      <span className={`text-right text-xs ${hasV2 ? penaltyCls(c.universeScore.falsePenalty.trapProbability) : "text-[#6B6F76]"}`}>
+        {hasV2 ? c.universeScore.falsePenalty.trapProbability : "---"}
+      </span>
     </div>
   );
 }
@@ -644,25 +587,28 @@ export default function CoinUniversePage() {
 
         {/* Active Coin list */}
         <section className="rounded-2xl border border-white/10 bg-[#121316] overflow-x-auto">
-          {/* Sticky header — sortable, min-width for horizontal scroll */}
-          <div className="sticky top-0 z-10 flex items-center border-b border-white/10 bg-[#0F1012] px-4 py-2 text-[10px] font-semibold uppercase tracking-wider text-[#6B6F76]" style={{ minWidth: 1320 }}>
-            <span className="w-8 text-center">#</span>
-            <span className="w-9" />
-            <span className="w-28">Coin</span>
-            <SortHeader label="Score" sortKey="compositeScore" activeKey={sortKey} dir={sortDir} onSort={handleSort} className="w-14 text-right" />
-            <SortHeader label="Price" sortKey="price" activeKey={sortKey} dir={sortDir} onSort={handleSort} className="w-24 text-right" />
-            <SortHeader label="24h" sortKey="change24hPct" activeKey={sortKey} dir={sortDir} onSort={handleSort} className="w-20 text-right" />
-            <SortHeader label="Volume" sortKey="volume24hUsd" activeKey={sortKey} dir={sortDir} onSort={handleSort} className="w-24 text-right" />
-            <SortHeader label="Trend" sortKey="trendStrength" activeKey={sortKey} dir={sortDir} onSort={handleSort} className="w-12 text-right" />
-            <span className="w-16 text-right">Regime</span>
-            <SortHeader label="OI%" sortKey="oiChange" activeKey={sortKey} dir={sortDir} onSort={handleSort} className="w-14 text-right" />
-            <span className="w-12 text-center">Spike</span>
-            <SortHeader label="Funding" sortKey="fundingRate" activeKey={sortKey} dir={sortDir} onSort={handleSort} className="w-20 text-right" />
-            <SortHeader label="Spread" sortKey="spreadBps" activeKey={sortKey} dir={sortDir} onSort={handleSort} className="w-14 text-right" />
-            {hasV2 && <span className="w-12 text-right">Entry</span>}
-            {hasV2 && <span className="w-12 text-right">Fake</span>}
-            {hasV2 && <span className="w-12 text-right">Confl</span>}
-            {hasV2 && <span className="w-12 text-right">Trap</span>}
+          {/* Sticky header — sortable, grid layout that grows with screen */}
+          <div
+            className="sticky top-0 z-10 border-b border-white/10 bg-[#0F1012] px-4 py-2 text-[10px] font-semibold uppercase tracking-wider text-[#6B6F76] grid items-center gap-1"
+            style={{ gridTemplateColumns: ROW_GRID }}
+          >
+            <span className="text-center">#</span>
+            <span />
+            <span>Coin</span>
+            <SortHeader label="Score" sortKey="compositeScore" activeKey={sortKey} dir={sortDir} onSort={handleSort} className="text-right" />
+            <SortHeader label="Price" sortKey="price" activeKey={sortKey} dir={sortDir} onSort={handleSort} className="text-right" />
+            <SortHeader label="24h" sortKey="change24hPct" activeKey={sortKey} dir={sortDir} onSort={handleSort} className="text-right" />
+            <SortHeader label="Volume" sortKey="volume24hUsd" activeKey={sortKey} dir={sortDir} onSort={handleSort} className="text-right" />
+            <SortHeader label="Trend" sortKey="trendStrength" activeKey={sortKey} dir={sortDir} onSort={handleSort} className="text-right" />
+            <span className="text-center">Regime</span>
+            <SortHeader label="OI%" sortKey="oiChange" activeKey={sortKey} dir={sortDir} onSort={handleSort} className="text-right" />
+            <span className="text-center">Spike</span>
+            <SortHeader label="Funding" sortKey="fundingRate" activeKey={sortKey} dir={sortDir} onSort={handleSort} className="text-right" />
+            <SortHeader label="Spread" sortKey="spreadBps" activeKey={sortKey} dir={sortDir} onSort={handleSort} className="text-right" />
+            <span className="text-right">Entry</span>
+            <span className="text-right">Fake</span>
+            <span className="text-right">Confl</span>
+            <span className="text-right">Trap</span>
           </div>
 
           {/* Scrollable rows */}
