@@ -501,8 +501,15 @@ export class CoinUniverseEngineV2 {
       cooldownRoundsLeft: null, scanner_selected: false,
     }));
 
+    // Cooldown penalty: reduce compositeScore by 30% for cooldown coins
+    for (const coin of cooldownPool) {
+      coin.compositeScore = Math.round(coin.compositeScore * 0.7 * 100) / 100;
+    }
+
     // Combine ALL scored coins (including cooldown) — top 100 for UI display
-    const allScored = [...selection.selected, ...selection.watchlist, ...selection.rejected, ...cooldownPool]
+    // Active coins first (no cooldown), then cooldown coins sorted by penalized score
+    const activeCoins = [...selection.selected, ...selection.watchlist, ...selection.rejected];
+    const allScored = [...activeCoins, ...cooldownPool]
       .sort((a, b) => b.compositeScore - a.compositeScore || b.volume24hUsd - a.volume24hUsd)
       .slice(0, 100);
 
@@ -510,7 +517,7 @@ export class CoinUniverseEngineV2 {
     this.rankedCooldown = cooldownPool.sort((a, b) => b.compositeScore - a.compositeScore);
     this.rankedRejected = [...selection.rejected.slice(0, 20), ...rejectedFromHardFilter];
     this.refreshedAt = new Date().toISOString();
-    this.previousActiveSymbols = new Set(allActive.map((c) => c.symbol));
+    this.previousActiveSymbols = new Set(allScored.map((c) => c.symbol));
 
     for (const [sym, entry] of this.cooldownMap) {
       if (this.currentRound >= entry.cooldownUntilRound) this.cooldownMap.delete(sym);
