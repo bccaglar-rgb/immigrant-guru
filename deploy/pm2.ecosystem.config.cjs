@@ -34,21 +34,10 @@ module.exports = {
         PORT: 8090,
         HOST: "0.0.0.0",
 
-        // ── Database ───────────────────────────────────────
-        // Point to PgBouncer, NOT PostgreSQL directly
-        DB_HOST: "127.0.0.1",
-        DB_PORT: 6432,
-        DB_NAME: "bitrium",
-        // DB_USER, DB_PASSWORD set via environment or .env
-
-        // ── Redis ──────────────────────────────────────────
-        REDIS_HOST: "127.0.0.1",
-        REDIS_PORT: 6379,
-        // REDIS_PASSWORD set via environment
+        // DB_HOST, DB_PORT, DB_USER, DB_PASSWORD → set in .env
+        // REDIS_HOST, REDIS_PORT, REDIS_PASSWORD → set in .env
 
         // ── Market Hub mode ───────────────────────────────
-        // Faz 1: HUB_EXTERNAL=false (local hub, same machine)
-        // Faz 2: set to true when market-hub runs separately
         HUB_EXTERNAL: false,
 
         // ── Bot limits ────────────────────────────────────
