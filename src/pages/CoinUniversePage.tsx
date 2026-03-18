@@ -339,6 +339,7 @@ function CoinRow({ c, idx, onClick }: { c: UniverseCoinRow; idx: number; onClick
   return (
     <div
       className={`flex cursor-pointer items-center border-b border-white/5 px-4 py-2 text-sm transition hover:bg-[#17191d] ${c.selected ? "bg-[#0d1a0d]/30" : ""}`}
+      style={{ minWidth: 1320 }}
       onClick={onClick}
     >
       {/* # */}
@@ -374,7 +375,7 @@ function CoinRow({ c, idx, onClick }: { c: UniverseCoinRow; idx: number; onClick
 
       {/* Universe Score (with hover breakdown) */}
       <span
-        className="relative hidden w-14 text-right text-xs xl:block"
+        className="relative w-14 text-right text-xs"
         onMouseEnter={() => setShowBreakdown(true)}
         onMouseLeave={() => setShowBreakdown(false)}
       >
@@ -385,7 +386,7 @@ function CoinRow({ c, idx, onClick }: { c: UniverseCoinRow; idx: number; onClick
       </span>
 
       {/* Price */}
-      <span className="ml-auto w-24 text-right font-medium text-white">
+      <span className="w-24 text-right font-medium text-white">
         {fmtPrice(c.price)}
       </span>
 
@@ -400,14 +401,14 @@ function CoinRow({ c, idx, onClick }: { c: UniverseCoinRow; idx: number; onClick
       </span>
 
       {/* Trend Strength */}
-      <span className={`hidden w-12 text-right text-xs lg:block ${
+      <span className={`w-12 text-right text-xs ${
         c.trendStrength >= 60 ? "text-[#4ade80]" : c.trendStrength >= 30 ? "text-[#F5C542]" : "text-[#6B6F76]"
       }`}>
         {c.trendStrength ?? "---"}
       </span>
 
       {/* Regime */}
-      <span className="hidden w-16 text-right text-xs xl:block">
+      <span className="w-16 text-right text-xs">
         {c.regime ? (
           <span className={`inline-flex rounded px-1 py-px text-[9px] font-semibold ${regimeChipCls(c.regime)}`}>
             {c.regime}
@@ -416,7 +417,7 @@ function CoinRow({ c, idx, onClick }: { c: UniverseCoinRow; idx: number; onClick
       </span>
 
       {/* OI Change */}
-      <span className={`hidden w-14 text-right text-xs xl:block ${
+      <span className={`w-14 text-right text-xs ${
         c.oiChange != null
           ? c.oiChange > 0 ? "text-[#8fc9ab]" : c.oiChange < 0 ? "text-[#d49f9a]" : "text-[#6B6F76]"
           : "text-[#6B6F76]"
@@ -425,7 +426,7 @@ function CoinRow({ c, idx, onClick }: { c: UniverseCoinRow; idx: number; onClick
       </span>
 
       {/* Volume Spike */}
-      <span className="hidden w-10 text-center text-xs xl:block">
+      <span className="w-12 text-center text-xs">
         {c.volumeSpike ? (
           <span className="inline-flex rounded bg-[#F5C542]/15 px-1 py-px text-[9px] font-bold text-[#F5C542]">
             SPIKE
@@ -437,7 +438,7 @@ function CoinRow({ c, idx, onClick }: { c: UniverseCoinRow; idx: number; onClick
 
       {/* Funding */}
       <span
-        className={`hidden w-20 text-right text-xs md:block ${
+        className={`w-20 text-right text-xs ${
           c.fundingRate != null
             ? c.fundingRate > 0 ? "text-[#8fc9ab]" : c.fundingRate < 0 ? "text-[#d49f9a]" : "text-[#8f95a3]"
             : "text-[#6B6F76]"
@@ -449,13 +450,13 @@ function CoinRow({ c, idx, onClick }: { c: UniverseCoinRow; idx: number; onClick
       </span>
 
       {/* Spread */}
-      <span className={`hidden w-14 text-right text-xs lg:block ${c.spreadBps != null ? spreadCls(c.spreadBps) : "text-[#6B6F76]"}`}>
+      <span className={`w-14 text-right text-xs ${c.spreadBps != null ? spreadCls(c.spreadBps) : "text-[#6B6F76]"}`}>
         {c.spreadBps != null ? `${c.spreadBps.toFixed(1)}` : "---"}
       </span>
 
       {/* Entry Quality (Execution score) */}
       {hasV2 && (
-        <span className={`hidden w-12 text-right text-xs xl:block ${
+        <span className={`w-12 text-right text-xs ${
           c.universeScore.execution.total >= 10 ? "text-[#4ade80]"
             : c.universeScore.execution.total >= 6 ? "text-[#F5C542]"
             : "text-[#6B6F76]"
@@ -466,21 +467,21 @@ function CoinRow({ c, idx, onClick }: { c: UniverseCoinRow; idx: number; onClick
 
       {/* Fake Breakout Risk */}
       {hasV2 && (
-        <span className={`hidden w-10 text-right text-xs 2xl:block ${penaltyCls(c.universeScore.falsePenalty.fakeBreakout)}`}>
+        <span className={`w-12 text-right text-xs ${penaltyCls(c.universeScore.falsePenalty.fakeBreakout)}`}>
           {c.universeScore.falsePenalty.fakeBreakout}
         </span>
       )}
 
       {/* Signal Conflict */}
       {hasV2 && (
-        <span className={`hidden w-10 text-right text-xs 2xl:block ${penaltyCls(c.universeScore.falsePenalty.signalConflict)}`}>
+        <span className={`w-12 text-right text-xs ${penaltyCls(c.universeScore.falsePenalty.signalConflict)}`}>
           {c.universeScore.falsePenalty.signalConflict}
         </span>
       )}
 
       {/* Trap Probability */}
       {hasV2 && (
-        <span className={`hidden w-10 text-right text-xs 2xl:block ${penaltyCls(c.universeScore.falsePenalty.trapProbability)}`}>
+        <span className={`w-12 text-right text-xs ${penaltyCls(c.universeScore.falsePenalty.trapProbability)}`}>
           {c.universeScore.falsePenalty.trapProbability}
         </span>
       )}
@@ -642,26 +643,26 @@ export default function CoinUniversePage() {
         )}
 
         {/* Active Coin list */}
-        <section className="overflow-hidden rounded-2xl border border-white/10 bg-[#121316]">
-          {/* Sticky header — sortable */}
-          <div className="sticky top-0 z-10 flex items-center border-b border-white/10 bg-[#0F1012] px-4 py-2 text-[10px] font-semibold uppercase tracking-wider text-[#6B6F76]">
+        <section className="rounded-2xl border border-white/10 bg-[#121316] overflow-x-auto">
+          {/* Sticky header — sortable, min-width for horizontal scroll */}
+          <div className="sticky top-0 z-10 flex items-center border-b border-white/10 bg-[#0F1012] px-4 py-2 text-[10px] font-semibold uppercase tracking-wider text-[#6B6F76]" style={{ minWidth: 1320 }}>
             <span className="w-8 text-center">#</span>
             <span className="w-9" />
             <span className="w-28">Coin</span>
-            <SortHeader label="Score" sortKey="compositeScore" activeKey={sortKey} dir={sortDir} onSort={handleSort} className="hidden w-14 text-right xl:block" />
-            <SortHeader label="Price" sortKey="price" activeKey={sortKey} dir={sortDir} onSort={handleSort} className="ml-auto w-24 text-right" />
+            <SortHeader label="Score" sortKey="compositeScore" activeKey={sortKey} dir={sortDir} onSort={handleSort} className="w-14 text-right" />
+            <SortHeader label="Price" sortKey="price" activeKey={sortKey} dir={sortDir} onSort={handleSort} className="w-24 text-right" />
             <SortHeader label="24h" sortKey="change24hPct" activeKey={sortKey} dir={sortDir} onSort={handleSort} className="w-20 text-right" />
             <SortHeader label="Volume" sortKey="volume24hUsd" activeKey={sortKey} dir={sortDir} onSort={handleSort} className="w-24 text-right" />
-            <SortHeader label="Trend" sortKey="trendStrength" activeKey={sortKey} dir={sortDir} onSort={handleSort} className="hidden w-12 text-right lg:block" />
-            <span className="hidden w-16 text-right xl:block">Regime</span>
-            <SortHeader label="OI%" sortKey="oiChange" activeKey={sortKey} dir={sortDir} onSort={handleSort} className="hidden w-14 text-right xl:block" />
-            <span className="hidden w-10 text-center xl:block">Vol Spike</span>
-            <SortHeader label="Funding" sortKey="fundingRate" activeKey={sortKey} dir={sortDir} onSort={handleSort} className="hidden w-20 text-right md:block" />
-            <SortHeader label="Spread" sortKey="spreadBps" activeKey={sortKey} dir={sortDir} onSort={handleSort} className="hidden w-14 text-right lg:block" />
-            {hasV2 && <span className="hidden w-12 text-right xl:block">Entry</span>}
-            {hasV2 && <span className="hidden w-10 text-right 2xl:block">Fake</span>}
-            {hasV2 && <span className="hidden w-10 text-right 2xl:block">Confl</span>}
-            {hasV2 && <span className="hidden w-10 text-right 2xl:block">Trap</span>}
+            <SortHeader label="Trend" sortKey="trendStrength" activeKey={sortKey} dir={sortDir} onSort={handleSort} className="w-12 text-right" />
+            <span className="w-16 text-right">Regime</span>
+            <SortHeader label="OI%" sortKey="oiChange" activeKey={sortKey} dir={sortDir} onSort={handleSort} className="w-14 text-right" />
+            <span className="w-12 text-center">Spike</span>
+            <SortHeader label="Funding" sortKey="fundingRate" activeKey={sortKey} dir={sortDir} onSort={handleSort} className="w-20 text-right" />
+            <SortHeader label="Spread" sortKey="spreadBps" activeKey={sortKey} dir={sortDir} onSort={handleSort} className="w-14 text-right" />
+            {hasV2 && <span className="w-12 text-right">Entry</span>}
+            {hasV2 && <span className="w-12 text-right">Fake</span>}
+            {hasV2 && <span className="w-12 text-right">Confl</span>}
+            {hasV2 && <span className="w-12 text-right">Trap</span>}
           </div>
 
           {/* Scrollable rows */}
