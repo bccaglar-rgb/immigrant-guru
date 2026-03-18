@@ -44,7 +44,7 @@ const KLINES_CACHE_TTL_MS = 5 * 60 * 1000;
 const KLINES_BARS = 100;
 const KLINES_INTERVAL = "15m";
 const KLINES_CONCURRENT = 10;
-const COOLDOWN_ROUNDS = 1;
+const COOLDOWN_ROUNDS = 0; // no cooldown — scanner always gets fresh top 28
 const SELECTED_TOP_28 = 28;
 
 const REDIS_SNAPSHOT_KEY = "coin_universe_v2:snapshot";
@@ -686,7 +686,12 @@ export class CoinUniverseEngineV2 {
       await new Promise<void>((r) => setImmediate(r));
     }
 
-    if (successCount === 0) primarySource = "none";
+    if (successCount === 0) {
+      // Check if we have cached klines from previous cycles
+      const cachedCount = symbols.filter((s) => this.klinesCache.has(s)).length;
+      primarySource = cachedCount > 0 ? "cache" : "none";
+      successCount = cachedCount; // report cache hits as success
+    }
     return { successCount, failCount, source: primarySource, binanceStatus };
   }
 }
