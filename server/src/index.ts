@@ -238,6 +238,10 @@ bootstrap()
         optimizationScheduler.start();
         tickOrchestrator.start();
 
+        // TradeIdeaTracker: resolve active ideas (entry hit, TP/SL hit, expiry)
+        tradeIdeaTracker.start();
+        console.log(`[Worker ${WORKER_ID}] TradeIdeaTracker started`);
+
         // SystemScanner: start after 45s delay to let CoinUniverseEngine warm up
         setTimeout(() => {
           systemScanner.start();
