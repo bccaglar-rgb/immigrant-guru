@@ -55,6 +55,8 @@ import { optimizationScheduler } from "./services/optimizer/optimizationSchedule
 import { tickOrchestrator } from "./services/tickOrchestrator.ts";
 import { ModePerformanceTracker } from "./services/optimizer/modePerformanceTracker.ts";
 import { TradeOutcomeAttributor } from "./services/optimizer/tradeOutcomeAttributor.ts";
+import { DynamicSlTpOptimizer } from "./services/optimizer/dynamicSlTpOptimizer.ts";
+import { RegimeParameterEngine } from "./services/optimizer/regimeParameterEngine.ts";
 import { registerOptimizerStatsRoutes } from "./routes/optimizerStats.ts";
 
 // PM2 cluster mode: Worker 0 = primary (runs singleton services + HTTP)
@@ -108,6 +110,8 @@ const tronMonitor = new TronMonitorService(paymentStore, tronClient, paymentServ
 const tradeIdeaStore = new TradeIdeaStore();
 const modePerformanceTracker = new ModePerformanceTracker();
 const tradeOutcomeAttributor = new TradeOutcomeAttributor(modePerformanceTracker);
+const dynamicSlTpOptimizer = new DynamicSlTpOptimizer();
+const regimeParameterEngine = new RegimeParameterEngine();
 const tradeIdeaTracker = new TradeIdeaTracker(tradeIdeaStore);
 const adminProviderStore = new AdminProviderStore();
 const aiProviderStore = new AiProviderStore();
@@ -177,7 +181,7 @@ registerAiTradeIdeasRoutes(app, aiProviderStore, { binanceFuturesHub, coinUniver
 registerExchangeCoreRoutes(app, exchangeCore);
 registerTraderHubRoutes(app, traderHubEngine);
 registerCoinUniverseRoutes(app, coinUniverseEngineV2);
-registerOptimizerStatsRoutes(app, modePerformanceTracker, tradeOutcomeAttributor);
+registerOptimizerStatsRoutes(app, modePerformanceTracker, tradeOutcomeAttributor, dynamicSlTpOptimizer, regimeParameterEngine);
 registerPaymentsRoutes(app, authService, paymentService);
 registerTokenCreatorRoutes(app, authService, tokenCreatorService);
 registerMLRoutes(app);
@@ -248,10 +252,14 @@ bootstrap()
         tradeIdeaTracker.start();
         console.log(`[Worker ${WORKER_ID}] TradeIdeaTracker started`);
 
-        // Mode Performance Tracker: load from Redis + daily snapshot
+        // Optimizer Evolution: P1-P4
         void modePerformanceTracker.loadFromRedis();
+        void dynamicSlTpOptimizer.loadFromRedis();
+        void regimeParameterEngine.loadFromRedis();
         setInterval(() => void modePerformanceTracker.saveDailySnapshot(), 3600_000); // hourly
-        console.log(`[Worker ${WORKER_ID}] ModePerformanceTracker + TradeOutcomeAttributor started`);
+        setInterval(() => void dynamicSlTpOptimizer.optimize(), 1800_000); // every 30min
+        setInterval(() => void regimeParameterEngine.autoAdjust(), 1800_000); // every 30min
+        console.log(`[Worker ${WORKER_ID}] Optimizer P1-P4 started (ModeTracker, Attributor, SL/TP, RegimeParams)`);
 
         // SystemScanner: start after 45s delay to let CoinUniverseEngine warm up
         setTimeout(() => {
