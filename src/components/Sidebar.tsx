@@ -40,11 +40,13 @@ const menuItems = [
   { label: "Bitrium Quant Engine", to: "/quant-engine", accent: "var(--menu-accent-1)", icon: () => <DashboardIcon /> },
   { label: "Quant Trade Ideas", to: "/quant-trade-ideas", accent: "var(--menu-accent-2)", icon: () => <TradeIcon /> },
   { label: "AI Trade Ideas", to: "/ai-trade-ideas", accent: "var(--menu-accent-9)", icon: () => <AiTradeIdeasIcon /> },
+  // AI Trader submenu inserted here in render
   { label: "Exchanges", to: "/exchanges", accent: "var(--menu-accent-3)", icon: () => <ExchangeIcon /> },
   { label: "Crypto Market", to: "/crypto-market", accent: "var(--menu-accent-4)", icon: () => <MarketIcon /> },
   { label: "Coin Universe", to: "/coin-universe", accent: "var(--menu-accent-8)", icon: () => <UniverseIcon /> },
   { label: "Super Charts", to: "/super-charts", accent: "var(--menu-accent-5)", icon: () => <SuperChartIcon /> },
   { label: "Indicators", to: "/indicators", accent: "var(--menu-accent-6)", icon: () => <IndicatorIcon /> },
+  // Tools submenu inserted here in render
   { label: "Bitrium Token", to: "/bitrium-token", accent: "var(--menu-accent-11)", icon: () => <BitriumTokenIcon /> },
   { label: "Pricing", to: "/pricing", accent: "var(--menu-accent-13)", icon: () => <PricingIcon /> },
 ] as const;
@@ -303,7 +305,10 @@ export const Sidebar = ({
   };
 
   const topMenu = menuItems.slice(0, 3);
-  const bottomMenu = menuItems.slice(3);
+  // Items between AI Trader and Tools: Exchanges..Indicators (index 3-7)
+  const midMenu = menuItems.slice(3, 8);
+  // Items after Tools: Bitrium Token, Pricing (index 8+)
+  const bottomMenu = menuItems.slice(8);
 
   return (
     <aside
@@ -414,6 +419,18 @@ export const Sidebar = ({
             ))}
           </div>
         </div>
+
+        {midMenu.map((item) => (
+          <NavItem
+            key={item.label}
+            to={item.to}
+            label={item.label}
+            accent={item.accent}
+            icon={item.icon}
+            expanded={showText}
+            onNavigate={onNavigate}
+          />
+        ))}
 
         <div
           ref={toolsRef}
