@@ -35,6 +35,8 @@ import type {
 import { applyHardFilter } from "./hardFilter.ts";
 import { computeUniverseScore } from "./universeScorer.ts";
 import { selectTopCoins } from "./universeSelector.ts";
+import { computeAllAlphaSignals, type FundingHistoryStore } from "./alpha/index.ts";
+import { loadAlphaConfig, type AlphaConfig } from "./alpha/alphaConfig.ts";
 
 /* ------------------------------------------------------------------ */
 /*  Constants                                                          */
@@ -278,6 +280,7 @@ function enrichCoin(raw: RawCoinData, bars: OhlcvBar[]): CoinUniverseData {
     oiChange: estimateOiChange(bars),
     aggressorFlow: detectAggressorFlow(bars),
     bars,
+    alpha: null, // populated later by alpha orchestrator
   };
 }
 
@@ -294,6 +297,7 @@ function enrichCoinNoKlines(raw: RawCoinData): CoinUniverseData {
     ...raw, atrPct: null, rsi14: null, srDistPct: null, nearestSR: null,
     srLevels: [], regime: "UNKNOWN", trendStrength: 0, expansionProbability: 0.5,
     volumeSpike: false, oiChange: null, aggressorFlow: "NEUTRAL", bars: [],
+    alpha: null,
   };
 }
 
@@ -381,6 +385,9 @@ export class CoinUniverseEngineV2 {
   private lastStats = { totalScanned: 0, hardFiltered: 0, scored: 0, selected: 0, cooldown: 0 };
   private lastHealth: EngineHealth = { engine: "v2", mode: "degraded", klinesAvailable: false, klinesSource: "none", klinesSuccessCount: 0, klinesFailCount: 0, dataQuality: "minimal", binanceStatus: "unknown" };
   private lastTelemetry: RejectionTelemetry = { hard_reject_volume: 0, hard_reject_spread: 0, hard_reject_stablecoin: 0, hard_reject_missing_data: 0, reject_score_below_threshold: 0, reject_weak_trend: 0, reject_range_low_expansion: 0, reject_declining_oi: 0, reject_below_top_10pct: 0, selected_count: 0, watchlist_count: 0 };
+  // Alpha signals
+  private fundingHistory: FundingHistoryStore = new Map();
+  private alphaConfig: AlphaConfig = loadAlphaConfig();
 
   constructor(deps: CoinUniverseEngineV2Deps) {
     this.deps = deps;
@@ -440,6 +447,18 @@ export class CoinUniverseEngineV2 {
     const mode: EngineMode = klinesHitCount > 0 ? "full" : "degraded";
     const dataQualityLevel = klinesHitCount >= 40 ? "full" : klinesHitCount > 0 ? "degraded" : "minimal";
 
+    // 4b. Alpha signal enrichment
+    for (const coin of enriched) {
+      coin.alpha = computeAllAlphaSignals(coin, this.fundingHistory, this.alphaConfig);
+      // Update funding history ring buffer
+      if (coin.fundingRate != null) {
+        const hist = this.fundingHistory.get(coin.symbol) ?? [];
+        hist.push(coin.fundingRate);
+        if (hist.length > 10) hist.shift();
+        this.fundingHistory.set(coin.symbol, hist);
+      }
+    }
+
     // 5. Score + select
     const expansionProbs = new Map<string, number>();
     const scoredRows: UniverseCoinRow[] = enriched.map((coin) => {
@@ -460,6 +479,7 @@ export class CoinUniverseEngineV2 {
         nearestSR: coin.nearestSR, regime: coin.regime, trendStrength: coin.trendStrength,
         volumeSpike: coin.volumeSpike, oiChange: coin.oiChange, aggressorFlow: coin.aggressorFlow,
         universeScore: score, compositeScore: score.final, dataQuality: dq,
+        alpha: coin.alpha,
         tier: "GAMMA" as const, // default — upgraded by selector
         selected: false, rejectedReason: null,
         status: isCooling ? "COOLDOWN" as const : isNew ? "NEW" as const : "ACTIVE" as const,
@@ -495,8 +515,9 @@ export class CoinUniverseEngineV2 {
       atrPct: null, rsi14: null, srDistPct: null, nearestSR: null,
       regime: "UNKNOWN" as const, trendStrength: 0, volumeSpike: false,
       oiChange: null, aggressorFlow: "NEUTRAL" as const,
-      universeScore: { raw: 0, penalty: 0, final: 0, liquidity: { total: 0, volumeScore: 0, depthScore: 0, spreadScore: 0 }, structure: { total: 0, srProximity: 0, regimeScore: 0, trendScore: 0 }, momentum: { total: 0, priceChange: 0, rsiScore: 0, volumeSpikeScore: 0 }, positioning: { total: 0, fundingScore: 0, oiScore: 0, flowScore: 0 }, execution: { total: 0, spreadQuality: 0, depthQuality: 0, imbalanceScore: 0 }, falsePenalty: { total: 0, fakeBreakout: 0, signalConflict: 0, trapProbability: 0, cascadeRisk: 0, newsRisk: 0 } },
+      universeScore: { raw: 0, penalty: 0, final: 0, liquidity: { total: 0, volumeScore: 0, depthScore: 0, spreadScore: 0 }, structure: { total: 0, srProximity: 0, regimeScore: 0, trendScore: 0 }, momentum: { total: 0, priceChange: 0, rsiScore: 0, volumeSpikeScore: 0 }, positioning: { total: 0, fundingScore: 0, oiScore: 0, flowScore: 0 }, execution: { total: 0, spreadQuality: 0, depthQuality: 0, imbalanceScore: 0 }, falsePenalty: { total: 0, fakeBreakout: 0, signalConflict: 0, trapProbability: 0, cascadeRisk: 0, newsRisk: 0 }, alphaBonus: 0, alphaPenalty: 0 },
       compositeScore: 0, dataQuality: { hasKlines: false, hasOi: false, hasFunding: false, hasOrderbook: false, score: 0 },
+      alpha: null,
       tier: "GAMMA" as const, selected: false, rejectedReason: r.reason, status: "REJECTED" as const,
       cooldownRoundsLeft: null, scanner_selected: false,
     }));

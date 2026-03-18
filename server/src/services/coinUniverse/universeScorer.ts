@@ -26,7 +26,12 @@ export function computeUniverseScore(coin: CoinUniverseData): UniverseScore {
   ) / 100;
 
   const penalty = falsePenalty.total;
-  const final = Math.max(0, Math.min(100, Math.round((raw - penalty) * 100) / 100));
+
+  // Alpha signal adjustments (from alpha modules if computed)
+  const alphaBonus = coin.alpha?.alphaBonus ?? 0;
+  const alphaPenalty = coin.alpha?.alphaPenalty ?? 0;
+
+  const final = Math.max(0, Math.min(100, Math.round((raw - penalty + alphaBonus - alphaPenalty) * 100) / 100));
 
   return {
     raw,
@@ -38,5 +43,7 @@ export function computeUniverseScore(coin: CoinUniverseData): UniverseScore {
     positioning,
     execution,
     falsePenalty,
+    alphaBonus,
+    alphaPenalty,
   };
 }

@@ -68,6 +68,7 @@ export function buildEvaluationPrompt(
       `  SL: [${slStr}] | TP: [${tpStr}]`,
       `  RR: ${c.rrRatio.toFixed(2)} | trade_validity: ${c.tradeValidity} | entry_window: ${c.entryWindow} | slippage: ${c.slippageRisk}`,
       c.softFlags.length > 0 ? `  soft_flags: [${c.softFlags.join(", ")}]` : null,
+      ...buildAlphaLines(c),
     ].filter(Boolean).join("\n");
   });
 
@@ -105,10 +106,48 @@ export function toEvaluationRequest(ranked: RankedCandidate): AiEvaluationReques
 }
 
 function getPrecision(c: { entryLow: number }): number {
-  // Auto-detect precision from entry price magnitude
   const price = c.entryLow;
   if (price >= 1000) return 2;
   if (price >= 1) return 4;
   if (price >= 0.01) return 6;
   return 8;
+}
+
+/** Build alpha signal context lines for the AI prompt (if available). */
+function buildAlphaLines(c: AiEvaluationRequest): (string | null)[] {
+  // Alpha signals are passed via quantSnapshot in the ranked candidate
+  // For now we access via the softFlags which carry alpha grade info
+  // In production, alpha data will be available through the enriched candidate pipeline
+  const alpha = (c as Record<string, unknown>).alpha as Record<string, unknown> | undefined;
+  if (!alpha) return [];
+
+  const lines: (string | null)[] = [];
+  lines.push(`  alpha_grade: ${alpha.alphaGrade ?? "?"} | bonus: +${alpha.alphaBonus ?? 0} | penalty: -${alpha.alphaPenalty ?? 0}`);
+
+  const funding = alpha.funding as Record<string, unknown> | null;
+  if (funding) {
+    lines.push(`  funding: ${funding.fundingDirection} extreme=${funding.isExtreme} crowding=${funding.fundingCrowdingIndex}`);
+  }
+
+  const multiTf = alpha.multiTf as Record<string, unknown> | null;
+  if (multiTf) {
+    lines.push(`  mtf_align: ${multiTf.multiTfAlignmentScore}% htf=${multiTf.htfTrendBias} strength=${multiTf.htfTrendStrength}`);
+  }
+
+  const liquidation = alpha.liquidation as Record<string, unknown> | null;
+  if (liquidation && (liquidation.cascadeScore as number) > 30) {
+    lines.push(`  liq_risk: ${liquidation.cascadeScore} dominant=${liquidation.dominantRisk}`);
+  }
+
+  const timing = alpha.timing as Record<string, unknown> | null;
+  if (timing) {
+    lines.push(`  timing: grade=${timing.timingGrade} ignition=${timing.momentumIgnitionScore}`);
+  }
+
+  const vol = alpha.volatility as Record<string, unknown> | null;
+  if (vol) {
+    lines.push(`  volatility: regime=${vol.volatilityRegime} compression=${vol.compressionScore} expansion=${vol.expansionForecast}`);
+  }
+
+  return lines;
 }

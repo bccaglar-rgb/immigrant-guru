@@ -71,6 +71,9 @@ export interface CoinUniverseData extends RawCoinData {
 
   // Computed from klines
   bars: OhlcvBar[];
+
+  // Alpha signals (enriched by alpha modules, null if disabled)
+  alpha: import("./alpha/alphaTypes.ts").AlphaSignals | null;
 }
 
 /* ------------------------------------------------------------------ */
@@ -132,7 +135,7 @@ export interface FalsePenalty {
 export interface UniverseScore {
   raw: number;          // 0-100 (sum of 5 sub-scores)
   penalty: number;      // 0-30 (false filter penalty)
-  final: number;        // raw - penalty (clamped 0-100)
+  final: number;        // raw - penalty + alphaBonus - alphaPenalty (clamped 0-100)
 
   liquidity: LiquidityScore;
   structure: StructureScore;
@@ -140,6 +143,10 @@ export interface UniverseScore {
   positioning: PositioningScore;
   execution: ExecutionScore;
   falsePenalty: FalsePenalty;
+
+  // Alpha signal adjustments (0 if alpha disabled)
+  alphaBonus: number;   // 0 to +15
+  alphaPenalty: number;  // 0 to +10
 }
 
 /* ------------------------------------------------------------------ */
@@ -169,6 +176,9 @@ export interface UniverseCoinRow {
   // Scores
   universeScore: UniverseScore;
   compositeScore: number;       // alias for universeScore.final
+
+  // Alpha signals (null if disabled)
+  alpha: import("./alpha/alphaTypes.ts").AlphaSignals | null;
 
   // Data quality
   dataQuality: DataQuality;
