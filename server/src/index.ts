@@ -168,7 +168,7 @@ registerAuthRoutes(app, authService);
 registerUserSettingsRoutes(app);
 registerTradeIdeasRoutes(app, tradeIdeaStore, systemScanner);
 registerAdminProviderRoutes(app, adminProviderStore);
-registerAiTradeIdeasRoutes(app, aiProviderStore, { binanceFuturesHub, coinUniverseEngine, serverPort, isPrimary: IS_PRIMARY, tradeIdeaStore });
+registerAiTradeIdeasRoutes(app, aiProviderStore, { binanceFuturesHub, coinUniverseEngine: coinUniverseEngineV2 as any, serverPort, isPrimary: IS_PRIMARY, tradeIdeaStore });
 registerExchangeCoreRoutes(app, exchangeCore);
 registerTraderHubRoutes(app, traderHubEngine);
 registerCoinUniverseRoutes(app, coinUniverseEngineV2);
