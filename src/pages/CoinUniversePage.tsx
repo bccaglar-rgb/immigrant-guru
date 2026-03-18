@@ -25,6 +25,21 @@ interface UniverseScoreDetail {
   positioning: { total: number; fundingScore: number; oiScore: number; flowScore: number };
   execution: { total: number; spreadQuality: number; depthQuality: number; imbalanceScore: number };
   falsePenalty: { total: number; fakeBreakout: number; signalConflict: number; trapProbability: number; cascadeRisk: number; newsRisk: number };
+  alphaBonus?: number;
+  alphaPenalty?: number;
+}
+
+interface AlphaSignals {
+  funding: { fundingExtremeScore: number; fundingCrowdingIndex: number; fundingDirection: string; isExtreme: boolean } | null;
+  oiShock: { oiShockScore: number; oiPriceDivergence: number; shockType: string } | null;
+  volatility: { volatilityRegime: string; compressionScore: number; expansionForecast: number } | null;
+  delta: { cvdTrend: string; deltaImbalanceScore: number; buySellPressureRatio: number } | null;
+  multiTf: { htfTrendBias: string; multiTfAlignmentScore: number; htfTrendStrength: number } | null;
+  liquidation: { cascadeScore: number; dominantRisk: string } | null;
+  timing: { timingGrade: string; momentumIgnitionScore: number } | null;
+  alphaBonus: number;
+  alphaPenalty: number;
+  alphaGrade: "S" | "A" | "B" | "C" | "D";
 }
 
 type MarketRegime = "TREND" | "RANGE" | "BREAKOUT" | "UNKNOWN";
@@ -48,6 +63,7 @@ interface UniverseCoinRow {
   aggressorFlow: "BUY" | "SELL" | "NEUTRAL";
   universeScore: UniverseScoreDetail;
   compositeScore: number;
+  alpha: AlphaSignals | null;
   tier: "ALPHA" | "BETA" | "GAMMA";
   selected: boolean;
   rejectedReason: string | null;
@@ -188,6 +204,16 @@ const penaltyCls = (v: number) => {
   if (v === 0) return "text-[#4ade80]";
   if (v <= 3) return "text-[#F5C542]";
   return "text-[#f87171]";
+};
+
+const alphaGradeCls = (grade: string) => {
+  switch (grade) {
+    case "S": return "bg-[#0d2818] text-[#4ade80] border border-[#4ade80]/40";
+    case "A": return "bg-[#162016] text-[#4ade80]";
+    case "B": return "bg-[#1c1a10] text-[#F5C542]";
+    case "C": return "bg-[#1A1B1F] text-[#8f95a3]";
+    default: return "bg-[#1A1B1F] text-[#6B6F76]";
+  }
 };
 
 /* Engine refresh: server refreshes every 60s, poll every 30s for safety */
@@ -341,8 +367,8 @@ function ScoreBreakdown({ score }: { score: UniverseScoreDetail }) {
 /*  Coin Row (V2 with new columns)                                     */
 /* ------------------------------------------------------------------ */
 
-// #  Icon  Coin  Score  Liq  Str  Mom  Pos  Price  24h  Volume  Trend  Regime  OI%  Spike  Funding  Spread  Entry  Fake  Confl  Trap
-const ROW_GRID = "1.8rem 2rem 1.8fr 0.7fr 0.5fr 0.5fr 0.5fr 0.5fr 1.2fr 0.8fr 1.1fr 0.6fr 0.9fr 0.7fr 0.6fr 1fr 0.6fr 0.6fr 0.5fr 0.5fr 0.5fr";
+// #  Icon  Coin  Score  Alpha  A±  MTF  Liq  Str  Mom  Pos  Price  24h  Volume  Trend  Regime  OI%  Spike  Funding  Spread  Entry  Fake  Confl  Trap
+const ROW_GRID = "1.8rem 2rem 1.8fr 0.7fr 0.55fr 0.55fr 0.5fr 0.5fr 0.5fr 0.5fr 0.5fr 1.2fr 0.8fr 1.1fr 0.6fr 0.9fr 0.7fr 0.6fr 1fr 0.6fr 0.6fr 0.5fr 0.5fr 0.5fr";
 
 function CoinRow({ c, idx, onClick }: { c: UniverseCoinRow; idx: number; onClick: () => void }) {
   const [showBreakdown, setShowBreakdown] = useState(false);
@@ -387,6 +413,24 @@ function CoinRow({ c, idx, onClick }: { c: UniverseCoinRow; idx: number; onClick
           {c.compositeScore}
         </span>
         {showBreakdown && hasV2 && <ScoreBreakdown score={c.universeScore} />}
+      </span>
+
+      {/* Alpha columns: Grade / A± / MTF */}
+      <span className="text-center text-xs">
+        {c.alpha ? (
+          <span className={`inline-flex rounded px-1.5 py-0.5 text-[9px] font-bold ${alphaGradeCls(c.alpha.alphaGrade)}`}>{c.alpha.alphaGrade}</span>
+        ) : <span className="text-[#6B6F76]">-</span>}
+      </span>
+      <span className="text-right text-[10px]">
+        {c.alpha ? (
+          <span>
+            <span className="text-[#4ade80]">+{c.alpha.alphaBonus}</span>
+            {c.alpha.alphaPenalty > 0 && <span className="text-[#f87171]">/{-c.alpha.alphaPenalty}</span>}
+          </span>
+        ) : <span className="text-[#6B6F76]">-</span>}
+      </span>
+      <span className={`text-right text-[10px] ${c.alpha?.multiTf ? c.alpha.multiTf.multiTfAlignmentScore >= 67 ? "text-[#4ade80]" : c.alpha.multiTf.multiTfAlignmentScore >= 33 ? "text-[#F5C542]" : "text-[#f87171]" : "text-[#6B6F76]"}`}>
+        {c.alpha?.multiTf ? `${c.alpha.multiTf.multiTfAlignmentScore}%` : "-"}
       </span>
 
       {/* Sub-scores: Liq / Str / Mom / Pos */}
@@ -617,6 +661,9 @@ export default function CoinUniversePage() {
             <span />
             <span>Coin</span>
             <SortHeader label="Score" sortKey="compositeScore" activeKey={sortKey} dir={sortDir} onSort={handleSort} className="text-right" />
+            <span className="text-center text-[8px]">Alpha</span>
+            <span className="text-right text-[8px]">A&plusmn;</span>
+            <span className="text-right text-[8px]">MTF</span>
             <span className="text-right text-[8px]">Liq</span>
             <span className="text-right text-[8px]">Str</span>
             <span className="text-right text-[8px]">Mom</span>
