@@ -27,13 +27,16 @@ export interface SelectionResult {
 }
 
 function passesExtraRules(coin: UniverseCoinRow): { pass: boolean; reason: string | null } {
+  // Skip extra rules when klines data is unavailable (regime=UNKNOWN means no klines)
+  const hasKlines = coin.regime !== "UNKNOWN";
+
   // RANGE regime + low expansion probability → reject
-  if (coin.regime === "RANGE" && (coin as any)._expansionProb < 0.55) {
+  if (hasKlines && coin.regime === "RANGE" && (coin as any)._expansionProb < 0.55) {
     return { pass: false, reason: "range_low_expansion" };
   }
 
-  // Weak trend + no volume spike → reject
-  if (coin.trendStrength < 55 && !coin.volumeSpike) {
+  // Weak trend + no volume spike → reject (only when klines available)
+  if (hasKlines && coin.trendStrength < 55 && !coin.volumeSpike) {
     return { pass: false, reason: "weak_trend_no_volume" };
   }
 
