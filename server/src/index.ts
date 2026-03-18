@@ -265,7 +265,10 @@ bootstrap()
           const tp1 = idea.tp_levels?.[0]?.price ?? idea.tp_levels?.[0] ?? 0;
           const tp2 = idea.tp_levels?.[1]?.price ?? idea.tp_levels?.[1] ?? null;
           const exitPrice = Number(idea.hit_level_price ?? entryMid);
-          console.log(`[OptimizerP2] Attributing ${idea.symbol} ${idea.direction} result=${idea.result} mode=${idea.scoring_mode}`);
+          // Derive regime from market_state.trend (TREND_UP/TREND_DOWN→TREND, RANGE→RANGE, etc.)
+          const rawTrend = String(idea.market_state?.trend ?? "").toUpperCase();
+          const regime = rawTrend.includes("TREND") ? "TREND" : rawTrend.includes("RANGE") ? "RANGE" : rawTrend.includes("BREAK") ? "BREAKOUT" : "UNKNOWN";
+          console.log(`[OptimizerP2] Attributing ${idea.symbol} ${idea.direction} result=${idea.result} mode=${idea.scoring_mode} regime=${regime}`);
           tradeOutcomeAttributor.attributeTrade({
             id: idea.id ?? `${idea.symbol}_${Date.now()}`,
             symbol: idea.symbol ?? "",
@@ -278,15 +281,15 @@ bootstrap()
             tp2: tp2 != null ? Number(tp2) : null,
             exitPrice,
             win,
-            regime: idea.market_state?.regime ?? "UNKNOWN",
+            regime,
             createdAt: idea.created_at ?? new Date().toISOString(),
             resolvedAt: idea.resolved_at ?? new Date().toISOString(),
             highPrice: exitPrice * (win ? 1.01 : 1),
             lowPrice: exitPrice * (win ? 1 : 0.99),
           }).catch((err: any) => console.error("[OptimizerP2] Attribution error:", err?.message));
           regimeParameterEngine.recordRegimeOutcome({
-            regime: idea.market_state?.regime ?? "UNKNOWN",
-            conditions: `${idea.scoring_mode ?? "FLOW"}+${idea.market_state?.regime ?? "UNKNOWN"}`,
+            regime,
+            conditions: `${idea.scoring_mode ?? "FLOW"}+${regime}`,
             outcomeR: win ? 1.5 : -1,
             win,
           }).catch(() => {});
