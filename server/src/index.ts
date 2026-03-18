@@ -53,6 +53,9 @@ import { registerCoinUniverseRoutes } from "./routes/coinUniverse.ts";
 import { adaptiveRR } from "./services/adaptiveRRService.ts";
 import { optimizationScheduler } from "./services/optimizer/optimizationScheduler.ts";
 import { tickOrchestrator } from "./services/tickOrchestrator.ts";
+import { ModePerformanceTracker } from "./services/optimizer/modePerformanceTracker.ts";
+import { TradeOutcomeAttributor } from "./services/optimizer/tradeOutcomeAttributor.ts";
+import { registerOptimizerStatsRoutes } from "./routes/optimizerStats.ts";
 
 // PM2 cluster mode: Worker 0 = primary (runs singleton services + HTTP)
 // Worker 1, 2 = HTTP-only
@@ -103,6 +106,8 @@ const tokenCreatorService = new TokenCreatorService(paymentStore, paymentService
 const tronClient = new TronClient();
 const tronMonitor = new TronMonitorService(paymentStore, tronClient, paymentService);
 const tradeIdeaStore = new TradeIdeaStore();
+const modePerformanceTracker = new ModePerformanceTracker();
+const tradeOutcomeAttributor = new TradeOutcomeAttributor(modePerformanceTracker);
 const tradeIdeaTracker = new TradeIdeaTracker(tradeIdeaStore);
 const adminProviderStore = new AdminProviderStore();
 const aiProviderStore = new AiProviderStore();
@@ -172,6 +177,7 @@ registerAiTradeIdeasRoutes(app, aiProviderStore, { binanceFuturesHub, coinUniver
 registerExchangeCoreRoutes(app, exchangeCore);
 registerTraderHubRoutes(app, traderHubEngine);
 registerCoinUniverseRoutes(app, coinUniverseEngineV2);
+registerOptimizerStatsRoutes(app, modePerformanceTracker, tradeOutcomeAttributor);
 registerPaymentsRoutes(app, authService, paymentService);
 registerTokenCreatorRoutes(app, authService, tokenCreatorService);
 registerMLRoutes(app);
@@ -241,6 +247,11 @@ bootstrap()
         // TradeIdeaTracker: resolve active ideas (entry hit, TP/SL hit, expiry)
         tradeIdeaTracker.start();
         console.log(`[Worker ${WORKER_ID}] TradeIdeaTracker started`);
+
+        // Mode Performance Tracker: load from Redis + daily snapshot
+        void modePerformanceTracker.loadFromRedis();
+        setInterval(() => void modePerformanceTracker.saveDailySnapshot(), 3600_000); // hourly
+        console.log(`[Worker ${WORKER_ID}] ModePerformanceTracker + TradeOutcomeAttributor started`);
 
         // SystemScanner: start after 45s delay to let CoinUniverseEngine warm up
         setTimeout(() => {
