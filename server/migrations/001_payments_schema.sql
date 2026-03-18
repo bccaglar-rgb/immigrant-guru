@@ -22,7 +22,7 @@ create table if not exists app_sessions (
 );
 
 create table if not exists plans (
-  id uuid primary key,
+  id text primary key,
   name text not null,
   price_usdt numeric(18,6) not null check (price_usdt > 0),
   duration_days integer not null check (duration_days > 0),
@@ -35,7 +35,7 @@ create table if not exists plans (
 create table if not exists invoices (
   id uuid primary key,
   user_id uuid not null references app_users(id) on delete cascade,
-  plan_id uuid not null references plans(id),
+  plan_id text not null references plans(id),
   expected_amount_usdt numeric(18,6) not null,
   paid_amount_usdt numeric(18,6) not null default 0,
   deposit_address text not null,
@@ -70,7 +70,7 @@ create table if not exists payment_events (
 create table if not exists subscriptions (
   id uuid primary key,
   user_id uuid not null references app_users(id) on delete cascade,
-  plan_id uuid not null references plans(id),
+  plan_id text not null references plans(id),
   start_at timestamptz not null,
   end_at timestamptz not null,
   status text not null check (status in ('active','expired','cancelled')),
