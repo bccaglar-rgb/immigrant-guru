@@ -149,6 +149,7 @@ const resolveProviderEndpoint = (provider: AiProviderRecord): string => {
 const AI_SCAN_INTERVAL_MS = 60_000;
 const AI_SCAN_COINS_PER_MODULE = 3;
 const AI_MODULE_STAGGER_MS = 20_000; // 20s delay between modules
+const aiCoinCooldown = new Set<string>(); // coins scanned this cycle — cleared after all coins used
 const AI_SCAN_ROW_LIMIT = 80;
 const AI_MIN_CONSENSUS = 48;
 const AI_MODE_BUFFER: Record<string, number> = {
@@ -1709,11 +1710,16 @@ export const registerAiTradeIdeasRoutes = (
       const enabledModuleIds = ALL_MODULE_IDS.filter((id) => providers.some((p) => p.id === id));
       const totalCoinsNeeded = enabledModuleIds.length * AI_SCAN_COINS_PER_MODULE;
 
-      // ── Coin selection: top N from CoinUniverseEngine by compositeScore ──
-      let rankedSymbols: string[] = [];
+      // ── Coin selection: top 9 from V2 engine, distribute 3 unique per module ──
+      // Coins that were scanned go into cooldown (tracked in aiCoinCooldown set)
+      let allRanked: string[] = [];
       if (deps.coinUniverseEngine) {
-        rankedSymbols = deps.coinUniverseEngine.getActiveSymbolsRanked().slice(0, AI_SCAN_COINS_PER_MODULE);
+        allRanked = deps.coinUniverseEngine.getActiveSymbolsRanked();
       }
+      // Filter out coins in AI cooldown
+      const available = allRanked.filter((s) => !aiCoinCooldown.has(s));
+      let rankedSymbols = available.slice(0, totalCoinsNeeded);
+
       // Fallback: volume-sorted universe rows
       if (!rankedSymbols.length) {
         const liveRows = deps.binanceFuturesHub
@@ -1723,7 +1729,12 @@ export const registerAiTradeIdeasRoutes = (
         rankedSymbols = liveRows
           .slice(0, totalCoinsNeeded)
           .map((row) => String(row.symbol ?? "").toUpperCase())
-          .filter(Boolean);
+          .filter((s) => !aiCoinCooldown.has(s));
+      }
+      // If all coins are in cooldown, clear cooldown and retry
+      if (!rankedSymbols.length && aiCoinCooldown.size > 0) {
+        aiCoinCooldown.clear();
+        rankedSymbols = (deps.coinUniverseEngine?.getActiveSymbolsRanked() ?? []).slice(0, totalCoinsNeeded);
       }
 
       const liveRows = deps.binanceFuturesHub.getUniverseRows();
@@ -1747,10 +1758,22 @@ export const registerAiTradeIdeasRoutes = (
         return;
       }
 
-      // ── All modules get the SAME top coins (each evaluates independently) ──
+      // ── Distribute UNIQUE coins to each module (no overlap) ──
+      // QWEN2 (Axiom) → top 3, ChatGPT → next 3, Qwen → next 3
+      const moduleOrder: AiModuleId[] = ["QWEN2", "CHATGPT", "QWEN"];
       const symbolsByModule: Record<AiModuleId, string[]> = { CHATGPT: [], QWEN: [], QWEN2: [] };
-      for (const moduleId of enabledModuleIds) {
-        symbolsByModule[moduleId] = [...rankedSymbols];
+      let symbolIdx = 0;
+      for (const moduleId of moduleOrder) {
+        if (!enabledModuleIds.includes(moduleId)) continue;
+        const coins: string[] = [];
+        for (let i = 0; i < AI_SCAN_COINS_PER_MODULE && symbolIdx < rankedSymbols.length; i++) {
+          coins.push(rankedSymbols[symbolIdx++]);
+        }
+        symbolsByModule[moduleId] = coins;
+      }
+      // Add scanned coins to cooldown (1 cycle cooldown)
+      for (const sym of rankedSymbols.slice(0, symbolIdx)) {
+        aiCoinCooldown.add(sym);
       }
 
       // Get CHATGPT provider from ALL stored providers (not just enabled) so key is always available for QWEN2
