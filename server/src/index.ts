@@ -265,9 +265,13 @@ bootstrap()
           const tp1 = idea.tp_levels?.[0]?.price ?? idea.tp_levels?.[0] ?? 0;
           const tp2 = idea.tp_levels?.[1]?.price ?? idea.tp_levels?.[1] ?? null;
           const exitPrice = Number(idea.hit_level_price ?? entryMid);
-          // Derive regime from market_state.trend (TREND_UP/TREND_DOWN→TREND, RANGE→RANGE, etc.)
+          // Derive regime from market_state fields
           const rawTrend = String(idea.market_state?.trend ?? "").toUpperCase();
-          const regime = rawTrend.includes("TREND") ? "TREND" : rawTrend.includes("RANGE") ? "RANGE" : rawTrend.includes("BREAK") ? "BREAKOUT" : "UNKNOWN";
+          const rawVol = String(idea.market_state?.volatility ?? "").toUpperCase();
+          const regime = rawTrend.includes("TREND") || rawTrend.includes("BULL") || rawTrend.includes("BEAR") ? "TREND"
+            : rawTrend.includes("RANGE") || rawTrend.includes("NEUTRAL") || rawTrend.includes("SIDEWAYS") ? "RANGE"
+            : rawTrend.includes("BREAK") || rawVol === "HIGH" ? "BREAKOUT"
+            : "RANGE"; // default to RANGE instead of UNKNOWN
           console.log(`[OptimizerP2] Attributing ${idea.symbol} ${idea.direction} result=${idea.result} mode=${idea.scoring_mode} regime=${regime}`);
           tradeOutcomeAttributor.attributeTrade({
             id: idea.id ?? `${idea.symbol}_${Date.now()}`,
