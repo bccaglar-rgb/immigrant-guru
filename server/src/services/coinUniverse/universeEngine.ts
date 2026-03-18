@@ -501,12 +501,12 @@ export class CoinUniverseEngineV2 {
       cooldownRoundsLeft: null, scanner_selected: false,
     }));
 
-    // Combine all scored coins (selected + watchlist + score-rejected) — top 100
-    const allActive = [...selection.selected, ...selection.watchlist, ...selection.rejected]
+    // Combine ALL scored coins (including cooldown) — top 100 for UI display
+    const allScored = [...selection.selected, ...selection.watchlist, ...selection.rejected, ...cooldownPool]
       .sort((a, b) => b.compositeScore - a.compositeScore || b.volume24hUsd - a.volume24hUsd)
       .slice(0, 100);
 
-    this.rankedActive = allActive;
+    this.rankedActive = allScored;
     this.rankedCooldown = cooldownPool.sort((a, b) => b.compositeScore - a.compositeScore);
     this.rankedRejected = [...selection.rejected.slice(0, 20), ...rejectedFromHardFilter];
     this.refreshedAt = new Date().toISOString();
