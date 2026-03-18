@@ -192,6 +192,10 @@ cp -r dist "$WEB_DIR/"
 cd "$APP_DIR/server"
 npm ci --ignore-scripts --omit=dev
 
+# tsx needed by PM2 to run TypeScript (--import tsx/esm)
+cd "$APP_DIR"
+npm install --save tsx
+
 # ── 10. Migrations ────────────────────────────────────────────
 echo "[10/12] DB migration'ları çalıştırılıyor..."
 cd "$APP_DIR"
