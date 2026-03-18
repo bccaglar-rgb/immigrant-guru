@@ -44,7 +44,7 @@ const KLINES_CACHE_TTL_MS = 5 * 60 * 1000;
 const KLINES_BARS = 100;
 const KLINES_INTERVAL = "15m";
 const KLINES_CONCURRENT = 10;
-const COOLDOWN_ROUNDS = 2;
+const COOLDOWN_ROUNDS = 1;
 const SELECTED_TOP_28 = 28;
 
 const REDIS_SNAPSHOT_KEY = "coin_universe_v2:snapshot";
