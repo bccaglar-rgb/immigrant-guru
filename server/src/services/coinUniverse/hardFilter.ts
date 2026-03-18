@@ -11,7 +11,7 @@
 
 import type { RawCoinData } from "./types.ts";
 
-const MIN_VOLUME_USD = 10_000_000;
+const MIN_VOLUME_USD = 4_000_000;
 const MAX_SPREAD_BPS = 20; // 0.20%
 
 const EXCLUDED_BASE_ASSETS = new Set([
