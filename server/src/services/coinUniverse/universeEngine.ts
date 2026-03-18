@@ -558,11 +558,8 @@ export class CoinUniverseEngineV2 {
   }
 
   getTop28(): string[] {
-    // Alpha first, then fill with Beta up to 28
-    const alphas = this.rankedActive.filter((c) => c.tier === "ALPHA").map((c) => c.symbol);
-    if (alphas.length >= SELECTED_TOP_28) return alphas.slice(0, SELECTED_TOP_28);
-    const betas = this.rankedActive.filter((c) => c.tier === "BETA").map((c) => c.symbol);
-    return [...alphas, ...betas].slice(0, SELECTED_TOP_28);
+    // Simple: all coins sorted by compositeScore desc, take first 28
+    return this.rankedActive.slice(0, SELECTED_TOP_28).map((c) => c.symbol);
   }
 
   getActiveSymbolsRanked(): string[] {
