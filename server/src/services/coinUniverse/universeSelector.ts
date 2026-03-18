@@ -18,7 +18,8 @@
 
 import type { UniverseCoinRow } from "./types.ts";
 
-const MIN_SCORE = 60;
+const MIN_SCORE_WITH_KLINES = 60;
+const MIN_SCORE_NO_KLINES = 25;  // Lower threshold when klines unavailable (no ATR/RSI/S/R data)
 
 export interface SelectionResult {
   selected: UniverseCoinRow[];
@@ -72,11 +73,15 @@ export function selectTopCoins(
   const watchlist: UniverseCoinRow[] = [];
   const rejected: UniverseCoinRow[] = [];
 
+  // Detect if klines are available (at least one coin has regime != UNKNOWN)
+  const hasAnyKlines = sorted.some((c) => c.regime !== "UNKNOWN");
+  const minScore = hasAnyKlines ? MIN_SCORE_WITH_KLINES : MIN_SCORE_NO_KLINES;
+
   for (const coin of sorted) {
     // Below minimum score → always reject
-    if (coin.compositeScore < MIN_SCORE) {
+    if (coin.compositeScore < minScore) {
       coin.selected = false;
-      coin.rejectedReason = `score_below_${MIN_SCORE}`;
+      coin.rejectedReason = `score_below_${minScore}`;
       rejected.push(coin);
       continue;
     }
@@ -87,7 +92,7 @@ export function selectTopCoins(
       coin.selected = false;
       coin.rejectedReason = extraCheck.reason;
       // Still in watchlist if score is decent
-      if (coin.compositeScore >= MIN_SCORE) {
+      if (coin.compositeScore >= minScore) {
         watchlist.push(coin);
       } else {
         rejected.push(coin);
