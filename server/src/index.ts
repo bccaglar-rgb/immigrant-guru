@@ -48,6 +48,8 @@ import { TronMonitorService } from "./payments/monitorService.ts";
 import { TokenCreatorService } from "./payments/tokenCreatorService.ts";
 import { SystemScannerService } from "./services/systemScannerService.ts";
 import { CoinUniverseEngine } from "./services/coinUniverseEngine.ts";
+import { CoinUniverseEngineV2 } from "./services/coinUniverse/universeEngine.ts";
+import { registerCoinUniverseRoutes } from "./routes/coinUniverse.ts";
 import { adaptiveRR } from "./services/adaptiveRRService.ts";
 import { optimizationScheduler } from "./services/optimizer/optimizationScheduler.ts";
 import { tickOrchestrator } from "./services/tickOrchestrator.ts";
@@ -134,6 +136,9 @@ const redisBinanceHubStub = {
 const coinUniverseEngine = new CoinUniverseEngine({
   binanceFuturesHub: HUB_EXTERNAL ? redisBinanceHubStub as any : binanceFuturesHub,
 });
+const coinUniverseEngineV2 = new CoinUniverseEngineV2({
+  binanceFuturesHub: HUB_EXTERNAL ? redisBinanceHubStub as any : binanceFuturesHub,
+});
 const systemScanner = new SystemScannerService({
   binanceFuturesHub: HUB_EXTERNAL ? redisBinanceHubStub as any : binanceFuturesHub,
   tradeIdeaStore,
@@ -166,6 +171,7 @@ registerAdminProviderRoutes(app, adminProviderStore);
 registerAiTradeIdeasRoutes(app, aiProviderStore, { binanceFuturesHub, coinUniverseEngine, serverPort, isPrimary: IS_PRIMARY, tradeIdeaStore });
 registerExchangeCoreRoutes(app, exchangeCore);
 registerTraderHubRoutes(app, traderHubEngine);
+registerCoinUniverseRoutes(app, coinUniverseEngineV2);
 registerPaymentsRoutes(app, authService, paymentService);
 registerTokenCreatorRoutes(app, authService, tokenCreatorService);
 registerMLRoutes(app);
@@ -251,6 +257,9 @@ bootstrap()
               }
 
               await coinUniverseEngine.refresh();
+              await coinUniverseEngineV2.refresh().catch((err: any) =>
+                console.error("[CoinUniverseV2] Refresh error:", err?.message ?? err),
+              );
               const snapshot = coinUniverseEngine.getSnapshot();
               if (snapshot.activeCoins.length > 0) {
                 hubEventBridge.storeUniverseSnapshot(JSON.stringify({
