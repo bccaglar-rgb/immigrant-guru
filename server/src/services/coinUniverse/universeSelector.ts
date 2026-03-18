@@ -78,35 +78,39 @@ export function selectTopCoins(
   const minScore = hasAnyKlines ? MIN_SCORE_WITH_KLINES : MIN_SCORE_NO_KLINES;
 
   for (const coin of sorted) {
-    // Below minimum score → always reject
+    // Below minimum score → GAMMA (reject)
     if (coin.compositeScore < minScore) {
       coin.selected = false;
+      coin.tier = "GAMMA";
       coin.rejectedReason = `score_below_${minScore}`;
       rejected.push(coin);
       continue;
     }
 
-    // Extra rules check
+    // Extra rules check → BETA if failed
     const extraCheck = passesExtraRules(coin);
     if (!extraCheck.pass) {
       coin.selected = false;
+      coin.tier = "BETA";
       coin.rejectedReason = extraCheck.reason;
-      // Still in watchlist if score is decent
       if (coin.compositeScore >= minScore) {
         watchlist.push(coin);
       } else {
+        coin.tier = "GAMMA";
         rejected.push(coin);
       }
       continue;
     }
 
-    // Top 10% check
+    // Top 10% check → ALPHA
     if (coin.compositeScore >= top10PctThreshold) {
       coin.selected = true;
+      coin.tier = "ALPHA";
       coin.rejectedReason = null;
       selected.push(coin);
     } else {
       coin.selected = false;
+      coin.tier = "BETA";
       coin.rejectedReason = "below_top_10pct";
       watchlist.push(coin);
     }

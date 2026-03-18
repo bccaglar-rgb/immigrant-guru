@@ -173,8 +173,11 @@ export interface UniverseCoinRow {
   // Data quality
   dataQuality: DataQuality;
 
+  // Tier classification
+  tier: "ALPHA" | "BETA" | "GAMMA";
+
   // Selection
-  selected: boolean;            // passed top 10% filter
+  selected: boolean;            // passed top 10% filter (ALPHA)
   rejectedReason: string | null; // reason for hard filter rejection
 
   // Status

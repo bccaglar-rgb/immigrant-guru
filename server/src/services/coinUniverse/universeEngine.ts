@@ -460,6 +460,7 @@ export class CoinUniverseEngineV2 {
         nearestSR: coin.nearestSR, regime: coin.regime, trendStrength: coin.trendStrength,
         volumeSpike: coin.volumeSpike, oiChange: coin.oiChange, aggressorFlow: coin.aggressorFlow,
         universeScore: score, compositeScore: score.final, dataQuality: dq,
+        tier: "GAMMA" as const, // default — upgraded by selector
         selected: false, rejectedReason: null,
         status: isCooling ? "COOLDOWN" as const : isNew ? "NEW" as const : "ACTIVE" as const,
         cooldownRoundsLeft, scanner_selected: false,
@@ -496,7 +497,7 @@ export class CoinUniverseEngineV2 {
       oiChange: null, aggressorFlow: "NEUTRAL" as const,
       universeScore: { raw: 0, penalty: 0, final: 0, liquidity: { total: 0, volumeScore: 0, depthScore: 0, spreadScore: 0 }, structure: { total: 0, srProximity: 0, regimeScore: 0, trendScore: 0 }, momentum: { total: 0, priceChange: 0, rsiScore: 0, volumeSpikeScore: 0 }, positioning: { total: 0, fundingScore: 0, oiScore: 0, flowScore: 0 }, execution: { total: 0, spreadQuality: 0, depthQuality: 0, imbalanceScore: 0 }, falsePenalty: { total: 0, fakeBreakout: 0, signalConflict: 0, trapProbability: 0, cascadeRisk: 0, newsRisk: 0 } },
       compositeScore: 0, dataQuality: { hasKlines: false, hasOi: false, hasFunding: false, hasOrderbook: false, score: 0 },
-      selected: false, rejectedReason: r.reason, status: "REJECTED" as const,
+      tier: "GAMMA" as const, selected: false, rejectedReason: r.reason, status: "REJECTED" as const,
       cooldownRoundsLeft: null, scanner_selected: false,
     }));
 
@@ -557,7 +558,11 @@ export class CoinUniverseEngineV2 {
   }
 
   getTop28(): string[] {
-    return this.rankedActive.filter((c) => c.selected).slice(0, SELECTED_TOP_28).map((c) => c.symbol);
+    // Alpha first, then fill with Beta up to 28
+    const alphas = this.rankedActive.filter((c) => c.tier === "ALPHA").map((c) => c.symbol);
+    if (alphas.length >= SELECTED_TOP_28) return alphas.slice(0, SELECTED_TOP_28);
+    const betas = this.rankedActive.filter((c) => c.tier === "BETA").map((c) => c.symbol);
+    return [...alphas, ...betas].slice(0, SELECTED_TOP_28);
   }
 
   getActiveSymbolsRanked(): string[] {

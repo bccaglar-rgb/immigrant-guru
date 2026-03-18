@@ -48,6 +48,7 @@ interface UniverseCoinRow {
   aggressorFlow: "BUY" | "SELL" | "NEUTRAL";
   universeScore: UniverseScoreDetail;
   compositeScore: number;
+  tier: "ALPHA" | "BETA" | "GAMMA";
   selected: boolean;
   rejectedReason: string | null;
   status: "ACTIVE" | "COOLDOWN" | "NEW" | "REJECTED";
@@ -173,6 +174,14 @@ const spreadCls = (v: number) => {
   if (v <= 2) return "text-[#4ade80]";
   if (v <= 5) return "text-[#F5C542]";
   return "text-[#f87171]";
+};
+
+const tierCls = (tier: string) => {
+  switch (tier) {
+    case "ALPHA": return "bg-[#0d2818] text-[#4ade80] border-[#4ade80]/40";
+    case "BETA": return "bg-[#1c1a10] text-[#F5C542] border-[#F5C542]/40";
+    default: return "bg-[#1A1B1F] text-[#6B6F76] border-[#6B6F76]/30";
+  }
 };
 
 const penaltyCls = (v: number) => {
@@ -341,7 +350,7 @@ function CoinRow({ c, idx, onClick }: { c: UniverseCoinRow; idx: number; onClick
 
   return (
     <div
-      className={`grid cursor-pointer items-center border-b border-white/5 px-4 py-2 text-sm transition hover:bg-[#17191d] gap-1 ${c.selected ? "bg-[#0d1a0d]/30" : ""}`}
+      className={`grid cursor-pointer items-center border-b border-white/5 px-4 py-2 text-sm transition hover:bg-[#17191d] gap-1 ${c.tier === "ALPHA" ? "border-l-2 border-l-[#4ade80]/50 bg-[#0d1a0d]/20" : c.tier === "BETA" ? "border-l-2 border-l-[#F5C542]/30" : ""}`}
       style={{ gridTemplateColumns: ROW_GRID }}
       onClick={onClick}
     >
@@ -355,8 +364,10 @@ function CoinRow({ c, idx, onClick }: { c: UniverseCoinRow; idx: number; onClick
         <div className="flex items-center gap-1">
           <span className="font-semibold text-white truncate">{c.baseAsset}</span>
           <span className="text-[11px] text-[#6B6F76]">/USDT</span>
-          {c.selected && (
-            <span className="inline-flex items-center rounded-full bg-[#4ade80]/15 px-1 py-px text-[8px] font-bold text-[#4ade80] border border-[#4ade80]/30 leading-tight">TOP</span>
+          {c.tier && (
+            <span className={`inline-flex items-center rounded-full px-1.5 py-px text-[8px] font-bold border leading-tight ${tierCls(c.tier)}`}>
+              {c.tier === "ALPHA" ? "\u03B1" : c.tier === "BETA" ? "\u03B2" : "\u03B3"}
+            </span>
           )}
           {c.scanner_selected && (
             <span className="inline-flex items-center rounded-full bg-[#F5C542]/15 px-1 py-px text-[8px] font-bold text-[#F5C542] border border-[#F5C542]/30 leading-tight">SCAN</span>
@@ -468,14 +479,17 @@ function CooldownRow({ c }: { c: UniverseCoinRow }) {
 /*  Stats Bar                                                          */
 /* ------------------------------------------------------------------ */
 
-function StatsBar({ stats }: { stats: UniverseEngineResponse["stats"] | null }) {
+function StatsBar({ stats, coins }: { stats: UniverseEngineResponse["stats"] | null; coins: UniverseCoinRow[] }) {
   if (!stats) return null;
+  const alphaCount = coins.filter((c) => c.tier === "ALPHA").length;
+  const betaCount = coins.filter((c) => c.tier === "BETA").length;
+  const gammaCount = coins.filter((c) => c.tier === "GAMMA").length;
   return (
     <div className="flex flex-wrap gap-4 text-[11px] text-[#6B6F76]">
       <span>Scanned: <span className="text-[#BFC2C7] font-medium">{stats.totalScanned}</span></span>
-      <span>Hard Filtered: <span className="text-[#d49f9a] font-medium">{stats.hardFiltered}</span></span>
-      <span>Scored: <span className="text-[#BFC2C7] font-medium">{stats.scored}</span></span>
-      <span>Selected (Top 10%): <span className="text-[#4ade80] font-medium">{stats.selected}</span></span>
+      <span className="text-[#4ade80]">Alpha: <span className="font-medium">{alphaCount}</span></span>
+      <span className="text-[#F5C542]">Beta: <span className="font-medium">{betaCount}</span></span>
+      <span className="text-[#6B6F76]">Gamma: <span className="font-medium">{gammaCount}</span></span>
       <span>Cooldown: <span className="text-[#F5C542] font-medium">{stats.cooldown}</span></span>
     </div>
   );
@@ -565,7 +579,7 @@ export default function CoinUniversePage() {
                 {hasV2 ? " \u00b7 V2" : ""}
                 {health?.mode === "degraded" ? " \u00b7 Degraded" : ""}
               </p>
-              {stats && <StatsBar stats={stats} />}
+              {stats && <StatsBar stats={stats} coins={activeCoins} />}
             </div>
           </div>
           <div className="mt-3">
