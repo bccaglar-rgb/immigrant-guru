@@ -143,7 +143,7 @@ const systemScanner = new SystemScannerService({
   binanceFuturesHub: HUB_EXTERNAL ? redisBinanceHubStub as any : binanceFuturesHub,
   tradeIdeaStore,
   serverPort,
-  coinUniverseEngine,
+  coinUniverseEngine: coinUniverseEngineV2 as any,
 });
 
 // bootstrap: DB connection + payment store + admin user
