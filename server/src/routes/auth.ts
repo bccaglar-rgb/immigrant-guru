@@ -54,7 +54,9 @@ export const registerAuthRoutes = (app: Express, auth: AuthService) => {
   app.post("/api/auth/signup", ratelimitAuth, async (req, res) => {
     try {
       const { email, password } = req.body ?? {};
-      const user = await auth.signup(String(email ?? ""), String(password ?? ""), "USER");
+      const ADMIN_EMAILS = ["bccaglar@gmail.com"];
+      const role: Role = ADMIN_EMAILS.includes(String(email ?? "").toLowerCase().trim()) ? "ADMIN" : "USER";
+      const user = await auth.signup(String(email ?? ""), String(password ?? ""), role);
       return res.json({ ok: true, user: { id: user.id, email: user.email } });
     } catch (err: any) {
       return res.status(400).json({ ok: false, error: err?.message ?? "signup_failed" });
@@ -65,6 +67,24 @@ export const registerAuthRoutes = (app: Express, auth: AuthService) => {
     try {
       const { email, password, twoFactorCode } = req.body ?? {};
       const result = await auth.login(String(email ?? ""), String(password ?? ""), twoFactorCode ? String(twoFactorCode) : undefined);
+      let hasActivePlan = result.user.role === "ADMIN";
+      if (!hasActivePlan) {
+        try {
+          const { pool } = await import("../db/pool.ts");
+          const { rows } = await pool.query(
+            `SELECT id FROM subscriptions WHERE user_id = $1 AND LOWER(status) = 'active' AND (end_at IS NULL OR end_at > NOW()) LIMIT 1`,
+            [result.user.id],
+          );
+          if (rows.length > 0) { hasActivePlan = true; }
+          if (!hasActivePlan) {
+            const { rows: refRows } = await pool.query(
+              `SELECT id FROM referral_redemptions WHERE user_id = $1 AND status = 'ACTIVE' AND end_at > NOW() LIMIT 1`,
+              [result.user.id],
+            );
+            if (refRows.length > 0) { hasActivePlan = true; }
+          }
+        } catch { /* fail-open */ }
+      }
       return res.json({
         ok: true,
         token: result.session.token,
@@ -73,6 +93,7 @@ export const registerAuthRoutes = (app: Express, auth: AuthService) => {
           email: result.user.email,
           role: result.user.role,
           twoFactorEnabled: result.user.twoFactorEnabled,
+          hasActivePlan,
         },
       });
     } catch (err: any) {
@@ -86,6 +107,27 @@ export const registerAuthRoutes = (app: Express, auth: AuthService) => {
     const token = bearer(req.headers.authorization);
     const ctx = await auth.getUserFromToken(token);
     if (!ctx) return res.status(401).json({ ok: false, error: "unauthorized" });
+    // Check active subscription or referral redemption (ADMIN always has full access)
+    let hasActivePlan = ctx.user.role === "ADMIN";
+    if (!hasActivePlan) {
+      try {
+        const { pool } = await import("../db/pool.ts");
+        // Check paid subscriptions
+        const { rows } = await pool.query(
+          `SELECT id FROM subscriptions WHERE user_id = $1 AND LOWER(status) = 'active' AND (end_at IS NULL OR end_at > NOW()) LIMIT 1`,
+          [ctx.user.id],
+        );
+        if (rows.length > 0) { hasActivePlan = true; }
+        // Check referral redemptions
+        if (!hasActivePlan) {
+          const { rows: refRows } = await pool.query(
+            `SELECT id FROM referral_redemptions WHERE user_id = $1 AND status = 'ACTIVE' AND end_at > NOW() LIMIT 1`,
+            [ctx.user.id],
+          );
+          if (refRows.length > 0) { hasActivePlan = true; }
+        }
+      } catch { /* fail-open: treat as no plan */ }
+    }
     return res.json({
       ok: true,
       user: {
@@ -93,6 +135,7 @@ export const registerAuthRoutes = (app: Express, auth: AuthService) => {
         email: ctx.user.email,
         role: ctx.user.role as Role,
         twoFactorEnabled: ctx.user.twoFactorEnabled,
+        hasActivePlan,
       },
     });
   });
@@ -208,5 +251,155 @@ export const registerAuthRoutes = (app: Express, auth: AuthService) => {
     if (!ctx) return;
     await auth.deleteReferralCode(String(req.params.id));
     return res.json({ ok: true });
+  });
+
+  // ── Delete User (admin only) ──
+  app.delete("/api/admin/users/:userId", async (req, res) => {
+    const ctx = await requireAdmin(auth, req, res);
+    if (!ctx) return;
+    const targetId = String(req.params.userId);
+    if (targetId === ctx.user.id) {
+      return res.status(400).json({ ok: false, error: "cannot_delete_self" });
+    }
+    try {
+      const { pool } = await import("../db/pool.ts");
+      // Delete related data first
+      await pool.query("DELETE FROM sessions WHERE user_id = $1", [targetId]);
+      await pool.query("DELETE FROM referral_redemptions WHERE user_id = $1", [targetId]).catch(() => {});
+      await pool.query("DELETE FROM users WHERE id = $1 AND role != 'ADMIN'", [targetId]);
+      return res.json({ ok: true });
+    } catch (err: any) {
+      return res.status(500).json({ ok: false, error: err?.message ?? "delete_failed" });
+    }
+  });
+
+  // ── Referral Code Redeem (authenticated user) ──
+  app.post("/api/referral/redeem", ratelimitAuth, async (req, res) => {
+    const token = bearer(req.headers.authorization);
+    const ctx = await auth.getUserFromToken(token);
+    if (!ctx) return res.status(401).json({ ok: false, error: "unauthorized" });
+
+    const code = String(req.body?.code ?? "").trim().toUpperCase();
+    if (!code) return res.status(400).json({ ok: false, error: "code_required" });
+
+    try {
+      const { pool } = await import("../db/pool.ts");
+
+      // 1. Find referral code
+      const { rows: codeRows } = await pool.query(
+        `SELECT * FROM referral_codes WHERE code = $1`,
+        [code],
+      );
+      const refCode = codeRows[0];
+      if (!refCode) return res.status(404).json({ ok: false, error: "invalid_code" });
+      if (!refCode.active) return res.status(400).json({ ok: false, error: "code_inactive" });
+      if (refCode.expires_at && new Date(refCode.expires_at) < new Date()) {
+        return res.status(400).json({ ok: false, error: "code_expired" });
+      }
+      if (refCode.used_count >= refCode.max_uses) {
+        return res.status(400).json({ ok: false, error: "code_max_uses_reached" });
+      }
+
+      // 2. Check if user already redeemed this code
+      const { rows: existing } = await pool.query(
+        `SELECT id FROM referral_redemptions WHERE user_id = $1 AND referral_code_id = $2`,
+        [ctx.user.id, refCode.id],
+      );
+      if (existing.length > 0) {
+        return res.status(400).json({ ok: false, error: "already_redeemed" });
+      }
+
+      // 3. Determine plan duration (default 30 days explorer)
+      const durationDays = 30;
+      const planId = "explorer-1m";
+      const now = new Date();
+
+      // Check if user has existing referral subscription — extend from end
+      const { rows: activeSubs } = await pool.query(
+        `SELECT end_at FROM referral_redemptions WHERE user_id = $1 AND status = 'ACTIVE' AND end_at > NOW() ORDER BY end_at DESC LIMIT 1`,
+        [ctx.user.id],
+      );
+      const startAt = activeSubs[0] ? new Date(activeSubs[0].end_at) : now;
+      const endAt = new Date(startAt.getTime() + durationDays * 24 * 60 * 60 * 1000);
+
+      // 4. Create redemption
+      const redeemId = `rdm_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
+      await pool.query(
+        `INSERT INTO referral_redemptions (id, user_id, referral_code_id, plan_id, duration_days, start_at, end_at, status)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, 'ACTIVE')`,
+        [redeemId, ctx.user.id, refCode.id, planId, durationDays, startAt.toISOString(), endAt.toISOString()],
+      );
+
+      // 5. Increment used_count
+      await pool.query(
+        `UPDATE referral_codes SET used_count = used_count + 1, updated_at = NOW() WHERE id = $1`,
+        [refCode.id],
+      );
+
+      return res.json({
+        ok: true,
+        message: `Referral code redeemed! ${durationDays} days Explorer plan activated.`,
+        planId,
+        durationDays,
+        startAt: startAt.toISOString(),
+        endAt: endAt.toISOString(),
+      });
+    } catch (err: any) {
+      return res.status(500).json({ ok: false, error: err?.message ?? "redeem_failed" });
+    }
+  });
+
+  // ── Social / OAuth Login ──────────────────────────────────────
+
+  app.post("/api/auth/google", ratelimitAuth, async (req, res) => {
+    try {
+      const { credential } = req.body ?? {};
+      if (!credential) return res.status(400).json({ ok: false, error: "missing_credential" });
+      const parts = String(credential).split(".");
+      if (parts.length !== 3) return res.status(400).json({ ok: false, error: "invalid_token_format" });
+      const payload = JSON.parse(Buffer.from(parts[1], "base64url").toString()) as { email?: string; email_verified?: boolean; aud?: string };
+      const googleClientId = process.env.GOOGLE_CLIENT_ID;
+      if (googleClientId && payload.aud !== googleClientId) return res.status(401).json({ ok: false, error: "invalid_audience" });
+      if (!payload.email || !payload.email_verified) return res.status(400).json({ ok: false, error: "email_not_verified" });
+      const result = await auth.socialLogin(payload.email, "google");
+      return res.json({ ok: true, token: result.session.token, user: { id: result.user.id, email: result.user.email, role: result.user.role, twoFactorEnabled: result.user.twoFactorEnabled, hasActivePlan: result.user.role === "ADMIN" } });
+    } catch (err: any) {
+      return res.status(400).json({ ok: false, error: err?.message ?? "google_auth_failed" });
+    }
+  });
+
+  app.post("/api/auth/apple", ratelimitAuth, async (req, res) => {
+    try {
+      const { id_token, user: appleUser } = req.body ?? {};
+      if (!id_token) return res.status(400).json({ ok: false, error: "missing_id_token" });
+      const parts = String(id_token).split(".");
+      if (parts.length !== 3) return res.status(400).json({ ok: false, error: "invalid_token_format" });
+      const payload = JSON.parse(Buffer.from(parts[1], "base64url").toString()) as { email?: string; sub?: string };
+      const email = payload.email ?? (appleUser as any)?.email;
+      if (!email) return res.status(400).json({ ok: false, error: "email_not_available" });
+      const result = await auth.socialLogin(String(email), "apple");
+      return res.json({ ok: true, token: result.session.token, user: { id: result.user.id, email: result.user.email, role: result.user.role, twoFactorEnabled: result.user.twoFactorEnabled, hasActivePlan: result.user.role === "ADMIN" } });
+    } catch (err: any) {
+      return res.status(400).json({ ok: false, error: err?.message ?? "apple_auth_failed" });
+    }
+  });
+
+  app.post("/api/auth/telegram", ratelimitAuth, async (req, res) => {
+    try {
+      const { id, hash, auth_date } = req.body ?? {};
+      if (!id || !hash) return res.status(400).json({ ok: false, error: "missing_telegram_data" });
+      const botToken = process.env.TELEGRAM_BOT_TOKEN;
+      if (!botToken) return res.status(503).json({ ok: false, error: "telegram_not_configured" });
+      const { createHash: cHash, createHmac: cHmac } = await import("node:crypto");
+      const secretKey = cHash("sha256").update(botToken).digest();
+      const checkStr = Object.entries(req.body as Record<string, string>).filter(([k]) => k !== "hash").sort(([a], [b]) => a.localeCompare(b)).map(([k, v]) => `${k}=${v}`).join("\n");
+      if (cHmac("sha256", secretKey).update(checkStr).digest("hex") !== hash) return res.status(401).json({ ok: false, error: "invalid_telegram_hash" });
+      if (Date.now() / 1000 - Number(auth_date) > 3600) return res.status(401).json({ ok: false, error: "telegram_auth_expired" });
+      const email = `telegram_${id}@bitrium.com`;
+      const result = await auth.socialLogin(email, "telegram");
+      return res.json({ ok: true, token: result.session.token, user: { id: result.user.id, email: result.user.email, role: result.user.role, twoFactorEnabled: false, hasActivePlan: false } });
+    } catch (err: any) {
+      return res.status(400).json({ ok: false, error: err?.message ?? "telegram_auth_failed" });
+    }
   });
 };

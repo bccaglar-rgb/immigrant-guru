@@ -138,6 +138,45 @@ export class AuthService {
     return { session, user };
   }
 
+  /** Social/OAuth login: find existing user by email or create new one. No password required. */
+  async socialLogin(email: string, provider: string) {
+    const normalized = email.trim().toLowerCase();
+    if (!normalized) throw new Error("invalid_email");
+
+    let user = await this.store.getUserByEmail(normalized);
+    if (!user) {
+      // Auto-create user from OAuth
+      const ADMIN_EMAILS = ["bccaglar@gmail.com"];
+      const role: Role = ADMIN_EMAILS.includes(normalized) ? "ADMIN" : "USER";
+      const now = nowIso();
+      user = {
+        id: makeId("usr"),
+        email: normalized,
+        passwordHash: hashPassword(randomBytes(32).toString("hex")), // random password — OAuth users don't need it
+        role,
+        twoFactorEnabled: false,
+        createdAt: now,
+        updatedAt: now,
+      };
+      await this.store.setUser(user);
+    }
+
+    // Create session
+    const now = Date.now();
+    const session: SessionRecord = {
+      token: randomBytes(24).toString("hex"),
+      userId: user.id,
+      createdAt: new Date(now).toISOString(),
+      expiresAt: new Date(now + 1000 * 60 * 60 * 24 * 30).toISOString(),
+    };
+    await this.store.setSession(session);
+    try {
+      const cachePayload = JSON.stringify({ session, user: { id: user.id, email: user.email, role: user.role, twoFactorEnabled: user.twoFactorEnabled } });
+      await redis.set(`session:${session.token}`, cachePayload, "EX", SESSION_CACHE_TTL);
+    } catch { /* Redis miss ok */ }
+    return { session, user, provider };
+  }
+
   async getUserFromToken(token: string | undefined) {
     if (!token) return null;
 

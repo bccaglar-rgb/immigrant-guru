@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuthStore } from "../hooks/useAuthStore";
 import { requestPasswordReset, confirmPasswordReset } from "../services/authClient";
+import { SocialLoginButtons } from "../components/SocialLoginButtons";
 
 type View = "login" | "forgot" | "reset";
 
@@ -183,6 +184,8 @@ export default function LoginPage() {
                   <span className="flex items-center justify-center gap-2">{spinner} Signing in...</span>
                 ) : show2FA ? "Verify & Sign In" : "Sign In"}
               </button>
+
+              {!show2FA && <SocialLoginButtons mode="login" />}
             </form>
           )}
 
