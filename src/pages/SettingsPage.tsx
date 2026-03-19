@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from "react";
 import type { AiModelConfig } from "../types";
 import { getAiProviderIcon, getExchangeBranding } from "../data/branding";
 import { writeExchangeAccounts } from "../hooks/useExchangeConfigs";
+import { ConnectApiModal, type ConnectApiPayload } from "../components/exchange/ConnectApiModal";
+import { authHeaders } from "../services/exchangeApi";
 import {
   applyPaletteToRoot,
   getPaletteById,
@@ -43,34 +45,6 @@ interface ExchangeConnectReport {
 const EXCHANGE_MANAGER_STORAGE_KEY = "exchange-manager-connections-v1";
 const MODELS_KEY = "admin-ai-models-v1";
 const MEMBERSHIP_EXPIRES_KEY = "membership.expiresAt";
-const CUSTOM_EXCHANGES_KEY = "settings.custom-exchanges-v1";
-
-const BUILTIN_EXCHANGE_OPTIONS: Array<{ id: string; label: string }> = [
-  { id: "binance", label: "Binance" },
-  { id: "gate", label: "Gate.io" },
-  { id: "bybit", label: "Bybit" },
-  { id: "okx", label: "OKX" },
-  { id: "coinbase", label: "Coinbase" },
-  { id: "kraken", label: "Kraken" },
-  { id: "kucoin", label: "KuCoin" },
-  { id: "bitget", label: "Bitget" },
-  { id: "mexc", label: "MEXC" },
-  { id: "htx", label: "HTX" },
-  { id: "hyperliquid", label: "Hyperliquid" },
-  { id: "deribit", label: "Deribit" },
-];
-
-const readCustomExchanges = (): Array<{ id: string; label: string }> => {
-  try {
-    const raw = window.localStorage.getItem(CUSTOM_EXCHANGES_KEY);
-    if (!raw) return [];
-    const parsed = JSON.parse(raw) as Array<{ id: string; label: string }>;
-    if (!Array.isArray(parsed)) return [];
-    return parsed.filter((row) => row && typeof row.id === "string" && typeof row.label === "string");
-  } catch {
-    return [];
-  }
-};
 
 type ProviderPreset = {
   provider: string;
@@ -198,18 +172,12 @@ type ModelForm = typeof defaultModelForm;
 
 export default function SettingsPage() {
   const [themeState, setThemeState] = useState(() => readStoredTheme());
-  const [exchangeId, setExchangeId] = useState("gate");
-  const [exchangeAccountName, setExchangeAccountName] = useState("Main");
-  const [apiKey, setApiKey] = useState("");
-  const [apiSecret, setApiSecret] = useState("");
-  const [passphrase, setPassphrase] = useState("");
-  const [connectLoading, setConnectLoading] = useState(false);
   const [connectError, setConnectError] = useState<string | null>(null);
   const [latestReport, setLatestReport] = useState<ExchangeConnectReport | null>(null);
   const [exchangeRows, setExchangeRows] = useState<ExchangeConnectionSummary[]>(() => readStoredManagerConnections());
   const [themePanelOpen, setThemePanelOpen] = useState(true);
-  const [customExchangeName, setCustomExchangeName] = useState("");
-  const [customExchanges, setCustomExchanges] = useState<Array<{ id: string; label: string }>>(() => readCustomExchanges());
+  const [exchangeModalOpen, setExchangeModalOpen] = useState(false);
+  const [exchangeEditMode, setExchangeEditMode] = useState<{ exchangeId: string; accountName: string } | null>(null);
 
   const [models, setModels] = useState<AiModelConfig[]>(() => readStoredModels());
   const [modelModalOpen, setModelModalOpen] = useState(false);
@@ -219,8 +187,6 @@ export default function SettingsPage() {
   const [modelErrors, setModelErrors] = useState<Record<string, string>>({});
 
   const [membershipExpiry] = useState<Date>(() => readMembershipExpiry());
-
-  const exchangeOptions = useMemo(() => [...BUILTIN_EXCHANGE_OPTIONS, ...customExchanges], [customExchanges]);
 
   const effectivePalette = useMemo(() => resolveEffectivePalette(themeState), [themeState]);
   const activePalette = useMemo(() => getPaletteById(themeState.paletteId), [themeState.paletteId]);
@@ -262,7 +228,7 @@ export default function SettingsPage() {
 
   const refreshExchangeRows = async () => {
     try {
-      const res = await fetch("/api/exchanges", { headers: { "x-user-id": "demo-user" } });
+      const res = await fetch("/api/exchanges", { headers: { ...authHeaders() } });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const body = await parseJsonResponse<{ exchanges?: ExchangeConnectionSummary[] }>(res);
       const rows = body.exchanges ?? [];
@@ -328,37 +294,29 @@ export default function SettingsPage() {
     setAndApply(next);
   };
 
-  const connectExchange = async () => {
+  const handleModalSave = async (payload: ConnectApiPayload): Promise<{ ok: boolean; error?: string }> => {
     setConnectError(null);
-    const accountName = exchangeAccountName.trim();
-    if (!accountName) {
-      setConnectError("Account name is required.");
-      return;
+    const sameExchangeCount = exchangeRows.filter((row) => row.exchangeId === payload.exchangeId).length;
+    if (!exchangeEditMode && sameExchangeCount >= 20) {
+      return { ok: false, error: "Maximum 20 accounts per exchange." };
     }
-    const sameExchangeCount = exchangeRows.filter((row) => row.exchangeId === exchangeId).length;
-    if (sameExchangeCount >= 20) {
-      setConnectError("Maximum 20 accounts per exchange.");
-      return;
-    }
-    setConnectLoading(true);
-    let connected = false;
     try {
       const res = await fetch("/api/exchanges/connect", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "x-user-id": "demo-user",
+          ...authHeaders(),
         },
         body: JSON.stringify({
-          exchangeId,
+          exchangeId: payload.exchangeId,
           credentials: {
-            apiKey,
-            apiSecret,
-            ...(passphrase.trim() ? { passphrase: passphrase.trim() } : {}),
+            apiKey: payload.apiKey,
+            apiSecret: payload.apiSecret,
+            ...(payload.passphrase ? { passphrase: payload.passphrase } : {}),
           },
           options: {
-            accountName,
-            environment: "mainnet",
+            accountName: payload.accountName,
+            environment: payload.testnet ? "testnet" : "mainnet",
             marketType: "both",
             defaultLeverage: 5,
             preferredMarginMode: "isolated",
@@ -368,34 +326,56 @@ export default function SettingsPage() {
       });
       const body = await parseJsonResponse<{ ok: boolean; report?: ExchangeConnectReport; message?: string; error?: string }>(res);
       if (!res.ok || !body.ok || !body.report) {
-        throw new Error(body.message ?? body.error ?? "Connection failed");
+        return { ok: false, error: body.message ?? body.error ?? "Connection failed" };
       }
       setLatestReport(body.report);
-      connected = true;
-      // Clear sensitive inputs immediately after successful save.
-      setApiKey("");
-      setApiSecret("");
-      setPassphrase("");
+      setExchangeModalOpen(false);
+      setExchangeEditMode(null);
       await refreshExchangeRows();
+      return { ok: true };
     } catch (err) {
-      setConnectError(err instanceof Error ? err.message : "Connection failed");
-    } finally {
-      if (connected) {
-        setApiKey("");
-        setApiSecret("");
-        setPassphrase("");
-      }
-      setConnectLoading(false);
+      return { ok: false, error: err instanceof Error ? err.message : "Connection failed" };
     }
   };
 
+  const handleModalTest = async (payload: { exchangeId: string; apiKey: string; apiSecret: string; passphrase?: string; testnet: boolean }): Promise<{ ok: boolean; error?: string }> => {
+    try {
+      const res = await fetch("/api/exchanges/connect", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...authHeaders(),
+        },
+        body: JSON.stringify({
+          exchangeId: payload.exchangeId,
+          credentials: {
+            apiKey: payload.apiKey,
+            apiSecret: payload.apiSecret,
+            ...(payload.passphrase ? { passphrase: payload.passphrase } : {}),
+          },
+          options: {
+            accountName: "__test__",
+            environment: payload.testnet ? "testnet" : "mainnet",
+            marketType: "both",
+            dryRun: true,
+          },
+        }),
+      });
+      const body = await parseJsonResponse<{ ok: boolean; message?: string; error?: string }>(res);
+      return { ok: res.ok && body.ok, error: body.message ?? body.error };
+    } catch (err) {
+      return { ok: false, error: err instanceof Error ? err.message : "Test failed" };
+    }
+  };
+
+  const openAddExchange = () => {
+    setExchangeEditMode(null);
+    setExchangeModalOpen(true);
+  };
+
   const editExchangeRow = (row: ExchangeConnectionSummary) => {
-    setExchangeId(row.exchangeId);
-    setExchangeAccountName(row.accountName ?? "Main");
-    setApiKey("");
-    setApiSecret("");
-    setPassphrase("");
-    setConnectError(`Editing ${row.exchangeDisplayName} / ${row.accountName ?? "Main"}: enter new API key/secret and save.`);
+    setExchangeEditMode({ exchangeId: row.exchangeId, accountName: row.accountName ?? "Main" });
+    setExchangeModalOpen(true);
   };
 
   const deleteExchangeRow = async (row: ExchangeConnectionSummary) => {
@@ -406,7 +386,7 @@ export default function SettingsPage() {
       const url = `/api/exchanges/${encodeURIComponent(row.exchangeId)}${q.toString() ? `?${q.toString()}` : ""}`;
       const res = await fetch(url, {
         method: "DELETE",
-        headers: { "x-user-id": "demo-user" },
+        headers: { ...authHeaders() },
       });
       const body = await parseJsonResponse<{ ok: boolean; message?: string; error?: string }>(res);
       if (!res.ok || !body.ok) throw new Error(body.message ?? body.error ?? "Delete failed");
@@ -492,10 +472,6 @@ export default function SettingsPage() {
     writeExchangeAccounts(exchangeRows);
   }, [exchangeRows]);
 
-  useEffect(() => {
-    window.localStorage.setItem(CUSTOM_EXCHANGES_KEY, JSON.stringify(customExchanges));
-  }, [customExchanges]);
-
   return (
     <main className="min-h-screen bg-[var(--bg)] p-4 text-[var(--textMuted)] md:p-6">
       <div className="mx-auto max-w-[1560px] space-y-4">
@@ -529,201 +505,99 @@ export default function SettingsPage() {
               <h2 className="text-base font-semibold text-[var(--text)]">Exchange Panel</h2>
               <p className="text-xs text-[var(--textMuted)]">Connect your exchange APIs and manage live trading access.</p>
             </div>
-            <button
-              type="button"
-              onClick={() => void refreshExchangeRows()}
-              className="rounded-lg border border-[var(--borderSoft)] bg-[var(--panelMuted)] px-3 py-1.5 text-xs text-[var(--textMuted)] hover:opacity-90"
-            >
-              Refresh
-            </button>
-          </div>
-
-          <div className="grid gap-3 xl:grid-cols-[380px_1fr]">
-            <div className="rounded-xl border border-[var(--borderSoft)] bg-[var(--panelMuted)] p-3">
-              <label className="text-xs text-[var(--textMuted)]">
-                Account Name
-                <input
-                  value={exchangeAccountName}
-                  onChange={(e) => setExchangeAccountName(e.target.value)}
-                  placeholder="Main / Scalping-01 / Test Net"
-                  className="mt-1 w-full rounded-lg border border-[var(--borderSoft)] bg-[var(--panel)] px-3 py-2 text-sm text-[var(--text)] outline-none"
-                />
-              </label>
-              <label className="text-xs text-[var(--textMuted)]">
-                Exchange
-                <select
-                  value={exchangeId}
-                  onChange={(e) => {
-                    const value = e.target.value;
-                    if (value === "__other__") {
-                      setExchangeId("");
-                      return;
-                    }
-                    if (value === "__add__") {
-                      const label = customExchangeName.trim();
-                      if (!label) {
-                        setConnectError("Enter an exchange name first.");
-                        return;
-                      }
-                      const id = label.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
-                      if (!id) {
-                        setConnectError("Invalid exchange name.");
-                        return;
-                      }
-                      setCustomExchanges((prev) => {
-                        if (prev.some((row) => row.id === id) || BUILTIN_EXCHANGE_OPTIONS.some((row) => row.id === id)) return prev;
-                        return [...prev, { id, label }];
-                      });
-                      setExchangeId(id);
-                      setConnectError(null);
-                      return;
-                    }
-                    setExchangeId(value);
-                    setConnectError(null);
-                  }}
-                  className="mt-1 w-full rounded-lg border border-[var(--borderSoft)] bg-[var(--panel)] px-3 py-2 text-sm text-[var(--text)] outline-none"
-                >
-                  {exchangeOptions.map((opt) => (
-                    <option key={opt.id} value={opt.id}>
-                      {opt.label}
-                    </option>
-                  ))}
-                  <option value="__add__">+ Add Exchange</option>
-                  <option value="__other__">Other Exchange...</option>
-                </select>
-              </label>
-              <label className="mt-2 block text-xs text-[var(--textMuted)]">
-                Other Exchange Name
-                <input
-                  value={customExchangeName}
-                  onChange={(e) => setCustomExchangeName(e.target.value)}
-                  placeholder="e.g. BitMart"
-                  className="mt-1 w-full rounded-lg border border-[var(--borderSoft)] bg-[var(--panel)] px-3 py-2 text-sm text-[var(--text)] outline-none"
-                />
-              </label>
-              <label className="mt-2 block text-xs text-[var(--textMuted)]">
-                API Key
-                <input
-                  value={apiKey}
-                  onChange={(e) => setApiKey(e.target.value)}
-                  autoComplete="off"
-                  spellCheck={false}
-                  className="mt-1 w-full rounded-lg border border-[var(--borderSoft)] bg-[var(--panel)] px-3 py-2 text-sm text-[var(--text)] outline-none"
-                />
-              </label>
-              <label className="mt-2 block text-xs text-[var(--textMuted)]">
-                API Secret
-                <input
-                  type="password"
-                  value={apiSecret}
-                  onChange={(e) => setApiSecret(e.target.value)}
-                  autoComplete="new-password"
-                  spellCheck={false}
-                  className="mt-1 w-full rounded-lg border border-[var(--borderSoft)] bg-[var(--panel)] px-3 py-2 text-sm text-[var(--text)] outline-none"
-                />
-              </label>
-              <label className="mt-2 block text-xs text-[var(--textMuted)]">
-                Passphrase (optional)
-                <input
-                  type="password"
-                  value={passphrase}
-                  onChange={(e) => setPassphrase(e.target.value)}
-                  autoComplete="new-password"
-                  spellCheck={false}
-                  className="mt-1 w-full rounded-lg border border-[var(--borderSoft)] bg-[var(--panel)] px-3 py-2 text-sm text-[var(--text)] outline-none"
-                />
-              </label>
+            <div className="flex items-center gap-2">
               <button
                 type="button"
-                disabled={connectLoading || !exchangeAccountName.trim() || !apiKey.trim() || !apiSecret.trim()}
-                onClick={() => void connectExchange()}
-                className="mt-3 rounded-lg border border-[var(--accent)] bg-[color-mix(in_srgb,var(--accent)_12%,transparent)] px-3 py-2 text-xs font-semibold text-[var(--accent)] disabled:opacity-60"
+                onClick={() => void refreshExchangeRows()}
+                className="rounded-lg border border-[var(--borderSoft)] bg-[var(--panelMuted)] px-3 py-1.5 text-xs text-[var(--textMuted)] hover:opacity-90"
               >
-                {connectLoading ? "Connecting..." : "Add new exchange account"}
+                Refresh
               </button>
-              <p className="mt-2 text-[11px] text-[var(--textMuted)]">
-                You can add up to 20 accounts per exchange with unique names.
-              </p>
-              {connectError ? <p className="mt-2 text-xs text-[#d6b3af]">{connectError}</p> : null}
-            </div>
-
-            <div className="space-y-3">
-              <div className="rounded-xl border border-[var(--borderSoft)] bg-[var(--panelMuted)] p-3">
-                <div className="flex items-center justify-between">
-                  <p className="text-xs uppercase tracking-wider text-[var(--textMuted)]">Connected Exchange Accounts</p>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setExchangeAccountName("Main");
-                      setApiKey("");
-                      setApiSecret("");
-                      setPassphrase("");
-                    }}
-                    className="rounded border border-[var(--borderSoft)] bg-[var(--panel)] px-2 py-1 text-[11px] text-[var(--accent)]"
-                  >
-                    + Add New
-                  </button>
-                </div>
-                <div className="mt-2 space-y-2">
-                  {exchangeRows.length ? (
-                    exchangeRows.map((row) => (
-                      <div key={`${row.exchangeId}-${row.accountName ?? "main"}-${row.checkedAt ?? row.exchangeDisplayName}`} className="rounded-lg border border-[var(--borderSoft)] bg-[var(--panel)] px-3 py-2 text-sm">
-                        <div className="flex items-center justify-between">
-                          <span className="inline-flex items-center gap-2 font-semibold text-[var(--text)]">
-                            <img
-                              src={getExchangeBranding(row.exchangeId).iconUrl}
-                              alt={row.exchangeDisplayName}
-                              className="h-5 w-5 rounded-full border border-white/10 object-cover"
-                            />
-                            <span>{row.exchangeDisplayName}</span>
-                            <span className="rounded border border-white/10 bg-[var(--panelMuted)] px-1.5 py-0.5 text-[11px] text-[var(--textMuted)]">
-                              {row.accountName ?? "Main"}
-                            </span>
-                          </span>
-                          <div className="flex items-center gap-1.5">
-                            <button
-                              type="button"
-                              onClick={() => editExchangeRow(row)}
-                              className="rounded border border-white/15 bg-[var(--panelMuted)] px-2 py-0.5 text-[10px] text-[var(--textMuted)]"
-                            >
-                              Edit
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => void deleteExchangeRow(row)}
-                              className="rounded border border-[#704844] bg-[#271a19] px-2 py-0.5 text-[10px] text-[#d6b3af]"
-                            >
-                              Delete
-                            </button>
-                            <span className={`rounded-full border px-2 py-0.5 text-[10px] font-semibold ${
-                              row.status === "READY"
-                                ? "border-[#6f765f] bg-[#1f251b] text-[#d8decf]"
-                                : row.status === "PARTIAL"
-                                  ? "border-[#7a6840] bg-[#2a2418] text-[#e7d9b3]"
-                                  : "border-[#704844] bg-[#271a19] text-[#d6b3af]"
-                            }`}>{row.status}</span>
-                          </div>
-                        </div>
-                        <p className="text-xs text-[var(--textMuted)]">{row.marketTypes?.join(", ").toUpperCase() || "-"} · {row.symbolsCount ?? 0} symbols</p>
-                      </div>
-                    ))
-                  ) : (
-                    <p className="text-xs text-[var(--textMuted)]">No connected exchange yet.</p>
-                  )}
-                </div>
-              </div>
-
-              {latestReport ? (
-                <div className="rounded-xl border border-[var(--borderSoft)] bg-[var(--panelMuted)] p-3">
-                  <div className="flex items-center justify-between">
-                    <p className="text-sm font-semibold text-[var(--text)]">{latestReport.exchangeDisplayName} onboarding report</p>
-                    <span className="rounded-full border border-[var(--accent)] px-2 py-0.5 text-[10px] font-semibold text-[var(--accent)]">{latestReport.overallStatus}</span>
-                  </div>
-                  <p className="mt-1 text-xs text-[var(--textMuted)]">Markets: {latestReport.discovery.marketsCount} · Types: {latestReport.discovery.marketTypes.join(", ")}</p>
-                </div>
-              ) : null}
+              <button
+                type="button"
+                onClick={openAddExchange}
+                className="rounded-lg border border-[var(--accent)] bg-[color-mix(in_srgb,var(--accent)_12%,transparent)] px-3 py-1.5 text-xs font-semibold text-[var(--accent)]"
+              >
+                + Add Exchange API
+              </button>
             </div>
           </div>
+
+          {connectError && (
+            <p className="mb-3 rounded-lg border border-[#704844] bg-[#271a19] px-3 py-2 text-xs text-[#d6b3af]">{connectError}</p>
+          )}
+
+          <div className="rounded-xl border border-[var(--borderSoft)] bg-[var(--panelMuted)] p-3">
+            <p className="mb-2 text-xs uppercase tracking-wider text-[var(--textMuted)]">Connected Exchange Accounts</p>
+            <div className="space-y-2">
+              {exchangeRows.length ? (
+                exchangeRows.map((row) => (
+                  <div key={`${row.exchangeId}-${row.accountName ?? "main"}-${row.checkedAt ?? row.exchangeDisplayName}`} className="rounded-lg border border-[var(--borderSoft)] bg-[var(--panel)] px-3 py-2.5 text-sm">
+                    <div className="flex items-center justify-between">
+                      <span className="inline-flex items-center gap-2 font-semibold text-[var(--text)]">
+                        <img
+                          src={getExchangeBranding(row.exchangeId).iconUrl}
+                          alt={row.exchangeDisplayName}
+                          className="h-6 w-6 rounded-full border border-white/10 object-cover"
+                        />
+                        <span>{row.exchangeDisplayName}</span>
+                        <span className="rounded border border-white/10 bg-[var(--panelMuted)] px-1.5 py-0.5 text-[11px] text-[var(--textMuted)]">
+                          {row.accountName ?? "Main"}
+                        </span>
+                      </span>
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => editExchangeRow(row)}
+                          className="rounded border border-white/15 bg-[var(--panelMuted)] px-2 py-0.5 text-[10px] text-[var(--textMuted)] hover:text-[var(--text)] transition"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => void deleteExchangeRow(row)}
+                          className="rounded border border-[#704844] bg-[#271a19] px-2 py-0.5 text-[10px] text-[#d6b3af] hover:opacity-80 transition"
+                        >
+                          Delete
+                        </button>
+                        <span className={`rounded-full border px-2 py-0.5 text-[10px] font-semibold ${
+                          row.status === "READY"
+                            ? "border-[#6f765f] bg-[#1f251b] text-[#d8decf]"
+                            : row.status === "PARTIAL"
+                              ? "border-[#7a6840] bg-[#2a2418] text-[#e7d9b3]"
+                              : "border-[#704844] bg-[#271a19] text-[#d6b3af]"
+                        }`}>{row.status}</span>
+                      </div>
+                    </div>
+                    <p className="mt-1 text-xs text-[var(--textMuted)]">{row.marketTypes?.join(", ").toUpperCase() || "-"} · {row.symbolsCount ?? 0} symbols</p>
+                  </div>
+                ))
+              ) : (
+                <div className="rounded-xl border border-dashed border-[var(--borderSoft)] bg-[var(--panel)] p-6 text-center">
+                  <p className="text-sm text-[var(--textMuted)]">No exchange connected yet.</p>
+                  <p className="mt-1 text-xs text-[var(--textMuted)]">
+                    Click <button type="button" onClick={openAddExchange} className="font-semibold text-[var(--accent)] hover:underline">+ Add Exchange API</button> to connect your first exchange.
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {latestReport && (
+            <div className="mt-3 rounded-xl border border-[var(--borderSoft)] bg-[var(--panelMuted)] p-3">
+              <div className="flex items-center justify-between">
+                <p className="text-sm font-semibold text-[var(--text)]">{latestReport.exchangeDisplayName} onboarding report</p>
+                <span className={`rounded-full border px-2 py-0.5 text-[10px] font-semibold ${
+                  latestReport.overallStatus === "READY"
+                    ? "border-[#6f765f] bg-[#1f251b] text-[#d8decf]"
+                    : latestReport.overallStatus === "PARTIAL"
+                      ? "border-[#7a6840] bg-[#2a2418] text-[#e7d9b3]"
+                      : "border-[#704844] bg-[#271a19] text-[#d6b3af]"
+                }`}>{latestReport.overallStatus}</span>
+              </div>
+              <p className="mt-1 text-xs text-[var(--textMuted)]">Markets: {latestReport.discovery.marketsCount} · Types: {latestReport.discovery.marketTypes.join(", ")}</p>
+            </div>
+          )}
         </section>
 
         <section id="ai-panel" className="rounded-2xl border border-[var(--borderSoft)] bg-[var(--panel)] p-4">
@@ -917,6 +791,14 @@ export default function SettingsPage() {
           ) : null}
         </section>
       </div>
+
+      <ConnectApiModal
+        open={exchangeModalOpen}
+        onClose={() => { setExchangeModalOpen(false); setExchangeEditMode(null); }}
+        onSave={handleModalSave}
+        onTest={handleModalTest}
+        editMode={exchangeEditMode}
+      />
 
       {modelModalOpen ? (
         <div className="fixed inset-0 z-50 grid place-items-center bg-black/70 p-4">

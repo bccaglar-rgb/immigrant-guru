@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { getExchangeBranding } from "../data/branding";
 import type { ExchangeConfig } from "../types";
+import { authHeaders } from "../services/exchangeApi";
 
 const EXCHANGES_KEY = "admin-exchanges-v1";
 const EXCHANGE_MANAGER_CONNECTIONS_KEY = "exchange-manager-connections-v1";
@@ -68,8 +69,6 @@ const readManagerConnections = (): ManagerConnection[] =>
 const readExchangeAccounts = (): ManagerConnection[] =>
   parseManagerRows(window.localStorage.getItem(EXCHANGE_ACCOUNTS_KEY));
 
-const USER_ID = "demo-user";
-
 export const writeExchangeAccounts = (rows: ManagerConnection[]) => {
   try {
     window.localStorage.setItem(EXCHANGE_ACCOUNTS_KEY, JSON.stringify(rows));
@@ -89,7 +88,7 @@ export const useExchangeConfigs = () => {
     const syncFromBackend = async () => {
       try {
         const res = await fetch("/api/exchanges", {
-          headers: { "x-user-id": USER_ID },
+          headers: { ...authHeaders() },
         });
         if (!res.ok) return;
         const body = (await res.json()) as {

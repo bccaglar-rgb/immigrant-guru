@@ -1,12 +1,14 @@
 import type { Express } from "express";
 import { ExchangeManager } from "../exchangeManager/ExchangeManager.ts";
+import type { AuthService } from "../payments/authService.ts";
+import { requireAuth } from "../middleware/authMiddleware.ts";
 
-const userFromReq = (req: any): string => String(req.headers["x-user-id"] ?? "demo-user");
+export const registerExchangeRoutes = (app: Express, manager: ExchangeManager, auth?: AuthService) => {
+  const authMw = auth ? requireAuth(auth) : (_req: any, _res: any, next: any) => { _req.userId = _req.headers["x-user-id"] ?? "demo-user"; next(); };
 
-export const registerExchangeRoutes = (app: Express, manager: ExchangeManager) => {
-  app.post("/api/exchanges/connect", async (req, res) => {
+  app.post("/api/exchanges/connect", authMw, async (req, res) => {
     try {
-      const userId = userFromReq(req);
+      const userId = req.userId!;
       const { exchangeId, credentials, options } = req.body ?? {};
       if (!exchangeId || !credentials) {
         return res.status(400).json({ ok: false, error: "missing_exchange_or_credentials" });
@@ -30,9 +32,9 @@ export const registerExchangeRoutes = (app: Express, manager: ExchangeManager) =
     }
   });
 
-  app.get("/api/exchanges", async (req, res) => {
+  app.get("/api/exchanges", authMw, async (req, res) => {
     try {
-      const userId = userFromReq(req);
+      const userId = req.userId!;
       const exchanges = await manager.list(userId);
       return res.json({ ok: true, exchanges });
     } catch (err: any) {
@@ -40,9 +42,9 @@ export const registerExchangeRoutes = (app: Express, manager: ExchangeManager) =
     }
   });
 
-  app.get("/api/exchanges/:exchangeId/symbols", async (req, res) => {
+  app.get("/api/exchanges/:exchangeId/symbols", authMw, async (req, res) => {
     try {
-      const userId = userFromReq(req);
+      const userId = req.userId!;
       const data = await manager.getSymbols(userId, req.params.exchangeId, String(req.query.marketType ?? ""));
       return res.json({ ok: true, ...data });
     } catch (err: any) {
@@ -51,9 +53,9 @@ export const registerExchangeRoutes = (app: Express, manager: ExchangeManager) =
     }
   });
 
-  app.get("/api/exchanges/:exchangeId/status", async (req, res) => {
+  app.get("/api/exchanges/:exchangeId/status", authMw, async (req, res) => {
     try {
-      const userId = userFromReq(req);
+      const userId = req.userId!;
       const report = await manager.getStatus(userId, req.params.exchangeId);
       if (!report) return res.status(404).json({ ok: false, error: "not_found" });
       return res.json({ ok: true, report, checkedAt: report.checkedAt });
@@ -62,9 +64,9 @@ export const registerExchangeRoutes = (app: Express, manager: ExchangeManager) =
     }
   });
 
-  app.get("/api/exchanges/:exchangeId/account", async (req, res) => {
+  app.get("/api/exchanges/:exchangeId/account", authMw, async (req, res) => {
     try {
-      const userId = userFromReq(req);
+      const userId = req.userId!;
       const symbol = String(req.query.symbol ?? "BTCUSDT");
       const accountName = req.query.accountName ? String(req.query.accountName) : undefined;
       const data = await manager.getAccountSnapshot(userId, req.params.exchangeId, symbol, accountName);
@@ -76,9 +78,9 @@ export const registerExchangeRoutes = (app: Express, manager: ExchangeManager) =
     }
   });
 
-  app.delete("/api/exchanges/:exchangeId", async (req, res) => {
+  app.delete("/api/exchanges/:exchangeId", authMw, async (req, res) => {
     try {
-      const userId = userFromReq(req);
+      const userId = req.userId!;
       const accountName = req.query.accountName ? String(req.query.accountName) : undefined;
       await manager.removeConnection(userId, req.params.exchangeId, accountName);
       return res.json({ ok: true });

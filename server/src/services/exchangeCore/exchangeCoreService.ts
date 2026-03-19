@@ -11,12 +11,22 @@
  */
 import { randomUUID, createHmac } from "node:crypto";
 import { pool } from "../../db/pool.ts";
-import { decryptSecret } from "../../security/crypto.ts";
 import type { ConnectionService, ExchangeConnectionRecord } from "../connectionService.ts";
 import type { TraderExchange } from "../traderHub/types.ts";
 import type { CoreEvent, CoreIntentRecord, ExchangeCoreMetrics } from "./types.ts";
 import { ExchangeRateLimiter } from "./exchangeRateLimiter.ts";
 import { circuitBreakers } from "./circuitBreaker.ts";
+import { IntentFactory, type ManualIntentInput } from "./intentFactory.ts";
+import { IntentDeduplicator } from "./intentDedup.ts";
+import { RiskGate } from "./riskGate.ts";
+import { SymbolRegistry } from "./symbolRegistry.ts";
+import { OrderNormalizer } from "./orderNormalizer.ts";
+import { ExchangeTimeSync } from "./timeSync.ts";
+import { OrderReconciler } from "./reconciler.ts";
+import { ApiVault } from "./apiVault.ts";
+import { KillSwitch } from "./killSwitch.ts";
+import { PolicyEngine } from "./policyEngine.ts";
+import { PositionTracker } from "./positionTracker.ts";
 
 const nowIso = () => new Date().toISOString();
 
@@ -128,6 +138,17 @@ export class ExchangeCoreService {
   private readonly connections: ConnectionService;
   private readonly encryptionKey: Buffer;
   private readonly rateLimiter: ExchangeRateLimiter;
+  private readonly intentFactory: IntentFactory;
+  private readonly deduplicator: IntentDeduplicator;
+  private readonly riskGate: RiskGate;
+  private readonly symbolRegistry: SymbolRegistry;
+  private readonly orderNormalizer: OrderNormalizer;
+  private readonly timeSync: ExchangeTimeSync;
+  private readonly reconciler: OrderReconciler;
+  private readonly apiVault: ApiVault;
+  private readonly killSwitch: KillSwitch;
+  private readonly policyEngine: PolicyEngine;
+  private readonly positionTracker: PositionTracker;
   private readonly tickMs: number;
   private readonly maxConcurrent: number;
   private started = false;
@@ -146,6 +167,17 @@ export class ExchangeCoreService {
     this.connections = connections;
     this.encryptionKey = encryptionKey;
     this.rateLimiter = new ExchangeRateLimiter();
+    this.intentFactory = new IntentFactory();
+    this.deduplicator = new IntentDeduplicator();
+    this.riskGate = new RiskGate();
+    this.symbolRegistry = new SymbolRegistry();
+    this.orderNormalizer = new OrderNormalizer(this.symbolRegistry);
+    this.timeSync = new ExchangeTimeSync();
+    this.reconciler = new OrderReconciler(connections, encryptionKey, this.rateLimiter);
+    this.apiVault = new ApiVault(encryptionKey);
+    this.positionTracker = new PositionTracker();
+    this.killSwitch = new KillSwitch();
+    this.policyEngine = new PolicyEngine(this.positionTracker);
     this.tickMs = Math.max(150, Math.min(2000, Math.floor(options.tickMs ?? 250)));
     this.maxConcurrent = Math.max(4, Math.min(2048, Math.floor(options.maxConcurrent ?? 128)));
   }
@@ -156,6 +188,8 @@ export class ExchangeCoreService {
     this.timer = setInterval(() => {
       void this.tick();
     }, this.tickMs);
+    this.timeSync.start();
+    this.reconciler.start();
   }
 
   stop() {
@@ -164,6 +198,8 @@ export class ExchangeCoreService {
       clearInterval(this.timer);
       this.timer = null;
     }
+    this.timeSync.stop();
+    this.reconciler.stop();
   }
 
   getMetrics(): ExchangeCoreMetrics {
@@ -190,6 +226,51 @@ export class ExchangeCoreService {
   /** List events for a user (from in-memory ring buffer). */
   listEventsByUser(userId: string): CoreEvent[] {
     return this.events.filter((event) => event.scope.userId === userId);
+  }
+
+  /** Submit a manual order intent from the Exchange Terminal UI.
+   *  Validates exchange connection, deduplicates, persists, and enqueues for execution. */
+  async submitManualIntent(input: ManualIntentInput): Promise<CoreIntentRecord> {
+    // 1. Build normalized intent record
+    const row = this.intentFactory.createManualIntent(input);
+
+    // 2. Dedup check (Redis fast path)
+    const dedup = await this.deduplicator.checkAndMark(row.userId, row.clientOrderId, row.id);
+    if (dedup.isDuplicate) {
+      row.state = "REJECTED";
+      row.rejectCode = "DUPLICATE_INTENT";
+      row.rejectReason = `Duplicate order: clientOrderId=${row.clientOrderId} already in-flight (intent: ${dedup.existingIntentId ?? "?"})`;
+      this.emitEvent(row, "risk.rejected", { code: "DUPLICATE_INTENT", message: row.rejectReason });
+      return row;
+    }
+
+    // 3. Validate exchange account is connected and enabled
+    const userConnections = await this.connections.listExchangeConnections(row.userId);
+    const account = userConnections.find(
+      (c) => c.id === row.exchangeAccountId && c.enabled && c.status !== "FAILED",
+    );
+    if (!account) {
+      row.state = "REJECTED";
+      row.rejectCode = "CONNECT_EXCHANGE_REQUIRED";
+      row.rejectReason = "Exchange account not connected, disabled, or failed.";
+      await this.persistIntent(row);
+      await this.deduplicator.release(row.userId, row.clientOrderId);
+      this.emitEvent(row, "risk.rejected", { code: row.rejectCode, message: row.rejectReason });
+      return row;
+    }
+
+    // 4. Persist to DB + cache + enqueue
+    await this.persistIntent(row);
+    this.intentCache.set(row.id, row);
+    this.emitEvent(row, "order.accepted", {
+      source: "MANUAL",
+      priority: row.priority,
+      venue: row.venue,
+      exchange: toExchangeDisplay(row.venue),
+      accountName: account.accountName ?? "Main",
+    });
+    this.enqueue(row.id, toQueue(row.source, row.priority));
+    return row;
   }
 
   /** Submit an AI-generated order intent. Persists to DB + enqueues for execution. */
@@ -418,6 +499,26 @@ export class ExchangeCoreService {
   // ── Order Execution ──────────────────────────────────────────
 
   private async processIntent(row: CoreIntentRecord) {
+    // 0. Kill switch check (highest priority)
+    const ksResult = await this.killSwitch.isBlocked({
+      venue: row.venue,
+      userId: row.userId,
+      symbolInternal: row.symbolInternal,
+      source: row.source,
+    });
+    if (ksResult.blocked) {
+      row.state = "REJECTED";
+      row.rejectCode = `KILL_SWITCH_${ksResult.level}`;
+      row.rejectReason = ksResult.reason ?? "Kill switch active";
+      row.updatedAt = nowIso();
+      await this.updateIntentState(row.id, "REJECTED", {
+        rejectCode: row.rejectCode,
+        rejectReason: row.rejectReason,
+      });
+      this.emitEvent(row, "risk.rejected", { stage: "kill_switch", level: ksResult.level, message: row.rejectReason });
+      return;
+    }
+
     // 1. Circuit breaker check (OPEN → reject immediately, don't waste the request)
     const cb = circuitBreakers[row.venue as keyof typeof circuitBreakers];
     if (cb && !await cb.canRequest()) {
@@ -433,12 +534,73 @@ export class ExchangeCoreService {
       return;
     }
 
-    // 2. Rate limit check
-    const allowed = await this.rateLimiter.tryAcquire(row.venue as "BINANCE" | "GATEIO", 5);
-    if (!allowed) {
+    // 2. Pre-trade risk check
+    const riskResult = await this.riskGate.check(row);
+    if (!riskResult.allowed) {
+      row.state = "REJECTED";
+      row.rejectCode = riskResult.code ?? "RISK_CHECK_FAILED";
+      row.rejectReason = riskResult.reason ?? "Risk check failed";
+      row.updatedAt = nowIso();
+      await this.updateIntentState(row.id, "REJECTED", {
+        rejectCode: row.rejectCode,
+        rejectReason: row.rejectReason,
+      });
+      this.emitEvent(row, "risk.rejected", { stage: "risk_gate", code: row.rejectCode, message: row.rejectReason });
+      return;
+    }
+    if (riskResult.warnings.length > 0) {
+      this.emitEvent(row, "order.accepted", { stage: "risk_gate", warnings: riskResult.warnings });
+    }
+
+    // 2b. Policy engine check (AI vs manual conflict)
+    const policyResult = await this.policyEngine.evaluate(row);
+    if (!policyResult.allowed) {
+      row.state = "REJECTED";
+      row.rejectCode = "POLICY_CONFLICT";
+      row.rejectReason = policyResult.reason;
+      row.updatedAt = nowIso();
+      await this.updateIntentState(row.id, "REJECTED", {
+        rejectCode: row.rejectCode,
+        rejectReason: row.rejectReason,
+      });
+      this.emitEvent(row, "risk.rejected", {
+        stage: "policy_engine",
+        message: policyResult.reason,
+        blockedBy: policyResult.blockedBy,
+      });
+      return;
+    }
+
+    // 3. Order normalization (qty precision, price tick, min notional)
+    const normResult = await this.orderNormalizer.normalize(row);
+    if (!normResult.ok) {
+      row.state = "REJECTED";
+      row.rejectCode = normResult.error.code;
+      row.rejectReason = normResult.error.reason;
+      row.updatedAt = nowIso();
+      await this.updateIntentState(row.id, "REJECTED", {
+        rejectCode: row.rejectCode,
+        rejectReason: row.rejectReason,
+      });
+      this.emitEvent(row, "risk.rejected", { stage: "order_normalizer", code: row.rejectCode, message: row.rejectReason });
+      return;
+    }
+    // Apply normalized values back to intent
+    row.symbolVenue = normResult.result.symbolVenue;
+    if (normResult.result.qty > 0) row.qty = normResult.result.qty;
+    if (normResult.result.price != null) row.price = normResult.result.price;
+
+    // 4. Multi-level rate limit check (global → venue → user → symbol)
+    const rlResult = await this.rateLimiter.tryAcquireAll(
+      row.venue as "BINANCE" | "GATEIO" | "BYBIT" | "OKX",
+      row.userId,
+      row.symbolInternal,
+      5,
+    );
+    if (!rlResult.allowed) {
       row.state = "ERROR";
       row.rejectCode = "RATE_LIMITED";
-      row.rejectReason = `Exchange rate limit exceeded for ${toExchangeDisplay(row.venue)}. Will retry next tick.`;
+      row.rejectReason = `Rate limit exceeded at ${rlResult.blockedBy} level for ${toExchangeDisplay(row.venue)}. Will retry next tick.`;
       row.updatedAt = nowIso();
       await this.updateIntentState(row.id, "ERROR", {
         rejectCode: "RATE_LIMITED",
@@ -446,13 +608,14 @@ export class ExchangeCoreService {
       });
       this.emitEvent(row, "error", {
         stage: "rate_limit",
+        level: rlResult.blockedBy,
         message: row.rejectReason,
       });
       return;
     }
 
-    // 3. Decrypt credentials
-    const creds = await this.decryptCredentials(row.userId, row.exchangeAccountId);
+    // 5. Decrypt credentials (via ApiVault with audit)
+    const creds = await this.apiVault.getCredentials(row.userId, row.exchangeAccountId, "order_execution");
     if (!creds) {
       row.state = "ERROR";
       row.rejectCode = "CREDS_UNAVAILABLE";
@@ -488,6 +651,10 @@ export class ExchangeCoreService {
         result = await this.executeBinanceOrder(creds, row);
       } else if (row.venue === "GATEIO") {
         result = await this.executeGateOrder(creds, row);
+      } else if (row.venue === "BYBIT") {
+        result = await this.executeBybitOrder(creds, row);
+      } else if (row.venue === "OKX") {
+        result = await this.executeOkxOrder(creds, row);
       } else {
         throw new Error(`Unsupported venue: ${row.venue}`);
       }
@@ -533,7 +700,7 @@ export class ExchangeCoreService {
 
   private async executeBinanceOrder(creds: DecryptedCreds, intent: CoreIntentRecord): Promise<ExchangeOrderResult> {
     const base = "https://fapi.binance.com";
-    const ts = Date.now();
+    const ts = this.timeSync.getAdjustedTimestamp("BINANCE");
 
     const params: Record<string, string> = {
       symbol: intent.symbolVenue,
@@ -669,7 +836,7 @@ export class ExchangeCoreService {
 
     // Gate.io uses underscore-separated symbol format
     const gateSymbol = toGateSymbol(intent.symbolVenue);
-    const ts = Math.floor(Date.now() / 1000);
+    const ts = Math.floor(this.timeSync.getAdjustedTimestamp("GATEIO") / 1000);
 
     // Compute size: Gate.io uses "size" in contracts (1 contract = 1 USD for most pairs)
     let size: number;
@@ -739,29 +906,6 @@ export class ExchangeCoreService {
     };
   }
 
-  // ── Credential Decryption ────────────────────────────────────
-
-  private async decryptCredentials(userId: string, exchangeAccountId: string): Promise<DecryptedCreds | null> {
-    try {
-      const { rows } = await pool.query(
-        `SELECT credentials_encrypted, exchange_id FROM exchange_connection_records WHERE id = $1 AND user_id = $2`,
-        [exchangeAccountId, userId],
-      );
-      if (!rows[0]) return null;
-      const encrypted = rows[0].credentials_encrypted as ExchangeConnectionRecord["credentialsEncrypted"];
-      return {
-        apiKey: decryptSecret(encrypted.apiKey, this.encryptionKey),
-        apiSecret: decryptSecret(encrypted.apiSecret, this.encryptionKey),
-        passphrase: encrypted.passphrase
-          ? decryptSecret(encrypted.passphrase, this.encryptionKey)
-          : undefined,
-      };
-    } catch (err: any) {
-      console.error(`[ExchangeCore] Credential decryption failed for account ${exchangeAccountId}:`, err?.message ?? err);
-      return null;
-    }
-  }
-
   // ── Events ───────────────────────────────────────────────────
 
   private emitEvent(intent: CoreIntentRecord, type: CoreEvent["type"], data: Record<string, unknown>) {
@@ -784,6 +928,630 @@ export class ExchangeCoreService {
     if (this.events.length > this.maxEvents) {
       this.events.splice(0, this.events.length - this.maxEvents);
     }
+  }
+
+  // ── Cancel Order ─────────────────────────────────────────────
+
+  /**
+   * Cancel an order intent. Handles three scenarios:
+   *   1. ACCEPTED/QUEUED → not yet sent to exchange → immediate CANCELED
+   *   2. SENT → sent to exchange → send cancel API → wait for ack
+   *   3. DONE/CANCELED/REJECTED/ERROR → already terminal → reject cancel
+   */
+  async cancelIntent(
+    intentId: string,
+    userId: string,
+    reason = "user_requested",
+  ): Promise<{ ok: boolean; intent?: CoreIntentRecord; code?: string; message?: string }> {
+    // 1. Fetch intent from DB (authoritative)
+    const { rows } = await pool.query(
+      `SELECT * FROM order_intents WHERE id = $1 LIMIT 1`,
+      [intentId],
+    );
+    if (!rows.length) {
+      return { ok: false, code: "NOT_FOUND", message: "Order not found." };
+    }
+    const intent = rowToIntent(rows[0]);
+
+    // 2. Ownership check
+    if (intent.userId !== userId) {
+      return { ok: false, code: "FORBIDDEN", message: "You do not own this order." };
+    }
+
+    // 3. Idempotency: already canceled or terminal
+    if (intent.state === "CANCELED") {
+      return { ok: true, intent, code: "ALREADY_CANCELED", message: "Order already canceled." };
+    }
+    if (intent.state === "DONE") {
+      return { ok: false, code: "ALREADY_FILLED", message: "Order already filled — cannot cancel." };
+    }
+    if (intent.state === "REJECTED" || intent.state === "ERROR") {
+      return { ok: true, intent, code: "ALREADY_CLOSED", message: `Order already ${intent.state.toLowerCase()}.` };
+    }
+
+    // 4. ACCEPTED or QUEUED — not sent to exchange yet → immediate cancel
+    if (intent.state === "ACCEPTED" || intent.state === "QUEUED" || intent.state === "PENDING") {
+      // Remove from queue if present
+      this.removeFromQueue(intent.id);
+
+      intent.state = "CANCELED";
+      intent.rejectCode = "USER_CANCELED";
+      intent.rejectReason = reason;
+      intent.updatedAt = nowIso();
+      await this.updateIntentState(intent.id, "CANCELED", {
+        rejectCode: "USER_CANCELED",
+        rejectReason: reason,
+      });
+      this.intentCache.set(intent.id, intent);
+      await this.deduplicator.release(intent.userId, intent.clientOrderId);
+      this.emitEvent(intent, "order.canceled", {
+        reason,
+        cancelType: "pre_exchange",
+        message: "Canceled before sending to exchange.",
+      });
+      return { ok: true, intent };
+    }
+
+    // 5. SENT — order is on the exchange → send cancel API
+    // Get exchange_order_id from DB
+    const { rows: fullRows } = await pool.query(
+      `SELECT exchange_order_id, fill_qty, avg_fill_price FROM order_intents WHERE id = $1`,
+      [intentId],
+    );
+    const exchangeOrderId = fullRows[0]?.exchange_order_id as string | null;
+
+    this.emitEvent(intent, "order.cancel_requested", { reason, exchangeOrderId });
+
+    // Decrypt credentials
+    const creds = await this.apiVault.getCredentials(intent.userId, intent.exchangeAccountId, "order_cancel");
+    if (!creds) {
+      return { ok: false, code: "CREDS_UNAVAILABLE", message: "Cannot decrypt credentials for cancel." };
+    }
+
+    // Rate limit check (cancel = 1 weight)
+    const rlResult = await this.rateLimiter.tryAcquireAll(
+      intent.venue as "BINANCE" | "GATEIO" | "BYBIT" | "OKX",
+      intent.userId,
+      intent.symbolInternal,
+      1,
+    );
+    if (!rlResult.allowed) {
+      return { ok: false, code: "RATE_LIMITED", message: `Rate limited at ${rlResult.blockedBy} level. Try again shortly.` };
+    }
+
+    // Circuit breaker check
+    const cb = circuitBreakers[intent.venue as keyof typeof circuitBreakers];
+    if (cb && !await cb.canRequest()) {
+      return { ok: false, code: "CIRCUIT_OPEN", message: `${toExchangeDisplay(intent.venue)} circuit breaker is OPEN.` };
+    }
+
+    try {
+      let cancelResult: { success: boolean; finalStatus: string; filledQty: number | null; avgPrice: number | null };
+
+      if (intent.venue === "BINANCE") {
+        cancelResult = await this.cancelBinanceOrder(creds, intent, exchangeOrderId);
+      } else if (intent.venue === "GATEIO") {
+        cancelResult = await this.cancelGateOrder(creds, intent, exchangeOrderId);
+      } else if (intent.venue === "BYBIT") {
+        cancelResult = await this.cancelBybitOrder(creds, intent, exchangeOrderId);
+      } else if (intent.venue === "OKX") {
+        cancelResult = await this.cancelOkxOrder(creds, intent, exchangeOrderId);
+      } else {
+        return { ok: false, code: "UNSUPPORTED_VENUE", message: `Cancel not supported for ${intent.venue}` };
+      }
+
+      if (cb) await cb.recordSuccess().catch(() => {});
+
+      // Determine final state based on exchange response
+      if (cancelResult.finalStatus === "CANCELED" || cancelResult.finalStatus === "cancelled") {
+        // Check if partially filled before cancel
+        const filledQty = cancelResult.filledQty ?? 0;
+        const finalState = filledQty > 0 ? "DONE" as const : "CANCELED" as const;
+        const cancelReason = filledQty > 0
+          ? `Partially filled (${filledQty}), then canceled. ${reason}`
+          : reason;
+
+        intent.state = finalState;
+        intent.rejectCode = "USER_CANCELED";
+        intent.rejectReason = cancelReason;
+        intent.updatedAt = nowIso();
+        await this.updateIntentState(intent.id, finalState, {
+          rejectCode: "USER_CANCELED",
+          rejectReason: cancelReason,
+          fillQty: filledQty || null,
+          avgFillPrice: cancelResult.avgPrice,
+        });
+        this.intentCache.set(intent.id, intent);
+        await this.deduplicator.release(intent.userId, intent.clientOrderId);
+        this.emitEvent(intent, "order.canceled", {
+          reason: cancelReason,
+          cancelType: "exchange_confirmed",
+          filledQty,
+          avgFillPrice: cancelResult.avgPrice,
+        });
+        return { ok: true, intent };
+      }
+
+      if (cancelResult.finalStatus === "FILLED") {
+        // Order filled while we tried to cancel
+        intent.state = "DONE";
+        intent.updatedAt = nowIso();
+        await this.updateIntentState(intent.id, "DONE", {
+          fillQty: cancelResult.filledQty,
+          avgFillPrice: cancelResult.avgPrice,
+        });
+        this.intentCache.set(intent.id, intent);
+        this.emitEvent(intent, "order.cancel_rejected", {
+          reason: "Order was filled before cancel could be processed.",
+          finalStatus: "FILLED",
+          filledQty: cancelResult.filledQty,
+        });
+        return { ok: false, code: "FILLED_DURING_CANCEL", message: "Order was filled before cancel." };
+      }
+
+      // Unknown / still open — mark as cancel_requested, reconciler will catch it
+      this.emitEvent(intent, "order.cancel_requested", {
+        exchangeStatus: cancelResult.finalStatus,
+        message: "Cancel sent, awaiting confirmation from exchange.",
+      });
+      return { ok: true, intent, code: "CANCEL_PENDING", message: "Cancel request sent. Awaiting exchange confirmation." };
+
+    } catch (err: any) {
+      const msg = err?.message ?? "cancel_failed";
+      if (cb) await cb.recordFailure().catch(() => {});
+
+      // Check for "order not found" / "already closed" style errors
+      const lower = msg.toLowerCase();
+      if (lower.includes("unknown order") || lower.includes("not found") || lower.includes("does not exist")) {
+        // Order no longer exists on exchange — mark as canceled
+        intent.state = "CANCELED";
+        intent.rejectCode = "USER_CANCELED";
+        intent.rejectReason = `${reason} (exchange: order not found)`;
+        intent.updatedAt = nowIso();
+        await this.updateIntentState(intent.id, "CANCELED", {
+          rejectCode: "USER_CANCELED",
+          rejectReason: intent.rejectReason,
+        });
+        this.intentCache.set(intent.id, intent);
+        await this.deduplicator.release(intent.userId, intent.clientOrderId);
+        this.emitEvent(intent, "order.canceled", { reason: intent.rejectReason, cancelType: "not_found_on_exchange" });
+        return { ok: true, intent };
+      }
+
+      this.emitEvent(intent, "error", { stage: "cancel_exchange", message: msg });
+      return { ok: false, code: "EXCHANGE_ERROR", message: msg };
+    }
+  }
+
+  /** Cancel all open intents for a user, optionally filtered. */
+  async cancelAllIntents(
+    userId: string,
+    filter?: { exchangeAccountId?: string; venue?: string; symbol?: string },
+  ): Promise<{ canceled: number; failed: number; results: Array<{ intentId: string; ok: boolean; code?: string }> }> {
+    const { rows } = await pool.query(
+      `SELECT * FROM order_intents WHERE user_id = $1 AND state IN ('ACCEPTED','QUEUED','SENT') ORDER BY created_at DESC`,
+      [userId],
+    );
+    const intents = rows.map(rowToIntent).filter((intent) => {
+      if (filter?.exchangeAccountId && intent.exchangeAccountId !== filter.exchangeAccountId) return false;
+      if (filter?.venue && intent.venue !== filter.venue.toUpperCase()) return false;
+      if (filter?.symbol && intent.symbolInternal !== filter.symbol.toUpperCase().replace(/[-_/]/g, "")) return false;
+      return true;
+    });
+
+    const results: Array<{ intentId: string; ok: boolean; code?: string }> = [];
+    let canceled = 0;
+    let failed = 0;
+
+    for (const intent of intents) {
+      const result = await this.cancelIntent(intent.id, userId, "cancel_all");
+      results.push({ intentId: intent.id, ok: result.ok, code: result.code });
+      if (result.ok) canceled++;
+      else failed++;
+    }
+
+    return { canceled, failed, results };
+  }
+
+  // ── Binance Cancel ──────────────────────────────────────────
+
+  private async cancelBinanceOrder(
+    creds: DecryptedCreds,
+    intent: CoreIntentRecord,
+    exchangeOrderId: string | null,
+  ): Promise<{ success: boolean; finalStatus: string; filledQty: number | null; avgPrice: number | null }> {
+    const base = "https://fapi.binance.com";
+    const ts = this.timeSync.getAdjustedTimestamp("BINANCE");
+
+    const params: Record<string, string> = {
+      symbol: intent.symbolVenue,
+      timestamp: String(ts),
+      recvWindow: "10000",
+    };
+
+    // Prefer origClientOrderId, fallback to orderId
+    if (intent.clientOrderId) {
+      params.origClientOrderId = intent.clientOrderId;
+    } else if (exchangeOrderId) {
+      params.orderId = exchangeOrderId;
+    } else {
+      throw new Error("No clientOrderId or exchangeOrderId available for cancel");
+    }
+
+    const data = await this.binanceSigned<{
+      orderId: number;
+      status: string;
+      executedQty: string;
+      avgPrice: string;
+      origClientOrderId: string;
+    }>(base, "DELETE", "/fapi/v1/order", creds, params);
+
+    return {
+      success: true,
+      finalStatus: data.status, // CANCELED, FILLED, etc.
+      filledQty: Number(data.executedQty) || null,
+      avgPrice: Number(data.avgPrice) || null,
+    };
+  }
+
+  // ── Gate.io Cancel ──────────────────────────────────────────
+
+  private async cancelGateOrder(
+    creds: DecryptedCreds,
+    intent: CoreIntentRecord,
+    exchangeOrderId: string | null,
+  ): Promise<{ success: boolean; finalStatus: string; filledQty: number | null; avgPrice: number | null }> {
+    if (!exchangeOrderId) {
+      throw new Error("No exchangeOrderId available for Gate.io cancel");
+    }
+
+    const base = "https://fx-api.gateio.ws";
+    const path = `/api/v4/futures/usdt/orders/${exchangeOrderId}`;
+    const ts = Math.floor(this.timeSync.getAdjustedTimestamp("GATEIO") / 1000);
+
+    // Gate.io V4 cancel: DELETE with HMAC-SHA512
+    const bodyHash = createHmac("sha512", "").update("").digest("hex");
+    const signStr = `DELETE\n${path}\n\n${bodyHash}\n${ts}`;
+    const signature = createHmac("sha512", creds.apiSecret).update(signStr).digest("hex");
+
+    const res = await fetch(`${base}${path}`, {
+      method: "DELETE",
+      headers: {
+        "KEY": creds.apiKey,
+        "SIGN": signature,
+        "Timestamp": String(ts),
+        "Accept": "application/json",
+      },
+    });
+
+    const text = await res.text();
+    if (!res.ok) {
+      let errMsg: string;
+      try {
+        const parsed = JSON.parse(text) as { label?: string; message?: string };
+        errMsg = `Gate.io Cancel ${res.status}: ${parsed.message ?? text} (label: ${parsed.label ?? "?"})`;
+      } catch {
+        errMsg = `Gate.io Cancel ${res.status}: ${text.slice(0, 200)}`;
+      }
+      throw new Error(errMsg);
+    }
+
+    const data = JSON.parse(text) as {
+      id: number;
+      status: string;
+      size: number;
+      fill_price: string;
+    };
+
+    return {
+      success: true,
+      finalStatus: data.status === "finished" ? "FILLED" : data.status === "cancelled" ? "CANCELED" : data.status,
+      filledQty: Math.abs(data.size) || null,
+      avgPrice: Number(data.fill_price) || null,
+    };
+  }
+
+  // ── Bybit V5 Signed Request ────────────────────────────────
+
+  private async bybitSigned<T>(
+    method: "GET" | "POST",
+    path: string,
+    creds: DecryptedCreds,
+    body?: Record<string, unknown>,
+    query?: Record<string, string>,
+  ): Promise<T> {
+    const ts = String(this.timeSync.getAdjustedTimestamp("BYBIT"));
+    const recvWindow = "10000";
+    const bodyStr = body ? JSON.stringify(body) : "";
+    const queryStr = query ? new URLSearchParams(query).toString() : "";
+
+    // Bybit V5 signing: HMAC-SHA256(secret, timestamp + apiKey + recvWindow + (queryString | body))
+    const preSign = ts + creds.apiKey + recvWindow + (method === "GET" ? queryStr : bodyStr);
+    const signature = createHmac("sha256", creds.apiSecret).update(preSign).digest("hex");
+
+    const url = method === "GET" && queryStr
+      ? `https://api.bybit.com${path}?${queryStr}`
+      : `https://api.bybit.com${path}`;
+
+    const res = await fetch(url, {
+      method,
+      headers: {
+        "X-BAPI-API-KEY": creds.apiKey,
+        "X-BAPI-SIGN": signature,
+        "X-BAPI-TIMESTAMP": ts,
+        "X-BAPI-RECV-WINDOW": recvWindow,
+        "Content-Type": "application/json",
+      },
+      body: method === "POST" ? bodyStr : undefined,
+    });
+
+    const text = await res.text();
+    const parsed = JSON.parse(text) as { retCode: number; retMsg: string; result: T };
+    if (parsed.retCode !== 0) {
+      throw new Error(`Bybit API ${parsed.retCode}: ${parsed.retMsg}`);
+    }
+    return parsed.result;
+  }
+
+  // ── Bybit V5 Order Execution ─────────────────────────────────
+
+  private async executeBybitOrder(creds: DecryptedCreds, intent: CoreIntentRecord): Promise<ExchangeOrderResult> {
+    // Set leverage if specified
+    if (intent.leverage != null && intent.leverage > 0) {
+      try {
+        await this.bybitSigned("POST", "/v5/position/set-leverage", creds, {
+          category: "linear",
+          symbol: intent.symbolVenue,
+          buyLeverage: String(intent.leverage),
+          sellLeverage: String(intent.leverage),
+        });
+      } catch {
+        console.warn(`[ExchangeCore] Bybit leverage change failed for ${intent.symbolVenue}, continuing`);
+      }
+    }
+
+    // Compute qty from notional if needed
+    let qty = intent.qty;
+    if ((!qty || qty <= 0) && intent.notionalUsdt != null && intent.notionalUsdt > 0) {
+      try {
+        const ticker = await this.bybitSigned<{ list: Array<{ lastPrice: string }> }>(
+          "GET", "/v5/market/tickers", creds, undefined,
+          { category: "linear", symbol: intent.symbolVenue },
+        );
+        const price = Number(ticker.list?.[0]?.lastPrice);
+        if (price > 0) {
+          const effectiveLeverage = intent.leverage ?? 3;
+          qty = Math.floor((intent.notionalUsdt * effectiveLeverage / price) * 1000) / 1000;
+        }
+      } catch { /* price fetch failed */ }
+      if (!qty || qty <= 0) throw new Error("Cannot compute order quantity — price unavailable");
+    }
+
+    const orderBody: Record<string, unknown> = {
+      category: "linear",
+      symbol: intent.symbolVenue,
+      side: intent.side === "BUY" ? "Buy" : "Sell",
+      orderType: intent.orderType === "MARKET" ? "Market" : "Limit",
+      qty: String(qty),
+      orderLinkId: intent.clientOrderId,
+    };
+
+    if (intent.orderType === "LIMIT" && intent.price != null) {
+      orderBody.price = String(intent.price);
+    }
+    if (intent.timeInForce) {
+      orderBody.timeInForce = intent.timeInForce === "POST_ONLY" ? "PostOnly" : intent.timeInForce;
+    }
+    if (intent.reduceOnly) {
+      orderBody.reduceOnly = true;
+    }
+
+    const data = await this.bybitSigned<{
+      orderId: string;
+      orderLinkId: string;
+    }>("POST", "/v5/order/create", creds, orderBody);
+
+    return {
+      orderId: data.orderId,
+      status: "NEW",
+      filledQty: null,
+      avgPrice: null,
+    };
+  }
+
+  // ── Bybit V5 Cancel ──────────────────────────────────────────
+
+  private async cancelBybitOrder(
+    creds: DecryptedCreds,
+    intent: CoreIntentRecord,
+    exchangeOrderId: string | null,
+  ): Promise<{ success: boolean; finalStatus: string; filledQty: number | null; avgPrice: number | null }> {
+    const cancelBody: Record<string, unknown> = {
+      category: "linear",
+      symbol: intent.symbolVenue,
+    };
+    if (exchangeOrderId) cancelBody.orderId = exchangeOrderId;
+    else if (intent.clientOrderId) cancelBody.orderLinkId = intent.clientOrderId;
+    else throw new Error("No orderId or orderLinkId for Bybit cancel");
+
+    await this.bybitSigned("POST", "/v5/order/cancel", creds, cancelBody);
+
+    // Bybit cancel returns success if accepted — query actual status
+    try {
+      const query = await this.bybitSigned<{ list: Array<{ orderStatus: string; cumExecQty: string; avgPrice: string }> }>(
+        "GET", "/v5/order/realtime", creds, undefined,
+        { category: "linear", symbol: intent.symbolVenue, orderId: exchangeOrderId ?? "", orderLinkId: intent.clientOrderId },
+      );
+      const order = query.list?.[0];
+      if (order) {
+        return {
+          success: true,
+          finalStatus: order.orderStatus === "Cancelled" ? "CANCELED" : order.orderStatus === "Filled" ? "FILLED" : order.orderStatus,
+          filledQty: Number(order.cumExecQty) || null,
+          avgPrice: Number(order.avgPrice) || null,
+        };
+      }
+    } catch { /* query failed, assume canceled */ }
+
+    return { success: true, finalStatus: "CANCELED", filledQty: null, avgPrice: null };
+  }
+
+  // ── OKX V5 Signed Request ────────────────────────────────────
+
+  private async okxSigned<T>(
+    method: "GET" | "POST",
+    path: string,
+    creds: DecryptedCreds,
+    body?: Record<string, unknown>,
+    query?: Record<string, string>,
+  ): Promise<T> {
+    const ts = new Date(this.timeSync.getAdjustedTimestamp("OKX")).toISOString();
+    const bodyStr = body ? JSON.stringify(body) : "";
+    const queryStr = query ? "?" + new URLSearchParams(query).toString() : "";
+
+    // OKX V5 signing: Base64(HMAC-SHA256(secret, timestamp + method + requestPath + body))
+    const preSign = ts + method + path + queryStr + bodyStr;
+    const signature = createHmac("sha256", creds.apiSecret).update(preSign).digest("base64");
+
+    const url = `https://www.okx.com${path}${queryStr}`;
+
+    const res = await fetch(url, {
+      method,
+      headers: {
+        "OK-ACCESS-KEY": creds.apiKey,
+        "OK-ACCESS-SIGN": signature,
+        "OK-ACCESS-TIMESTAMP": ts,
+        "OK-ACCESS-PASSPHRASE": creds.passphrase ?? "",
+        "Content-Type": "application/json",
+      },
+      body: method === "POST" ? bodyStr : undefined,
+    });
+
+    const text = await res.text();
+    const parsed = JSON.parse(text) as { code: string; msg: string; data: T };
+    if (parsed.code !== "0") {
+      throw new Error(`OKX API ${parsed.code}: ${parsed.msg}`);
+    }
+    return parsed.data;
+  }
+
+  // ── OKX V5 Order Execution ───────────────────────────────────
+
+  private async executeOkxOrder(creds: DecryptedCreds, intent: CoreIntentRecord): Promise<ExchangeOrderResult> {
+    // Set leverage if specified
+    if (intent.leverage != null && intent.leverage > 0) {
+      try {
+        await this.okxSigned("POST", "/api/v5/account/set-leverage", creds, {
+          instId: intent.symbolVenue,
+          lever: String(intent.leverage),
+          mgnMode: "cross",
+        });
+      } catch {
+        console.warn(`[ExchangeCore] OKX leverage change failed for ${intent.symbolVenue}, continuing`);
+      }
+    }
+
+    // Compute qty from notional if needed
+    let sz = intent.qty;
+    if ((!sz || sz <= 0) && intent.notionalUsdt != null && intent.notionalUsdt > 0) {
+      try {
+        const ticker = await this.okxSigned<Array<{ last: string }>>(
+          "GET", "/api/v5/market/ticker", creds, undefined,
+          { instId: intent.symbolVenue },
+        );
+        const price = Number(ticker?.[0]?.last);
+        if (price > 0) {
+          const effectiveLeverage = intent.leverage ?? 3;
+          sz = Math.floor((intent.notionalUsdt * effectiveLeverage / price) * 1000) / 1000;
+        }
+      } catch { /* price fetch failed */ }
+      if (!sz || sz <= 0) throw new Error("Cannot compute order quantity — price unavailable");
+    }
+
+    const orderBody: Record<string, unknown> = {
+      instId: intent.symbolVenue,
+      tdMode: "cross",
+      side: intent.side.toLowerCase(),
+      ordType: intent.orderType === "MARKET" ? "market" : "limit",
+      sz: String(sz),
+      clOrdId: intent.clientOrderId.slice(0, 32), // OKX max 32 chars
+    };
+
+    if (intent.orderType === "LIMIT" && intent.price != null) {
+      orderBody.px = String(intent.price);
+    }
+    if (intent.reduceOnly) {
+      orderBody.reduceOnly = true;
+    }
+
+    const data = await this.okxSigned<Array<{ ordId: string; clOrdId: string; sCode: string; sMsg: string }>>(
+      "POST", "/api/v5/trade/order", creds, orderBody,
+    );
+
+    const result = data?.[0];
+    if (!result || result.sCode !== "0") {
+      throw new Error(`OKX order rejected: ${result?.sMsg ?? "unknown"} (code: ${result?.sCode ?? "?"})`);
+    }
+
+    return {
+      orderId: result.ordId,
+      status: "NEW",
+      filledQty: null,
+      avgPrice: null,
+    };
+  }
+
+  // ── OKX V5 Cancel ────────────────────────────────────────────
+
+  private async cancelOkxOrder(
+    creds: DecryptedCreds,
+    intent: CoreIntentRecord,
+    exchangeOrderId: string | null,
+  ): Promise<{ success: boolean; finalStatus: string; filledQty: number | null; avgPrice: number | null }> {
+    const cancelBody: Record<string, unknown> = {
+      instId: intent.symbolVenue,
+    };
+    if (exchangeOrderId) cancelBody.ordId = exchangeOrderId;
+    if (intent.clientOrderId) cancelBody.clOrdId = intent.clientOrderId.slice(0, 32);
+    if (!cancelBody.ordId && !cancelBody.clOrdId) throw new Error("No ordId or clOrdId for OKX cancel");
+
+    const data = await this.okxSigned<Array<{ ordId: string; sCode: string; sMsg: string }>>(
+      "POST", "/api/v5/trade/cancel-order", creds, cancelBody,
+    );
+
+    const result = data?.[0];
+    if (!result || result.sCode !== "0") {
+      throw new Error(`OKX cancel failed: ${result?.sMsg ?? "unknown"} (code: ${result?.sCode ?? "?"})`);
+    }
+
+    // Query actual status after cancel
+    try {
+      const orderData = await this.okxSigned<Array<{ state: string; accFillSz: string; avgPx: string }>>(
+        "GET", "/api/v5/trade/order", creds, undefined,
+        { instId: intent.symbolVenue, ordId: exchangeOrderId ?? result.ordId },
+      );
+      const order = orderData?.[0];
+      if (order) {
+        const stateMap: Record<string, string> = { canceled: "CANCELED", filled: "FILLED", live: "NEW", partially_filled: "PARTIALLY_FILLED" };
+        return {
+          success: true,
+          finalStatus: stateMap[order.state] ?? order.state,
+          filledQty: Number(order.accFillSz) || null,
+          avgPrice: Number(order.avgPx) || null,
+        };
+      }
+    } catch { /* query failed */ }
+
+    return { success: true, finalStatus: "CANCELED", filledQty: null, avgPrice: null };
+  }
+
+  // ── Queue Helpers ───────────────────────────────────────────
+
+  private removeFromQueue(intentId: string) {
+    const iIdx = this.interactiveQueue.indexOf(intentId);
+    if (iIdx >= 0) this.interactiveQueue.splice(iIdx, 1);
+    const bIdx = this.batchQueue.indexOf(intentId);
+    if (bIdx >= 0) this.batchQueue.splice(bIdx, 1);
   }
 
   // ── Venue Resolution ─────────────────────────────────────────

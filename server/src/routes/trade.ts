@@ -1,6 +1,10 @@
 import type { Express } from "express";
 import { AuditLogService } from "../services/auditLog.ts";
 import type { ConnectionService } from "../services/connectionService.ts";
+import type { ExchangeCoreService } from "../services/exchangeCore/exchangeCoreService.ts";
+import type { CoreVenue, CoreTpSlSpec } from "../services/exchangeCore/types.ts";
+import type { AuthService } from "../payments/authService.ts";
+import { requireAuth } from "../middleware/authMiddleware.ts";
 
 const normalizeExchangeId = (raw: string): string | null => {
   const value = String(raw ?? "").trim().toLowerCase();
@@ -11,68 +15,212 @@ const normalizeExchangeId = (raw: string): string | null => {
   return null;
 };
 
-export const registerTradeRoutes = (app: Express, audit: AuditLogService, connections: ConnectionService) => {
-  app.post("/api/trade/place", async (req, res) => {
-    const userId = String(req.headers["x-user-id"] ?? "demo-user");
+const toVenueCode = (exchangeId: string): CoreVenue | null => {
+  if (exchangeId === "binance") return "BINANCE";
+  if (exchangeId === "gate") return "GATEIO";
+  return null;
+};
+
+export const registerTradeRoutes = (
+  app: Express,
+  audit: AuditLogService,
+  connections: ConnectionService,
+  exchangeCore?: ExchangeCoreService,
+  auth?: AuthService,
+) => {
+  const authMw = auth ? requireAuth(auth) : (_req: any, _res: any, next: any) => { _req.userId = _req.headers["x-user-id"] ?? "demo-user"; next(); };
+
+  app.post("/api/trade/place", authMw, async (req, res) => {
+    const userId = req.userId!;
     const payload = req.body;
     const exchangeId = normalizeExchangeId(String(payload.exchange ?? ""));
     if (!exchangeId) {
       return res.status(400).json({ ok: false, error: "unsupported_exchange" });
     }
+
+    const venue = toVenueCode(exchangeId);
+    if (!venue || !exchangeCore) {
+      // Fallback for unsupported venues or missing exchangeCore (shouldn't happen in production)
+      const userConnections = await connections.listExchangeConnections(userId);
+      const hasConnectedExchange = userConnections.some(
+        (row) => row.exchangeId === exchangeId && row.enabled && row.status !== "FAILED",
+      );
+      if (!hasConnectedExchange) {
+        return res.status(403).json({
+          ok: false,
+          error: "CONNECT_EXCHANGE_REQUIRED",
+          message: "Connect your own exchange API before trading.",
+        });
+      }
+      // Legacy fallback: return mock orderId for unsupported venues
+      const response = { orderId: `ord_${Date.now()}`, status: "accepted", mode: "legacy" };
+      await audit.write({
+        userId,
+        exchange: String(payload.exchange ?? "unknown"),
+        symbol: String(payload.symbol ?? ""),
+        action: "TRADE_PLACE",
+        payload,
+        response,
+        ip: req.ip,
+        createdAt: new Date().toISOString(),
+      });
+      return res.json(response);
+    }
+
+    // Find the user's exchange account for this venue
     const userConnections = await connections.listExchangeConnections(userId);
-    const hasConnectedExchange = userConnections.some(
+    const account = userConnections.find(
       (row) => row.exchangeId === exchangeId && row.enabled && row.status !== "FAILED",
     );
-    if (!hasConnectedExchange) {
+    if (!account) {
       return res.status(403).json({
         ok: false,
         error: "CONNECT_EXCHANGE_REQUIRED",
-        message: "Connect your own exchange API before trading with AI bot.",
+        message: "Connect your own exchange API before trading.",
       });
     }
-    const response = { orderId: `ord_${Date.now()}`, status: "accepted" };
-    await audit.write({
-      userId,
-      exchange: String(payload.exchange ?? "unknown"),
-      symbol: String(payload.symbol ?? ""),
-      action: "TRADE_PLACE",
-      payload,
-      response,
-      ip: req.ip,
-      createdAt: new Date().toISOString(),
-    });
-    res.json(response);
+
+    // Parse TP/SL from payload
+    const parseTpSl = (raw: unknown): CoreTpSlSpec | null => {
+      if (!raw || typeof raw !== "object") return null;
+      const obj = raw as Record<string, unknown>;
+      const mode = String(obj.mode ?? "PERCENT").toUpperCase();
+      const value = Number(obj.value ?? 0);
+      if (!value || (mode !== "PERCENT" && mode !== "PRICE")) return null;
+      return { mode: mode as "PERCENT" | "PRICE", value };
+    };
+
+    try {
+      const intent = await exchangeCore.submitManualIntent({
+        userId,
+        exchangeAccountId: account.id,
+        venue,
+        symbolInternal: String(payload.symbol ?? "BTCUSDT"),
+        side: String(payload.side ?? "BUY").toUpperCase() as "BUY" | "SELL",
+        orderType: String(payload.orderType ?? "MARKET").toUpperCase() as "MARKET" | "LIMIT" | "STOP" | "TAKE_PROFIT",
+        timeInForce: payload.timeInForce ? String(payload.timeInForce).toUpperCase() as "GTC" | "IOC" | "FOK" | "POST_ONLY" : null,
+        qty: payload.qty != null ? Number(payload.qty) : null,
+        notionalUsdt: payload.notionalUsdt != null ? Number(payload.notionalUsdt) : null,
+        price: payload.price != null ? Number(payload.price) : null,
+        leverage: payload.leverage != null ? Number(payload.leverage) : null,
+        reduceOnly: Boolean(payload.reduceOnly),
+        tp: parseTpSl(payload.tp),
+        sl: parseTpSl(payload.sl),
+        clientOrderId: payload.clientOrderId ? String(payload.clientOrderId) : undefined,
+      });
+
+      const response = {
+        ok: intent.state !== "REJECTED",
+        intentId: intent.id,
+        clientOrderId: intent.clientOrderId,
+        state: intent.state,
+        venue: intent.venue,
+        symbol: intent.symbolInternal,
+        side: intent.side,
+        rejectCode: intent.rejectCode || undefined,
+        rejectReason: intent.rejectReason || undefined,
+      };
+
+      await audit.write({
+        userId,
+        exchange: String(payload.exchange ?? "unknown"),
+        symbol: intent.symbolInternal,
+        action: "TRADE_PLACE",
+        payload,
+        response,
+        ip: req.ip,
+        createdAt: new Date().toISOString(),
+      });
+
+      const status = intent.state === "REJECTED" ? 400 : 200;
+      return res.status(status).json(response);
+    } catch (err: any) {
+      const message = err?.message ?? "trade_submission_failed";
+      console.error(`[trade.place] Error for user ${userId}:`, message);
+      return res.status(500).json({ ok: false, error: "INTERNAL_ERROR", message });
+    }
   });
 
-  app.post("/api/trade/cancel", async (req, res) => {
-    const userId = String(req.headers["x-user-id"] ?? "demo-user");
+  app.post("/api/trade/cancel", authMw, async (req, res) => {
+    const userId = req.userId!;
     const payload = req.body;
-    const exchangeId = normalizeExchangeId(String(payload.exchange ?? ""));
-    if (!exchangeId) {
-      return res.status(400).json({ ok: false, error: "unsupported_exchange" });
+
+    if (!exchangeCore) {
+      return res.status(503).json({ ok: false, error: "SERVICE_UNAVAILABLE", message: "Exchange core not initialized." });
     }
-    const userConnections = await connections.listExchangeConnections(userId);
-    const hasConnectedExchange = userConnections.some(
-      (row) => row.exchangeId === exchangeId && row.enabled && row.status !== "FAILED",
-    );
-    if (!hasConnectedExchange) {
-      return res.status(403).json({
-        ok: false,
-        error: "CONNECT_EXCHANGE_REQUIRED",
-        message: "Connect your own exchange API before managing AI bot orders.",
+
+    const intentId = String(payload.intentId ?? payload.orderId ?? "").trim();
+    if (!intentId) {
+      return res.status(400).json({ ok: false, error: "MISSING_INTENT_ID", message: "intentId is required." });
+    }
+
+    const reason = String(payload.reason ?? "user_requested");
+
+    try {
+      const result = await exchangeCore.cancelIntent(intentId, userId, reason);
+
+      await audit.write({
+        userId,
+        exchange: result.intent?.venue ?? "unknown",
+        symbol: result.intent?.symbolInternal ?? "",
+        action: "TRADE_CANCEL",
+        payload: { intentId, reason },
+        response: { ok: result.ok, code: result.code, state: result.intent?.state },
+        ip: req.ip,
+        createdAt: new Date().toISOString(),
       });
+
+      const status = result.ok ? 200 : result.code === "NOT_FOUND" ? 404 : result.code === "FORBIDDEN" ? 403 : 400;
+      return res.status(status).json({
+        ok: result.ok,
+        intentId,
+        state: result.intent?.state,
+        code: result.code,
+        message: result.message,
+      });
+    } catch (err: any) {
+      const message = err?.message ?? "cancel_failed";
+      console.error(`[trade.cancel] Error for user ${userId}:`, message);
+      return res.status(500).json({ ok: false, error: "INTERNAL_ERROR", message });
     }
-    const response = { status: "cancelled" };
-    await audit.write({
-      userId,
-      exchange: String(payload.exchange ?? "unknown"),
-      symbol: String(payload.symbol ?? ""),
-      action: "TRADE_CANCEL",
-      payload,
-      response,
-      ip: req.ip,
-      createdAt: new Date().toISOString(),
-    });
-    res.json(response);
+  });
+
+  app.post("/api/trade/cancel-all", authMw, async (req, res) => {
+    const userId = req.userId!;
+    const payload = req.body;
+
+    if (!exchangeCore) {
+      return res.status(503).json({ ok: false, error: "SERVICE_UNAVAILABLE", message: "Exchange core not initialized." });
+    }
+
+    try {
+      const result = await exchangeCore.cancelAllIntents(userId, {
+        exchangeAccountId: payload.exchangeAccountId ? String(payload.exchangeAccountId) : undefined,
+        venue: payload.venue ? String(payload.venue) : undefined,
+        symbol: payload.symbol ? String(payload.symbol) : undefined,
+      });
+
+      await audit.write({
+        userId,
+        exchange: payload.venue ?? "all",
+        symbol: payload.symbol ?? "all",
+        action: "TRADE_CANCEL_ALL",
+        payload,
+        response: { canceled: result.canceled, failed: result.failed },
+        ip: req.ip,
+        createdAt: new Date().toISOString(),
+      });
+
+      return res.json({
+        ok: true,
+        canceled: result.canceled,
+        failed: result.failed,
+        results: result.results,
+      });
+    } catch (err: any) {
+      const message = err?.message ?? "cancel_all_failed";
+      console.error(`[trade.cancel-all] Error for user ${userId}:`, message);
+      return res.status(500).json({ ok: false, error: "INTERNAL_ERROR", message });
+    }
   });
 };

@@ -20,7 +20,8 @@ interface RateLimitConfig {
 
 export function createRateLimit(config: RateLimitConfig) {
   return async (req: Request, res: Response, next: NextFunction) => {
-    const userId = config.byUser !== false ? (req.headers["x-user-id"] as string) : undefined;
+    // Prefer auth-derived userId (set by requireAuth middleware), fallback to header for backwards compat
+    const userId = config.byUser !== false ? (req.userId ?? req.headers["x-user-id"] as string) : undefined;
     const key = `rl:${config.keyPrefix}:${userId || req.ip || "unknown"}`;
     try {
       const current = await redis.incr(key);

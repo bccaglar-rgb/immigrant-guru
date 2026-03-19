@@ -55,6 +55,11 @@ interface ExchangeTerminalState {
   setTradeIdeasClosed: (closed: boolean, reason?: string) => void;
   setOrderbookStep: (step: number) => void;
   setOrderbookLimit: (limit: number) => void;
+  privateStreamStatus: "idle" | "subscribing" | "subscribed" | "error" | "disconnected";
+  setPrivateStreamStatus: (status: ExchangeTerminalState["privateStreamStatus"]) => void;
+  applyOrderUpdate: (event: Record<string, unknown>) => void;
+  applyPositionUpdate: (event: Record<string, unknown>) => void;
+  applyBalanceUpdate: (event: Record<string, unknown>) => void;
 }
 
 const seedTickers: TickerItem[] = [
@@ -131,6 +136,30 @@ const seedOrders: OpenOrderItem[] = [
   },
 ];
 
+// ── Symbol normalizer: venue-aware raw symbol → "BASE/QUOTE" ──
+const QUOTE_SUFFIXES = ["USDT", "BUSD", "USDC", "USD_PERP", "USDM"] as const;
+const normalizeSymbol = (raw: string): string => {
+  if (!raw) return raw;
+  if (raw.includes("/")) return raw;
+  // Gate.io uses underscore: BTC_USDT
+  if (raw.includes("_")) {
+    const [base, quote] = raw.split("_");
+    return `${base}/${quote}`;
+  }
+  // Binance etc: BTCUSDT, 1000PEPEUSDT, ETHUSDC
+  for (const suffix of QUOTE_SUFFIXES) {
+    if (raw.endsWith(suffix) && raw.length > suffix.length) {
+      return `${raw.slice(0, -suffix.length)}/${suffix}`;
+    }
+  }
+  return raw;
+};
+
+// ── Per-order event timestamp tracking (stale event protection) ──
+const _orderEventTs = new Map<string, number>();
+const _privateStreamDebug = { staleEventsDropped: 0, lastEventTs: 0, lastReconnectTs: 0 };
+if (typeof window !== "undefined") (window as any).__privateStreamDebug = _privateStreamDebug;
+
 export const useExchangeTerminalStore = create<ExchangeTerminalState>((set) => ({
   selectedExchange: "Binance",
   selectedExchangeAccount: null,
@@ -154,6 +183,7 @@ export const useExchangeTerminalStore = create<ExchangeTerminalState>((set) => (
   tradeIdeasClosed: false,
   orderbookStep: 0.1,
   orderbookLimit: 20,
+  privateStreamStatus: "idle",
   setSelectedExchange: (exchange) => set({ selectedExchange: exchange }),
   setSelectedExchangeAccount: (accountName) => set({ selectedExchangeAccount: accountName }),
   setSelectedSymbol: (symbol) => set({ selectedSymbol: symbol }),
@@ -195,4 +225,143 @@ export const useExchangeTerminalStore = create<ExchangeTerminalState>((set) => (
   setTradeIdeasClosed: (closed, reason) => set({ tradeIdeasClosed: closed, tradeIdeasCloseReason: closed ? reason : undefined }),
   setOrderbookStep: (step) => set({ orderbookStep: Number.isFinite(step) && step > 0 ? step : 0.1 }),
   setOrderbookLimit: (limit) => set({ orderbookLimit: Math.max(10, Math.min(100, Math.round(limit))) }),
+  setPrivateStreamStatus: (status) => set({ privateStreamStatus: status }),
+
+  // ═══════════════════════════════════════════════════════════════════
+  // PIPELINE 8: Private stream granular updates
+  //   Event ordering: per-order timestamp guard — stale events are dropped.
+  //   Merge logic: existing order + event → final snapshot → route to
+  //   openOrders or orderHistory based on terminal status.
+  // ═══════════════════════════════════════════════════════════════════
+
+  applyOrderUpdate: (event) =>
+    set((state) => {
+      const orderId = String(event.orderId ?? event.clientOrderId ?? "");
+      if (!orderId) return state;
+
+      // ── Stale event guard ──
+      const eventTs = Number(event.timestamp ?? event.ts ?? Date.now());
+      const prevTs = _orderEventTs.get(orderId) ?? 0;
+      if (eventTs < prevTs) {
+        _privateStreamDebug.staleEventsDropped++;
+        return state;
+      }
+      _orderEventTs.set(orderId, eventTs);
+      _privateStreamDebug.lastEventTs = eventTs;
+      // Prevent unbounded growth — prune entries older than 10 minutes
+      if (_orderEventTs.size > 500) {
+        const cutoff = Date.now() - 10 * 60 * 1000;
+        for (const [k, v] of _orderEventTs) {
+          if (v < cutoff) _orderEventTs.delete(k);
+        }
+      }
+
+      // ── Merge existing order with incoming event ──
+      const existingOrder = state.openOrders.find((o) => o.id === orderId);
+      const pair = normalizeSymbol(String(event.symbol ?? existingOrder?.pair ?? ""));
+      const rawSide = String(event.side ?? existingOrder?.side ?? "BUY");
+      const side = (rawSide === "BUY" || rawSide === "SELL" ? rawSide : "BUY") as "BUY" | "SELL";
+      const rawType = String(event.orderType ?? existingOrder?.type ?? "Limit");
+      const typeCap = (rawType.charAt(0).toUpperCase() + rawType.slice(1).toLowerCase()) as OpenOrderItem["type"];
+      const price = Number(event.avgPrice ?? event.filledPrice ?? event.price ?? existingOrder?.price ?? 0);
+      const origQty = Number(event.origQty ?? existingOrder?.amount ?? event.totalFilledQty ?? 0);
+      const filledQty = Number(event.totalFilledQty ?? 0);
+      const filledPct = origQty > 0 ? Math.round((filledQty / origQty) * 100) : 0;
+      const dateStr = new Date(eventTs).toISOString().replace("T", " ").slice(0, 19);
+
+      const finalOrder: OpenOrderItem = {
+        id: orderId,
+        date: existingOrder?.date ?? dateStr,
+        pair,
+        type: typeCap,
+        side,
+        price,
+        amount: origQty,
+        total: price * origQty,
+        filledPct,
+      };
+
+      // ── Route based on final status ──
+      const status = String(event.orderStatus ?? "");
+      const terminalStatuses = ["FILLED", "CANCELED", "EXPIRED", "REJECTED"];
+
+      if (terminalStatuses.includes(status)) {
+        const historyEntry: OrderHistoryItem = {
+          id: orderId,
+          date: dateStr,
+          pair: finalOrder.pair,
+          type: finalOrder.type,
+          side: finalOrder.side,
+          price: finalOrder.price,
+          amount: finalOrder.amount,
+          filled: filledQty,
+          status,
+        };
+        return {
+          openOrders: state.openOrders.filter((o) => o.id !== orderId),
+          orderHistory: [historyEntry, ...state.orderHistory.filter((h) => h.id !== orderId)].slice(0, 100),
+        };
+      }
+
+      // NEW or PARTIALLY_FILLED → upsert into openOrders
+      const idx = state.openOrders.findIndex((o) => o.id === orderId);
+      if (idx >= 0) {
+        const updated = [...state.openOrders];
+        updated[idx] = finalOrder;
+        return { openOrders: updated };
+      }
+      return { openOrders: [finalOrder, ...state.openOrders] };
+    }),
+
+  applyPositionUpdate: (event) =>
+    set((state) => {
+      const symbol = normalizeSymbol(String(event.symbol ?? ""));
+      if (!symbol) return state;
+      const rawSize = Number(event.size ?? event.positionAmt ?? 0);
+      const size = Math.abs(rawSize);
+
+      // Epsilon threshold — prevent ghost positions from floating point noise
+      if (size < 1e-12) {
+        return { positions: state.positions.filter((p) => p.symbol !== symbol) };
+      }
+
+      const rawSide = String(event.side ?? "BOTH");
+      const side: "BUY" | "SELL" = rawSide === "SELL" || rawSide === "SHORT" || rawSize < 0 ? "SELL" : "BUY";
+      const entryPrice = Number(event.entryPrice ?? 0);
+      const existing = state.positions.findIndex((p) => p.symbol === symbol);
+      const pos: PositionItem = {
+        id: existing >= 0 ? state.positions[existing].id : `ws-${symbol}`,
+        symbol,
+        side,
+        size,
+        entry: entryPrice,
+        mark: Number(event.markPrice ?? 0) || entryPrice,
+        pnl: Number(event.unrealizedPnl ?? 0),
+        liquidation: Number(event.liquidationPrice ?? 0),
+        leverage: Number(event.leverage ?? state.positions[existing]?.leverage ?? 1),
+      };
+      if (existing >= 0) {
+        const updated = [...state.positions];
+        updated[existing] = pos;
+        return { positions: updated };
+      }
+      return { positions: [pos, ...state.positions] };
+    }),
+
+  applyBalanceUpdate: (event) =>
+    set((state) => {
+      const asset = String(event.asset ?? "");
+      if (!asset) return state;
+      const walletBalance = Number(event.walletBalance ?? 0);
+      // crossWalletBalance is "available for trading" in futures cross margin
+      const crossWalletBalance = Number(event.crossWalletBalance ?? walletBalance);
+      const existing = state.balances.findIndex((b) => b.asset === asset);
+      const item: BalanceItem = { asset, available: crossWalletBalance, total: walletBalance };
+      if (existing >= 0) {
+        const updated = [...state.balances];
+        updated[existing] = item;
+        return { balances: updated };
+      }
+      return { balances: [...state.balances, item] };
+    }),
 }));

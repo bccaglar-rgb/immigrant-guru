@@ -69,6 +69,12 @@ interface GatewayOpts {
   hubExternal?: boolean; // When true, hub runs as separate service — all workers use Redis
 }
 
+// Auth function type — injected from index.ts to avoid circular dependency
+type WsAuthFn = (token: string) => Promise<{ userId: string; role: string } | null>;
+let _wsAuthFn: WsAuthFn | null = null;
+
+export const setWsAuthFunction = (fn: WsAuthFn) => { _wsAuthFn = fn; };
+
 export const createGateway = (httpServer: HttpServer, opts?: GatewayOpts) => {
   const wss = new WebSocketServer({ server: httpServer, path: "/ws" });
   const sockets = new Map<WebSocket, SocketState>();
@@ -635,8 +641,23 @@ export const createGateway = (httpServer: HttpServer, opts?: GatewayOpts) => {
     orderflowAggregator.stop();
   });
 
-  wss.on("connection", (socket) => {
+  wss.on("connection", async (socket, req) => {
     sockets.set(socket, { subs: {}, subscribedSymbols: new Set(), domSynced: new Set(), marketListSubscribed: false });
+
+    // ── Token-based auth on WS handshake ──
+    // Extract token from query: /ws?token=xxx
+    try {
+      const url = new URL(req.url ?? "", `http://${req.headers.host ?? "localhost"}`);
+      const token = url.searchParams.get("token");
+      if (token && _wsAuthFn) {
+        const ctx = await _wsAuthFn(token);
+        if (ctx) {
+          (socket as any).__authUserId = ctx.userId;
+          (socket as any).__authRole = ctx.role;
+        }
+      }
+    } catch { /* ignore auth errors — public streams still work */ }
+
     socket.send(JSON.stringify({ type: "connected", ts: Date.now() }));
     socket.on("message", (raw) => {
       let parsed: any;
@@ -726,6 +747,31 @@ export const createGateway = (httpServer: HttpServer, opts?: GatewayOpts) => {
       } else if (parsed?.type === "unsubscribe_market_list") {
         state.marketListSubscribed = false;
         socket.send(JSON.stringify({ type: "unsubscribed_market_list", ts: Date.now() }));
+      } else if (parsed?.type === "subscribe_private") {
+        // ═══════════════════════════════════════════════════════════════════
+        // PIPELINE 8: Private User Stream Relay (Faz 9)
+        //   Client sends: { type: "subscribe_private", userId, exchangeAccountId, venue }
+        //   Server relays: order_update, position_update, balance_update events
+        // ═══════════════════════════════════════════════════════════════════
+        const userId = String(parsed.userId ?? "");
+        const exchangeAccountId = String(parsed.exchangeAccountId ?? "");
+        const venue = String(parsed.venue ?? "BINANCE");
+        // Auth check: if WS is authenticated, userId must match token-derived identity
+        const authUserId = (socket as any).__authUserId;
+        if (authUserId && authUserId !== userId) {
+          socket.send(JSON.stringify({ type: "subscribe_private_error", error: "unauthorized: userId mismatch" }));
+        } else if (!userId || !exchangeAccountId) {
+          socket.send(JSON.stringify({ type: "subscribe_private_error", error: "userId and exchangeAccountId required" }));
+        } else {
+          // Tag this socket for private event relay
+          (socket as any).__privateUserId = userId;
+          (socket as any).__privateAccountId = exchangeAccountId;
+          socket.send(JSON.stringify({ type: "subscribed_private", userId: userId.slice(0, 8), venue, ts: Date.now() }));
+        }
+      } else if (parsed?.type === "unsubscribe_private") {
+        delete (socket as any).__privateUserId;
+        delete (socket as any).__privateAccountId;
+        socket.send(JSON.stringify({ type: "unsubscribed_private", ts: Date.now() }));
       } else if (parsed?.type === "ping") {
         socket.send(JSON.stringify({ type: "pong", ts: Date.now() }));
       }
@@ -734,5 +780,23 @@ export const createGateway = (httpServer: HttpServer, opts?: GatewayOpts) => {
       sockets.delete(socket);
     });
   });
+  // ═══════════════════════════════════════════════════════════════════
+  // PIPELINE 8: Private user event broadcast helper
+  // Called from PrivateStreamManager callbacks to relay events to connected clients
+  // ═══════════════════════════════════════════════════════════════════
+  const broadcastPrivateEvent = (userId: string, exchangeAccountId: string, event: Record<string, unknown>) => {
+    const payload = JSON.stringify(event);
+    for (const [socket] of sockets) {
+      if (socket.readyState !== WebSocket.OPEN) continue;
+      if ((socket as any).__privateUserId === userId &&
+          (socket as any).__privateAccountId === exchangeAccountId) {
+        socket.send(payload);
+      }
+    }
+  };
+
+  // Expose for external use (index.ts wires PrivateStreamManager → gateway)
+  (wss as any).broadcastPrivateEvent = broadcastPrivateEvent;
+
   return wss;
 };

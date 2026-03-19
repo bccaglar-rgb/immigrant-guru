@@ -1,4 +1,4 @@
-export type CoreVenue = "BINANCE" | "GATEIO";
+export type CoreVenue = "BINANCE" | "GATEIO" | "BYBIT" | "OKX";
 export type CoreMarketType = "FUTURES" | "SPOT";
 export type CoreSource = "MANUAL" | "AI";
 export type CorePriority = "INTERACTIVE" | "BATCH";
@@ -102,6 +102,9 @@ export interface CoreEvent {
     | "risk.rejected"
     | "order.sent"
     | "order.update"
+    | "order.cancel_requested"
+    | "order.canceled"
+    | "order.cancel_rejected"
     | "fill.created"
     | "position.update"
     | "error";

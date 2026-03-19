@@ -1,6 +1,13 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
+import { useLocation } from "react-router-dom";
 import { AdminAiExchangeManagerPanel } from "../components/AdminAiExchangeManagerPanel";
 import { CollapsiblePanel } from "../components/CollapsiblePanel";
+import { PaymentReviewPanel } from "../components/PaymentReviewPanel";
+import { LogsPanel } from "../components/LogsPanel";
+import { BugReportsPanel } from "../components/BugReportsPanel";
+import { KillSwitchPanel } from "../components/admin/KillSwitchPanel";
+import { TradeTracePanel } from "../components/admin/TradeTracePanel";
+import { CircuitBreakerPanel } from "../components/admin/CircuitBreakerPanel";
 import { MappingEditor } from "../components/MappingEditor";
 import { ProviderFormModal } from "../components/ProviderFormModal";
 import { ProviderTable } from "../components/ProviderTable";
@@ -22,7 +29,7 @@ import { checkProvidersHealth, type ProviderHealthResult } from "../services/adm
 
 const PANEL_STORAGE_KEY = "adminPanelState";
 
-type PanelKey = "providers" | "mapping" | "refresh" | "tradeIdeas" | "aiProviders" | "aiExchange" | "branding" | "tradingView" | "referrals" | "members" | "adminUsers";
+type PanelKey = "providers" | "mapping" | "refresh" | "tradeIdeas" | "aiProviders" | "aiExchange" | "branding" | "tradingView" | "referrals" | "members" | "adminUsers" | "payments" | "logs" | "bugReports" | "killSwitch" | "tradeTrace" | "circuitBreaker";
 type PanelState = Record<PanelKey, boolean>;
 
 const defaultPanelState: PanelState = {
@@ -37,6 +44,12 @@ const defaultPanelState: PanelState = {
   referrals: false,
   members: false,
   adminUsers: false,
+  payments: false,
+  logs: false,
+  bugReports: false,
+  killSwitch: false,
+  tradeTrace: false,
+  circuitBreaker: false,
 };
 
 const readPanelState = (): PanelState => {
@@ -133,6 +146,59 @@ export default function AdminPage() {
     providersSyncError,
   } = useAdminConfig();
   const [panelState, setPanelState] = useState<PanelState>(() => readPanelState());
+  const routerLocation = useLocation();
+
+  // Path-based section filtering: /admin/members → show only members panel
+  const pathSegment = routerLocation.pathname.replace("/admin/", "").replace("/admin", "");
+  const pathToSection: Record<string, PanelKey> = {
+    members: "members",
+    users: "adminUsers",
+    referrals: "referrals",
+    exchanges: "aiExchange",
+    "trade-ideas": "tradeIdeas",
+    branding: "branding",
+    payments: "payments",
+    logs: "logs",
+    "bug-reports": "bugReports",
+    "kill-switch": "killSwitch",
+    "trade-trace": "tradeTrace",
+    "circuit-breaker": "circuitBreaker",
+  };
+  const activeSection = (pathToSection[pathSegment] ?? "") as PanelKey | "";
+
+  // Map each hash to which panels should be visible
+  const sectionPanels: Record<string, PanelKey[]> = {
+    members: ["members"],
+    adminUsers: ["adminUsers"],
+    referrals: ["referrals"],
+    aiExchange: ["aiExchange"],
+    tradeIdeas: ["tradeIdeas"],
+    branding: ["branding"],
+    payments: ["payments"],
+    providers: ["providers"],
+    mapping: ["mapping"],
+    refresh: ["refresh"],
+    tradingView: ["tradingView"],
+    aiProviders: ["aiProviders"],
+    logs: ["logs"],
+    bugReports: ["bugReports"],
+    killSwitch: ["killSwitch"],
+    tradeTrace: ["tradeTrace"],
+    circuitBreaker: ["circuitBreaker"],
+  };
+  const visiblePanels = activeSection && sectionPanels[activeSection]
+    ? new Set(sectionPanels[activeSection])
+    : null; // null = show all (no hash)
+
+  const shouldShow = (panel: PanelKey) => !visiblePanels || visiblePanels.has(panel);
+
+  // Auto-open the target panel when navigating to a sub-route
+  useEffect(() => {
+    if (activeSection && activeSection in defaultPanelState) {
+      setPanelState((prev) => ({ ...prev, [activeSection]: true }));
+    }
+  }, [activeSection]);
+
   const [modalOpen, setModalOpen] = useState(false);
   const [editingProvider, setEditingProvider] = useState<ProviderConfig | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<ProviderConfig | null>(null);
@@ -312,6 +378,9 @@ export default function AdminPage() {
     setMembersBusy(true);
     setMembersErr(null);
     try {
+      const { getAuthToken } = await import("../services/authClient");
+      const token = getAuthToken();
+      if (!token) { setMembersErr("Not authenticated. Please re-login."); setMembersBusy(false); return; }
       const res = await fetchAdminMembersOverview();
       setMemberTotals(res.totals);
       setMemberRows(res.members);
@@ -328,14 +397,35 @@ export default function AdminPage() {
 
   const adminUsers = useMemo(() => allUsers.filter((u) => u.role === "ADMIN"), [allUsers]);
 
+  // Section titles for sub-page headers
+  const sectionTitles: Record<string, { title: string; desc: string }> = {
+    members: { title: "Members", desc: "Total members, membership duration and total paid amounts" },
+    adminUsers: { title: "Admin Users", desc: "Create admin accounts from a dedicated panel" },
+    referrals: { title: "Referral Codes", desc: "Generate and manage referral codes for members" },
+    aiExchange: { title: "Exchange Manager", desc: "Connect / update / remove exchange APIs" },
+    tradeIdeas: { title: "Trade Ideas Settings", desc: "Confidence threshold used by the feed" },
+    branding: { title: "Branding", desc: "Sidebar logo and collapsed emblem upload" },
+    payments: { title: "Payment Review", desc: "Monitor invoices, pending payments, and manual confirmations" },
+    logs: { title: "Logs", desc: "System event logs, error tracking, and operational monitoring" },
+    bugReports: { title: "Bug Reports", desc: "Track and manage bug reports from users and internal team" },
+    providers: { title: "API Sources", desc: "Manage API keys/endpoints from admin" },
+    mapping: { title: "Field Mapping", desc: "Map required market fields to provider endpoints" },
+    refresh: { title: "Refresh Settings", desc: "Global refresh and per-feed switches" },
+    tradingView: { title: "TradingView API", desc: "Configure TradingView credentials and fallback widget defaults" },
+  };
+  const headerInfo = activeSection && sectionTitles[activeSection]
+    ? sectionTitles[activeSection]
+    : { title: "Admin Dashboard", desc: "Platform administration and configuration" };
+
   return (
     <main className="min-h-screen bg-[#0B0B0C] p-4 text-[#BFC2C7] md:p-6">
       <div className="mx-auto max-w-[1560px] space-y-4">
         <section className="rounded-2xl border border-white/10 bg-[#121316] p-4">
-          <h1 className="text-lg font-semibold text-white">Admin</h1>
-          <p className="text-xs text-[#6B6F76]">Market Data API Configuration</p>
+          <h1 className="text-lg font-semibold text-white">{headerInfo.title}</h1>
+          <p className="text-xs text-[#6B6F76]">{headerInfo.desc}</p>
         </section>
 
+        {shouldShow("members") && (
         <CollapsiblePanel
           title="Members Overview"
           description="Total members, membership duration and total paid amounts"
@@ -354,25 +444,38 @@ export default function AdminPage() {
                 <p className="mt-1 text-2xl font-semibold text-[#9BE7B6]">{memberTotals.activeUsers}</p>
               </div>
               <div className="rounded-xl border border-white/10 bg-[#0F1012] p-3">
-                <p className="text-[11px] uppercase tracking-[0.12em] text-[#6B6F76]">Total Paid</p>
-                <p className="mt-1 text-2xl font-semibold text-[#F5C542]">${memberTotals.totalPaidUsdt.toLocaleString()}</p>
+                <p className="text-[11px] uppercase tracking-[0.12em] text-[#6B6F76]">Total Revenue</p>
+                <p className="mt-1 text-2xl font-semibold text-[#F5C542]">{memberTotals.totalPaidUsdt.toLocaleString()} USDT</p>
               </div>
               <div className="rounded-xl border border-white/10 bg-[#0F1012] p-3">
-                <p className="text-[11px] uppercase tracking-[0.12em] text-[#6B6F76]">Avg Paid / Member</p>
-                <p className="mt-1 text-2xl font-semibold text-white">${memberTotals.avgPaidUsdt.toLocaleString()}</p>
+                <p className="text-[11px] uppercase tracking-[0.12em] text-[#6B6F76]">Avg Revenue / Member</p>
+                <p className="mt-1 text-2xl font-semibold text-white">{memberTotals.avgPaidUsdt.toLocaleString()} USDT</p>
               </div>
             </div>
 
             <div className="rounded-xl border border-white/10 bg-[#0F1012] p-3">
-              <div className="mb-2 flex items-center justify-between">
+              <div className="mb-2 flex items-center justify-between gap-3">
                 <p className="text-sm font-semibold text-white">Member List</p>
-                <button
-                  type="button"
-                  onClick={() => void reloadMembers()}
-                  className="rounded-lg border border-white/15 bg-[#121316] px-3 py-1.5 text-xs text-[#BFC2C7]"
-                >
-                  Refresh
-                </button>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    placeholder="Search email..."
+                    className="rounded-lg border border-white/10 bg-[#121316] px-3 py-1.5 text-xs text-white outline-none placeholder:text-[#6B6F76] focus:border-[#F5C542]/50 w-48"
+                    onChange={(e) => {
+                      const q = e.target.value.toLowerCase();
+                      if (!q) { void reloadMembers(); return; }
+                      setMemberRows((prev) => prev.filter((r) => r.email.toLowerCase().includes(q)));
+                    }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => void reloadMembers()}
+                    disabled={membersBusy}
+                    className="rounded-lg border border-white/15 bg-[#121316] px-3 py-1.5 text-xs text-[#BFC2C7] hover:text-white disabled:opacity-50"
+                  >
+                    {membersBusy ? "Loading..." : "Refresh"}
+                  </button>
+                </div>
               </div>
               <div className="max-h-[360px] overflow-auto rounded-lg border border-white/10">
                 <table className="min-w-full text-left text-xs">
@@ -386,6 +489,7 @@ export default function AdminPage() {
                       <th className="px-2 py-2 font-medium">Total Paid (USDT)</th>
                       <th className="px-2 py-2 font-medium">Subscriptions</th>
                       <th className="px-2 py-2 font-medium">Member Since</th>
+                      <th className="px-2 py-2 font-medium text-center">Actions</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -403,11 +507,33 @@ export default function AdminPage() {
                         <td className="px-2 py-2">{row.totalPaidUsdt.toLocaleString()}</td>
                         <td className="px-2 py-2">{row.subscriptionsCount}</td>
                         <td className="px-2 py-2">{new Date(row.createdAt).toLocaleDateString()}</td>
+                        <td className="px-2 py-2 text-center">
+                          <button
+                            type="button"
+                            title="Delete user"
+                            onClick={async () => {
+                              if (!confirm(`Delete user ${row.email}? This cannot be undone.`)) return;
+                              try {
+                                const { getAuthToken } = await import("../services/authClient");
+                                await fetch(`/api/admin/users/${row.userId}`, {
+                                  method: "DELETE",
+                                  headers: { Authorization: `Bearer ${getAuthToken()}` },
+                                });
+                                void reloadMembers();
+                              } catch { alert("Delete failed"); }
+                            }}
+                            className="rounded p-1 text-[#e0a5a5] transition hover:bg-[#2a1c1c] hover:text-red-400"
+                          >
+                            <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                              <path d="M3 6h18" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" /><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                            </svg>
+                          </button>
+                        </td>
                       </tr>
                     ))}
                     {!membersBusy && !memberRows.length ? (
                       <tr>
-                        <td colSpan={8} className="px-3 py-6 text-center text-[#6B6F76]">
+                        <td colSpan={9} className="px-3 py-6 text-center text-[#6B6F76]">
                           No members found.
                         </td>
                       </tr>
@@ -415,11 +541,18 @@ export default function AdminPage() {
                   </tbody>
                 </table>
               </div>
-              {membersErr ? <p className="mt-2 text-xs text-[#d6b3af]">{membersErr}</p> : null}
+              {membersErr ? (
+                <div className="mt-2 flex items-center gap-2">
+                  <p className="text-xs text-[#d6b3af]">{membersErr}</p>
+                  <button type="button" onClick={() => void reloadMembers()} className="rounded border border-white/10 px-2 py-0.5 text-[10px] text-[#BFC2C7] hover:text-white">Retry</button>
+                </div>
+              ) : null}
             </div>
           </div>
         </CollapsiblePanel>
+        )}
 
+        {shouldShow("providers") && (
         <CollapsiblePanel
           title="Outsource APIs & Exchange Sources"
           description="Manage API keys/endpoints from admin (add/edit/delete/test)"
@@ -492,7 +625,9 @@ export default function AdminPage() {
             onPinPriorityTop={(providerId) => pinFallbackTop(providerId)}
           />
         </CollapsiblePanel>
+        )}
 
+        {shouldShow("adminUsers") && (
         <CollapsiblePanel
           title="Admin Users"
           description="Create admin accounts from a dedicated panel"
@@ -606,7 +741,9 @@ export default function AdminPage() {
             </section>
           </div>
         </CollapsiblePanel>
+        )}
 
+        {shouldShow("mapping") && (
         <CollapsiblePanel
           title="Feature / Field Mapping"
           description="Map required market fields to provider endpoints"
@@ -615,7 +752,9 @@ export default function AdminPage() {
         >
           <MappingEditor mappings={config.mappings} providers={providerOptions} onChange={onMappingChange} />
         </CollapsiblePanel>
+        )}
 
+        {shouldShow("refresh") && (
         <CollapsiblePanel
           title="Refresh Settings"
           description="Global refresh and per-feed switches"
@@ -644,7 +783,9 @@ export default function AdminPage() {
             </section>
           </div>
         </CollapsiblePanel>
+        )}
 
+        {shouldShow("tradeIdeas") && (
         <CollapsiblePanel
           title="Trade Ideas Settings"
           description="Confidence threshold used by the feed"
@@ -953,7 +1094,9 @@ export default function AdminPage() {
             </label>
           </div>
         </CollapsiblePanel>
+        )}
 
+        {shouldShow("referrals") && (
         <CollapsiblePanel
           title="Member Referral Codes"
           description="Generate and manage referral codes for members"
@@ -1142,7 +1285,9 @@ export default function AdminPage() {
             </section>
           </div>
         </CollapsiblePanel>
+        )}
 
+        {shouldShow("aiExchange") && (
         <CollapsiblePanel
           title="Exchange Manager"
           description="Connect / update / remove exchange APIs"
@@ -1151,7 +1296,9 @@ export default function AdminPage() {
         >
           <AdminAiExchangeManagerPanel />
         </CollapsiblePanel>
+        )}
 
+        {shouldShow("tradingView") && (
         <CollapsiblePanel
           title="TradingView API"
           description="Configure TradingView credentials and fallback widget defaults"
@@ -1226,7 +1373,9 @@ export default function AdminPage() {
             These credentials are stored in localStorage (dev mode). In production, move secrets to encrypted backend storage.
           </p>
         </CollapsiblePanel>
+        )}
 
+        {shouldShow("branding") && (
         <CollapsiblePanel
           title="Branding"
           description="Sidebar logo and collapsed emblem upload"
@@ -1329,6 +1478,73 @@ export default function AdminPage() {
             </div>
           </div>
         </CollapsiblePanel>
+        )}
+
+        {shouldShow("payments") && (
+        <CollapsiblePanel
+          title="Payment Review"
+          description="Monitor invoices, pending payments, and manual confirmations"
+          open={panelState.payments}
+          onToggle={() => togglePanel("payments")}
+        >
+          <PaymentReviewPanel />
+        </CollapsiblePanel>
+        )}
+
+        {shouldShow("logs") && (
+        <CollapsiblePanel
+          title="System Logs"
+          description="Event logs, error tracking, and operational monitoring"
+          open={panelState.logs}
+          onToggle={() => togglePanel("logs")}
+        >
+          <LogsPanel />
+        </CollapsiblePanel>
+        )}
+
+        {shouldShow("bugReports") && (
+        <CollapsiblePanel
+          title="Bug Reports"
+          description="Track and manage bug reports from users and internal team"
+          open={panelState.bugReports}
+          onToggle={() => togglePanel("bugReports")}
+        >
+          <BugReportsPanel />
+        </CollapsiblePanel>
+        )}
+
+        {shouldShow("killSwitch") && (
+        <CollapsiblePanel
+          title="Kill Switch"
+          description="Emergency trading halt — activate/deactivate per level"
+          open={panelState.killSwitch}
+          onToggle={() => togglePanel("killSwitch")}
+        >
+          <KillSwitchPanel />
+        </CollapsiblePanel>
+        )}
+
+        {shouldShow("tradeTrace") && (
+        <CollapsiblePanel
+          title="Trade Trace"
+          description="Pipeline event trace for order intents"
+          open={panelState.tradeTrace}
+          onToggle={() => togglePanel("tradeTrace")}
+        >
+          <TradeTracePanel />
+        </CollapsiblePanel>
+        )}
+
+        {shouldShow("circuitBreaker") && (
+        <CollapsiblePanel
+          title="Exchange Core Status"
+          description="Circuit breakers, queues, and engine metrics"
+          open={panelState.circuitBreaker}
+          onToggle={() => togglePanel("circuitBreaker")}
+        >
+          <CircuitBreakerPanel />
+        </CollapsiblePanel>
+        )}
 
         {validationMsg ? <div className="rounded-lg border border-[#704844] bg-[#271a19] px-3 py-2 text-xs text-[#d6b3af]">{validationMsg}</div> : null}
         {persistError ? <div className="rounded-lg border border-[#704844] bg-[#271a19] px-3 py-2 text-xs text-[#d6b3af]">{persistError}</div> : null}

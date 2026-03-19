@@ -14,6 +14,9 @@ import { registerMarketRoutes } from "./routes/market.ts";
 import { registerTradeRoutes } from "./routes/trade.ts";
 import { registerAuthRoutes } from "./routes/auth.ts";
 import { registerPaymentsRoutes } from "./routes/payments.ts";
+import { registerPaymentWebhookRoutes } from "./routes/paymentWebhook.ts";
+import { registerAdminLogsRoutes } from "./routes/adminLogs.ts";
+import { registerBugReportRoutes } from "./routes/bugReports.ts";
 import { registerTokenCreatorRoutes } from "./routes/tokenCreator.ts";
 import { registerUserSettingsRoutes } from "./routes/userSettings.ts";
 import { registerTradeIdeasRoutes } from "./routes/tradeIdeas.ts";
@@ -38,7 +41,7 @@ import { writeFeatureCache } from "./services/traderHub/featureCache.ts";
 import { markFeaturesRefreshed } from "./services/traderHub/featureFreshness.ts";
 import { registerMLRoutes } from "./routes/ml.ts";
 import { registerMetricsRoute } from "./routes/metrics.ts";
-import { createGateway } from "./ws/gateway.ts";
+import { createGateway, setWsAuthFunction } from "./ws/gateway.ts";
 import { HubEventBridge } from "./services/marketHub/HubEventBridge.ts";
 import { PaymentStore } from "./payments/storage.ts";
 import { AuthService } from "./payments/authService.ts";
@@ -110,6 +113,19 @@ const exchangeManager = new ExchangeManager(connections, encryptionKey);
 const paymentStore = new PaymentStore();
 const authService = new AuthService(paymentStore, encryptionKey);
 const paymentService = new PaymentService(paymentStore);
+
+// Wire WS auth: gateway validates tokens via authService
+setWsAuthFunction(async (token) => {
+  const ctx = await authService.getUserFromToken(token);
+  if (!ctx) return null;
+  return { userId: ctx.user.id, role: ctx.user.role };
+});
+
+// Address Pool for per-invoice TRON deposit addresses
+import { AddressPoolService } from "./payments/addressPoolService.ts";
+const addressPoolService = new AddressPoolService(encryptionKey);
+paymentService.setAddressPool(addressPoolService);
+
 const tokenCreatorService = new TokenCreatorService(paymentStore, paymentService);
 const tronClient = new TronClient();
 const tronMonitor = new TronMonitorService(paymentStore, tronClient, paymentService);
@@ -130,6 +146,43 @@ const binanceFuturesHub = new BinanceFuturesHub();
 const exchangeMarketHub = new ExchangeMarketHub();
 const hubEventBridge = new HubEventBridge();
 const exchangeCore = new ExchangeCoreService(connections, encryptionKey);
+
+// ── Private Stream Manager (Faz 9) ──────────────────────────
+import { PrivateStreamManager } from "./services/exchangeCore/privateStreamManager.ts";
+import { ApiVault } from "./services/exchangeCore/apiVault.ts";
+import { PositionTracker } from "./services/exchangeCore/positionTracker.ts";
+
+const apiVault = new ApiVault(encryptionKey);
+const positionTracker = new PositionTracker();
+const privateStreamManager = new PrivateStreamManager(apiVault, {
+  onEvent: (userId, exchangeAccountId, venue, events) => {
+    for (const evt of events) {
+      if (evt.type === "position_update") {
+        const pos = evt as any;
+        positionTracker.updatePosition({
+          userId,
+          exchangeAccountId,
+          venue,
+          symbol: pos.symbol,
+          side: pos.side,
+          size: pos.size,
+          entryPrice: pos.entryPrice ?? pos.entry_price ?? 0,
+          markPrice: null,
+          unrealizedPnl: pos.unrealizedPnl ?? pos.unrealized_pnl ?? null,
+          leverage: pos.leverage ?? null,
+          updatedAt: new Date().toISOString(),
+        }).catch(() => {});
+      }
+    }
+  },
+  onDisconnect: (userId, exchangeAccountId, venue) => {
+    console.log(`[PrivateStream] Disconnected: ${venue} for user ${userId.slice(0, 8)}`);
+  },
+  onReconnect: (userId, exchangeAccountId, venue) => {
+    console.log(`[PrivateStream] Reconnected: ${venue} for user ${userId.slice(0, 8)}`);
+  },
+});
+
 const traderHubStore = new TraderHubStore();
 const botScheduler = new BotScheduler(traderHubStore);
 const traderHubEngine = new TraderHubEngine(traderHubStore, botScheduler, { exchangeCore });
@@ -183,20 +236,23 @@ async function bootstrap() {
 }
 
 registerConnectionRoutes(app, connections, encryptionKey);
-registerExchangeRoutes(app, exchangeManager);
-registerTradeRoutes(app, audit, connections);
+registerExchangeRoutes(app, exchangeManager, authService);
+registerTradeRoutes(app, audit, connections, exchangeCore, authService);
 registerMarketRoutes(app, { providerStore: adminProviderStore, binanceFuturesHub, exchangeMarketHub, hubEventBridge, systemScanner, coinUniverseEngine });
 registerAuthRoutes(app, authService);
 registerUserSettingsRoutes(app);
 registerTradeIdeasRoutes(app, tradeIdeaStore, systemScanner);
-registerAdminProviderRoutes(app, adminProviderStore);
+registerAdminProviderRoutes(app, adminProviderStore, authService);
 registerAiTradeIdeasRoutes(app, aiProviderStore, { binanceFuturesHub, coinUniverseEngine: coinUniverseEngineV2 as any, serverPort, isPrimary: IS_PRIMARY, tradeIdeaStore });
-registerExchangeCoreRoutes(app, exchangeCore);
+registerExchangeCoreRoutes(app, exchangeCore, authService);
 registerTraderHubRoutes(app, traderHubEngine);
 registerCoinUniverseRoutes(app, coinUniverseEngineV2);
 registerOptimizerStatsRoutes(app, modePerformanceTracker, tradeOutcomeAttributor, dynamicSlTpOptimizer, regimeParameterEngine, confidenceCalibrator, selfThrottleEngine, featureWeightTuner);
-registerPaymentsRoutes(app, authService, paymentService);
+registerPaymentsRoutes(app, authService, paymentService, addressPoolService);
 registerTokenCreatorRoutes(app, authService, tokenCreatorService);
+registerPaymentWebhookRoutes(app);
+registerAdminLogsRoutes(app, authService);
+registerBugReportRoutes(app, authService);
 registerMLRoutes(app);
 registerMetricsRoute(app, {});
 registerAiEngineV2Routes(app, aiTradeIdeaEngine);
@@ -215,7 +271,21 @@ if (process.env.NODE_ENV === "production") {
 }
 
 const server = http.createServer(app);
-createGateway(server, { exchangeMarketHub, hubEventBridge, binanceFuturesHub, isPrimary: IS_PRIMARY, hubExternal: HUB_EXTERNAL });
+const wss = createGateway(server, { exchangeMarketHub, hubEventBridge, binanceFuturesHub, isPrimary: IS_PRIMARY, hubExternal: HUB_EXTERNAL });
+
+// Wire PrivateStreamManager events → gateway broadcast (Pipeline 8)
+const origOnEvent = privateStreamManager["callbacks"].onEvent;
+privateStreamManager["callbacks"].onEvent = (userId, exchangeAccountId, venue, events) => {
+  origOnEvent(userId, exchangeAccountId, venue, events);
+  for (const evt of events) {
+    (wss as any).broadcastPrivateEvent?.(userId, exchangeAccountId, {
+      type: evt.type,
+      venue,
+      ...evt,
+      ts: Date.now(),
+    });
+  }
+};
 
 const host = process.env.HOST ?? "127.0.0.1";
 const port = Number(process.env.PORT ?? 8090);
@@ -256,8 +326,9 @@ bootstrap()
 
         // Singleton services (run regardless of hub mode)
         exchangeCore.start();
+        privateStreamManager.start();
         void traderHubEngine.start();
-        tronMonitor.start();
+        // tronMonitor.start(); // Disabled — moved to crypto-payment-engine (10.110.0.9:9100)
         adaptiveRR.start();
         optimizationScheduler.start();
         tickOrchestrator.start();

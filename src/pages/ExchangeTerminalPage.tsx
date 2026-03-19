@@ -24,6 +24,7 @@ import type { TradeTick } from "../types/exchange";
 import type { TickerItem } from "../types/exchange";
 import { useDataSourceManager } from "../data/DataSourceManager";
 import { useDisplayPrice, useMarkPrice } from "../hooks/useLivePriceStore";
+import { usePrivateStream } from "../hooks/usePrivateStream";
 
 const normalizeCandlesForChart = (
   rows: Array<{ time: number; open: number; high: number; low: number; close: number }> | undefined,
@@ -87,6 +88,18 @@ export default function ExchangeTerminalPage() {
   );
   const exchangeBlocked = !hasEnabledAccounts || !hasSelectedAccount;
   const routerSymbol = useMemo(() => selectedSymbol.replace("/", ""), [selectedSymbol]);
+
+  // Pipeline 8: Private stream — real-time order/position/balance updates via WS
+  const privateStreamVenue = useMemo(() => {
+    const raw = selectedExchange.toLowerCase();
+    if (raw.includes("gate")) return "GATEIO";
+    return "BINANCE";
+  }, [selectedExchange]);
+  usePrivateStream(
+    exchangeBlocked ? null : "demo-user",
+    exchangeBlocked ? null : selectedExchangeAccount,
+    privateStreamVenue,
+  );
 
   // ── Canonical prices — useLivePriceStore is the SINGLE SOURCE OF TRUTH ──
   // MarketDataRouter bootstraps from REST, WS streams update in real-time.
@@ -384,10 +397,23 @@ export default function ExchangeTerminalPage() {
     };
 
     void run();
-    const timer = window.setInterval(() => void run(), 5000);
+    // REST now serves as periodic reconciliation — primary data comes via Pipeline 8 WS.
+    // WS connected → 30s reconciliation; WS disconnected → 5s fast polling as fallback.
+    const getInterval = () => MarketDataRouter.isWsConnected() && MarketDataRouter.isPrivateSubscribed() ? 30_000 : 5_000;
+    let currentInterval = getInterval();
+    let timer = window.setInterval(() => void run(), currentInterval);
+    const intervalCheck = window.setInterval(() => {
+      const next = getInterval();
+      if (next !== currentInterval) {
+        currentInterval = next;
+        window.clearInterval(timer);
+        timer = window.setInterval(() => void run(), currentInterval);
+      }
+    }, 3_000);
     return () => {
       cancelled = true;
       window.clearInterval(timer);
+      window.clearInterval(intervalCheck);
     };
   }, [exchangeBlocked, routerSymbol, selectedExchange, selectedExchangeAccount, setAccountData]);
 

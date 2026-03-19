@@ -1,5 +1,6 @@
 import type { ExchangeConnectionInput, ExchangeName } from "../types/exchange";
 import type { BalanceItem, OpenOrderItem, OrderHistoryItem, PositionItem, TradeHistoryItem, TransactionHistoryItem } from "../types/exchange";
+import { getAuthToken } from "./authClient";
 
 interface ApiResult<T> {
   ok: boolean;
@@ -9,13 +10,19 @@ interface ApiResult<T> {
 
 const API_BASE = "";
 
+/** Shared auth headers for all exchange API calls. */
+export const authHeaders = (): Record<string, string> => {
+  const token = getAuthToken();
+  return token ? { Authorization: `Bearer ${token}` } : {};
+};
+
 const req = async <T>(path: string, init: RequestInit): Promise<ApiResult<T>> => {
   try {
     const res = await fetch(`${API_BASE}${path}`, {
       ...init,
       headers: {
         "Content-Type": "application/json",
-        "x-user-id": "demo-user",
+        ...authHeaders(),
         ...(init.headers ?? {}),
       },
     });
@@ -27,12 +34,11 @@ const req = async <T>(path: string, init: RequestInit): Promise<ApiResult<T>> =>
   }
 };
 
-export const testExchangeConnection = (payload: { baseUrl: string; apiKey: string; apiSecret: string }) => {
-  void payload;
-  return req<{ ok: true; route?: string }>("/api/connections/health", {
-    method: "GET",
+export const testExchangeConnection = (payload: { baseUrl: string; apiKey: string; apiSecret: string }) =>
+  req<{ ok: true; route?: string }>("/api/connections/health", {
+    method: "POST",
+    body: JSON.stringify(payload),
   });
-};
 
 export const saveExchangeConnection = (payload: ExchangeConnectionInput) =>
   req<{ ok: true; report?: unknown }>("/api/exchanges/connect", {

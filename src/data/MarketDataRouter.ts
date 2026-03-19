@@ -9,6 +9,17 @@ import { useOrderflowStore } from "../hooks/useOrderflowStore";
 import { useLivePriceStore } from "../hooks/useLivePriceStore";
 import { useMarketListStore } from "../hooks/useMarketListStore";
 
+// ── Pipeline 8: Private stream callback registry (replace semantics — no leak) ──
+interface PrivateStreamCallbacks {
+  onOrderUpdate?: (event: Record<string, unknown>) => void;
+  onPositionUpdate?: (event: Record<string, unknown>) => void;
+  onBalanceUpdate?: (event: Record<string, unknown>) => void;
+  onSubscribed?: (msg: Record<string, unknown>) => void;
+  onError?: (msg: Record<string, unknown>) => void;
+}
+let _privateCallbacks: PrivateStreamCallbacks = {};
+let _privateSubscription: { userId: string; accountId: string; venue: string } | null = null;
+
 export interface MarketDatum<T> {
   sourceId: SourceId;
   ts: number;
@@ -387,7 +398,10 @@ const fetchOne = async (sourceId: SourceId, sub: SubscriptionKey) => {
 
 const wsUrl = () => {
   const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-  return `${protocol}//${window.location.host}/ws`;
+  const base = `${protocol}//${window.location.host}/ws`;
+  // Attach auth token for private stream authentication
+  const token = typeof window !== "undefined" ? window.localStorage.getItem("bitrium.auth.token") : null;
+  return token ? `${base}?token=${encodeURIComponent(token)}` : base;
 };
 
 const sendWsSubscriptions = () => {
@@ -444,6 +458,15 @@ const connectWebSocket = () => {
       // Re-subscribe to market list if active
       if (marketListSubscribed) {
         ws!.send(JSON.stringify({ type: "subscribe_market_list" }));
+      }
+      // Re-subscribe to private stream if active (idempotent — uses stored subscription)
+      if (_privateSubscription) {
+        ws!.send(JSON.stringify({
+          type: "subscribe_private",
+          userId: _privateSubscription.userId,
+          exchangeAccountId: _privateSubscription.accountId,
+          venue: _privateSubscription.venue,
+        }));
       }
     };
     ws.onmessage = (event) => {
@@ -672,6 +695,17 @@ const connectWebSocket = () => {
           if (patch && typeof patch === "object") {
             useMarketListStore.getState().ingestPatch(patch, Number(msg.ts ?? Date.now()));
           }
+        // ── Pipeline 8: Private user stream events ──
+        } else if (msg.type === "order_update") {
+          _privateCallbacks.onOrderUpdate?.(msg);
+        } else if (msg.type === "position_update") {
+          _privateCallbacks.onPositionUpdate?.(msg);
+        } else if (msg.type === "balance_update") {
+          _privateCallbacks.onBalanceUpdate?.(msg);
+        } else if (msg.type === "subscribed_private") {
+          _privateCallbacks.onSubscribed?.(msg);
+        } else if (msg.type === "subscribe_private_error") {
+          _privateCallbacks.onError?.(msg);
         } else if (msg.type === "market_error") {
           const state = useMarketDataRouterStore.getState();
           useDataSourceManager.getState().markError(
@@ -881,5 +915,38 @@ export const MarketDataRouter = {
     mountCount = Math.max(0, mountCount - 1);
     if (mountCount === 0) stopRouter();
   },
+  // ── Pipeline 8: Private stream management ──
+  setPrivateStreamCallbacks: (callbacks: PrivateStreamCallbacks) => {
+    _privateCallbacks = callbacks; // replace semantics — overwrites previous
+  },
+  clearPrivateStreamCallbacks: () => {
+    _privateCallbacks = {};
+  },
+  subscribePrivate: (userId: string, accountId: string, venue: string) => {
+    // Idempotent — skip if already subscribed with same params
+    if (
+      _privateSubscription &&
+      _privateSubscription.userId === userId &&
+      _privateSubscription.accountId === accountId &&
+      _privateSubscription.venue === venue
+    ) return;
+    _privateSubscription = { userId, accountId, venue };
+    if (ws && wsConnected) {
+      ws.send(JSON.stringify({
+        type: "subscribe_private",
+        userId,
+        exchangeAccountId: accountId,
+        venue,
+      }));
+    }
+  },
+  unsubscribePrivate: () => {
+    _privateSubscription = null;
+    if (ws && wsConnected) {
+      ws.send(JSON.stringify({ type: "unsubscribe_private" }));
+    }
+  },
+  isPrivateSubscribed: () => _privateSubscription !== null,
+  isWsConnected: () => wsConnected,
   useStore: useMarketDataRouterStore,
 };
