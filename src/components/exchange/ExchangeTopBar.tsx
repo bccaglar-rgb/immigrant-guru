@@ -24,7 +24,7 @@ const toUiSymbol = (raw: string) => {
   return upper;
 };
 
-export const ExchangeTopBar = () => {
+export const ExchangeTopBar = ({ onAddExchange }: { onAddExchange?: () => void }) => {
   const {
     selectedExchange,
     selectedSymbol,
@@ -206,7 +206,7 @@ export const ExchangeTopBar = () => {
             ) : (
               <button
                 type="button"
-                onClick={() => navigate("/settings#exchange-panel")}
+                onClick={() => onAddExchange ? onAddExchange() : navigate("/settings#exchange-panel")}
                 className="inline-flex items-center gap-2 rounded border border-[#7a6840] bg-[#2a2418] px-3 py-1.5 text-sm font-semibold text-[#F5C542]"
               >
                 <span className="inline-flex h-5 w-5 items-center justify-center rounded-full border border-[#7a6840] bg-[#1f1a12] text-[12px]">
@@ -266,7 +266,7 @@ export const ExchangeTopBar = () => {
                   type="button"
                   onClick={() => {
                     setExchangeMenuOpen(false);
-                    navigate("/settings#exchange-panel");
+                    onAddExchange ? onAddExchange() : navigate("/settings#exchange-panel");
                   }}
                   className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-sm text-[#F5C542] hover:bg-[#2b2417]"
                 >

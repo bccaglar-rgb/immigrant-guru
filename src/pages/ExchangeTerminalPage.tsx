@@ -686,7 +686,7 @@ export default function ExchangeTerminalPage() {
   <>
     <main className="h-screen overflow-hidden bg-[#0B0B0C] p-3 text-[#BFC2C7] md:p-4">
       <div className="mx-auto flex h-full max-w-[1850px] min-h-0 flex-col">
-        <ExchangeTopBar />
+        <ExchangeTopBar onAddExchange={() => setConnectModalOpen(true)} />
         {sourceWarning || liveError || (!exchangeBlocked && !chartBundle && !noDataTimeout) || noDataTimeout ? (
           <div className="mt-2 rounded-lg border border-[#7a6840] bg-[#2a2418] px-3 py-2 text-xs text-[#e7d9b3]">
             {sourceWarning
