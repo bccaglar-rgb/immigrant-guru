@@ -172,9 +172,9 @@ export default function TradeIdeasReportPage() {
       .then((r) => r.ok ? r.json() : null)
       .then((body: any) => { if (body?.ok && body.config) setRrConfig(body.config); })
       .catch(() => {});
-    fetch("/api/optimizer/performance")
+    fetch("/api/optimizer/mode-performance")
       .then((r) => r.ok ? r.json() : null)
-      .then((body: any) => { if (body?.ok && body.performance) setOptPerf(body.performance); })
+      .then((body: any) => { if (body?.ok && (body.modes || body.performance)) setOptPerf(body.modes ?? body.performance); })
       .catch(() => {});
   }, [isAiReport]);
 

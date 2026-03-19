@@ -47,7 +47,8 @@ export class TronClient {
           amount: toAmount(row.value),
           contractAddress: String(row.token_info?.address ?? ""),
           blockNumber,
-          confirmations: PAYMENT_CONFIG.confirmationsRequired,
+          // TronGrid only_confirmed=true filter means sufficient confirmations; use threshold as proxy
+          confirmations: row.confirmed ? PAYMENT_CONFIG.confirmationsRequired : 0,
           success: Boolean(row.confirmed ?? true),
           timestamp: Number(row.block_timestamp ?? Date.now()),
           logIndex: 0,

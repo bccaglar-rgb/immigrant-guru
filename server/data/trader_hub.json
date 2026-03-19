@@ -15,43 +15,43 @@
       "scanIntervalSec": 30,
       "status": "RUNNING",
       "createdAt": "2026-03-02T04:04:49.746Z",
-      "updatedAt": "2026-03-18T00:11:24.003Z",
-      "nextRunAt": "2026-03-18T00:11:53.999Z",
-      "lastRunAt": "2026-03-18T00:11:24.003Z",
+      "updatedAt": "2026-03-19T02:44:55.681Z",
+      "nextRunAt": "2026-03-19T02:45:25.678Z",
+      "lastRunAt": "2026-03-19T02:44:55.681Z",
       "lastError": "",
       "failStreak": 0,
       "stats": {
-        "runs": 24836,
-        "tradeCount": 579,
-        "watchCount": 3217,
-        "noTradeCount": 21040,
-        "pnlPct": 33.747
+        "runs": 28016,
+        "tradeCount": 644,
+        "watchCount": 4129,
+        "noTradeCount": 23243,
+        "pnlPct": 33.727
       },
       "lastResult": {
-        "ts": "2026-03-18T00:11:24.003Z",
+        "ts": "2026-03-19T02:44:55.681Z",
         "sourceExchange": "Binance",
-        "scorePct": 88.87,
-        "decision": "NO_TRADE",
-        "bias": "LONG",
-        "reason": "CHATGPT rejected setup due to weak edge/quality.",
-        "price": 73985.7,
+        "scorePct": 63.1,
+        "decision": "WATCH",
+        "bias": "SHORT",
+        "reason": "CHATGPT sees setup building, waiting for stronger confirmation.",
+        "price": 71195.6,
         "plan": {
-          "entryLow": 73868.0924,
-          "entryHigh": 74026.8627,
-          "sl1": 73814.6688,
-          "sl2": 73746.2563,
-          "tp1": 74639.1503,
-          "tp2": 74933.2029
+          "entryLow": 71133.5162,
+          "entryHigh": 71372.9823,
+          "sl1": 71411.5493,
+          "sl2": 71497.929,
+          "tp1": 70676.8663,
+          "tp2": 70443.4361
         },
         "dataStale": false,
         "execution": {
-          "state": "REJECTED",
+          "state": "N/A",
           "venue": "N/A",
-          "intentId": "24023068-199c-4300-adbd-1eb13264e18a",
-          "message": "No connected exchange account found. Connect Binance or Gate.io in Settings."
+          "intentId": "",
+          "message": "No execution requested."
         }
       }
     }
   ],
-  "updatedAt": "2026-03-18T00:11:24.003Z"
+  "updatedAt": "2026-03-19T02:44:55.681Z"
 }

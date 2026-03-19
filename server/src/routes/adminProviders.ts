@@ -1,6 +1,14 @@
-import type { Express } from "express";
+import type { Express, Request, Response } from "express";
 import WebSocket from "ws";
 import type { AdminProviderStore } from "../services/adminProviderStore.ts";
+import { AuthService } from "../payments/authService.ts";
+
+const bearer = (header: string | undefined) => {
+  if (!header) return "";
+  const [scheme, token] = header.split(" ");
+  if ((scheme ?? "").toLowerCase() !== "bearer") return "";
+  return token ?? "";
+};
 
 type ProviderType = "REST" | "WS" | "BOTH";
 
@@ -322,7 +330,7 @@ const assessProviderHealth = async (provider: ProviderHealthInput): Promise<Prov
   };
 };
 
-export const registerAdminProviderRoutes = (app: Express, providerStore?: AdminProviderStore) => {
+export const registerAdminProviderRoutes = (app: Express, providerStore?: AdminProviderStore, auth?: AuthService) => {
   app.get("/api/admin/providers/config", async (_req, res) => {
     if (!providerStore) {
       return res.status(503).json({
@@ -351,6 +359,15 @@ export const registerAdminProviderRoutes = (app: Express, providerStore?: AdminP
   });
 
   app.put("/api/admin/providers/config", async (req, res) => {
+    // Admin-only: verify auth token
+    if (auth) {
+      const token = bearer(req.headers.authorization);
+      const ctx = await auth.getUserFromToken(token);
+      if (!ctx || ctx.user.role !== "ADMIN") {
+        return res.status(403).json({ ok: false, error: "admin_required" });
+      }
+    }
+
     if (!providerStore) {
       return res.status(503).json({
         ok: false,

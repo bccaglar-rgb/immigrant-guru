@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { CoinIcon } from "../components/CoinIcon";
 import { EmailModal } from "../components/EmailModal";
 import { ShareModal } from "../components/ShareModal";
+import { useAuthStore } from "../hooks/useAuthStore";
 import { useAdminConfig } from "../hooks/useAdminConfig";
 import { useMarketDataStatus } from "../hooks/useMarketData";
 import { useExchangeTerminalStore } from "../hooks/useExchangeTerminalStore";
@@ -300,6 +301,8 @@ export default function TradeIdeasPage() {
   const location = useLocation();
   const isAiTradeIdeasPage = location.pathname.startsWith("/ai-trade-ideas");
   const { config: adminConfig } = useAdminConfig();
+  const authUser = useAuthStore((s) => s.user);
+  const isAdmin = authUser?.role === "ADMIN";
   const selectedExchange = useExchangeTerminalStore((state) => state.selectedExchange);
   const setSelectedExchange = useExchangeTerminalStore((state) => state.setSelectedExchange);
   const setSelectedSymbol = useExchangeTerminalStore((state) => state.setSelectedSymbol);
@@ -869,7 +872,7 @@ export default function TradeIdeasPage() {
 
               <div className="rounded-xl border border-white/10 bg-[radial-gradient(circle_at_top_right,rgba(245,197,66,0.08),transparent_45%),linear-gradient(180deg,#101216,#0D0F13)] px-3 py-2.5 shadow-[0_12px_24px_rgba(0,0,0,0.34)]">
                 <div className="flex items-center justify-between gap-2">
-                  <p className="text-sm font-semibold text-white">Trade Ideas Report</p>
+                  <p className="text-sm font-semibold text-white">{isAiTradeIdeasPage ? "AI Trade Reports" : "Trade Ideas Report"}</p>
                   <div className="flex items-center gap-1.5">
                     {(["1h", "4h", "24h", "7d"] as const).map((range) => {
                       const active = isAiTradeIdeasPage ? aiReportTimeRange === range : reportTimeRange === range;
@@ -895,7 +898,7 @@ export default function TradeIdeasPage() {
                     >
                       Open detailed report
                     </button>
-                    {!isAiTradeIdeasPage && (
+                    {(!isAiTradeIdeasPage || isAdmin) && (
                       <button
                         type="button"
                         onClick={() => void handleReportReset()}

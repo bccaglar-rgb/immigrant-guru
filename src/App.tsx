@@ -51,6 +51,9 @@ const PaymentCheckoutPage = lazyRetry(() => import("./pages/PaymentCheckoutPage"
 const AdminPaymentsPage = lazyRetry(() => import("./pages/AdminPaymentsPage"));
 const SettingsPage = lazyRetry(() => import("./pages/SettingsPage"));
 const AdminPage = lazyRetry(() => import("./pages/AdminPage"));
+const OptimizerDashboardPage = lazyRetry(() => import("./pages/OptimizerDashboardPage"));
+const SystemMonitorPage = lazyRetry(() => import("./pages/SystemMonitorPage"));
+const MLExplorerPage = lazyRetry(() => import("./pages/MLExplorerPage"));
 
 const PageLoader = () => (
   <div className="flex min-h-[60vh] items-center justify-center">
@@ -58,21 +61,32 @@ const PageLoader = () => (
   </div>
 );
 
-/** Redirect to /signup if not authenticated */
+/** Redirect to /login if not authenticated */
 const RequireAuth = ({ children }: { children: React.ReactNode }) => {
   const user = useAuthStore((s) => s.user);
   const loading = useAuthStore((s) => s.loading);
   if (loading) return <PageLoader />;
-  if (!user) return <Navigate to="/signup" replace />;
+  if (!user) return <Navigate to="/login" replace />;
   return <>{children}</>;
 };
 
-/** Redirect to / if not admin */
+/** Redirect to /pricing if no active plan (ADMIN bypasses) */
+const RequirePlan = ({ children }: { children: React.ReactNode }) => {
+  const user = useAuthStore((s) => s.user);
+  const loading = useAuthStore((s) => s.loading);
+  if (loading) return <PageLoader />;
+  if (!user) return <Navigate to="/login" replace />;
+  if (!user.hasActivePlan) return <Navigate to="/pricing" replace />;
+  return <>{children}</>;
+};
+
+/** Redirect to /login if not authenticated, to / if not admin */
 const RequireAdmin = ({ children }: { children: React.ReactNode }) => {
   const user = useAuthStore((s) => s.user);
   const loading = useAuthStore((s) => s.loading);
   if (loading) return <PageLoader />;
-  if (!user || user.role !== "ADMIN") return <Navigate to="/" replace />;
+  if (!user) return <Navigate to="/login" replace />;
+  if (user.role !== "ADMIN") return <Navigate to="/" replace />;
   return <>{children}</>;
 };
 
@@ -91,33 +105,35 @@ function App() {
 
       {/* Main app — WITH sidebar */}
       <Route element={<AppShell />}>
-        {/* Public pages — no auth required */}
+        {/* Public pages — no auth required (guest accessible) */}
         <Route path="/" element={<Suspense fallback={<PageLoader />}><LandingPage /></Suspense>} />
-        <Route path="/crypto-market" element={<Suspense fallback={<PageLoader />}><CryptoMarketPage /></Suspense>} />
         <Route path="/bitrium-token" element={<Suspense fallback={<PageLoader />}><BitriumTokenPage /></Suspense>} />
         <Route path="/pricing" element={<Suspense fallback={<PageLoader />}><PricingPage /></Suspense>} />
 
-        {/* Protected pages — auth required */}
+        {/* Preview pages — auth required, no plan needed (page opens but data won't load without plan) */}
         <Route path="/quant-engine" element={<RequireAuth><Suspense fallback={<PageLoader />}><MarketDashboardPage /></Suspense></RequireAuth>} />
         <Route path="/dashboard" element={<Navigate to="/quant-engine" replace />} />
         <Route path="/exchange-terminal" element={<RequireAuth><Suspense fallback={<PageLoader />}><ExchangeTerminalPage /></Suspense></RequireAuth>} />
         <Route path="/exchanges" element={<Navigate to="/exchange-terminal" replace />} />
-        <Route path="/coin-universe" element={<RequireAuth><Suspense fallback={<PageLoader />}><CoinUniversePage /></Suspense></RequireAuth>} />
-        <Route path="/super-charts" element={<RequireAuth><Suspense fallback={<PageLoader />}><SuperChartsPage /></Suspense></RequireAuth>} />
-        <Route path="/quant-trade-ideas" element={<RequireAuth><Suspense fallback={<PageLoader />}><TradeIdeasPage /></Suspense></RequireAuth>} />
+        <Route path="/crypto-market" element={<RequireAuth><Suspense fallback={<PageLoader />}><CryptoMarketPage /></Suspense></RequireAuth>} />
+
+        {/* Plan-gated pages — redirect to /pricing if no active subscription */}
+        <Route path="/quant-trade-ideas" element={<RequirePlan><Suspense fallback={<PageLoader />}><TradeIdeasPage /></Suspense></RequirePlan>} />
         <Route path="/trade-ideas" element={<Navigate to="/quant-trade-ideas" replace />} />
         <Route path="/bitrium-trade-ideas" element={<Navigate to="/quant-trade-ideas" replace />} />
-        <Route path="/ai-trade-ideas" element={<RequireAuth><Suspense fallback={<PageLoader />}><TradeIdeasPage /></Suspense></RequireAuth>} />
-        <Route path="/games" element={<RequireAuth><Suspense fallback={<PageLoader />}><GamesPage /></Suspense></RequireAuth>} />
-        <Route path="/quant-trade-ideas/report" element={<RequireAuth><Suspense fallback={<PageLoader />}><TradeIdeasReportPage /></Suspense></RequireAuth>} />
+        <Route path="/ai-trade-ideas" element={<RequirePlan><Suspense fallback={<PageLoader />}><TradeIdeasPage /></Suspense></RequirePlan>} />
+        <Route path="/quant-trade-ideas/report" element={<RequirePlan><Suspense fallback={<PageLoader />}><TradeIdeasReportPage /></Suspense></RequirePlan>} />
         <Route path="/trade-ideas/report" element={<Navigate to="/quant-trade-ideas/report" replace />} />
-        <Route path="/ai-trade-ideas/report" element={<RequireAuth><Suspense fallback={<PageLoader />}><TradeIdeasReportPage /></Suspense></RequireAuth>} />
-        <Route path="/ai-trader/leaderboard" element={<RequireAuth><Suspense fallback={<PageLoader />}><AiTraderLeaderboardPage /></Suspense></RequireAuth>} />
-        <Route path="/ai-trader/dashboard" element={<RequireAuth><Suspense fallback={<PageLoader />}><AiTraderDashboardPage /></Suspense></RequireAuth>} />
-        <Route path="/ai-trader/strategy" element={<RequireAuth><Suspense fallback={<PageLoader />}><AiTraderStrategyPage /></Suspense></RequireAuth>} />
-        <Route path="/ai-trader/arena" element={<RequireAuth><Suspense fallback={<PageLoader />}><AiTraderComingSoonPage title="AI Trader · AI Arena" note="AI Arena module is coming soon." /></Suspense></RequireAuth>} />
-        <Route path="/ai-trader/backtest" element={<RequireAuth><Suspense fallback={<PageLoader />}><AiTraderComingSoonPage title="AI Trader · Backtest" note="Backtest module is coming soon." /></Suspense></RequireAuth>} />
-        <Route path="/indicators" element={<RequireAuth><Suspense fallback={<PageLoader />}><IndicatorsPage /></Suspense></RequireAuth>} />
+        <Route path="/ai-trade-ideas/report" element={<RequirePlan><Suspense fallback={<PageLoader />}><TradeIdeasReportPage /></Suspense></RequirePlan>} />
+        <Route path="/ai-trader/leaderboard" element={<RequirePlan><Suspense fallback={<PageLoader />}><AiTraderLeaderboardPage /></Suspense></RequirePlan>} />
+        <Route path="/ai-trader/dashboard" element={<RequirePlan><Suspense fallback={<PageLoader />}><AiTraderDashboardPage /></Suspense></RequirePlan>} />
+        <Route path="/ai-trader/strategy" element={<RequirePlan><Suspense fallback={<PageLoader />}><AiTraderStrategyPage /></Suspense></RequirePlan>} />
+        <Route path="/ai-trader/arena" element={<RequirePlan><Suspense fallback={<PageLoader />}><AiTraderComingSoonPage title="AI Trader · AI Arena" note="AI Arena module is coming soon." /></Suspense></RequirePlan>} />
+        <Route path="/ai-trader/backtest" element={<RequirePlan><Suspense fallback={<PageLoader />}><AiTraderComingSoonPage title="AI Trader · Backtest" note="Backtest module is coming soon." /></Suspense></RequirePlan>} />
+        <Route path="/coin-universe" element={<RequirePlan><Suspense fallback={<PageLoader />}><CoinUniversePage /></Suspense></RequirePlan>} />
+        <Route path="/super-charts" element={<RequirePlan><Suspense fallback={<PageLoader />}><SuperChartsPage /></Suspense></RequirePlan>} />
+        <Route path="/indicators" element={<RequirePlan><Suspense fallback={<PageLoader />}><IndicatorsPage /></Suspense></RequirePlan>} />
+        <Route path="/games" element={<RequirePlan><Suspense fallback={<PageLoader />}><GamesPage /></Suspense></RequirePlan>} />
         <Route path="/icon-gallery" element={<RequireAuth><Suspense fallback={<PageLoader />}><IconGalleryPage /></Suspense></RequireAuth>} />
         <Route path="/open-interest" element={<Navigate to="/quant-engine" replace />} />
         <Route path="/funding-rate" element={<Navigate to="/quant-engine" replace />} />
@@ -128,10 +144,21 @@ function App() {
         <Route path="/checkout/:invoiceId" element={<RequireAuth><Suspense fallback={<PageLoader />}><PaymentCheckoutPage /></Suspense></RequireAuth>} />
         <Route path="/settings" element={<RequireAuth><Suspense fallback={<PageLoader />}><SettingsPage /></Suspense></RequireAuth>} />
 
-        {/* Admin pages */}
-        <Route path="/admin/payments" element={<RequireAdmin><Suspense fallback={<PageLoader />}><AdminPaymentsPage /></Suspense></RequireAdmin>} />
-        <Route path="/ai-exchange-manager" element={<Navigate to="/admin" replace />} />
+        {/* Admin sub-pages (specific routes first, then catch-all) */}
+        <Route path="/admin/members" element={<RequireAdmin><Suspense fallback={<PageLoader />}><AdminPage /></Suspense></RequireAdmin>} />
+        <Route path="/admin/users" element={<RequireAdmin><Suspense fallback={<PageLoader />}><AdminPage /></Suspense></RequireAdmin>} />
+        <Route path="/admin/referrals" element={<RequireAdmin><Suspense fallback={<PageLoader />}><AdminPage /></Suspense></RequireAdmin>} />
+        <Route path="/admin/exchanges" element={<RequireAdmin><Suspense fallback={<PageLoader />}><AdminPage /></Suspense></RequireAdmin>} />
+        <Route path="/admin/trade-ideas" element={<RequireAdmin><Suspense fallback={<PageLoader />}><AdminPage /></Suspense></RequireAdmin>} />
+        <Route path="/admin/branding" element={<RequireAdmin><Suspense fallback={<PageLoader />}><AdminPage /></Suspense></RequireAdmin>} />
+        <Route path="/admin/payments" element={<RequireAdmin><Suspense fallback={<PageLoader />}><AdminPage /></Suspense></RequireAdmin>} />
+        <Route path="/admin/logs" element={<RequireAdmin><Suspense fallback={<PageLoader />}><AdminPage /></Suspense></RequireAdmin>} />
+        <Route path="/admin/bug-reports" element={<RequireAdmin><Suspense fallback={<PageLoader />}><AdminPage /></Suspense></RequireAdmin>} />
         <Route path="/admin" element={<RequireAdmin><Suspense fallback={<PageLoader />}><AdminPage /></Suspense></RequireAdmin>} />
+        <Route path="/ai-exchange-manager" element={<Navigate to="/admin/exchanges" replace />} />
+        <Route path="/optimizer" element={<RequireAdmin><Suspense fallback={<PageLoader />}><OptimizerDashboardPage /></Suspense></RequireAdmin>} />
+        <Route path="/system-monitor" element={<RequireAdmin><Suspense fallback={<PageLoader />}><SystemMonitorPage /></Suspense></RequireAdmin>} />
+        <Route path="/ml-explorer" element={<RequireAdmin><Suspense fallback={<PageLoader />}><MLExplorerPage /></Suspense></RequireAdmin>} />
 
         <Route path="*" element={<Navigate to="/" replace />} />
       </Route>

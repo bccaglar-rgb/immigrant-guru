@@ -45,7 +45,7 @@ export interface PlanRecord {
   updatedAt: string;
 }
 
-export type InvoiceStatus = "created" | "awaiting_payment" | "partially_paid" | "paid" | "expired" | "failed";
+export type InvoiceStatus = "created" | "awaiting_payment" | "detected" | "confirming" | "partially_paid" | "paid" | "expired" | "failed" | "underpaid" | "overpaid" | "manual_review";
 
 export interface InvoiceRecord {
   id: string;

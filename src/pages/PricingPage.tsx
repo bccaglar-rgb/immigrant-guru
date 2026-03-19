@@ -44,8 +44,6 @@ const TIERS: Tier[] = [
       "Indicators",
       "Crypto Market",
       "Coin Universe",
-      "Coin Calculator",
-      "Token Creator",
     ],
     pricing: {
       "1m": { total: 49, monthly: 49 },
@@ -68,8 +66,6 @@ const TIERS: Tier[] = [
       "Indicators",
       "Crypto Market",
       "Coin Universe",
-      "Coin Calculator",
-      "Token Creator",
     ],
     pricing: {
       "1m": { total: 79, monthly: 79 },
@@ -94,8 +90,6 @@ const TIERS: Tier[] = [
       "Indicators",
       "Crypto Market",
       "Coin Universe",
-      "Coin Calculator",
-      "Token Creator",
     ],
     pricing: {
       "1m": { total: 99, monthly: 99 },
@@ -119,8 +113,6 @@ const TIERS: Tier[] = [
       "Indicators",
       "Crypto Market",
       "Coin Universe",
-      "Coin Calculator",
-      "Token Creator",
     ],
     pricing: {
       "1m": { total: 179, monthly: 179 },
@@ -145,8 +137,7 @@ const PERIOD_LABELS: Record<BillingPeriod, string> = {
   "12m": "12 Months",
 };
 
-const tierBorder = (highlight?: boolean, isCurrentTier?: boolean) => {
-  if (isCurrentTier) return "border-[#4caf50]/50 shadow-[0_0_24px_rgba(76,175,80,0.08)]";
+const tierBorder = (highlight?: boolean) => {
   if (highlight) return "border-[#F5C542]/50 shadow-[0_0_24px_rgba(245,197,66,0.08)]";
   return "border-white/10";
 };
@@ -163,6 +154,50 @@ export default function PricingPage() {
   const nav = useNavigate();
   const [err, setErr] = useState("");
   const [busyTier, setBusyTier] = useState("");
+
+  // ── Referral code redeem ──
+  const [referralCode, setReferralCode] = useState("");
+  const [referralLoading, setReferralLoading] = useState(false);
+  const [referralMsg, setReferralMsg] = useState("");
+  const [referralMsgType, setReferralMsgType] = useState<"success" | "error">("success");
+
+  const handleRedeem = async () => {
+    if (!referralCode.trim() || referralLoading) return;
+    setReferralLoading(true);
+    setReferralMsg("");
+    try {
+      const res = await fetch("/api/referral/redeem", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(getAuthToken() ? { Authorization: `Bearer ${getAuthToken()}` } : {}),
+        },
+        body: JSON.stringify({ code: referralCode.trim() }),
+      });
+      const data = await res.json();
+      if (data.ok) {
+        setReferralMsgType("success");
+        setReferralMsg(data.message ?? "Referral code redeemed successfully!");
+        setReferralCode("");
+      } else {
+        setReferralMsgType("error");
+        const errors: Record<string, string> = {
+          invalid_code: "Invalid referral code.",
+          code_inactive: "This referral code is no longer active.",
+          code_expired: "This referral code has expired.",
+          code_max_uses_reached: "This referral code has been fully used.",
+          already_redeemed: "You have already redeemed this code.",
+          unauthorized: "Please sign in to redeem a referral code.",
+        };
+        setReferralMsg(errors[data.error] ?? data.error ?? "Redemption failed.");
+      }
+    } catch {
+      setReferralMsgType("error");
+      setReferralMsg("Network error. Please try again.");
+    } finally {
+      setReferralLoading(false);
+    }
+  };
 
   // ── Server-fetched membership state ──
   const [activeSub, setActiveSub] = useState<SubscriptionDto | null>(null);
@@ -251,27 +286,22 @@ export default function PricingPage() {
   };
 
   return (
+    <>
+    <style>{`
+      @keyframes glow {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.6; text-shadow: 0 0 8px rgba(245,197,66,0.4); }
+      }
+    `}</style>
     <main className="min-h-screen bg-[#0B0B0C] p-3 text-[#BFC2C7] md:p-6">
       <div className="mx-auto max-w-[1400px] space-y-5">
         {/* Header */}
         <section className="rounded-xl border border-white/10 bg-[#121316] p-5 text-center md:p-6">
-          <h1 className="text-2xl font-bold text-white md:text-3xl">Choose Your Plan</h1>
-          <p className="mt-2 text-sm text-[#6B6F76]">All plans include full access to the Bitrium platform. Prices in USD / USDT.</p>
-
-          {hasMembership ? (
-            <div className="mx-auto mt-4 max-w-xl rounded-lg border border-white/10 bg-[#0F1012] p-4">
-              <p className="text-lg font-semibold text-[#F5C542]">You are a Premium Member</p>
-              {currentPlan ? (
-                <p className="mt-1.5 text-sm text-[#9ba3b4]">
-                  Current plan: <span className="font-semibold text-white">{TIERS.find((t) => t.planIdPrefix === currentPlan.prefix)?.name ?? currentPlan.prefix}</span>
-                  {" · "}
-                  <span className="text-[#6B6F76]">{PERIOD_LABELS[currentPlan.period]}</span>
-                </p>
-              ) : null}
-              <p className="mt-1.5 text-sm text-[#9ba3b4]">Your subscription expires on: <span className="text-white">{expiryLabel}</span></p>
-              <p className="mt-1 text-sm text-[#6B6F76]">({daysRemaining} days remaining)</p>
-            </div>
-          ) : null}
+          <h1 className="text-2xl font-bold text-white md:text-3xl">Unlock the Full Power of Bitrium</h1>
+          <p className="mt-2 text-sm text-[#9ba3b4]">
+            Professional-grade crypto analytics, AI-powered trading bots, and real-time quant signals — all in one platform.
+          </p>
+          <p className="mt-1 text-xs text-[#6B6F76]">Prices in USDT. Cancel anytime.</p>
         </section>
 
         {/* Tier cards */}
@@ -280,20 +310,21 @@ export default function PricingPage() {
             const isCurrentTier = currentTierPrefix === tier.planIdPrefix;
             const tierSelected = selection?.tierName === tier.name;
             const activePeriod = tierSelected ? selection.period : undefined;
+            // Find features of the selected tier to compare
+            const selectedTierIdx = selection ? TIERS.findIndex((t) => t.name === selection.tierName) : -1;
+            const thisTierIdx = TIERS.findIndex((t) => t.name === tier.name);
+            const selectedTierFeatures = selection ? TIERS.find((t) => t.name === selection.tierName)?.features ?? [] : [];
+            // Only glow on HIGHER tiers (not lower)
+            const anotherTierSelected = selection !== null && selection.tierName !== tier.name && thisTierIdx > selectedTierIdx;
 
             return (
               <article
                 key={tier.name}
-                className={`relative flex flex-col rounded-xl border bg-[#121316] p-5 ${tierBorder(tier.highlight, isCurrentTier)}`}
+                className={`relative flex flex-col rounded-xl border bg-[#121316] p-5 ${tierBorder(tier.highlight)}`}
               >
                 {/* Badges */}
-                {isCurrentTier ? (
-                  <span className="absolute left-3 top-0 -translate-y-1/2 rounded-md bg-[#4caf50] px-2.5 py-0.5 text-[10px] font-bold uppercase text-white">
-                    Your Plan
-                  </span>
-                ) : null}
                 {tier.badge ? (
-                  <span className={`absolute ${isCurrentTier ? "right-3" : "right-3"} top-0 -translate-y-1/2 rounded-md bg-[#F5C542] px-2.5 py-0.5 text-[10px] font-bold uppercase text-black`}>
+                  <span className="absolute right-3 top-0 -translate-y-1/2 rounded-md bg-[#F5C542] px-2.5 py-0.5 text-[10px] font-bold uppercase text-black">
                     {tier.badge}
                   </span>
                 ) : null}
@@ -304,13 +335,19 @@ export default function PricingPage() {
                 {/* Features */}
                 <ul className="mt-4 flex-1 space-y-2 text-sm">
                   {tier.features.map((f) => {
-                    const isHighlight = f.includes("AI Trader") || f.includes("Exchange Accounts");
+                    const isPremiumFeature = f.includes("AI Trader") || f.includes("Exchange Accounts") || f === "AI Trade Ideas";
+                    // When another (lower) tier is selected: this is a higher tier → show glow on unique features
+                    const isUniqueAdvantage = anotherTierSelected && isPremiumFeature && !selectedTierFeatures.includes(f);
+                    // When a higher tier is selected: this is a lower tier → demote premium styling
+                    const isDemoted = selection !== null && !tierSelected && thisTierIdx < selectedTierIdx && isPremiumFeature;
+                    // Show highlight only if not demoted
+                    const showHighlight = isPremiumFeature && !isDemoted;
                     return (
-                      <li key={f} className="flex items-start gap-2">
-                        <span className={`mt-0.5 text-xs ${isHighlight ? "text-[#F5C542]" : "text-[#4caf50]"}`}>
-                          {isHighlight ? "\u2605" : "\u2713"}
+                      <li key={f} className={`flex items-start gap-2 ${isUniqueAdvantage ? "animate-[glow_2s_ease-in-out_infinite]" : ""}`}>
+                        <span className={`mt-0.5 text-xs ${showHighlight ? "text-[#F5C542]" : "text-[#4caf50]"}`}>
+                          {showHighlight ? "\u2605" : "\u2713"}
                         </span>
-                        <span className={isHighlight ? "font-semibold text-white" : ""}>{f}</span>
+                        <span className={showHighlight ? "font-bold text-white" : ""}>{f}</span>
                       </li>
                     );
                   })}
@@ -321,7 +358,7 @@ export default function PricingPage() {
                   {BILLING_OPTIONS.map(({ key, label }) => {
                     const p = tier.pricing[key];
                     const isSelected = activePeriod === key;
-                    const isCurrentPlan = isCurrentTier && currentPeriod === key;
+                    const isCurrentPlan = false;
                     const isMonthly = key === "1m";
                     return (
                       <button
@@ -353,11 +390,11 @@ export default function PricingPage() {
                         </div>
                         <div className="text-right">
                           {isMonthly ? (
-                            <span className={`font-bold ${isCurrentPlan ? "text-[#4caf50]" : isSelected ? "text-[#F5C542]" : "text-white"}`}>${p.total}</span>
+                            <span className={`font-bold ${isCurrentPlan ? "text-[#4caf50]" : isSelected ? "text-[#F5C542]" : "text-white"}`}>{p.total} USDT</span>
                           ) : (
                             <div className="flex items-baseline gap-1.5">
-                              <span className={`font-bold ${isCurrentPlan ? "text-[#4caf50]" : isSelected ? "text-[#F5C542]" : "text-white"}`}>${p.total}</span>
-                              <span className="text-[11px] text-[#6B6F76]">(${p.monthly}/mo)</span>
+                              <span className={`font-bold ${isCurrentPlan ? "text-[#4caf50]" : isSelected ? "text-[#F5C542]" : "text-white"}`}>{p.total} USDT</span>
+                              <span className="text-[11px] text-[#6B6F76]">({p.monthly} USDT/mo)</span>
                             </div>
                           )}
                         </div>
@@ -371,23 +408,19 @@ export default function PricingPage() {
                   type="button"
                   onClick={() => void handleSubscribe(tier)}
                   disabled={!tierSelected || busyTier === tier.name}
-                  className={`mt-4 w-full rounded-lg px-4 py-2.5 text-sm font-semibold transition ${
+                  className={`group mt-4 w-full rounded-lg px-4 py-2.5 text-sm font-semibold transition-all duration-300 ${
                     !tierSelected
                       ? "cursor-not-allowed border border-white/10 bg-[#17191d] text-[#6B6F76]"
                       : tier.highlight
-                        ? "bg-[#F5C542] text-black hover:bg-[#e5b632]"
-                        : "border border-[#7a6840] bg-[#2b2417] text-[#F5C542] hover:bg-[#3a3020]"
-                  } disabled:opacity-50`}
+                        ? "bg-[#F5C542] text-black hover:bg-[#e5b632] hover:shadow-[0_0_24px_rgba(245,197,66,0.4)] hover:scale-[1.02] active:scale-[0.97] active:shadow-[0_0_32px_rgba(245,197,66,0.6)]"
+                        : "border border-[#7a6840] bg-[#2b2417] text-[#F5C542] hover:bg-[#3a3020] hover:shadow-[0_0_20px_rgba(245,197,66,0.2)] hover:scale-[1.02] active:scale-[0.97] active:shadow-[0_0_28px_rgba(245,197,66,0.4)]"
+                  } disabled:opacity-50 disabled:hover:scale-100 disabled:hover:shadow-none`}
                 >
                   {busyTier === tier.name
                     ? "Creating invoice..."
                     : !tierSelected
                       ? "Select a plan"
-                      : hasMembership
-                        ? isCurrentTier
-                          ? "Extend Subscription"
-                          : "Upgrade Subscription"
-                        : "Subscribe Now"}
+                      : "Subscribe Now"}
                 </button>
               </article>
             );
@@ -405,14 +438,30 @@ export default function PricingPage() {
           <p className="mb-2 text-center text-xs font-semibold uppercase tracking-wider text-[#6B6F76]">Have a referral code?</p>
           <div className="grid gap-2.5 md:grid-cols-[1fr_180px]">
             <input
+              id="referral-input"
               type="text"
               placeholder="Enter referral code"
+              value={referralCode}
+              onChange={(e) => setReferralCode(e.target.value.toUpperCase())}
               className="rounded-lg border border-white/15 bg-[#0F1012] px-3 py-2 text-sm text-white outline-none placeholder:text-[#6B6F76] focus:border-[#F5C542]/50"
             />
-            <button type="button" className="rounded-lg bg-[#F5C542] px-3 py-2 text-sm font-semibold text-black hover:bg-[#e5b632]">Redeem Code</button>
+            <button
+              type="button"
+              disabled={!referralCode.trim() || referralLoading}
+              onClick={handleRedeem}
+              className="rounded-lg bg-[#F5C542] px-3 py-2 text-sm font-semibold text-black hover:bg-[#e5b632] disabled:opacity-50"
+            >
+              {referralLoading ? "Redeeming..." : "Redeem Code"}
+            </button>
           </div>
+          {referralMsg && (
+            <p className={`mt-2 text-center text-xs ${referralMsgType === "success" ? "text-[#4caf50]" : "text-[#d6b3af]"}`}>
+              {referralMsg}
+            </p>
+          )}
         </section>
       </div>
     </main>
+    </>
   );
 }

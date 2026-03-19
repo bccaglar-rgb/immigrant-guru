@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { CoinIcon } from "../components/CoinIcon";
 import { MarketDataRouter } from "../data/MarketDataRouter";
 import { useMarketListStore } from "../hooks/useMarketListStore";
+import { fetchCoinUniverseStats, type CoinUniverseStats } from "../services/coinUniverseApi";
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
@@ -520,6 +521,82 @@ function CooldownRow({ c }: { c: UniverseCoinRow }) {
 }
 
 /* ------------------------------------------------------------------ */
+/*  Engine Stats Panel (from /api/coin-universe/stats)                 */
+/* ------------------------------------------------------------------ */
+
+function EngineStatsPanel() {
+  const [data, setData] = useState<CoinUniverseStats | null>(null);
+  const [collapsed, setCollapsed] = useState(true);
+
+  useEffect(() => {
+    let mounted = true;
+    const load = async () => {
+      try {
+        const res = await fetchCoinUniverseStats();
+        if (mounted) setData(res);
+      } catch { /* best effort */ }
+    };
+    void load();
+    const timer = setInterval(load, 30_000);
+    return () => { mounted = false; clearInterval(timer); };
+  }, []);
+
+  if (!data) return null;
+
+  const { health, scoreDistribution: sd, stats, telemetry } = data;
+  const modeColor = health.mode === "full" ? "text-[#4ade80]" : "text-[#F5C542]";
+  const modeBg = health.mode === "full" ? "bg-[#0d2818] border-[#4ade80]/30" : "bg-[#2a2418] border-[#F5C542]/30";
+  const dq = typeof health.dataQuality === "number" ? (health.dataQuality * 100).toFixed(0) : "—";
+
+  return (
+    <section className="rounded-2xl border border-white/10 bg-[#121316] p-4">
+      <button type="button" onClick={() => setCollapsed((p) => !p)} className="flex w-full items-center justify-between">
+        <h2 className="text-sm font-semibold text-white">Engine Telemetry</h2>
+        <span className="text-xs text-[#6B6F76]">{collapsed ? "Show" : "Hide"}</span>
+      </button>
+      {!collapsed && (
+        <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <div className={`rounded-lg border ${modeBg} px-3 py-2`}>
+            <span className="text-[10px] uppercase tracking-wider text-[#6B6F76]">Engine Mode</span>
+            <p className={`text-lg font-bold ${modeColor}`}>{health.mode.toUpperCase()}</p>
+            <p className="text-[11px] text-[#6B6F76]">Klines: {health.klinesSource} &middot; Quality: {dq}%</p>
+          </div>
+          <div className="rounded-lg border border-white/10 bg-[#0F1012] px-3 py-2">
+            <span className="text-[10px] uppercase tracking-wider text-[#6B6F76]">Pipeline</span>
+            <div className="mt-1 space-y-0.5 text-[11px]">
+              <div className="flex justify-between"><span>Scanned</span><span className="text-white font-medium">{stats.totalScanned}</span></div>
+              <div className="flex justify-between"><span>Hard Filtered</span><span className="text-[#fb7185] font-medium">{stats.hardFiltered}</span></div>
+              <div className="flex justify-between"><span>Scored</span><span className="text-white font-medium">{stats.scored}</span></div>
+              <div className="flex justify-between"><span>Selected</span><span className="text-[#4ade80] font-medium">{stats.selected}</span></div>
+            </div>
+          </div>
+          <div className="rounded-lg border border-white/10 bg-[#0F1012] px-3 py-2">
+            <span className="text-[10px] uppercase tracking-wider text-[#6B6F76]">Score Distribution</span>
+            <div className="mt-1 space-y-0.5 text-[11px]">
+              <div className="flex justify-between"><span className="text-[#4ade80]">Elite (80+)</span><span className="text-white font-medium">{sd.elite}</span></div>
+              <div className="flex justify-between"><span className="text-[#34d399]">Strong (60-79)</span><span className="text-white font-medium">{sd.strong}</span></div>
+              <div className="flex justify-between"><span className="text-[#F5C542]">Watchlist (40-59)</span><span className="text-white font-medium">{sd.watchlist}</span></div>
+              <div className="flex justify-between"><span className="text-[#6B6F76]">Below (&lt;40)</span><span className="text-white font-medium">{sd.below}</span></div>
+            </div>
+          </div>
+          <div className="rounded-lg border border-white/10 bg-[#0F1012] px-3 py-2">
+            <span className="text-[10px] uppercase tracking-wider text-[#6B6F76]">Round Info</span>
+            <div className="mt-1 space-y-0.5 text-[11px]">
+              <div className="flex justify-between"><span>Round</span><span className="text-white font-medium">{data.round}</span></div>
+              <div className="flex justify-between"><span>Total Coins</span><span className="text-white font-medium">{sd.total}</span></div>
+              <div className="flex justify-between"><span>Refreshed</span><span className="text-white font-medium">{new Date(data.refreshedAt).toLocaleTimeString()}</span></div>
+              {telemetry && typeof telemetry === "object" && Object.keys(telemetry).length > 0 && (
+                <div className="flex justify-between"><span>Telemetry keys</span><span className="text-white font-medium">{Object.keys(telemetry).length}</span></div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+    </section>
+  );
+}
+
+/* ------------------------------------------------------------------ */
 /*  Stats Bar                                                          */
 /* ------------------------------------------------------------------ */
 
@@ -635,6 +712,9 @@ export default function CoinUniversePage() {
             />
           </div>
         </section>
+
+        {/* Engine Telemetry Panel */}
+        <EngineStatsPanel />
 
         {/* Error */}
         {error ? (

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { NavLink, useLocation } from "react-router-dom";
+import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { readAdminConfigFromStorage, ADMIN_CONFIG_STORAGE_KEY } from "../hooks/useAdminConfig";
 import { useAuthStore } from "../hooks/useAuthStore";
 import { NavItem } from "./NavItem";
@@ -140,6 +140,20 @@ const toolsSubItems = [
 ] as const;
 
 const adminItem = { label: "Admin", to: "/admin", accent: "var(--menu-accent-14)", icon: () => <AdminIcon /> };
+const adminSubItems = [
+  { label: "Members", to: "/admin/members", accent: "#4ade80", icon: () => <Icon><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M22 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></Icon> },
+  { label: "Admin Users", to: "/admin/users", accent: "#f97316", icon: () => <Icon><path d="M12 3l3 2 4-1 1 4 3 3-3 3-1 4-4-1-3 2-3-2-4 1-1-4-3-3 3-3 1-4 4 1z" /><circle cx="12" cy="12" r="2.5" /></Icon> },
+  { label: "Referral Codes", to: "/admin/referrals", accent: "#F5C542", icon: () => <Icon><path d="M4 7V4h16v3" /><path d="M9 20h6" /><path d="M12 4v16" /></Icon> },
+  { label: "Exchange Manager", to: "/admin/exchanges", accent: "#66b3ff", icon: () => <Icon><path d="M4 4h16v16H4z" /><path d="M4 9h16" /><path d="M9 4v16" /></Icon> },
+  { label: "Trade Ideas", to: "/admin/trade-ideas", accent: "#2bc48a", icon: () => <Icon><path d="M4 18l4-6 4 3 8-10" /></Icon> },
+  { label: "Branding", to: "/admin/branding", accent: "#9f8bff", icon: () => <Icon><rect x="3" y="3" width="18" height="18" rx="2" /><circle cx="8.5" cy="8.5" r="1.5" /><path d="M21 15l-5-5L5 21" /></Icon> },
+  { label: "Payment Review", to: "/admin/payments", accent: "#ef4444", icon: () => <Icon><path d="M2 7h20" /><rect x="2" y="4" width="20" height="16" rx="2" /><path d="M2 12h20" /></Icon> },
+  { label: "Logs", to: "/admin/logs", accent: "#a8dadc", icon: () => <Icon><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><path d="M14 2v6h6" /><path d="M16 13H8" /><path d="M16 17H8" /><path d="M10 9H8" /></Icon> },
+  { label: "Bug Reports", to: "/admin/bug-reports", accent: "#f4a460", icon: () => <Icon><path d="M8 2l1.88 1.88" /><path d="M14.12 3.88L16 2" /><path d="M9 7.13v-1a3 3 0 1 1 6 0v1" /><path d="M12 20c-3.3 0-6-2.7-6-6v-3a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v3c0 3.3-2.7 6-6 6" /></Icon> },
+  { label: "Optimizer", to: "/optimizer", accent: "#66b3ff", icon: () => <Icon><path d="M4 14l4-8 4 4 4-6 4 10" /><path d="M4 18h16" /></Icon> },
+  { label: "System Monitor", to: "/system-monitor", accent: "#4ade80", icon: () => <Icon><circle cx="12" cy="12" r="9" /><path d="M12 8v4l3 3" /></Icon> },
+  { label: "ML Explorer", to: "/ml-explorer", accent: "#a78bfa", icon: () => <Icon><rect x="4" y="4" width="16" height="16" rx="2" /><path d="M8 12h8" /><path d="M12 8v8" /></Icon> },
+];
 const settingsItem = { label: "Settings", to: "/settings", accent: "var(--menu-accent-7)", icon: () => <SettingsIcon /> };
 
 export const Sidebar = ({
@@ -152,6 +166,7 @@ export const Sidebar = ({
   onToggleMode,
 }: Props) => {
   const location = useLocation();
+  const navigate = useNavigate();
   const authUser = useAuthStore((s) => s.user);
   const isAdmin = authUser?.role === "ADMIN";
   const isAuthenticated = authUser !== null;
@@ -238,32 +253,93 @@ export const Sidebar = ({
   const collapsed = !showText;
   const displayLogo = collapsed ? branding.emblemDataUrl ?? branding.logoDataUrl : branding.logoDataUrl ?? branding.emblemDataUrl;
 
+  const [adminMenuOpen, setAdminMenuOpen] = useState(false);
+  const adminMenuRef = useRef<HTMLDivElement | null>(null);
+  const adminCloseTimerRef = useRef<number | null>(null);
+  const openAdminMenu = () => { if (adminCloseTimerRef.current) { window.clearTimeout(adminCloseTimerRef.current); adminCloseTimerRef.current = null; } setAdminMenuOpen(true); };
+  const closeAdminMenuWithDelay = () => { adminCloseTimerRef.current = window.setTimeout(() => setAdminMenuOpen(false), 200); };
+  const adminActive = location.pathname.startsWith("/admin") || location.pathname.startsWith("/optimizer") || location.pathname.startsWith("/system-monitor") || location.pathname.startsWith("/ml-explorer");
+  const allAdminSubItems = [adminItem, ...adminSubItems];
+
+  // Close admin menu on outside click
+  useEffect(() => {
+    const onDocClick = (e: MouseEvent) => {
+      if (adminMenuRef.current && !adminMenuRef.current.contains(e.target as Node)) setAdminMenuOpen(false);
+    };
+    document.addEventListener("mousedown", onDocClick);
+    return () => document.removeEventListener("mousedown", onDocClick);
+  }, []);
+
   const versionBlock = useMemo(
     () => (
       <div className={`mt-auto border-t border-[var(--borderSoft)] pt-2 ${showText ? "px-2" : "px-0"}`}>
-        {isAuthenticated ? (
-          <NavItem
-            to={settingsItem.to}
-            label={settingsItem.label}
-            accent={settingsItem.accent}
-            icon={settingsItem.icon}
-            expanded={showText}
-            onNavigate={onNavigate}
-          />
-        ) : null}
+        <NavItem
+          to={settingsItem.to}
+          label={settingsItem.label}
+          accent={settingsItem.accent}
+          icon={settingsItem.icon}
+          expanded={showText}
+          onNavigate={onNavigate}
+        />
         {isAdmin ? (
-          <NavItem
-            to={adminItem.to}
-            label={adminItem.label}
-            accent={adminItem.accent}
-            icon={adminItem.icon}
-            expanded={showText}
-            onNavigate={onNavigate}
-          />
+          <div ref={adminMenuRef} className="relative" onMouseEnter={openAdminMenu} onMouseLeave={closeAdminMenuWithDelay}>
+            <button
+              type="button"
+              title="Admin"
+              onClick={openAdminMenu}
+              className="group block w-full"
+            >
+              <span
+                className={`relative flex w-full items-center rounded-lg border border-transparent px-2 py-2 text-sm transition-all hover:border-[var(--borderSoft)] hover:bg-[var(--panelAlt)] ${
+                  adminActive ? "bg-[var(--panelAlt3)] text-white" : "text-[var(--textMuted)]"
+                }`}
+                style={{ boxShadow: adminActive ? `inset 2px 0 0 0 ${adminItem.accent}` : undefined }}
+              >
+                <span
+                  className={`inline-grid h-8 w-8 place-items-center transition-all duration-[180ms] ease-[cubic-bezier(0.215,0.61,0.355,1)] ${showText ? "mr-2" : "mx-auto"}`}
+                  style={{ color: adminItem.accent }}
+                >
+                  {(adminItem.icon as any)(adminActive)}
+                </span>
+                <span className={`truncate transition-all duration-[180ms] ease-[cubic-bezier(0.215,0.61,0.355,1)] ${showText ? "translate-x-0 opacity-100" : "w-0 -translate-x-1 opacity-0"}`}>
+                  Admin
+                </span>
+              </span>
+            </button>
+
+            <div
+              className={`absolute left-full bottom-0 z-[120] ml-2 w-56 rounded-xl border border-[var(--borderSoft)] bg-[var(--panel)] p-2 shadow-2xl transition-all duration-180 ${
+                adminMenuOpen ? "pointer-events-auto translate-x-0 opacity-100" : "pointer-events-none -translate-x-1 opacity-0"
+              }`}
+              role="menu"
+              aria-label="Admin submenu"
+            >
+              {allAdminSubItems.map((sub) => (
+                  <NavLink
+                    key={sub.to}
+                    to={sub.to}
+                    onClick={() => { setAdminMenuOpen(false); onNavigate?.(); }}
+                    className={({ isActive }) =>
+                      `block rounded-md border px-2 py-1.5 text-sm transition-colors ${
+                        isActive
+                          ? "border-[var(--borderSoft)] bg-[var(--panelAlt3)] text-white"
+                          : "border-transparent text-[var(--textMuted)] hover:border-[var(--borderSoft)] hover:bg-[var(--panelAlt)]"
+                      }`
+                    }
+                    role="menuitem"
+                  >
+                    <span className="flex items-center gap-2">
+                      <span style={{ color: sub.accent }}>{typeof sub.icon === "function" ? (sub.icon as any)(false) : sub.icon}</span>
+                      <span>{sub.label}</span>
+                    </span>
+                  </NavLink>
+              ))}
+            </div>
+          </div>
         ) : null}
       </div>
     ),
-    [onNavigate, showText, isAdmin, isAuthenticated],
+    [onNavigate, showText, isAdmin, isAuthenticated, adminMenuOpen, adminActive],
   );
 
   useEffect(() => {
@@ -337,7 +413,7 @@ export const Sidebar = ({
       />
 
       <nav className="space-y-1">
-        {topMenu.filter((item) => isAuthenticated || publicPaths.has(item.to)).map((item) => (
+        {topMenu.filter(() => true).map((item) => (
           <NavItem
             key={item.label}
             to={item.to}
@@ -349,7 +425,7 @@ export const Sidebar = ({
           />
         ))}
 
-        {isAuthenticated ? <div
+        {true ? <div
           ref={aiTraderRef}
           className="relative"
           onMouseEnter={openAiTrader}
@@ -358,24 +434,8 @@ export const Sidebar = ({
           <button
             type="button"
             title={aiTraderItem.label}
-            onClick={openAiTrader}
-            onKeyDown={(event) => {
-              if (event.key === "Enter" || event.key === " ") {
-                event.preventDefault();
-                setAiTraderOpen((v) => !v);
-              }
-              if (event.key === "ArrowRight") {
-                event.preventDefault();
-                setAiTraderOpen(true);
-              }
-              if (event.key === "Escape") {
-                event.preventDefault();
-                setAiTraderOpen(false);
-              }
-            }}
+            onClick={() => { navigate("/ai-trader/strategy"); onNavigate?.(); }}
             className="group block w-full"
-            aria-haspopup="menu"
-            aria-expanded={aiTraderOpen}
           >
             <span
               className={`relative flex w-full items-center rounded-lg border border-transparent px-2 py-2 text-sm transition-all hover:border-[var(--borderSoft)] hover:bg-[var(--panelAlt)] ${
@@ -386,7 +446,7 @@ export const Sidebar = ({
               }}
             >
               <span
-                className={`inline-grid h-7 w-7 place-items-center transition-all duration-[180ms] ease-[cubic-bezier(0.215,0.61,0.355,1)] ${showText ? "mr-2" : "mx-auto"}`}
+                className={`inline-grid h-8 w-8 place-items-center transition-all duration-[180ms] ease-[cubic-bezier(0.215,0.61,0.355,1)] ${showText ? "mr-2" : "mx-auto"}`}
                 style={{ color: aiTraderItem.accent }}
               >
                 {aiTraderItem.icon}
@@ -397,40 +457,10 @@ export const Sidebar = ({
             </span>
           </button>
 
-          <div
-            className={`absolute left-full top-1/2 z-[120] ml-2 w-56 -translate-y-1/2 rounded-xl border border-[var(--borderSoft)] bg-[var(--panel)] p-2 shadow-2xl transition-all duration-180 ${
-              aiTraderOpen ? "pointer-events-auto translate-x-0 opacity-100" : "pointer-events-none -translate-x-1 opacity-0"
-            }`}
-            role="menu"
-            aria-label="AI Trader submenu"
-          >
-            {aiTraderSubItems.map((sub) => (
-              <NavLink
-                key={sub.to}
-                to={sub.to}
-                onClick={() => {
-                  setAiTraderOpen(false);
-                  onNavigate?.();
-                }}
-                className={({ isActive }) =>
-                  `block rounded-md border px-2 py-1.5 text-sm transition-colors ${
-                    isActive
-                      ? "border-[var(--borderSoft)] bg-[var(--panelAlt3)] text-white"
-                      : "border-transparent text-[var(--textMuted)] hover:border-[var(--borderSoft)] hover:bg-[var(--panelAlt)]"
-                  }`
-                }
-                role="menuitem"
-              >
-                <span className="flex items-center gap-2">
-                  <span style={{ color: sub.accent }}>{sub.icon}</span>
-                  <span>{sub.label}</span>
-                </span>
-              </NavLink>
-            ))}
-          </div>
+          {/* Submenu removed — AI Trader navigates directly to /ai-trader/strategy */}
         </div> : null}
 
-        {midMenu.filter((item) => isAuthenticated || publicPaths.has(item.to)).map((item) => (
+        {midMenu.filter(() => true).map((item) => (
           <NavItem
             key={item.label}
             to={item.to}
@@ -442,7 +472,8 @@ export const Sidebar = ({
           />
         ))}
 
-        {isAuthenticated ? <div
+        {/* Tools menu hidden — will re-enable later */}
+        {false && isAuthenticated ? <div
           ref={toolsRef}
           className="relative"
           onMouseEnter={openTools}
@@ -465,7 +496,7 @@ export const Sidebar = ({
               }}
             >
               <span
-                className={`inline-grid h-7 w-7 place-items-center transition-all duration-[180ms] ease-[cubic-bezier(0.215,0.61,0.355,1)] ${showText ? "mr-2" : "mx-auto"}`}
+                className={`inline-grid h-8 w-8 place-items-center transition-all duration-[180ms] ease-[cubic-bezier(0.215,0.61,0.355,1)] ${showText ? "mr-2" : "mx-auto"}`}
                 style={{ color: toolsItem.accent }}
               >
                 {toolsItem.icon}
@@ -509,7 +540,7 @@ export const Sidebar = ({
           </div>
         </div> : null}
 
-        {bottomMenu.filter((item) => isAuthenticated || publicPaths.has(item.to)).map((item) => (
+        {bottomMenu.filter(() => true).map((item) => (
           <NavItem
             key={item.label}
             to={item.to}

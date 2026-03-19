@@ -1,4 +1,5 @@
 import type { ProviderConfig } from "../types";
+import { getAuthToken } from "./authClient";
 
 export interface AdminProvidersFallbackPolicy {
   defaultExchange: "Binance" | "Bybit" | "OKX" | "Gate.io" | null;
@@ -26,9 +27,15 @@ const parseError = async (res: Response): Promise<string> => {
   }
 };
 
+const authHeaders = (): Record<string, string> => {
+  const token = getAuthToken();
+  return token ? { Authorization: `Bearer ${token}` } : {};
+};
+
 export const fetchAdminProvidersConfig = async (): Promise<AdminProvidersConfigResponse> => {
   const res = await fetch("/api/admin/providers/config", {
     method: "GET",
+    headers: { ...authHeaders() },
   });
   if (!res.ok) {
     throw new Error(await parseError(res));
@@ -41,6 +48,7 @@ export const saveAdminProvidersConfig = async (providers: ProviderConfig[]): Pro
     method: "PUT",
     headers: {
       "content-type": "application/json",
+      ...authHeaders(),
     },
     body: JSON.stringify({ providers }),
   });
@@ -58,6 +66,7 @@ export const saveAdminBrandingConfig = async (branding: {
     method: "PUT",
     headers: {
       "content-type": "application/json",
+      ...authHeaders(),
     },
     body: JSON.stringify({ branding }),
   });

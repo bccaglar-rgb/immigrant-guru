@@ -11,8 +11,8 @@ interface Props {
   onLogoNavigate?: () => void;
 }
 
-const EXPANDED_LOGO_SCALE = 1.39 * 0.83;
-const COLLAPSED_LOGO_SCALE = 1.06 * 0.83 * 1.4;
+const EXPANDED_LOGO_SCALE = 1.39 * 0.83 * 0.85;
+const COLLAPSED_LOGO_SCALE = 1.06 * 0.83 * 1.4 * 0.88;
 
 export const SidebarHeader = ({
   logoUrl,

@@ -30,7 +30,7 @@ const requireAdmin = async (auth: AuthService, req: Request, res: Response) => {
   return ctx;
 };
 
-export const registerPaymentsRoutes = (app: Express, auth: AuthService, payments: PaymentService) => {
+export const registerPaymentsRoutes = (app: Express, auth: AuthService, payments: PaymentService, addressPool?: any) => {
   app.get("/api/payments/plans", async (_req, res) => {
     res.json({ ok: true, plans: await payments.listPlans() });
   });
@@ -187,5 +187,43 @@ export const registerPaymentsRoutes = (app: Express, auth: AuthService, payments
       totals,
       members: rows.sort((a, b) => b.totalPaidUsdt - a.totalPaidUsdt),
     });
+  });
+
+  // ── Address Pool Status ──
+  app.get("/api/payments/address-pool-status", async (req, res) => {
+    const ctx = await requireAdmin(auth, req, res);
+    if (!ctx) return;
+    try {
+      const pool = addressPool ? await addressPool.getPoolStatus() : {};
+      return res.json({ ok: true, pool });
+    } catch {
+      return res.json({ ok: true, pool: {} });
+    }
+  });
+
+  // ── All Invoices (admin) ──
+  app.get("/api/payments/invoices", async (req, res) => {
+    const ctx = await requireAdmin(auth, req, res);
+    if (!ctx) return;
+    return res.json({ ok: true, invoices: await payments.listInvoices() });
+  });
+
+  // ── Admin Mark Paid ──
+  app.post("/api/admin/payments/mark-paid", async (req, res) => {
+    const ctx = await requireAdmin(auth, req, res);
+    if (!ctx) return;
+    try {
+      const { invoiceId, txHash, amountUsdt, reason } = req.body ?? {};
+      const invoice = await payments.manualMarkPaid(
+        String(invoiceId ?? ""),
+        String(txHash ?? "admin-manual"),
+        Number(amountUsdt ?? 0),
+        String(reason ?? "admin_manual"),
+        ctx.user.id,
+      );
+      return res.json({ ok: true, invoice });
+    } catch (err: any) {
+      return res.status(400).json({ ok: false, error: err?.message ?? "mark_paid_failed" });
+    }
   });
 };

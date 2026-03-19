@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Outlet, useLocation } from "react-router-dom";
+import { BugReportModal } from "./BugReportModal";
 import { useSidebarStore } from "../hooks/SidebarStore";
 import { applyStoredTheme } from "../theme/siteTheme";
 import { Sidebar } from "./Sidebar";
@@ -27,6 +28,9 @@ const titleForPath = (path: string) => {
   if (path.startsWith("/token-creator")) return "Token Creator";
   if (path.startsWith("/pricing")) return "Pricing";
   if (path.startsWith("/settings")) return "Settings";
+  if (path.startsWith("/optimizer")) return "Optimizer Evolution";
+  if (path.startsWith("/system-monitor")) return "System Monitor";
+  if (path.startsWith("/ml-explorer")) return "ML Data Explorer";
   if (path === "/") return "Bitrium";
   return "Bitrium Quant Engine";
 };
@@ -72,6 +76,7 @@ export const AppShell = () => {
         <TopBar title={title} onMenuClick={() => setMobileOpen(true)} />
         <Outlet />
       </div>
+      <BugReportModal />
 
       {mobileOpen ? (
         <div className="fixed inset-0 z-30 md:hidden">

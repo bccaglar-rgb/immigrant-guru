@@ -1,11 +1,12 @@
 const TOKEN_KEY = "bitrium.auth.token";
-const LEGACY_TOKEN_KEY = "bitrium.auth.token";
+const LEGACY_TOKEN_KEY = "bitrium_token";
 
 export interface AuthUser {
   id: string;
   email: string;
   role: "USER" | "ADMIN";
   twoFactorEnabled: boolean;
+  hasActivePlan: boolean;
 }
 
 export const getAuthToken = () => window.localStorage.getItem(TOKEN_KEY) ?? window.localStorage.getItem(LEGACY_TOKEN_KEY) ?? "";
@@ -58,4 +59,16 @@ export const confirmPasswordReset = (token: string, newPassword: string) =>
   req<{ ok: true }>("/api/auth/password-reset/confirm", {
     method: "POST",
     body: JSON.stringify({ token, newPassword }),
+  });
+
+// ── 2FA Setup ──
+export const setup2FA = () =>
+  req<{ ok: true; secret: string; otpauthUrl: string }>("/api/auth/2fa/setup", {
+    method: "POST",
+  });
+
+export const enable2FA = (token: string) =>
+  req<{ ok: true }>("/api/auth/2fa/enable", {
+    method: "POST",
+    body: JSON.stringify({ token }),
   });

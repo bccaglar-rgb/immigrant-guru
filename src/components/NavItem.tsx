@@ -22,7 +22,7 @@ export const NavItem = ({ to, label, icon, accent, expanded, onNavigate }: Props
         }}
       >
         <span
-          className={`inline-grid h-7 w-7 place-items-center transition-all duration-[180ms] ease-[cubic-bezier(0.215,0.61,0.355,1)] ${expanded ? "mr-2" : "mx-auto"} ${
+          className={`inline-grid h-8 w-8 place-items-center transition-all duration-[180ms] ease-[cubic-bezier(0.215,0.61,0.355,1)] ${expanded ? "mr-2" : "mx-auto"} ${
             isActive ? "opacity-100" : "opacity-90"
           }`}
           style={{ color: accent }}

@@ -319,7 +319,7 @@ export class PaymentStore {
 
   async listPendingInvoices(): Promise<InvoiceRecord[]> {
     const { rows } = await pool.query(
-      "SELECT * FROM invoices WHERE status IN ('awaiting_payment','partially_paid')",
+      "SELECT * FROM invoices WHERE status IN ('created','awaiting_payment','partially_paid','detected','confirming')",
     );
     return rows.map(rowToInvoice);
   }
@@ -347,7 +347,7 @@ export class PaymentStore {
   }
 
   async addProcessedEventKey(key: string): Promise<void> {
-    await pool.query("INSERT INTO processed_event_keys (event_key) VALUES ($1) ON CONFLICT DO NOTHING", [key]);
+    await pool.query("INSERT INTO processed_event_keys (event_key) VALUES ($1) ON CONFLICT (event_key) DO NOTHING", [key]);
   }
 
   /* ─────────────── Subscriptions ────────── */
