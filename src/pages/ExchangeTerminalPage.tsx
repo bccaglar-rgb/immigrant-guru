@@ -26,6 +26,9 @@ import { useDataSourceManager } from "../data/DataSourceManager";
 import { useDisplayPrice, useMarkPrice } from "../hooks/useLivePriceStore";
 import { usePrivateStream } from "../hooks/usePrivateStream";
 import { useAuthStore } from "../hooks/useAuthStore";
+import { ConnectApiModal, type ConnectApiPayload } from "../components/exchange/ConnectApiModal";
+import { authHeaders } from "../services/exchangeApi";
+import { writeExchangeAccounts } from "../hooks/useExchangeConfigs";
 
 const normalizeCandlesForChart = (
   rows: Array<{ time: number; open: number; high: number; low: number; close: number }> | undefined,
@@ -128,6 +131,48 @@ export default function ExchangeTerminalPage() {
   // UI reads ONLY from these selector hooks, never from raw backend objects.
   const displayPrice = useDisplayPrice(routerSymbol);
   const liveMarkPrice = useMarkPrice(routerSymbol);
+
+  // ── Exchange connect modal (inline — no navigate to settings) ──
+  const [connectModalOpen, setConnectModalOpen] = useState(false);
+  const handleConnectSave = async (payload: ConnectApiPayload): Promise<{ ok: boolean; error?: string }> => {
+    try {
+      const res = await fetch("/api/exchanges/connect", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...authHeaders() },
+        body: JSON.stringify({
+          exchangeId: payload.exchangeId,
+          credentials: { apiKey: payload.apiKey, apiSecret: payload.apiSecret, ...(payload.passphrase ? { passphrase: payload.passphrase } : {}) },
+          options: { accountName: payload.accountName, environment: payload.testnet ? "testnet" : "mainnet", marketType: "both", defaultLeverage: 5 },
+        }),
+      });
+      const body = await res.json();
+      if (!res.ok || !body.ok) return { ok: false, error: body.message ?? body.error ?? "Connection failed" };
+      // Refresh exchange list
+      const listRes = await fetch("/api/exchanges", { headers: { ...authHeaders() } });
+      const listBody = await listRes.json();
+      if (listBody.exchanges) {
+        writeExchangeAccounts(listBody.exchanges);
+        window.dispatchEvent(new Event("exchange-manager-updated"));
+      }
+      setConnectModalOpen(false);
+      return { ok: true };
+    } catch { return { ok: false, error: "Network error" }; }
+  };
+  const handleConnectTest = async (payload: { exchangeId: string; apiKey: string; apiSecret: string; passphrase?: string; testnet: boolean }): Promise<{ ok: boolean; error?: string }> => {
+    try {
+      const res = await fetch("/api/exchanges/connect", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...authHeaders() },
+        body: JSON.stringify({
+          exchangeId: payload.exchangeId,
+          credentials: { apiKey: payload.apiKey, apiSecret: payload.apiSecret, ...(payload.passphrase ? { passphrase: payload.passphrase } : {}) },
+          options: { accountName: "__test__", dryRun: true, environment: payload.testnet ? "testnet" : "mainnet" },
+        }),
+      });
+      const body = await res.json();
+      return body.ok ? { ok: true } : { ok: false, error: body.message ?? body.error ?? "Test failed" };
+    } catch { return { ok: false, error: "Network error" }; }
+  };
 
   const [chartBundle, setChartBundle] = useState<FallbackLivePayload | null>(null);
   const [strictBookBundle, setStrictBookBundle] = useState<FallbackLivePayload | null>(null);
@@ -638,6 +683,7 @@ export default function ExchangeTerminalPage() {
   }, [apiInterval, exchangeBlocked, exchangeHint, routerSymbol, setActiveSignal]);
 
   return (
+  <>
     <main className="h-screen overflow-hidden bg-[#0B0B0C] p-3 text-[#BFC2C7] md:p-4">
       <div className="mx-auto flex h-full max-w-[1850px] min-h-0 flex-col">
         <ExchangeTopBar />
@@ -675,7 +721,7 @@ export default function ExchangeTerminalPage() {
                             : null
                       }
                       tradingViewSymbol={!exchangeBlocked && !stableCandles.length && (liveError || noDataTimeout) ? tradingViewSymbol : null}
-                      onAddExchange={exchangeBlocked ? () => navigate("/settings#exchange-panel") : undefined}
+                      onAddExchange={exchangeBlocked ? () => setConnectModalOpen(true) : undefined}
                       indicatorsEnabledCount={indicators.enabledCount}
                       setMasterIndicators={indicators.setMaster}
                       setIndicatorGroup={indicators.setGroup}
@@ -727,7 +773,7 @@ export default function ExchangeTerminalPage() {
                       : null
                   }
                   tradingViewSymbol={!exchangeBlocked && !stableCandles.length && (liveError || noDataTimeout) ? tradingViewSymbol : null}
-                  onAddExchange={exchangeBlocked ? () => navigate("/settings#exchange-panel") : undefined}
+                  onAddExchange={exchangeBlocked ? () => setConnectModalOpen(true) : undefined}
                   indicatorsEnabledCount={indicators.enabledCount}
                   setMasterIndicators={indicators.setMaster}
                   setIndicatorGroup={indicators.setGroup}
@@ -752,5 +798,15 @@ export default function ExchangeTerminalPage() {
         )}
       </div>
     </main>
+
+    {connectModalOpen && (
+      <ConnectApiModal
+        open={connectModalOpen}
+        onClose={() => setConnectModalOpen(false)}
+        onSave={handleConnectSave}
+        onTest={handleConnectTest}
+      />
+    )}
+  </>
   );
 }
