@@ -379,8 +379,12 @@ bootstrap()
             win,
           }).catch(() => {});
         };
-        tradeIdeaTracker.start();
-        console.log(`[Worker ${WORKER_ID}] TradeIdeaTracker started + linked to Optimizer P2/P4`);
+        if (process.env.DISABLE_TRADE_IDEAS !== "true") {
+          tradeIdeaTracker.start();
+          console.log(`[Worker ${WORKER_ID}] TradeIdeaTracker started + linked to Optimizer P2/P4`);
+        } else {
+          console.log(`[Worker ${WORKER_ID}] TradeIdeaTracker DISABLED`);
+        }
 
         // Optimizer Evolution: P1-P10
         void modePerformanceTracker.loadFromRedis();
