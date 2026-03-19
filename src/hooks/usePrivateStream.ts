@@ -15,11 +15,12 @@ export function usePrivateStream(
   userId: string | null,
   exchangeAccountId: string | null,
   venue: string,
+  onReconnected?: () => void,
 ) {
   const mountedRef = useRef(true);
   const subRef = useRef<{ userId: string; accountId: string; venue: string } | null>(null);
 
-  const { applyOrderUpdate, applyPositionUpdate, applyBalanceUpdate, setPrivateStreamStatus } =
+  const { applyOrderUpdate, applyPositionUpdate, applyBalanceUpdate, setPrivateStreamStatus, pushActivity } =
     useExchangeTerminalStore();
 
   useEffect(() => {
@@ -41,22 +42,35 @@ export function usePrivateStream(
       onOrderUpdate: (event) => {
         if (!mountedRef.current) return;
         applyOrderUpdate(event);
+        const status = String(event.orderStatus ?? "");
+        const symbol = String(event.symbol ?? "");
+        const side = String(event.side ?? "");
+        pushActivity("order", `${symbol} ${side} ${status}`);
       },
       onPositionUpdate: (event) => {
         if (!mountedRef.current) return;
         applyPositionUpdate(event);
+        const symbol = String(event.symbol ?? "");
+        const size = Number(event.size ?? 0);
+        pushActivity("position", `${symbol} size=${size}`);
       },
       onBalanceUpdate: (event) => {
         if (!mountedRef.current) return;
         applyBalanceUpdate(event);
+        const asset = String(event.asset ?? "");
+        const balance = Number(event.walletBalance ?? 0);
+        pushActivity("balance", `${asset} ${balance.toFixed(2)}`);
       },
       onSubscribed: () => {
         if (!mountedRef.current) return;
         setPrivateStreamStatus("subscribed");
+        pushActivity("system", "Private stream connected");
+        onReconnected?.();
       },
       onError: () => {
         if (!mountedRef.current) return;
         setPrivateStreamStatus("error");
+        pushActivity("system", "Private stream error");
       },
     });
 
@@ -72,5 +86,5 @@ export function usePrivateStream(
       subRef.current = null;
       setPrivateStreamStatus("disconnected");
     };
-  }, [userId, exchangeAccountId, venue, applyOrderUpdate, applyPositionUpdate, applyBalanceUpdate, setPrivateStreamStatus]);
+  }, [userId, exchangeAccountId, venue, applyOrderUpdate, applyPositionUpdate, applyBalanceUpdate, setPrivateStreamStatus, pushActivity]);
 }

@@ -57,6 +57,8 @@ interface ExchangeTerminalState {
   setOrderbookLimit: (limit: number) => void;
   privateStreamStatus: "idle" | "subscribing" | "subscribed" | "error" | "disconnected";
   setPrivateStreamStatus: (status: ExchangeTerminalState["privateStreamStatus"]) => void;
+  activityLog: Array<{ ts: number; type: string; message: string }>;
+  pushActivity: (type: string, message: string) => void;
   applyOrderUpdate: (event: Record<string, unknown>) => void;
   applyPositionUpdate: (event: Record<string, unknown>) => void;
   applyBalanceUpdate: (event: Record<string, unknown>) => void;
@@ -184,6 +186,7 @@ export const useExchangeTerminalStore = create<ExchangeTerminalState>((set) => (
   orderbookStep: 0.1,
   orderbookLimit: 20,
   privateStreamStatus: "idle",
+  activityLog: [],
   setSelectedExchange: (exchange) => set({ selectedExchange: exchange }),
   setSelectedExchangeAccount: (accountName) => set({ selectedExchangeAccount: accountName }),
   setSelectedSymbol: (symbol) => set({ selectedSymbol: symbol }),
@@ -226,6 +229,9 @@ export const useExchangeTerminalStore = create<ExchangeTerminalState>((set) => (
   setOrderbookStep: (step) => set({ orderbookStep: Number.isFinite(step) && step > 0 ? step : 0.1 }),
   setOrderbookLimit: (limit) => set({ orderbookLimit: Math.max(10, Math.min(100, Math.round(limit))) }),
   setPrivateStreamStatus: (status) => set({ privateStreamStatus: status }),
+  pushActivity: (type, message) => set((state) => ({
+    activityLog: [{ ts: Date.now(), type, message }, ...state.activityLog].slice(0, 50),
+  })),
 
   // ═══════════════════════════════════════════════════════════════════
   // PIPELINE 8: Private stream granular updates

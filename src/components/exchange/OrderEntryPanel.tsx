@@ -1,7 +1,25 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useExchangeTerminalStore } from "../../hooks/useExchangeTerminalStore";
 import { BalancesSummary } from "./BalancesSummary";
 import { placeExchangeOrder } from "../../services/exchangeApi";
+
+// ── Precision helpers — prevents exchange rejects before request leaves client ──
+const roundToStep = (value: number, step: number): number => {
+  if (step <= 0 || !Number.isFinite(step)) return value;
+  return Math.floor(value / step) * step;
+};
+const roundToTick = (value: number, tick: number): number => {
+  if (tick <= 0 || !Number.isFinite(tick)) return value;
+  return Math.round(value / tick) * tick;
+};
+const countDecimals = (n: number): number => {
+  if (Number.isInteger(n)) return 0;
+  const s = String(n);
+  return s.includes(".") ? s.split(".")[1].length : 0;
+};
+
+// Sensible defaults when symbol info is unavailable
+const DEFAULT_SYMBOL_INFO = { stepSize: 0.001, tickSize: 0.01, minQty: 0.001, minNotional: 5, pricePrecision: 2, qtyPrecision: 3 };
 
 interface Props {
   showBalances?: boolean;
@@ -9,7 +27,7 @@ interface Props {
 }
 
 export const OrderEntryPanel = ({ showBalances = true, className = "" }: Props) => {
-  const { selectedSymbol, selectedExchange, accountMode, tickers } = useExchangeTerminalStore();
+  const { selectedSymbol, selectedExchange, accountMode, tickers, positions } = useExchangeTerminalStore();
   const isBitriumOnly = selectedExchange === "Bitrium Labs";
   const [orderType, setOrderType] = useState<"Limit" | "Market" | "Stop Limit">("Limit");
   const [openCloseMode, setOpenCloseMode] = useState<"Open" | "Close">("Open");
@@ -29,11 +47,38 @@ export const OrderEntryPanel = ({ showBalances = true, className = "" }: Props) 
   const [tpPrice, setTpPrice] = useState("");
   const [slPrice, setSlPrice] = useState("");
   const [submitInfo, setSubmitInfo] = useState<string>("");
+  const [submitting, setSubmitting] = useState(false);
+  const lastSubmitRef = useRef<string>("");
+
+  // ── Symbol precision info (loaded from backend cache) ──
+  const [symbolInfo, setSymbolInfo] = useState(DEFAULT_SYMBOL_INFO);
+  useEffect(() => {
+    const sym = selectedSymbol.replace("/", "");
+    const venue = selectedExchange.toLowerCase().includes("gate") ? "GATEIO"
+      : selectedExchange.toLowerCase().includes("bybit") ? "BYBIT"
+      : selectedExchange.toLowerCase().includes("okx") ? "OKX"
+      : "BINANCE";
+    // Try to load symbol info from backend cache
+    fetch(`/api/exchange-core/symbol-info?venue=${venue}&symbol=${sym}`)
+      .then((r) => r.ok ? r.json() : null)
+      .then((data) => {
+        if (data?.info) setSymbolInfo({
+          stepSize: Number(data.info.stepSize) || DEFAULT_SYMBOL_INFO.stepSize,
+          tickSize: Number(data.info.tickSize) || DEFAULT_SYMBOL_INFO.tickSize,
+          minQty: Number(data.info.minQty) || DEFAULT_SYMBOL_INFO.minQty,
+          minNotional: Number(data.info.minNotional) || DEFAULT_SYMBOL_INFO.minNotional,
+          pricePrecision: Number(data.info.pricePrecision) ?? DEFAULT_SYMBOL_INFO.pricePrecision,
+          qtyPrecision: Number(data.info.qtyPrecision) ?? DEFAULT_SYMBOL_INFO.qtyPrecision,
+        });
+      })
+      .catch(() => { /* use defaults */ });
+  }, [selectedSymbol, selectedExchange]);
 
   const ticker = useMemo(() => tickers.find((t) => t.symbol === selectedSymbol), [tickers, selectedSymbol]);
   const total = useMemo(() => (Number(price) || 0) * (Number(amount) || 0), [price, amount]);
   const base = selectedSymbol.split("/")[0];
   const leverageOptions = useMemo(() => [1, 2, 3, 5, 10, 20, 25, 50, 75, 100], []);
+  const hasPosition = useMemo(() => positions.some((p) => p.symbol === selectedSymbol && p.size > 0), [positions, selectedSymbol]);
 
   useEffect(() => {
     const live = Number(ticker?.lastPrice ?? 0);
@@ -52,45 +97,118 @@ export const OrderEntryPanel = ({ showBalances = true, className = "" }: Props) 
     if (live > 0) setPrice(live.toFixed(2));
   };
 
+  const { balances, openOrders, pushActivity } = useExchangeTerminalStore();
+
+  // ── Tradable balance: wallet - openOrderMargin - positionMargin - feeBuffer ──
+  const balanceMetrics = useMemo(() => {
+    const usdt = balances.find((b) => b.asset === "USDT");
+    const walletBalance = usdt?.total ?? 0;
+    const crossWalletBalance = usdt?.available ?? walletBalance;
+
+    // Open order margin = sum of (price * qty / leverage) for all open orders
+    const openOrderMargin = openOrders.reduce((sum, o) => sum + (o.total / Math.max(leverage, 1)), 0);
+
+    // Position margin from existing positions
+    const positionMargin = positions
+      .filter((p) => p.size > 0)
+      .reduce((sum, p) => sum + (p.entry * p.size / Math.max(p.leverage, 1)), 0);
+
+    // Unrealized PnL from positions
+    const unrealizedPnl = positions.reduce((sum, p) => sum + p.pnl, 0);
+
+    // Fee buffer: 0.1% of wallet or min 1 USDT
+    const feeBuffer = Math.max(walletBalance * 0.001, 1);
+
+    const marginBalance = walletBalance + unrealizedPnl;
+    // Prefer exchange crossWalletBalance if available, else compute
+    const availableToTrade = accountMode === "Futures"
+      ? Math.max(0, crossWalletBalance - openOrderMargin - feeBuffer)
+      : Math.max(0, crossWalletBalance - feeBuffer);
+
+    return { walletBalance, marginBalance, availableToTrade, feeBuffer };
+  }, [balances, openOrders, positions, leverage, accountMode]);
+
+  const { availableToTrade } = balanceMetrics;
+
   const applySizePreset = (pct: number) => {
-    const available = 403.67;
-    const next = (available * (pct / 100)) / Math.max(Number(price) || 1, 1);
-    setAmount(next.toFixed(4));
+    const maxNotional = availableToTrade * Math.max(leverage, 1);
+    const next = (maxNotional * (pct / 100)) / Math.max(Number(price) || 1, 1);
+    setAmount(next.toFixed(symbolInfo.qtyPrecision));
   };
 
-  const place = async (side: "BUY" | "SELL") => {
-    const qty = Number(amount);
-    if (!qty || qty <= 0) {
-      setSubmitInfo("Amount must be greater than 0");
-      return;
-    }
+  // ── Pre-validation: precision, min notional, reduce-only logic ──
+  const validate = useCallback((side: "BUY" | "SELL"): string | null => {
+    const rawQty = Number(amount);
+    if (!rawQty || rawQty <= 0) return "Amount must be greater than 0";
+
+    // Step size validation
+    const roundedQty = roundToStep(rawQty, symbolInfo.stepSize);
+    if (roundedQty < symbolInfo.minQty) return `Min qty: ${symbolInfo.minQty}`;
+
     if (orderType !== "Market") {
       const p = Number(price);
-      if (!p || p <= 0) {
-        setSubmitInfo("Price must be greater than 0");
-        return;
+      if (!p || p <= 0) return "Price must be greater than 0";
+      // Tick size validation
+      const roundedPrice = roundToTick(p, symbolInfo.tickSize);
+      if (Math.abs(roundedPrice - p) > 1e-12) return `Price must be a multiple of ${symbolInfo.tickSize}`;
+      // Min notional check
+      const notional = roundedPrice * roundedQty;
+      if (notional < symbolInfo.minNotional) return `Min notional: ${symbolInfo.minNotional} USDT (current: ${notional.toFixed(2)})`;
+      // Post-only + marketable price warning
+      if (postOnly && ticker) {
+        const lastPrice = ticker.lastPrice;
+        if (side === "BUY" && roundedPrice >= lastPrice) return "Post-only: buy price must be below market";
+        if (side === "SELL" && roundedPrice <= lastPrice) return "Post-only: sell price must be above market";
       }
     }
+
     if (orderType === "Stop Limit") {
       const s = Number(stopPrice);
-      if (!s || s <= 0) {
-        setSubmitInfo("Stop price must be greater than 0");
-        return;
-      }
+      if (!s || s <= 0) return "Stop price must be greater than 0";
     }
+
+    // Reduce-only requires open position
+    if (reduceOnly && !hasPosition) return "Reduce-only: no open position for this symbol";
+
+    // TP/SL validation
     if (tpsl) {
-      if ((tpPrice && Number(tpPrice) <= 0) || (slPrice && Number(slPrice) <= 0)) {
-        setSubmitInfo("TP/SL values must be greater than 0");
-        return;
+      const tp = Number(tpPrice);
+      const sl = Number(slPrice);
+      if (tpPrice && tp <= 0) return "Take profit must be greater than 0";
+      if (slPrice && sl <= 0) return "Stop loss must be greater than 0";
+      if (tp && sl) {
+        if (side === "BUY" && tp <= sl) return "Long: TP must be above SL";
+        if (side === "SELL" && sl <= tp) return "Short: SL must be above TP";
       }
     }
+
+    return null;
+  }, [amount, price, stopPrice, orderType, symbolInfo, postOnly, ticker, reduceOnly, hasPosition, tpsl, tpPrice, slPrice]);
+
+  const place = async (side: "BUY" | "SELL") => {
+    // Pre-validation
+    const error = validate(side);
+    if (error) { setSubmitInfo(error); return; }
+
+    // Debounce: prevent double-submit
+    if (submitting) return;
+    const submitKey = `${side}:${selectedSymbol}:${amount}:${price}:${Date.now()}`;
+    if (submitKey === lastSubmitRef.current) return;
+    lastSubmitRef.current = submitKey;
+
+    // Round qty and price to exchange precision
+    const qty = roundToStep(Number(amount), symbolInfo.stepSize);
+    const roundedPrice = orderType === "Market" ? undefined : roundToTick(Number(price), symbolInfo.tickSize);
+    const qtyFactor = Math.pow(10, symbolInfo.qtyPrecision);
+    const finalQty = Math.floor(qty * qtyFactor) / qtyFactor;
+
     const payload = {
       exchange: selectedExchange,
       symbol: selectedSymbol.replace("/", ""),
       side,
       orderType,
-      amount: qty,
-      price: orderType === "Market" ? undefined : Number(price),
+      amount: finalQty,
+      price: roundedPrice,
       stopPrice: orderType === "Stop Limit" ? Number(stopPrice) : undefined,
       accountMode,
       leverage: accountMode === "Futures" ? leverage : undefined,
@@ -105,9 +223,61 @@ export const OrderEntryPanel = ({ showBalances = true, className = "" }: Props) 
         slPrice: slPrice ? Number(slPrice) : undefined,
       },
     } as const;
+
+    setSubmitting(true);
     setSubmitInfo("Sending order...");
-    const res = await placeExchangeOrder(payload);
-    setSubmitInfo(res.ok ? `Order sent (${side})` : `Order failed: ${res.error ?? "unknown"}`);
+
+    // Optimistic: insert pending order into store immediately
+    const pendingId = `pending-${Date.now()}`;
+    const { applyOrderUpdate } = useExchangeTerminalStore.getState();
+    applyOrderUpdate({
+      orderId: pendingId,
+      symbol: selectedSymbol.replace("/", ""),
+      side,
+      orderType: orderType.toUpperCase(),
+      orderStatus: "PENDING_SUBMIT",
+      origQty: finalQty,
+      price: roundedPrice ?? 0,
+      totalFilledQty: 0,
+      timestamp: Date.now(),
+    });
+    pushActivity("order", `${selectedSymbol} ${side} submitting...`);
+
+    try {
+      const res = await placeExchangeOrder(payload);
+      if (res.ok) {
+        setSubmitInfo(`Order sent (${side})`);
+        pushActivity("order", `${selectedSymbol} ${side} accepted`);
+        // Remove pending placeholder — real order comes via WS
+        const store = useExchangeTerminalStore.getState();
+        store.setAccountData({ openOrders: store.openOrders.filter((o) => o.id !== pendingId) });
+      } else {
+        // Normalize error for user
+        const errorMap: Record<string, string> = {
+          INSUFFICIENT_BALANCE: "Yetersiz bakiye.",
+          NORM_QTY_TOO_SMALL: "Emir boyutu minimum limitin altinda.",
+          NORM_MIN_NOTIONAL: "Emir tutari minimum notional'in altinda.",
+          RISK_REJECTED: "Risk kontrolu reddetti.",
+          RATE_LIMITED: "Istek limiti asildi, biraz bekleyin.",
+          CIRCUIT_OPEN: "Borsa baglantisi gecici olarak devre disi.",
+          EXCHANGE_ERROR: "Borsa API hatasi.",
+        };
+        const code = String(res.error ?? "");
+        const userMsg = errorMap[code] ?? res.error ?? "Emir gonderilemedi.";
+        setSubmitInfo(userMsg);
+        pushActivity("order", `${selectedSymbol} ${side} REJECTED: ${code}`);
+        // Remove pending placeholder
+        const store = useExchangeTerminalStore.getState();
+        store.setAccountData({ openOrders: store.openOrders.filter((o) => o.id !== pendingId) });
+      }
+    } catch (err: any) {
+      setSubmitInfo("Baglanti hatasi — emir dogrulanamadi.");
+      pushActivity("order", `${selectedSymbol} ${side} NETWORK_ERROR`);
+      const store = useExchangeTerminalStore.getState();
+      store.setAccountData({ openOrders: store.openOrders.filter((o) => o.id !== pendingId) });
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   if (accountMode === "Futures") {
@@ -218,9 +388,21 @@ export const OrderEntryPanel = ({ showBalances = true, className = "" }: Props) 
           <span className="ml-auto text-xs text-[#6B6F76]">ⓘ</span>
         </div>
 
-        <div className="mb-2 flex items-center justify-between text-xs text-[#BFC2C7]">
-          <span>Avbl 403.67 USDT</span>
-          <span className="text-[#F5C542]">↪</span>
+        <div className="mb-2 space-y-0.5 text-[11px]">
+          <div className="flex justify-between text-[#6B6F76]">
+            <span>Wallet</span>
+            <span className="text-[#BFC2C7]">{balanceMetrics.walletBalance.toLocaleString(undefined, { maximumFractionDigits: 2 })} USDT</span>
+          </div>
+          {accountMode === "Futures" && (
+            <div className="flex justify-between text-[#6B6F76]">
+              <span>Margin</span>
+              <span className="text-[#BFC2C7]">{balanceMetrics.marginBalance.toLocaleString(undefined, { maximumFractionDigits: 2 })} USDT</span>
+            </div>
+          )}
+          <div className="flex justify-between text-[#F5C542]">
+            <span>Available to Trade</span>
+            <span>{availableToTrade.toLocaleString(undefined, { maximumFractionDigits: 2 })} USDT</span>
+          </div>
         </div>
 
         <div className="mb-2">
@@ -368,20 +550,20 @@ export const OrderEntryPanel = ({ showBalances = true, className = "" }: Props) 
           <button
             type="button"
             onClick={() => void place("BUY")}
-            disabled={isBitriumOnly}
+            disabled={isBitriumOnly || submitting}
             title={isBitriumOnly ? "Connect an exchange to trade. Using Bitrium Labs public data." : undefined}
             className="rounded-md bg-[#2bc48a] px-3 py-2 text-base font-semibold text-black disabled:cursor-not-allowed disabled:opacity-50"
           >
-            Open Long
+            {submitting ? "Sending..." : "Open Long"}
           </button>
           <button
             type="button"
             onClick={() => void place("SELL")}
-            disabled={isBitriumOnly}
+            disabled={isBitriumOnly || submitting}
             title={isBitriumOnly ? "Connect an exchange to trade. Using Bitrium Labs public data." : undefined}
             className="rounded-md bg-[#f6465d] px-3 py-2 text-base font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
           >
-            Open Short
+            {submitting ? "Sending..." : "Open Short"}
           </button>
         </div>
         {isBitriumOnly ? (
@@ -390,18 +572,15 @@ export const OrderEntryPanel = ({ showBalances = true, className = "" }: Props) 
 
         <div className="mb-2 grid grid-cols-2 gap-2 text-xs text-[#8A8F98]">
           <div>
-            <div>Liq Price -- USDT</div>
-            <div>Cost {(total / Math.max(leverage, 1)).toFixed(2)} USDT</div>
-            <div>Max {(403.67 * Math.max(leverage, 1)).toLocaleString(undefined, { maximumFractionDigits: 2 })} USDT</div>
+            <div>Init Margin {(total / Math.max(leverage, 1)).toFixed(2)} USDT</div>
+            <div>Est. Fee {(total * 0.0004).toFixed(2)} USDT</div>
+            <div>Max {(availableToTrade * Math.max(leverage, 1)).toLocaleString(undefined, { maximumFractionDigits: 2 })} USDT</div>
           </div>
           <div className="text-right">
-            <div>Liq Price -- USDT</div>
-            <div>Cost {(total / Math.max(leverage, 1)).toFixed(2)} USDT</div>
-            <div>Max {(403.67 * Math.max(leverage, 1)).toLocaleString(undefined, { maximumFractionDigits: 2 })} USDT</div>
+            <div>Cost {((total / Math.max(leverage, 1)) + total * 0.0004).toFixed(2)} USDT</div>
+            <div>Max Qty {((availableToTrade * Math.max(leverage, 1)) / Math.max(Number(price) || 1, 1)).toFixed(symbolInfo.qtyPrecision)} {base}</div>
           </div>
         </div>
-
-        <div className="mb-2 text-xs text-[#8A8F98]">% Fee level</div>
 
         <div className="rounded-lg border border-white/10 bg-[#2a3140] px-2 py-2 text-xs text-[#E7E9ED]">
           <span className="mr-1 text-[#F5C542]">✦</span>
@@ -448,11 +627,11 @@ export const OrderEntryPanel = ({ showBalances = true, className = "" }: Props) 
           <button
             type="button"
             onClick={() => void place("BUY")}
-            disabled={isBitriumOnly}
+            disabled={isBitriumOnly || submitting}
             title={isBitriumOnly ? "Connect an exchange to trade. Using Bitrium Labs public data." : undefined}
             className="w-full rounded bg-[#2bc48a] px-3 py-2 text-sm font-semibold text-black disabled:cursor-not-allowed disabled:opacity-50"
           >
-            {`Buy ${base}`}
+            {submitting ? "Sending..." : `Buy ${base}`}
           </button>
         </div>
 
@@ -472,7 +651,7 @@ export const OrderEntryPanel = ({ showBalances = true, className = "" }: Props) 
             title={isBitriumOnly ? "Connect an exchange to trade. Using Bitrium Labs public data." : undefined}
             className="w-full rounded bg-[#f6465d] px-3 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
           >
-            {`Sell ${base}`}
+            {submitting ? "Sending..." : `Sell ${base}`}
           </button>
         </div>
       </div>

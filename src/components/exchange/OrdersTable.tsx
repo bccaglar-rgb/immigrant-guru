@@ -31,7 +31,7 @@ const cancelAll = async (): Promise<{ ok: boolean; canceled?: number }> => {
 };
 
 export const OrdersTable = () => {
-  const { openOrders } = useExchangeTerminalStore();
+  const { openOrders, privateStreamStatus, activityLog } = useExchangeTerminalStore();
   const [tab, setTab] = useState<"open" | "history" | "trade">("open");
   const [cancelingIds, setCancelingIds] = useState<Set<string>>(new Set());
   const [cancelAllLoading, setCancelAllLoading] = useState(false);
@@ -86,14 +86,20 @@ export const OrdersTable = () => {
           <tbody>
             {openOrders.length === 0 && tab === "open" ? (
               <tr className="border-t border-white/5 text-xs text-[#6B6F76]">
-                <td className="px-2 py-6 text-center" colSpan={9}>No data from exchange API.</td>
+                <td className="px-2 py-6 text-center" colSpan={9}>
+                  {privateStreamStatus === "subscribing" ? "Connecting to exchange stream..."
+                    : privateStreamStatus === "error" ? "Stream error — using REST fallback"
+                    : privateStreamStatus === "disconnected" ? "Stream disconnected — reconnecting..."
+                    : "No open orders"}
+                </td>
               </tr>
             ) : null}
             {openOrders.map((o) => {
               const isCanceling = cancelingIds.has(o.id);
+              const isPending = o.id.startsWith("pending-");
               return (
-                <tr key={o.id} className="border-t border-white/5 text-xs text-[#BFC2C7]">
-                  <td className="px-2 py-1.5">{o.date}</td>
+                <tr key={o.id} className={`border-t border-white/5 text-xs ${isCanceling ? "text-[#6B6F76] opacity-50" : isPending ? "text-[#8A8F98] animate-pulse" : "text-[#BFC2C7]"}`}>
+                  <td className="px-2 py-1.5">{isPending ? "..." : o.date}</td>
                   <td className="px-2 py-1.5">{o.pair}</td>
                   <td className="px-2 py-1.5">{o.type}</td>
                   <td className={`px-2 py-1.5 ${o.side === "BUY" ? "text-[#8fc9ab]" : "text-[#d49f9a]"}`}>{o.side}</td>
@@ -117,6 +123,20 @@ export const OrdersTable = () => {
           </tbody>
         </table>
       </div>
+      {/* Activity feed — last 3 events */}
+      {activityLog.length > 0 && (
+        <div className="border-t border-white/5 px-3 py-1.5">
+          {activityLog.slice(0, 3).map((a, i) => (
+            <div key={a.ts + i} className="flex items-center gap-2 text-[10px] text-[#6B6F76]">
+              <span className={a.type === "order" ? "text-[#F5C542]" : a.type === "system" ? "text-blue-400" : "text-[#6B6F76]"}>
+                {a.type === "order" ? "ORDER" : a.type === "position" ? "POS" : a.type === "balance" ? "BAL" : "SYS"}
+              </span>
+              <span>{a.message}</span>
+              <span className="ml-auto">{new Date(a.ts).toLocaleTimeString()}</span>
+            </div>
+          ))}
+        </div>
+      )}
     </section>
   );
 };

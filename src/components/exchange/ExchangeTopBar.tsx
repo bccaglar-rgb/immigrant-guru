@@ -33,6 +33,7 @@ export const ExchangeTopBar = () => {
     connectionStatus,
     activeSignal,
     selectedExchangeAccount,
+    privateStreamStatus,
     setSelectedExchange,
     setSelectedExchangeAccount,
     setAccountMode,
@@ -217,6 +218,20 @@ export const ExchangeTopBar = () => {
             <span className={`inline-flex items-center gap-1 rounded border px-2 py-0.5 text-[10px] font-semibold ${statusUi.cls}`}>
               <span className={`h-1.5 w-1.5 rounded-full ${statusUi.dot}`} />
               {statusUi.label}
+            </span>
+            <span className={`inline-flex items-center gap-1 rounded border px-1.5 py-0.5 text-[10px] font-semibold ${
+              privateStreamStatus === "subscribed" ? "border-[#4f6f58] bg-[#1c2620] text-[#b8d8c4]"
+              : privateStreamStatus === "subscribing" ? "border-[#7a6840] bg-[#2a2418] text-[#e7d9b3]"
+              : privateStreamStatus === "error" || privateStreamStatus === "disconnected" ? "border-[#704844] bg-[#271a19] text-[#d6b3af]"
+              : "border-white/15 bg-[#15171b] text-[#6B6F76]"
+            }`}>
+              <span className={`h-1.5 w-1.5 rounded-full ${
+                privateStreamStatus === "subscribed" ? "bg-[#2bc48a]"
+                : privateStreamStatus === "subscribing" ? "bg-[#F5C542] animate-pulse"
+                : privateStreamStatus === "error" || privateStreamStatus === "disconnected" ? "bg-[#f6465d]"
+                : "bg-[#6B6F76]"
+              }`} />
+              {privateStreamStatus === "subscribed" ? "LIVE" : privateStreamStatus === "subscribing" ? "CONNECTING" : privateStreamStatus === "error" ? "ERROR" : privateStreamStatus === "disconnected" ? "OFFLINE" : "IDLE"}
             </span>
           </div>
 

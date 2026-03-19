@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { CandlestickData, UTCTimestamp } from "lightweight-charts";
 import { useLocation, useNavigate } from "react-router-dom";
 import { ChartPanel } from "../components/exchange/ChartPanel";
@@ -95,10 +95,30 @@ export default function ExchangeTerminalPage() {
     if (raw.includes("gate")) return "GATEIO";
     return "BINANCE";
   }, [selectedExchange]);
+  // Immediate REST reconcile after WS reconnect — fills any missed events
+  const reconcileNow = useCallback(() => {
+    if (exchangeBlocked) return;
+    const exchangeId = selectedExchange.toLowerCase().includes("gate") ? "gate"
+      : selectedExchange.toLowerCase().includes("binance") ? "binance"
+      : selectedExchange.toLowerCase().includes("bybit") ? "bybit"
+      : selectedExchange.toLowerCase().includes("okx") ? "okx" : "";
+    if (!exchangeId) return;
+    void fetchExchangeAccountSnapshot(exchangeId, routerSymbol, selectedExchangeAccount ?? undefined)
+      .then((snapshot) => {
+        if (snapshot.ok && snapshot.data) {
+          setAccountData({
+            balances: snapshot.data.balances ?? [],
+            positions: snapshot.data.positions ?? [],
+            openOrders: snapshot.data.openOrders ?? [],
+          });
+        }
+      });
+  }, [exchangeBlocked, selectedExchange, routerSymbol, selectedExchangeAccount, setAccountData]);
   usePrivateStream(
     exchangeBlocked ? null : "demo-user",
     exchangeBlocked ? null : selectedExchangeAccount,
     privateStreamVenue,
+    reconcileNow,
   );
 
   // ── Canonical prices — useLivePriceStore is the SINGLE SOURCE OF TRUTH ──
