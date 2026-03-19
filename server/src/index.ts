@@ -124,7 +124,11 @@ setWsAuthFunction(async (token) => {
 // Address Pool for per-invoice TRON deposit addresses
 import { AddressPoolService } from "./payments/addressPoolService.ts";
 const addressPoolService = new AddressPoolService(encryptionKey);
-paymentService.setAddressPool(addressPoolService);
+if (typeof paymentService.setAddressPool === "function") {
+  paymentService.setAddressPool(addressPoolService);
+} else {
+  console.warn("[index] paymentService.setAddressPool not available — skipping address pool setup");
+}
 
 const tokenCreatorService = new TokenCreatorService(paymentStore, paymentService);
 const tronClient = new TronClient();
