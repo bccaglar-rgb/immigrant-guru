@@ -85,8 +85,10 @@ export default function CryptoMarketPage() {
     });
 
     return rows;
+    // lastPatchAt excluded — allRows Map reference already triggers on snapshot.
+    // Patch updates mutate in-place for performance; we throttle recalc via patchCount.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [allRows, search, filter, sortBy, sortDir, favoriteSymbols, lastPatchAt]);
+  }, [allRows, search, filter, sortBy, sortDir, favoriteSymbols, Math.floor((lastPatchAt ?? 0) / 3000)]);
 
   // Reset visible count when filters change
   useEffect(() => {
