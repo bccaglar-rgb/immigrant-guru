@@ -397,15 +397,17 @@ bootstrap()
         setInterval(() => void featureWeightTuner.tune(), 3600_000);
         console.log(`[Worker ${WORKER_ID}] Optimizer P1-P10 started (all 10 modules active)`);
 
-        // SystemScanner: start after 45s delay to let CoinUniverseEngine warm up
-        setTimeout(() => {
-          systemScanner.start();
-          console.log(`[Worker ${WORKER_ID}] SystemScanner started`);
-        }, 45_000);
-
-        // AITradeIdeaEngine V2: starts with its own internal 90s delay
-        aiTradeIdeaEngine.start();
-        console.log(`[Worker ${WORKER_ID}] AITradeIdeaEngine V2 initialized`);
+        // SystemScanner + AITradeIdeaEngine: controlled by DISABLE_TRADE_IDEAS env flag
+        if (process.env.DISABLE_TRADE_IDEAS === "true") {
+          console.log(`[Worker ${WORKER_ID}] Trade ideas DISABLED (DISABLE_TRADE_IDEAS=true)`);
+        } else {
+          setTimeout(() => {
+            systemScanner.start();
+            console.log(`[Worker ${WORKER_ID}] SystemScanner started`);
+          }, 45_000);
+          aiTradeIdeaEngine.start();
+          console.log(`[Worker ${WORKER_ID}] AITradeIdeaEngine V2 initialized`);
+        }
 
         // CoinUniverseEngine: refresh every 60s on Worker 0
         // In HUB_EXTERNAL mode, reads universe from Redis cache (redisBinanceHubStub)
