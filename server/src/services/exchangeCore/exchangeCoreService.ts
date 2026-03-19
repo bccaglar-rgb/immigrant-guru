@@ -214,6 +214,11 @@ export class ExchangeCoreService {
     };
   }
 
+  /** Get symbol info from registry (for frontend precision validation). */
+  async getSymbolInfo(venue: string, symbol: string) {
+    return this.symbolRegistry.getSymbolInfo(venue as any, symbol);
+  }
+
   /** List intents for a user from DB. */
   async listIntentsByUser(userId: string): Promise<CoreIntentRecord[]> {
     const { rows } = await pool.query(

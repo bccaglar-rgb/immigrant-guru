@@ -67,4 +67,18 @@ export const registerExchangeCoreRoutes = (app: Express, core: ExchangeCoreServi
     const events = await tracer.getTrace(req.params.intentId);
     res.json({ ok: true, events, ts: new Date().toISOString() });
   });
+
+  // ── Symbol Info (public — needed by OrderEntryPanel for precision validation) ──
+
+  app.get("/api/exchange-core/symbol-info", async (req, res) => {
+    const venue = String(req.query.venue ?? "BINANCE") as any;
+    const symbol = String(req.query.symbol ?? "");
+    if (!symbol) return res.status(400).json({ ok: false, error: "symbol required" });
+    try {
+      const info = await core.getSymbolInfo(venue, symbol);
+      res.json({ ok: true, info });
+    } catch {
+      res.json({ ok: true, info: null });
+    }
+  });
 };

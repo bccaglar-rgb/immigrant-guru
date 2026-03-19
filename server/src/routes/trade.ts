@@ -18,6 +18,8 @@ const normalizeExchangeId = (raw: string): string | null => {
 const toVenueCode = (exchangeId: string): CoreVenue | null => {
   if (exchangeId === "binance") return "BINANCE";
   if (exchangeId === "gate") return "GATEIO";
+  if (exchangeId === "bybit") return "BYBIT";
+  if (exchangeId === "okx") return "OKX";
   return null;
 };
 

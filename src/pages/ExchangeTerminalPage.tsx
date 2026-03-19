@@ -25,6 +25,7 @@ import type { TickerItem } from "../types/exchange";
 import { useDataSourceManager } from "../data/DataSourceManager";
 import { useDisplayPrice, useMarkPrice } from "../hooks/useLivePriceStore";
 import { usePrivateStream } from "../hooks/usePrivateStream";
+import { useAuthStore } from "../hooks/useAuthStore";
 
 const normalizeCandlesForChart = (
   rows: Array<{ time: number; open: number; high: number; low: number; close: number }> | undefined,
@@ -114,8 +115,9 @@ export default function ExchangeTerminalPage() {
         }
       });
   }, [exchangeBlocked, selectedExchange, routerSymbol, selectedExchangeAccount, setAccountData]);
+  const authUser = useAuthStore((s) => s.user);
   usePrivateStream(
-    exchangeBlocked ? null : "demo-user",
+    exchangeBlocked ? null : authUser?.id ?? null,
     exchangeBlocked ? null : selectedExchangeAccount,
     privateStreamVenue,
     reconcileNow,
