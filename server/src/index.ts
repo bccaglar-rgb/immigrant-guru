@@ -259,7 +259,7 @@ registerAdminLogsRoutes(app, authService);
 registerBugReportRoutes(app, authService);
 registerMLRoutes(app);
 registerMetricsRoute(app, {});
-registerAiEngineV2Routes(app, aiTradeIdeaEngine);
+registerAiEngineV2Routes(app, aiTradeIdeaEngine, systemScanner, authService);
 
 // In production, serve the Vite-built frontend
 if (process.env.NODE_ENV === "production") {

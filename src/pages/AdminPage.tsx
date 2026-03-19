@@ -8,6 +8,7 @@ import { BugReportsPanel } from "../components/BugReportsPanel";
 import { KillSwitchPanel } from "../components/admin/KillSwitchPanel";
 import { TradeTracePanel } from "../components/admin/TradeTracePanel";
 import { CircuitBreakerPanel } from "../components/admin/CircuitBreakerPanel";
+import { AiEngineControlPanel } from "../components/admin/AiEngineControlPanel";
 import { MappingEditor } from "../components/MappingEditor";
 import { ProviderFormModal } from "../components/ProviderFormModal";
 import { ProviderTable } from "../components/ProviderTable";
@@ -29,7 +30,7 @@ import { checkProvidersHealth, type ProviderHealthResult } from "../services/adm
 
 const PANEL_STORAGE_KEY = "adminPanelState";
 
-type PanelKey = "providers" | "mapping" | "refresh" | "tradeIdeas" | "aiProviders" | "aiExchange" | "branding" | "tradingView" | "referrals" | "members" | "adminUsers" | "payments" | "logs" | "bugReports" | "killSwitch" | "tradeTrace" | "circuitBreaker";
+type PanelKey = "providers" | "mapping" | "refresh" | "tradeIdeas" | "aiProviders" | "aiExchange" | "branding" | "tradingView" | "referrals" | "members" | "adminUsers" | "payments" | "logs" | "bugReports" | "killSwitch" | "tradeTrace" | "circuitBreaker" | "aiControl";
 type PanelState = Record<PanelKey, boolean>;
 
 const defaultPanelState: PanelState = {
@@ -50,6 +51,7 @@ const defaultPanelState: PanelState = {
   killSwitch: false,
   tradeTrace: false,
   circuitBreaker: false,
+  aiControl: false,
 };
 
 const readPanelState = (): PanelState => {
@@ -185,6 +187,7 @@ export default function AdminPage() {
     killSwitch: ["killSwitch"],
     tradeTrace: ["tradeTrace"],
     circuitBreaker: ["circuitBreaker"],
+    aiControl: ["aiControl"],
   };
   const visiblePanels = activeSection && sectionPanels[activeSection]
     ? new Set(sectionPanels[activeSection])
@@ -1543,6 +1546,17 @@ export default function AdminPage() {
           onToggle={() => togglePanel("circuitBreaker")}
         >
           <CircuitBreakerPanel />
+        </CollapsiblePanel>
+        )}
+
+        {shouldShow("aiControl") && (
+        <CollapsiblePanel
+          title="AI Trade Engine"
+          description="Start/stop AI trade idea generation and system scanner"
+          open={panelState.aiControl}
+          onToggle={() => togglePanel("aiControl")}
+        >
+          <AiEngineControlPanel />
         </CollapsiblePanel>
         )}
 
