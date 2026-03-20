@@ -218,6 +218,8 @@ export default function AdminPage() {
     prefix: "BITRIUM",
     maxUses: 1,
     expiresDays: 30,
+    grantPlanTier: "explorer" as string,
+    grantDurationDays: 30 as number,
   });
   const [membersBusy, setMembersBusy] = useState(false);
   const [membersErr, setMembersErr] = useState<string | null>(null);
@@ -1135,6 +1137,34 @@ export default function AdminPage() {
                     className="mt-1 w-full rounded-lg border border-white/15 bg-[#0F1012] px-3 py-2 text-sm text-[#E7E9ED] outline-none"
                   />
                 </label>
+                <div className="grid grid-cols-2 gap-2">
+                  <label className="text-xs text-[#BFC2C7]">
+                    Plan Tier
+                    <select
+                      value={refForm.grantPlanTier}
+                      onChange={(e) => setRefForm((prev) => ({ ...prev, grantPlanTier: e.target.value }))}
+                      className="mt-1 w-full rounded-lg border border-white/15 bg-[#0F1012] px-3 py-2 text-sm text-[#E7E9ED] outline-none"
+                    >
+                      <option value="explorer">Explorer</option>
+                      <option value="trader">Trader</option>
+                      <option value="strategist">Strategist</option>
+                      <option value="titan">Titan</option>
+                    </select>
+                  </label>
+                  <label className="text-xs text-[#BFC2C7]">
+                    Plan Duration
+                    <select
+                      value={refForm.grantDurationDays}
+                      onChange={(e) => setRefForm((prev) => ({ ...prev, grantDurationDays: Number(e.target.value) }))}
+                      className="mt-1 w-full rounded-lg border border-white/15 bg-[#0F1012] px-3 py-2 text-sm text-[#E7E9ED] outline-none"
+                    >
+                      <option value={30}>1 Month (30 days)</option>
+                      <option value={90}>3 Months (90 days)</option>
+                      <option value={180}>6 Months (180 days)</option>
+                      <option value={365}>12 Months (365 days)</option>
+                    </select>
+                  </label>
+                </div>
                 <div className="grid grid-cols-3 gap-2">
                   <label className="text-xs text-[#BFC2C7]">
                     Prefix
@@ -1156,7 +1186,7 @@ export default function AdminPage() {
                     />
                   </label>
                   <label className="text-xs text-[#BFC2C7]">
-                    Expires (days)
+                    Code Expires (days)
                     <input
                       type="number"
                       min={1}
@@ -1181,6 +1211,8 @@ export default function AdminPage() {
                           prefix: refForm.prefix.trim() || undefined,
                           maxUses: refForm.maxUses,
                           expiresDays: refForm.expiresDays,
+                          grantPlanTier: refForm.grantPlanTier,
+                          grantDurationDays: refForm.grantDurationDays,
                         });
                         await reloadReferrals();
                       } catch (e: any) {
@@ -1212,6 +1244,7 @@ export default function AdminPage() {
                   <thead className="sticky top-0 bg-[#13151a] text-[#8e94a0]">
                     <tr>
                       <th className="px-2 py-2 font-medium">Code</th>
+                      <th className="px-2 py-2 font-medium">Plan</th>
                       <th className="px-2 py-2 font-medium">Member</th>
                       <th className="px-2 py-2 font-medium">Uses</th>
                       <th className="px-2 py-2 font-medium">Expires</th>
@@ -1227,6 +1260,16 @@ export default function AdminPage() {
                       return (
                         <tr key={row.id} className="border-t border-white/5 text-[#d7dae0]">
                           <td className="px-2 py-2 font-semibold text-[#F5C542]">{row.code}</td>
+                          <td className="px-2 py-2">
+                            <span className={`rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase ${
+                              row.grantPlanTier === "titan" ? "bg-[#2a0f0f] text-[#ef4444]" :
+                              row.grantPlanTier === "strategist" ? "bg-[#1a0f2a] text-[#9f8bff]" :
+                              row.grantPlanTier === "trader" ? "bg-[#0f1f2a] text-[#6ec4ff]" :
+                              "bg-[#1A1B1F] text-[#6B6F76]"
+                            }`}>{row.grantPlanTier ?? "explorer"}</span>
+                            {" "}
+                            <span className="text-[10px] text-[#6B6F76]">{row.grantDurationDays ?? 30}d</span>
+                          </td>
                           <td className="px-2 py-2">{member}</td>
                           <td className="px-2 py-2">{row.usedCount}/{row.maxUses}</td>
                           <td className="px-2 py-2">{row.expiresAt ? new Date(row.expiresAt).toLocaleDateString() : "-"}</td>
@@ -1277,7 +1320,7 @@ export default function AdminPage() {
                     })}
                     {!refCodes.length ? (
                       <tr>
-                        <td colSpan={6} className="px-3 py-6 text-center text-[#6B6F76]">
+                        <td colSpan={7} className="px-3 py-6 text-center text-[#6B6F76]">
                           No referral codes generated yet.
                         </td>
                       </tr>

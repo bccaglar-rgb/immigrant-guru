@@ -42,6 +42,8 @@ const statusFromIssues = (errors: StructuredIssue[], discoveryCount: number, val
   if (!validated) return "FAILED";
   if (!errors.length && discoveryCount > 0) return "READY";
   if (discoveryCount > 0) return "PARTIAL";
+  // If credentials validated but discovery failed (e.g. testnet down), allow PARTIAL
+  if (validated && errors.some((e) => e.code === "EXCHANGE_DOWN" && (e.retryable ?? false))) return "PARTIAL";
   return "FAILED";
 };
 

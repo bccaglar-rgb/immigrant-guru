@@ -120,6 +120,8 @@ function rowToReferralCode(r: any): ReferralCodeRecord {
     usedCount: r.used_count,
     active: r.active,
     expiresAt: r.expires_at?.toISOString() ?? undefined,
+    grantPlanTier: r.grant_plan_tier ?? "explorer",
+    grantDurationDays: r.grant_duration_days ?? 30,
     createdAt: r.created_at.toISOString(),
     updatedAt: r.updated_at.toISOString(),
   };
@@ -393,13 +395,15 @@ export class PaymentStore {
   async setReferralCode(rc: ReferralCodeRecord): Promise<void> {
     await pool.query(
       `INSERT INTO referral_codes (id, code, assigned_user_id, assigned_email, created_by_user_id,
-                                   max_uses, used_count, active, expires_at, created_at, updated_at)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
+                                   max_uses, used_count, active, expires_at, grant_plan_tier, grant_duration_days, created_at, updated_at)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)
        ON CONFLICT (id) DO UPDATE SET
          active = EXCLUDED.active, used_count = EXCLUDED.used_count, updated_at = EXCLUDED.updated_at`,
       [
         rc.id, rc.code, rc.assignedUserId ?? null, rc.assignedEmail ?? null, rc.createdByUserId,
-        rc.maxUses, rc.usedCount, rc.active, rc.expiresAt ?? null, rc.createdAt, rc.updatedAt,
+        rc.maxUses, rc.usedCount, rc.active, rc.expiresAt ?? null,
+        rc.grantPlanTier ?? "explorer", rc.grantDurationDays ?? 30,
+        rc.createdAt, rc.updatedAt,
       ],
     );
   }

@@ -1,7 +1,7 @@
 import type { TradeIdeaRecord } from "./tradeIdeaTypes.ts";
 import { calcTotalR } from "./rrSimulator.ts";
 
-export const RR_CANDIDATES = [1.0, 1.25, 1.5, 1.75, 2.0, 2.25, 2.5, 3.0] as const;
+export const RR_CANDIDATES = [1.5, 1.75, 2.0, 2.25, 2.5, 3.0] as const;
 
 /** Minimum number of resolved trades required before we change the active RR */
 export const MIN_TRADES_FOR_OPTIMIZATION = 30;

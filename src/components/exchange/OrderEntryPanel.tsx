@@ -327,20 +327,26 @@ export const OrderEntryPanel = ({ showBalances = true, className = "" }: Props) 
               {leverage}x
             </button>
             {leverageOpen ? (
-              <div className="absolute left-0 top-8 z-20 grid w-36 grid-cols-3 gap-1 rounded-md border border-white/10 bg-[#121316] p-1">
-                {leverageOptions.map((x) => (
-                  <button
-                    key={x}
-                    type="button"
-                    onClick={() => {
-                      setLeverage(x);
-                      setLeverageOpen(false);
-                    }}
-                    className={`rounded px-1 py-1 text-xs ${leverage === x ? "bg-[#2d3645] text-white" : "text-[#BFC2C7] hover:bg-[#1A1B1F]"}`}
-                  >
-                    {x}x
-                  </button>
-                ))}
+              <div className="absolute left-0 top-8 z-20 w-48 rounded-md border border-white/10 bg-[#121316] p-2">
+                <input
+                  type="range" min={1} max={100} value={leverage}
+                  onChange={(e) => setLeverage(Number(e.target.value))}
+                  className="mb-2 h-1 w-full appearance-none rounded-full accent-[#F5C542]"
+                  style={{ background: `linear-gradient(90deg, ${leverage <= 10 ? '#2bc48a' : leverage <= 25 ? '#F5C542' : '#f6465d'} ${leverage}%, #1A1B1F ${leverage}%)` }}
+                />
+                <div className="mb-1.5 flex items-center justify-between text-[10px]">
+                  <span className={leverage <= 10 ? "text-[#2bc48a]" : leverage <= 25 ? "text-[#F5C542]" : "text-[#f6465d]"}>
+                    {leverage}x {leverage <= 5 ? "Safe" : leverage <= 20 ? "Moderate" : leverage <= 50 ? "Risky" : "Dangerous"}
+                  </span>
+                </div>
+                <div className="grid grid-cols-5 gap-1">
+                  {[1, 3, 5, 10, 20, 25, 50, 75, 100].map((x) => (
+                    <button key={x} type="button"
+                      onClick={() => { setLeverage(x); setLeverageOpen(false); }}
+                      className={`rounded px-1 py-0.5 text-[10px] ${leverage === x ? "bg-[#2d3645] text-white" : "text-[#6B6F76] hover:bg-[#1A1B1F]"}`}
+                    >{x}x</button>
+                  ))}
+                </div>
               </div>
             ) : null}
           </div>
@@ -570,15 +576,14 @@ export const OrderEntryPanel = ({ showBalances = true, className = "" }: Props) 
           <p className="mb-2 text-xs text-[#8A8F98]">Connect an exchange to trade. Using Bitrium Labs public data.</p>
         ) : null}
 
-        <div className="mb-2 grid grid-cols-2 gap-2 text-xs text-[#8A8F98]">
-          <div>
-            <div>Init Margin {(total / Math.max(leverage, 1)).toFixed(2)} USDT</div>
-            <div>Est. Fee {(total * 0.0004).toFixed(2)} USDT</div>
-            <div>Max {(availableToTrade * Math.max(leverage, 1)).toLocaleString(undefined, { maximumFractionDigits: 2 })} USDT</div>
-          </div>
-          <div className="text-right">
-            <div>Cost {((total / Math.max(leverage, 1)) + total * 0.0004).toFixed(2)} USDT</div>
-            <div>Max Qty {((availableToTrade * Math.max(leverage, 1)) / Math.max(Number(price) || 1, 1)).toFixed(symbolInfo.qtyPrecision)} {base}</div>
+        <div className="mb-2 rounded-lg border border-white/5 bg-[#0d0f12] p-2 text-[11px]">
+          <div className="grid grid-cols-2 gap-x-3 gap-y-0.5 text-[#8A8F98]">
+            <div>Init Margin <span className="text-white">{(total / Math.max(leverage, 1)).toFixed(2)} USDT</span></div>
+            <div className="text-right">Cost <span className="text-white">{((total / Math.max(leverage, 1)) + total * 0.0004).toFixed(2)} USDT</span></div>
+            <div>Est. Fee <span className="text-white">{(total * 0.0004).toFixed(2)} USDT</span> <span className="text-[#6B6F76]">(0.04%)</span></div>
+            <div className="text-right">Max Qty <span className="text-white">{((availableToTrade * Math.max(leverage, 1)) / Math.max(Number(price) || 1, 1)).toFixed(symbolInfo.qtyPrecision)} {base}</span></div>
+            <div>Liq. Price <span className={leverage > 10 ? "text-[#f6465d]" : "text-[#F5C542]"}>~{Number(price) > 0 ? (Number(price) * (1 - 1 / Math.max(leverage, 1) * 0.9)).toFixed(2) : "-"}</span></div>
+            <div className="text-right">Max <span className="text-white">{(availableToTrade * Math.max(leverage, 1)).toLocaleString(undefined, { maximumFractionDigits: 0 })} USDT</span></div>
           </div>
         </div>
 

@@ -7,6 +7,8 @@ export interface AuthUser {
   role: "USER" | "ADMIN";
   twoFactorEnabled: boolean;
   hasActivePlan: boolean;
+  activePlanTier?: string | null;
+  activePlanEndAt?: string | null;
 }
 
 export const getAuthToken = () => window.localStorage.getItem(TOKEN_KEY) ?? window.localStorage.getItem(LEGACY_TOKEN_KEY) ?? "";

@@ -61,7 +61,7 @@ export default function ExchangeTerminalPage() {
   const location = useLocation();
   const [chartTimeframe, setChartTimeframe] = useState<"1m" | "15m" | "1H" | "4H" | "1D" | "1W">("15m");
   const indicators = useIndicatorsStore();
-  const { enabledAccounts, hasEnabledAccounts } = useExchangeConfigs();
+  const { enabledAccounts, hasEnabledAccounts, registeredAccounts } = useExchangeConfigs();
   const {
     selectedSymbol,
     selectedExchange,
@@ -118,6 +118,14 @@ export default function ExchangeTerminalPage() {
         }
       });
   }, [exchangeBlocked, selectedExchange, routerSymbol, selectedExchangeAccount, setAccountData]);
+
+  // Fetch balance on mount and when exchange/account changes
+  useEffect(() => {
+    reconcileNow();
+    const timer = setInterval(reconcileNow, 15_000); // refresh every 15s
+    return () => clearInterval(timer);
+  }, [reconcileNow]);
+
   const authUser = useAuthStore((s) => s.user);
   usePrivateStream(
     exchangeBlocked ? null : authUser?.id ?? null,
@@ -180,6 +188,7 @@ export default function ExchangeTerminalPage() {
   const [sourceWarning, setSourceWarning] = useState<string | null>(null);
   const [noDataTimeout, setNoDataTimeout] = useState(false);
   const [activeFeedLabel, setActiveFeedLabel] = useState<string>("NONE");
+  const [feedLatencyMs, setFeedLatencyMs] = useState<number | null>(null);
   const exchangeHint = useMemo<"BINANCE" | "BYBIT" | "OKX" | "GATEIO">(() => {
     const raw = selectedExchange.toLowerCase();
     if (raw === "bybit") return "BYBIT";
@@ -332,6 +341,7 @@ export default function ExchangeTerminalPage() {
       setConnectionStatus("CONNECTING");
       try {
         let live: FallbackLivePayload | null = null;
+        const fetchStart = performance.now();
         try {
           const attempt = await FallbackApiAdapter.fetchLive({
             symbol: routerSymbol,
@@ -345,8 +355,10 @@ export default function ExchangeTerminalPage() {
           if ((attempt.ohlcv ?? []).length > 0) {
             live = attempt;
           }
+          setFeedLatencyMs(Math.round(performance.now() - fetchStart));
         } catch {
           live = null;
+          setFeedLatencyMs(null);
         }
 
         if (cancelled) return;
@@ -363,17 +375,27 @@ export default function ExchangeTerminalPage() {
         const strictHasBookLevels =
           (live?.orderbookLevels?.bids?.length ?? 0) > 0 &&
           (live?.orderbookLevels?.asks?.length ?? 0) > 0;
+        const obSource = (live as any)?.orderbookSource as string | undefined;
+        const isFallback = obSource && obSource !== "NONE" && obSource !== "BINANCE" && obSource !== selectedExchange?.toUpperCase();
 
         setChartBundle(live);
         setStrictBookBundle(strictHasBookLevels ? live : null);
         setConnectionStatus(strictHasBookLevels ? "CONNECTED" : "ERROR", strictHasBookLevels ? undefined : "Selected exchange book/trades unavailable");
         setLiveError(null);
         setSourceWarning(
-          strictHasBookLevels
-            ? null
-            : `Orderbook/Trades unavailable on ${selectedExchange}. Chart is shown, book/trades are N/A.`,
+          strictHasBookLevels && isFallback
+            ? `Orderbook sourced from ${obSource} (${selectedExchange} REST unavailable).`
+            : strictHasBookLevels
+              ? null
+              : `Orderbook/Trades unavailable on ${selectedExchange}. Chart is shown, book/trades are N/A.`,
         );
-        setActiveFeedLabel(strictHasBookLevels ? `PRIMARY:${selectedExchange}` : `PRIMARY:${selectedExchange} | BOOK:N/A`);
+        setActiveFeedLabel(
+          strictHasBookLevels
+            ? isFallback
+              ? `PRIMARY:${selectedExchange} | BOOK:${obSource}`
+              : `PRIMARY:${selectedExchange}`
+            : `PRIMARY:${selectedExchange} | BOOK:N/A`,
+        );
       } catch (err) {
         if (cancelled) return;
         setLiveError(err instanceof Error ? err.message : "Live fetch failed");
@@ -712,6 +734,7 @@ export default function ExchangeTerminalPage() {
                       liveOhlcv={stableOhlcv}
                       indicatorsState={indicators.state}
                       chartSourceLabel={activeFeedLabel}
+                      chartLatencyMs={feedLatencyMs}
                       activeSignal={activeSignal}
                       blockedMessage={
                         exchangeBlocked
@@ -764,6 +787,7 @@ export default function ExchangeTerminalPage() {
                   liveOhlcv={stableOhlcv}
                   indicatorsState={indicators.state}
                   chartSourceLabel={activeFeedLabel}
+                  chartLatencyMs={feedLatencyMs}
                   activeSignal={activeSignal}
                   blockedMessage={
                     exchangeBlocked
@@ -805,6 +829,12 @@ export default function ExchangeTerminalPage() {
         onClose={() => setConnectModalOpen(false)}
         onSave={handleConnectSave}
         onTest={handleConnectTest}
+        connectedAccounts={registeredAccounts.map((a) => ({
+          exchangeId: a.exchangeId,
+          accountName: a.accountName,
+          status: a.status,
+          enabled: a.enabled,
+        }))}
       />
     )}
   </>

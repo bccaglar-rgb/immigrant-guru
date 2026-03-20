@@ -15,43 +15,43 @@
       "scanIntervalSec": 30,
       "status": "RUNNING",
       "createdAt": "2026-03-02T04:04:49.746Z",
-      "updatedAt": "2026-03-19T02:44:55.681Z",
-      "nextRunAt": "2026-03-19T02:45:25.678Z",
-      "lastRunAt": "2026-03-19T02:44:55.681Z",
+      "updatedAt": "2026-03-20T02:58:27.764Z",
+      "nextRunAt": "2026-03-20T02:58:57.761Z",
+      "lastRunAt": "2026-03-20T02:58:27.764Z",
       "lastError": "",
       "failStreak": 0,
       "stats": {
-        "runs": 28016,
-        "tradeCount": 644,
-        "watchCount": 4129,
-        "noTradeCount": 23243,
-        "pnlPct": 33.727
+        "runs": 30916,
+        "tradeCount": 716,
+        "watchCount": 4992,
+        "noTradeCount": 25208,
+        "pnlPct": 33.911
       },
       "lastResult": {
-        "ts": "2026-03-19T02:44:55.681Z",
+        "ts": "2026-03-20T02:58:27.764Z",
         "sourceExchange": "Binance",
-        "scorePct": 63.1,
-        "decision": "WATCH",
+        "scorePct": 73.53,
+        "decision": "NO_TRADE",
         "bias": "SHORT",
-        "reason": "CHATGPT sees setup building, waiting for stronger confirmation.",
-        "price": 71195.6,
+        "reason": "CHATGPT rejected setup due to weak edge/quality.",
+        "price": 70406.4,
         "plan": {
-          "entryLow": 71133.5162,
-          "entryHigh": 71372.9823,
-          "sl1": 71411.5493,
-          "sl2": 71497.929,
-          "tp1": 70676.8663,
-          "tp2": 70443.4361
+          "entryLow": 70354.0018,
+          "entryHigh": 70556.1091,
+          "sl1": 70599.3899,
+          "sl2": 70676.5859,
+          "tp1": 69849.3473,
+          "tp2": 69598.6736
         },
         "dataStale": false,
         "execution": {
-          "state": "N/A",
+          "state": "REJECTED",
           "venue": "N/A",
-          "intentId": "",
-          "message": "No execution requested."
+          "intentId": "22d21a50-7a71-499d-8089-44b9c00756ca",
+          "message": "No connected exchange account found. Connect Binance or Gate.io in Settings."
         }
       }
     }
   ],
-  "updatedAt": "2026-03-19T02:44:55.681Z"
+  "updatedAt": "2026-03-20T02:58:27.764Z"
 }

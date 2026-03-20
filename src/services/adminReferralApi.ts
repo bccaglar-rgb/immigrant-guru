@@ -17,6 +17,8 @@ export interface ReferralCodeDto {
   usedCount: number;
   active: boolean;
   expiresAt?: string;
+  grantPlanTier?: string;
+  grantDurationDays?: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -53,6 +55,8 @@ export const createReferralCode = (input: {
   prefix?: string;
   maxUses?: number;
   expiresDays?: number;
+  grantPlanTier?: string;
+  grantDurationDays?: number;
 }) =>
   req<{ ok: true; item: ReferralCodeDto }>("/api/admin/referral-codes", {
     method: "POST",

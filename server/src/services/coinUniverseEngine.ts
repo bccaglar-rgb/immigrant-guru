@@ -113,11 +113,11 @@ interface BinanceFuturesHubLike {
 /*  Constants                                                          */
 /* ------------------------------------------------------------------ */
 
-const KLINES_CACHE_TTL_MS = 5 * 60 * 1000;  // 5 minute cache per symbol
+const KLINES_CACHE_TTL_MS = 10 * 60 * 1000; // 10 minute cache per symbol (was 5min — reduced REST pressure)
 const KLINES_BARS = 100;                      // 100 candles
 const KLINES_INTERVAL = "15m";               // 15-minute candles
-const KLINES_CONCURRENT = 10;                // Max concurrent klines fetches
-const TIER2_TOP_N = 60;                      // Compute Tier 2 for top 60 coins
+const KLINES_CONCURRENT = 6;                 // Max concurrent klines fetches (was 10 — reduced REST pressure)
+const TIER2_TOP_N = 40;                      // Compute Tier 2 for top 40 coins (was 60 — reduced REST pressure)
 const COOLDOWN_ROUNDS = 2;                   // Minimum 2 cycles cooldown
 const SELECTED_TOP_28 = 28;                  // Output: top 28 active coins for Quant Engine
 const MIN_VOLUME_USD = 3_000_000;            // Minimum $3M daily volume to enter universe
@@ -968,13 +968,16 @@ export class CoinUniverseEngine {
    * Fetch klines for a single symbol from Binance Futures API.
    */
   private async fetchKlines(symbol: string): Promise<OhlcvBar[] | null> {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 8_000);
-
     try {
+      const { binanceFetch } = await import("./binanceRateLimiter.ts");
       const url = `https://fapi.binance.com/fapi/v1/klines?symbol=${symbol}&interval=${KLINES_INTERVAL}&limit=${KLINES_BARS}`;
-      const res = await fetch(url, { signal: controller.signal });
-      clearTimeout(timeout);
+      const res = await binanceFetch({
+        url,
+        init: { signal: AbortSignal.timeout(8_000) },
+        priority: "low",
+        dedupKey: `klines:${symbol}:${KLINES_INTERVAL}`,
+        weight: 10,
+      });
 
       if (!res.ok) return null;
 
@@ -994,8 +997,6 @@ export class CoinUniverseEngine {
       }));
     } catch {
       return null;
-    } finally {
-      clearTimeout(timeout);
     }
   }
 }

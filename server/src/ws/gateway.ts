@@ -80,6 +80,130 @@ export const createGateway = (httpServer: HttpServer, opts?: GatewayOpts) => {
   const sockets = new Map<WebSocket, SocketState>();
 
   // ═══════════════════════════════════════════════════════════════════
+  // BINANCE DEPTH STREAM RELAY — depth20@500ms for actively viewed symbols
+  // Uses Binance partial book depth stream instead of bookTicker (top-of-book only).
+  // Subscribes dynamically when clients view a symbol, unsubscribes when no clients need it.
+  // ═══════════════════════════════════════════════════════════════════
+  const BINANCE_FSTREAM_WS = "wss://fstream.binance.com/ws";
+  const depthRefCounts = new Map<string, number>(); // symbol → number of clients needing depth
+  let depthWs: WebSocket | null = null;
+  let depthWsReady = false;
+  let depthReconnectTimer: ReturnType<typeof setTimeout> | null = null;
+  let depthSubIdCounter = 1;
+
+  const connectDepthWs = () => {
+    // Already connected — skip
+    if (depthWs && depthWs.readyState === WebSocket.OPEN) return;
+    // Already connecting — don't open another
+    if (depthWs && depthWs.readyState === WebSocket.CONNECTING) return;
+    // Clean up stale/closed WS
+    if (depthWs) {
+      const old = depthWs;
+      depthWs = null;
+      depthWsReady = false;
+      try { old.removeAllListeners(); } catch { /* no-op */ }
+      try { if (old.readyState !== WebSocket.CLOSED) old.close(); } catch { /* no-op */ }
+    }
+    console.log("[DepthRelay] Connecting to Binance fstream WS...");
+    let ws: WebSocket;
+    try {
+      ws = new WebSocket(BINANCE_FSTREAM_WS);
+    } catch (e) { console.error("[DepthRelay] WS constructor failed:", e); return; }
+    depthWs = ws;
+    ws.on("open", () => {
+      depthWsReady = true;
+      // Re-subscribe all active symbols
+      const syms = [...depthRefCounts.keys()];
+      console.log(`[DepthRelay] Connected. Re-subscribing ${syms.length} symbols:`, syms.join(","));
+      if (syms.length > 0) {
+        const params = syms.map((s) => `${s.toLowerCase()}@depth20@500ms`);
+        depthWs!.send(JSON.stringify({ method: "SUBSCRIBE", params, id: depthSubIdCounter++ }));
+      }
+    });
+    depthWs.on("message", (raw) => {
+      try {
+        const msg = JSON.parse(String(raw));
+        // Skip subscription confirmations and errors
+        if (msg.result !== undefined || msg.id !== undefined) return;
+        // Format: { stream: "btcusdt@depth20@500ms", data: {...} } OR direct { lastUpdateId, bids, asks, E, T }
+        const data = msg.data ?? msg;
+        const streamStr = msg.stream ?? msg.e ?? "";
+        // Determine symbol from stream name or event data
+        let symbol = "";
+        if (typeof streamStr === "string" && streamStr.includes("@")) {
+          symbol = streamStr.split("@")[0]?.toUpperCase() ?? "";
+        } else if (data.s) {
+          symbol = String(data.s).toUpperCase();
+        }
+        if (!symbol || !data.bids && !data.b) return;
+        const bids: Array<[number, number]> = (data.bids ?? data.b ?? []).map((r: [string, string]) => [Number(r[0]), Number(r[1])]);
+        const asks: Array<[number, number]> = (data.asks ?? data.a ?? []).map((r: [string, string]) => [Number(r[0]), Number(r[1])]);
+        const seq = Number(data.lastUpdateId ?? data.u ?? 0);
+        const ts = Number(data.T ?? data.E ?? Date.now());
+        if (bids.length < 2) return; // skip if not enough depth data
+        // Broadcast as dom_snapshot to subscribed clients (reuses existing Pipeline 3)
+        const body = JSON.stringify({ type: "dom_snapshot", symbol, seq, bids, asks, ts, serverTs: Date.now() });
+        for (const [socket, state] of sockets.entries()) {
+          if (socket.readyState !== WebSocket.OPEN) continue;
+          if (state.subscribedSymbols.has(symbol)) {
+            state.domSynced.add(symbol);
+            socket.send(body);
+          }
+        }
+      } catch { /* ignore parse errors */ }
+    });
+    depthWs.on("close", () => {
+      depthWs = null;
+      depthWsReady = false;
+      if (depthRefCounts.size > 0 && !depthReconnectTimer) {
+        depthReconnectTimer = setTimeout(() => { depthReconnectTimer = null; connectDepthWs(); }, 2000);
+      }
+    });
+    depthWs.on("error", (err) => {
+      console.error("[DepthRelay] WS error:", err instanceof Error ? err.message : err);
+      depthWsReady = false;
+      try { depthWs?.close(); } catch { /* no-op */ }
+    });
+  };
+
+  const depthSubscribe = (symbol: string) => {
+    const prev = depthRefCounts.get(symbol) ?? 0;
+    depthRefCounts.set(symbol, prev + 1);
+    if (prev > 0) return; // already subscribed
+    console.log(`[DepthRelay] Subscribe depth for ${symbol} (wsReady=${depthWsReady})`);
+    if (!depthWs || !depthWsReady || depthWs.readyState !== WebSocket.OPEN) {
+      connectDepthWs();
+      return;
+    }
+    try {
+      depthWs.send(JSON.stringify({ method: "SUBSCRIBE", params: [`${symbol.toLowerCase()}@depth20@500ms`], id: depthSubIdCounter++ }));
+    } catch {
+      console.log(`[DepthRelay] Send failed for ${symbol}, reconnecting...`);
+      depthWsReady = false;
+      try { depthWs.close(); } catch { /* no-op */ }
+    }
+  };
+
+  const depthUnsubscribe = (symbol: string) => {
+    const prev = depthRefCounts.get(symbol) ?? 0;
+    if (prev <= 1) {
+      depthRefCounts.delete(symbol);
+      if (depthWs && depthWsReady && depthWs.readyState === WebSocket.OPEN) {
+        try {
+          depthWs.send(JSON.stringify({ method: "UNSUBSCRIBE", params: [`${symbol.toLowerCase()}@depth20@500ms`], id: depthSubIdCounter++ }));
+        } catch { /* no-op */ }
+      }
+    } else {
+      depthRefCounts.set(symbol, prev - 1);
+    }
+    if (depthRefCounts.size === 0 && depthWs) {
+      try { depthWs.close(); } catch {}
+      depthWs = null;
+      depthWsReady = false;
+    }
+  };
+
+  // ═══════════════════════════════════════════════════════════════════
   // PIPELINE 1: Canonical Candle (kline → candle_update)
   //  Guards: out-of-order, duplicate, stale stream
   // ═══════════════════════════════════════════════════════════════════
@@ -695,12 +819,15 @@ export const createGateway = (httpServer: HttpServer, opts?: GatewayOpts) => {
         // After this, real-time updates come from pipelines 1-5.
         void sendInitialBundle(socket, sub);
 
-        // Ensure the hub is watching this symbol (triggers depth subscription + snapshot)
+        // Ensure the hub is watching this symbol (triggers kline/trade/ticker streams)
         if (opts?.hubExternal) {
           opts?.hubEventBridge?.publishCommand({ cmd: "ensure_symbol", symbol });
         } else {
           opts?.exchangeMarketHub?.ensureSymbol(symbol);
         }
+
+        // Subscribe to Binance depth@20@500ms WebSocket stream for real-time orderbook
+        depthSubscribe(symbol);
       } else if (parsed?.type === "unsubscribe_market") {
         const symbol = String(parsed.symbol ?? "BTCUSDT").toUpperCase();
         const interval = asInterval(parsed.interval);
@@ -710,6 +837,7 @@ export const createGateway = (httpServer: HttpServer, opts?: GatewayOpts) => {
         if (!stillHasSymbol) {
           state.subscribedSymbols.delete(symbol);
           state.domSynced.delete(symbol);
+          depthUnsubscribe(symbol);
         }
         socket.send(JSON.stringify({ type: "unsubscribed_market", symbol, interval }));
       } else if (parsed?.type === "subscribe_market_list") {
@@ -777,6 +905,13 @@ export const createGateway = (httpServer: HttpServer, opts?: GatewayOpts) => {
       }
     });
     socket.on("close", () => {
+      const state = sockets.get(socket);
+      if (state) {
+        // Cleanup depth subscriptions for all symbols this client was watching
+        for (const symbol of state.subscribedSymbols) {
+          depthUnsubscribe(symbol);
+        }
+      }
       sockets.delete(socket);
     });
   });

@@ -289,4 +289,24 @@ export class TradeIdeaStore {
       client.release();
     }
   }
+
+  async clearAiIdeas() {
+    const client = await pool.connect();
+    try {
+      await client.query("BEGIN");
+      await client.query(
+        "DELETE FROM trade_idea_events WHERE idea_id IN (SELECT id FROM trade_ideas WHERE user_id LIKE 'ai-%')",
+      );
+      const { rowCount: deletedIdeas } = await client.query(
+        "DELETE FROM trade_ideas WHERE user_id LIKE 'ai-%'",
+      );
+      await client.query("COMMIT");
+      return { deletedIdeas: deletedIdeas ?? 0, deletedEvents: 0 };
+    } catch (e) {
+      await client.query("ROLLBACK");
+      throw e;
+    } finally {
+      client.release();
+    }
+  }
 }

@@ -834,8 +834,8 @@ let marketExchangeHub: ExchangeMarketHub | undefined;
 let marketHubEventBridge: HubEventBridge | undefined;
 const onChainCache = new Map<string, { ts: number; providerName: string; metrics: OnChainMetricsSnapshot }>();
 const LIVE_BUNDLE_CACHE_MAX = 800;
-const LIVE_BUNDLE_EXCHANGE_TTL_MS = 450;
-const LIVE_BUNDLE_FALLBACK_TTL_MS = 1200;
+const LIVE_BUNDLE_EXCHANGE_TTL_MS = 2000;  // was 450ms — increased to match 2.5s frontend polling
+const LIVE_BUNDLE_FALLBACK_TTL_MS = 3000;  // was 1200ms — increased for consistency
 const liveBundleCache = new Map<string, { ts: number; payload: unknown }>();
 const liveBundleInFlight = new Map<string, Promise<unknown>>();
 const exchangeLiveFailureStreak = new Map<string, { count: number; ts: number }>();
@@ -1689,19 +1689,72 @@ const fetchBinanceLive = async (
   const wsCandles = marketExchangeHub?.getCandlesFromExchange(normalizedSymbol, "Binance", interval, safeLimit) ?? [];
   const wsTrades = marketExchangeHub?.getRecentTradesFromExchange(normalizedSymbol, "Binance", 240) ?? [];
 
-  const depthRaw = hubRow?.topBid && hubRow?.topAsk && hubRow?.depthUsd && hubRow.depthUsd > 0
-    ? (() => {
-        const imbalance = Math.max(-0.98, Math.min(0.98, Number(hubRow.imbalance ?? 0)));
-        const bidUsd = Math.max(0, (hubRow.depthUsd * (1 + imbalance)) / 2);
-        const askUsd = Math.max(0, hubRow.depthUsd - bidUsd);
-        const bidQty = hubRow.topBid > 0 ? bidUsd / hubRow.topBid : 0;
-        const askQty = hubRow.topAsk > 0 ? askUsd / hubRow.topAsk : 0;
-        return {
-          bids: [[String(hubRow.topBid), String(Math.max(0, bidQty))]],
-          asks: [[String(hubRow.topAsk), String(Math.max(0, askQty))]],
-        };
-      })()
-    : { bids: [], asks: [] };
+  // Fetch real orderbook depth from Binance REST for multi-level display (rate-limited).
+  // Falls back to synthetic single-level from hub bookTicker if REST fails or rate limited.
+  let depthRaw: { bids: string[][]; asks: string[][] } = { bids: [], asks: [] };
+  let orderbookSource = "NONE";
+  try {
+    const { binanceFetch } = await import("../services/binanceRateLimiter.ts");
+    const depthRes = await binanceFetch({
+      url: `https://fapi.binance.com/fapi/v1/depth?symbol=${normalizedSymbol}&limit=${safeBookLimit}`,
+      init: { headers: { accept: "application/json" } },
+      priority: "normal",
+      dedupKey: `depth:${normalizedSymbol}:${safeBookLimit}`,
+      weight: 10,
+    });
+    if (depthRes.ok) {
+      const depthJson = await depthRes.json() as { bids?: string[][]; asks?: string[][] };
+      if (Array.isArray(depthJson.bids) && depthJson.bids.length > 1) {
+        depthRaw = { bids: depthJson.bids, asks: depthJson.asks ?? [] };
+        orderbookSource = "BINANCE";
+      }
+    }
+  } catch { /* REST depth failed or rate limited */ }
+  // If REST depth failed (IP ban etc.), try other exchange adapters' depth data
+  if (depthRaw.bids.length === 0 && marketExchangeHub) {
+    for (const altExchange of ["BYBIT", "OKX", "GATEIO"] as const) {
+      try {
+        const altAdapter = (marketExchangeHub as any).adapters?.get(altExchange);
+        if (!altAdapter) continue;
+        const altSnap = altAdapter.getSnapshot?.(normalizedSymbol);
+        if (!altSnap || !altSnap.topBid || !altSnap.topAsk) continue;
+        const altBook = altAdapter.getOrderbook?.(normalizedSymbol);
+        if (altBook && altBook.bids.length > 2) {
+          depthRaw = {
+            bids: altBook.bids.map((l: { price: number; qty: number }) => [String(l.price), String(l.qty)]),
+            asks: altBook.asks.map((l: { price: number; qty: number }) => [String(l.price), String(l.qty)]),
+          };
+          orderbookSource = altExchange;
+          break;
+        }
+      } catch { /* continue to next exchange */ }
+    }
+  }
+  // Final fallback: generate synthetic levels from hub top-of-book spread
+  if (depthRaw.bids.length === 0 && hubRow?.topBid && hubRow?.topAsk && hubRow?.depthUsd && hubRow.depthUsd > 0) {
+    const topBid = hubRow.topBid;
+    const topAsk = hubRow.topAsk;
+    const totalDepthUsd = hubRow.depthUsd;
+    const imbalance = Math.max(-0.98, Math.min(0.98, Number(hubRow.imbalance ?? 0)));
+    const bidUsd = Math.max(0, (totalDepthUsd * (1 + imbalance)) / 2);
+    const askUsd = Math.max(0, totalDepthUsd - bidUsd);
+    // Generate 10 synthetic levels with decreasing depth
+    const syntheticLevels = 10;
+    const tickSize = topBid > 100 ? 0.1 : topBid > 10 ? 0.01 : 0.001;
+    const synBids: string[][] = [];
+    const synAsks: string[][] = [];
+    for (let i = 0; i < syntheticLevels; i++) {
+      const factor = Math.pow(0.75, i); // decreasing depth per level
+      const bidPrice = topBid - i * tickSize;
+      const askPrice = topAsk + i * tickSize;
+      const bidQty = bidPrice > 0 ? (bidUsd * factor * 0.3) / bidPrice : 0;
+      const askQty = askPrice > 0 ? (askUsd * factor * 0.3) / askPrice : 0;
+      if (bidPrice > 0 && bidQty > 0) synBids.push([String(bidPrice), String(bidQty)]);
+      if (askPrice > 0 && askQty > 0) synAsks.push([String(askPrice), String(askQty)]);
+    }
+    depthRaw = { bids: synBids, asks: synAsks };
+    orderbookSource = "SYNTHETIC";
+  }
 
   const premiumIndexRaw = hubRow && (hubRow.markPrice !== null || hubRow.fundingRate !== null)
     ? {
@@ -1827,6 +1880,7 @@ const fetchBinanceLive = async (
     lastTradePrice: hubLastPrice ?? null,
     feedExchange,
     feedSource: liveHubRow ? "WS_HUB" : (hubRow ? "REDIS_SNAPSHOT" : "REST"),
+    orderbookSource,
     sourceTs: Date.now(),
   };
   // Only throw "empty candles" if we have NO price data at all.
@@ -2080,19 +2134,47 @@ const fetchGateLive = async (
     }
   }
 
-  const depthRaw = hubRow?.topBid && hubRow?.topAsk && hubRow?.depthUsd && hubRow.depthUsd > 0
-    ? (() => {
-        const imbalance = Math.max(-0.98, Math.min(0.98, Number(hubRow.imbalance ?? 0)));
-        const bidUsd = Math.max(0, (hubRow.depthUsd * (1 + imbalance)) / 2);
-        const askUsd = Math.max(0, hubRow.depthUsd - bidUsd);
-        const bidQty = hubRow.topBid > 0 ? bidUsd / hubRow.topBid : 0;
-        const askQty = hubRow.topAsk > 0 ? askUsd / hubRow.topAsk : 0;
-        return {
-          bids: [[String(hubRow.topBid), String(Math.max(0, bidQty))]],
-          asks: [[String(hubRow.topAsk), String(Math.max(0, askQty))]],
-        };
-      })()
-    : { bids: [], asks: [] };
+  // Gate.io: fetch real orderbook depth from REST (rate-limited via exchangeFetch)
+  let depthRaw: { bids: string[][]; asks: string[][] } = { bids: [], asks: [] };
+  try {
+    const { exchangeFetch } = await import("../services/binanceRateLimiter.ts");
+    const depthRes = await exchangeFetch({
+      url: `${GATE_FUTURES_BASE}/futures/usdt/order_book?contract=${pair}&limit=${safeBookLimit}&with_id=true`,
+      priority: "normal",
+      dedupKey: `gate:depth:${pair}:${safeBookLimit}`,
+      weight: 10,
+      exchange: "gateio",
+    });
+    if (depthRes.ok) {
+      const depthJson = await depthRes.json() as { bids?: Array<{ p: string; s: number }>; asks?: Array<{ p: string; s: number }> };
+      const bids = (depthJson.bids ?? []).map((row) => [String(row.p), String(row.s)]);
+      const asks = (depthJson.asks ?? []).map((row) => [String(row.p), String(row.s)]);
+      if (bids.length > 1) depthRaw = { bids, asks };
+    }
+  } catch { /* REST depth failed or rate limited */ }
+  // Fallback: hub top-of-book with synthetic levels
+  if (depthRaw.bids.length === 0 && hubRow?.topBid && hubRow?.topAsk && hubRow?.depthUsd && hubRow.depthUsd > 0) {
+    const topBid = hubRow.topBid;
+    const topAsk = hubRow.topAsk;
+    const totalDepthUsd = hubRow.depthUsd;
+    const imbalance = Math.max(-0.98, Math.min(0.98, Number(hubRow.imbalance ?? 0)));
+    const bidUsd = Math.max(0, (totalDepthUsd * (1 + imbalance)) / 2);
+    const askUsd = Math.max(0, totalDepthUsd - bidUsd);
+    const syntheticLevels = 10;
+    const tickSize = topBid > 100 ? 0.1 : topBid > 10 ? 0.01 : 0.001;
+    const synBids: string[][] = [];
+    const synAsks: string[][] = [];
+    for (let i = 0; i < syntheticLevels; i++) {
+      const factor = Math.pow(0.75, i);
+      const bidPrice = topBid - i * tickSize;
+      const askPrice = topAsk + i * tickSize;
+      const bidQty = bidPrice > 0 ? (bidUsd * factor * 0.3) / bidPrice : 0;
+      const askQty = askPrice > 0 ? (askUsd * factor * 0.3) / askPrice : 0;
+      if (bidPrice > 0 && bidQty > 0) synBids.push([String(bidPrice), String(bidQty)]);
+      if (askPrice > 0 && askQty > 0) synAsks.push([String(askPrice), String(askQty)]);
+    }
+    depthRaw = { bids: synBids, asks: synAsks };
+  }
   const bidRows = asList(depthRaw.bids)
     .slice(0, safeBookLimit)
     .map((row) => parseGateBookRow(row))
@@ -2983,6 +3065,7 @@ export const registerMarketRoutes = (
       const { queryCandles } = await import("../db/candleStore.ts");
       const dbCandles = await queryCandles(symbol, interval, limit, exchange);
 
+      res.set("Cache-Control", "public, max-age=5");
       if (dbCandles.length >= Math.floor(limit / 2)) {
         res.json({
           ok: true,
@@ -3029,6 +3112,7 @@ export const registerMarketRoutes = (
   // ---- Lightweight Binance Futures universe (for gateway secondary worker snapshot) ----
   // Worker 0 has live WS hub data; Workers 1-2 read from Redis snapshot.
   app.get("/api/market/futures-universe", async (_req, res) => {
+    res.set("Cache-Control", "public, max-age=8");
     // Try local hub first (Worker 0 — has live WS connections)
     if (binanceFuturesHub) {
       const rows = binanceFuturesHub.getUniverseRows();
@@ -3056,6 +3140,7 @@ export const registerMarketRoutes = (
   // ---- Coin Universe Engine endpoint ----
   // Worker 0 has live engine data; Workers 1-2 read from Redis snapshot.
   app.get("/api/market/universe-engine", async (_req, res) => {
+    res.set("Cache-Control", "public, max-age=25");
     // Try local engine first (Worker 0)
     if (coinUniverseEngine) {
       const snapshot = coinUniverseEngine.getSnapshot();
@@ -3091,6 +3176,7 @@ export const registerMarketRoutes = (
       res.status(503).json({ ok: false, error: "BINANCE_FUTURES_HUB_UNAVAILABLE" });
       return;
     }
+    res.set("Cache-Control", "public, max-age=3");
     res.json({
       ok: true,
       ...binanceFuturesHub.getStatus(),
@@ -3103,6 +3189,7 @@ export const registerMarketRoutes = (
       res.status(503).json({ ok: false, error: "EXCHANGE_MARKET_HUB_UNAVAILABLE" });
       return;
     }
+    res.set("Cache-Control", "public, max-age=3");
     res.json({
       ok: true,
       ...exchangeMarketHub.getStatus(),
@@ -3143,6 +3230,7 @@ export const registerMarketRoutes = (
         : sourceMode === "fallback"
           ? await fetchTickersWithFallbackChain(exchange)
           : await fetchTickersForExchange(exchange).catch(() => fetchTickersWithFallbackChain(exchange));
+      res.set("Cache-Control", "public, max-age=5");
       res.json({
         ok: true,
         exchange,
@@ -3822,6 +3910,7 @@ export const registerMarketRoutes = (
           ? await fetchSymbolsWithFallbackChain(exchange)
           : await fetchSymbolsForExchange(exchange).catch(() => fetchSymbolsWithFallbackChain(exchange));
 
+      res.set("Cache-Control", "public, max-age=300");
       res.json({
         ok: true,
         sourceUsed: sourceMode === "fallback" ? "FALLBACK_API" : "EXCHANGE",
@@ -3858,6 +3947,7 @@ export const registerMarketRoutes = (
         bookLimit,
         bookStep,
       });
+      res.set("Cache-Control", "public, max-age=2");
       res.json(payload);
     } catch (err) {
       res.status(500).json({ ok: false, error: err instanceof Error ? err.message : "live fetch failed" });

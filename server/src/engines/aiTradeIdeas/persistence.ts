@@ -51,6 +51,18 @@ export async function persistResults(
       const barMs = BAR_DURATION_MS[c.timeframe] ?? 900_000;
       const validUntilUtc = new Date(Date.now() + validUntilBars * barMs).toISOString();
 
+      // Enrich market_state with Axiom analysis if present
+      const marketState = extractMarketState(c.quantSnapshot);
+      if (r.axiomAnalysis) {
+        (marketState as Record<string, unknown>).axiom_regime = r.axiomAnalysis.regime;
+        (marketState as Record<string, unknown>).axiom_thesis = r.axiomAnalysis.primaryThesis;
+        (marketState as Record<string, unknown>).axiom_entry_type = r.axiomAnalysis.entryType;
+        (marketState as Record<string, unknown>).axiom_invalidation = r.axiomAnalysis.invalidation;
+        (marketState as Record<string, unknown>).axiom_bullish_score = r.axiomAnalysis.bullishScore;
+        (marketState as Record<string, unknown>).axiom_bearish_score = r.axiomAnalysis.bearishScore;
+        (marketState as Record<string, unknown>).axiom_rr = r.axiomAnalysis.rrEstimate;
+      }
+
       const idea: TradeIdeaRecord = {
         id: randomUUID(),
         user_id: config.userId,
@@ -75,19 +87,19 @@ export async function persistResults(
         minutes_total: null,
         horizon: c.horizon as TradeIdeaRecord["horizon"],
         timeframe: c.timeframe as TradeIdeaRecord["timeframe"],
-        setup: `AIv2: ${c.setup}`,
+        setup: r.axiomAnalysis ? `Axiom: ${r.axiomAnalysis.entryType || c.setup}` : `AIv2: ${c.setup}`,
         trade_validity: "VALID",
         entry_window: c.entryWindow as TradeIdeaRecord["entry_window"],
         slippage_risk: c.slippageRisk as TradeIdeaRecord["slippage_risk"],
-        triggers_to_activate: [],
-        invalidation: "",
+        triggers_to_activate: r.axiomAnalysis?.entryCondition ? [r.axiomAnalysis.entryCondition] : [],
+        invalidation: r.axiomAnalysis?.invalidation ?? "",
         timestamp_utc: now,
         valid_until_bars: validUntilBars,
         valid_until_utc: validUntilUtc,
-        market_state: extractMarketState(c.quantSnapshot),
-        flow_analysis: r.aiResponse.riskFlags,
+        market_state: marketState,
+        flow_analysis: r.axiomAnalysis?.notes ?? r.aiResponse.riskFlags,
         trade_intent: [],
-        raw_text: r.aiResponse.comment,
+        raw_text: r.axiomAnalysis?.primaryThesis ?? r.aiResponse.comment,
         incomplete: false,
         price_precision: c.pricePrecision,
         created_at: now,

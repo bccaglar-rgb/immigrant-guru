@@ -39,55 +39,17 @@ export const SocialLoginButtons = ({ mode = "login" }: { mode?: "login" | "signu
       setError("Google login not configured. Set VITE_GOOGLE_CLIENT_ID.");
       return;
     }
-    setLoading("google");
-    setError("");
-
-    // Load Google Identity Services
-    const script = document.getElementById("google-gsi") ?? (() => {
-      const s = document.createElement("script");
-      s.id = "google-gsi";
-      s.src = "https://accounts.google.com/gsi/client";
-      s.async = true;
-      document.head.appendChild(s);
-      return s;
-    })();
-
-    const initGoogle = () => {
-      const google = (window as any).google;
-      if (!google?.accounts?.id) {
-        setTimeout(initGoogle, 200);
-        return;
-      }
-      google.accounts.id.initialize({
-        client_id: GOOGLE_CLIENT_ID,
-        callback: async (response: { credential: string }) => {
-          try {
-            const res = await fetch("/api/auth/google", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ credential: response.credential }),
-            });
-            const body = await res.json();
-            if (body.ok && body.token) {
-              await handleSuccess(body.token);
-            } else {
-              setError(body.error ?? "Google login failed");
-            }
-          } catch {
-            setError("Network error");
-          } finally {
-            setLoading(null);
-          }
-        },
-      });
-      google.accounts.id.prompt();
-    };
-
-    if ((window as any).google?.accounts?.id) {
-      initGoogle();
-    } else {
-      script.addEventListener("load", initGoogle);
-    }
+    // OAuth redirect flow — no popup, no SDK quirks
+    const nonce = crypto.randomUUID();
+    sessionStorage.setItem("google_nonce", nonce);
+    const params = new URLSearchParams({
+      client_id: GOOGLE_CLIENT_ID,
+      redirect_uri: `${window.location.origin}/auth/google/callback`,
+      response_type: "id_token",
+      scope: "openid email profile",
+      nonce,
+    });
+    window.location.href = `https://accounts.google.com/o/oauth2/v2/auth?${params}`;
   };
 
   const handleApple = () => {

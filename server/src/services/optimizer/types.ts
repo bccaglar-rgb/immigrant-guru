@@ -46,10 +46,10 @@ export const DEFAULT_MODULE_CONFIG: ModuleConfig = {
 
 // Param candidates for grid search
 export const PARAM_CANDIDATES = {
-  rr: [1.0, 1.25, 1.5, 1.75, 2.0, 2.25, 2.5, 3.0],
+  rr: [1.5, 1.75, 2.0, 2.25, 2.5, 3.0],
   slBufferFactor: [0.10, 0.15, 0.20, 0.25, 0.30],
   entryZoneFactor: [0.10, 0.12, 0.15, 0.18, 0.20],
-  minRRFilter: [1.0, 1.2, 1.5, 1.8, 2.0],
+  minRRFilter: [1.5, 1.8, 2.0],
 } as const;
 
 // ── Performance Metrics ───────────────────────────────────────

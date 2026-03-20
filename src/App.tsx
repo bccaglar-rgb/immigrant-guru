@@ -47,6 +47,7 @@ const CoinUniversePage = lazyRetry(() => import("./pages/CoinUniversePage"));
 const PricingPage = lazyRetry(() => import("./pages/PricingPage"));
 const LoginPage = lazyRetry(() => import("./pages/LoginPage"));
 const SignupPage = lazyRetry(() => import("./pages/SignupPage"));
+const GoogleCallbackPage = lazyRetry(() => import("./pages/GoogleCallbackPage"));
 const PaymentCheckoutPage = lazyRetry(() => import("./pages/PaymentCheckoutPage"));
 const AdminPaymentsPage = lazyRetry(() => import("./pages/AdminPaymentsPage"));
 const SettingsPage = lazyRetry(() => import("./pages/SettingsPage"));
@@ -54,6 +55,8 @@ const AdminPage = lazyRetry(() => import("./pages/AdminPage"));
 const OptimizerDashboardPage = lazyRetry(() => import("./pages/OptimizerDashboardPage"));
 const SystemMonitorPage = lazyRetry(() => import("./pages/SystemMonitorPage"));
 const MLExplorerPage = lazyRetry(() => import("./pages/MLExplorerPage"));
+const BotPage = lazyRetry(() => import("./pages/BotPage"));
+const PortfolioPage = lazyRetry(() => import("./pages/PortfolioPage"));
 
 const PageLoader = () => (
   <div className="flex min-h-[60vh] items-center justify-center">
@@ -102,6 +105,7 @@ function App() {
       {/* Auth pages — NO sidebar */}
       <Route path="/login" element={<Suspense fallback={<PageLoader />}><LoginPage /></Suspense>} />
       <Route path="/signup" element={<Suspense fallback={<PageLoader />}><SignupPage /></Suspense>} />
+      <Route path="/auth/google/callback" element={<Suspense fallback={<PageLoader />}><GoogleCallbackPage /></Suspense>} />
 
       {/* Main app — WITH sidebar */}
       <Route element={<AppShell />}>
@@ -115,6 +119,7 @@ function App() {
         <Route path="/dashboard" element={<Navigate to="/quant-engine" replace />} />
         <Route path="/exchange-terminal" element={<RequireAuth><Suspense fallback={<PageLoader />}><ExchangeTerminalPage /></Suspense></RequireAuth>} />
         <Route path="/exchanges" element={<Navigate to="/exchange-terminal" replace />} />
+        <Route path="/portfolio" element={<RequireAuth><Suspense fallback={<PageLoader />}><PortfolioPage /></Suspense></RequireAuth>} />
         <Route path="/crypto-market" element={<RequireAuth><Suspense fallback={<PageLoader />}><CryptoMarketPage /></Suspense></RequireAuth>} />
 
         {/* Plan-gated pages — redirect to /pricing if no active subscription */}
@@ -130,6 +135,7 @@ function App() {
         <Route path="/ai-trader/strategy" element={<RequirePlan><Suspense fallback={<PageLoader />}><AiTraderStrategyPage /></Suspense></RequirePlan>} />
         <Route path="/ai-trader/arena" element={<RequirePlan><Suspense fallback={<PageLoader />}><AiTraderComingSoonPage title="AI Trader · AI Arena" note="AI Arena module is coming soon." /></Suspense></RequirePlan>} />
         <Route path="/ai-trader/backtest" element={<RequirePlan><Suspense fallback={<PageLoader />}><AiTraderComingSoonPage title="AI Trader · Backtest" note="Backtest module is coming soon." /></Suspense></RequirePlan>} />
+        <Route path="/bot" element={<RequirePlan><Suspense fallback={<PageLoader />}><BotPage /></Suspense></RequirePlan>} />
         <Route path="/coin-universe" element={<RequirePlan><Suspense fallback={<PageLoader />}><CoinUniversePage /></Suspense></RequirePlan>} />
         <Route path="/super-charts" element={<RequirePlan><Suspense fallback={<PageLoader />}><SuperChartsPage /></Suspense></RequirePlan>} />
         <Route path="/indicators" element={<RequirePlan><Suspense fallback={<PageLoader />}><IndicatorsPage /></Suspense></RequirePlan>} />

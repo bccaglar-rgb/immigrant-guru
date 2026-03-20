@@ -118,6 +118,20 @@ type AiScanRow = {
   scoringMode?: string;
   layerConsensus?: number;
   disclaimer?: string;
+  axiomAnalysis?: {
+    regime: string;
+    primaryThesis: string;
+    entryType: string;
+    entryCondition: string;
+    invalidation: string;
+    notes: string[];
+    bullishScore: number;
+    bearishScore: number;
+    rrEstimate: number;
+    tp1: number;
+    tp2: number;
+    tp3: number;
+  };
 };
 
 type AiModuleStatus = {
@@ -686,13 +700,21 @@ export default function TradeIdeasPage() {
   // Reset report: clear all trade ideas + scan counts + scanner stats
   const handleReportReset = async () => {
     if (reportResetting) return;
-    if (!window.confirm("Reset all trade ideas, scan counts and scanner stats? This cannot be undone.")) return;
+    const msg = isAiTradeIdeasPage
+      ? "Reset all AI trade ideas and scan counts? This cannot be undone."
+      : "Reset all trade ideas, scan counts and scanner stats? This cannot be undone.";
+    if (!window.confirm(msg)) return;
     setReportResetting(true);
     try {
-      const res = await fetch("/api/trade-ideas/reset", { method: "POST" });
+      const endpoint = isAiTradeIdeasPage ? "/api/ai-trade-ideas/reset" : "/api/trade-ideas/reset";
+      const res = await fetch(endpoint, { method: "POST" });
       if (res.ok) {
-        setReportStatsByMode({});
-        setReportResetEpoch((e) => e + 1);
+        if (isAiTradeIdeasPage) {
+          setAiReportStatsByModule({});
+        } else {
+          setReportStatsByMode({});
+          setReportResetEpoch((e) => e + 1);
+        }
       }
     } catch { /* ignore */ }
     setReportResetting(false);
@@ -1540,11 +1562,109 @@ export default function TradeIdeasPage() {
                   {/* AI Comment — shown on ALL cards */}
                   <div className="mt-2 rounded-md border border-white/10 bg-[#0F1012] px-2 py-1.5 text-[11px] text-[#BFC2C7]">
                     <p className="text-[10px] uppercase tracking-wide text-[#8f95a3]">AI Comment</p>
-                    <p>{row.notes?.one_liner || row.reason || "No comment returned by AI module."}</p>
+                    <p>{row.axiomAnalysis?.primaryThesis || row.notes?.one_liner || row.reason || "No comment returned by AI module."}</p>
                     {Array.isArray(row.blockers) && row.blockers.length ? (
                       <p className="mt-1 text-[#d6b3af]">Blockers: {row.blockers.slice(0, 3).join(" · ")}</p>
                     ) : null}
                   </div>
+                  {/* Axiom Analysis — only for QWEN2 (Bitrium Axiom) */}
+                  {row.module === "QWEN2" && row.axiomAnalysis ? (() => {
+                    const ax = row.axiomAnalysis;
+                    const maxScore = Math.max(ax.bullishScore, ax.bearishScore);
+                    const bullPct = Math.round(ax.bullishScore * 100);
+                    const bearPct = Math.round(ax.bearishScore * 100);
+                    return (
+                      <div className="mt-2 space-y-2">
+                        {/* Regime + Entry Type */}
+                        <div className="flex flex-wrap gap-1.5 text-[11px]">
+                          {ax.regime ? (
+                            <span className="rounded-full border border-[#c4893d]/60 bg-[#2a1f0f] px-2 py-0.5 font-semibold text-[#ffd699]">
+                              {ax.regime}
+                            </span>
+                          ) : null}
+                          {ax.entryType ? (
+                            <span className="rounded-full border border-[#46546a]/70 bg-[#1a212d] px-2 py-0.5 text-[#cfd9ea]">
+                              {ax.entryType}
+                            </span>
+                          ) : null}
+                          {ax.rrEstimate > 0 ? (
+                            <span className="rounded-full border border-[#6f765f]/70 bg-[#1f251b] px-2 py-0.5 text-[#d8decf]">
+                              RR {ax.rrEstimate.toFixed(1)}
+                            </span>
+                          ) : null}
+                        </div>
+                        {/* Bullish vs Bearish Score Bar */}
+                        {maxScore > 0 ? (
+                          <div className="rounded-md border border-white/10 bg-[#0F1012] p-2">
+                            <div className="mb-1 flex items-center justify-between text-[10px]">
+                              <span className="text-[#6f9e6f]">Bull {bullPct}%</span>
+                              <span className="text-[10px] text-[#8f95a3]">Score Balance</span>
+                              <span className="text-[#c06060]">Bear {bearPct}%</span>
+                            </div>
+                            <div className="relative h-2 overflow-hidden rounded-full bg-[#1a1a1e]">
+                              <div
+                                className="absolute left-0 top-0 h-full rounded-full bg-[#4a7a4a]"
+                                style={{ width: `${bullPct}%` }}
+                              />
+                              <div
+                                className="absolute right-0 top-0 h-full rounded-full bg-[#8a3a3a]"
+                                style={{ width: `${bearPct}%` }}
+                              />
+                            </div>
+                          </div>
+                        ) : null}
+                        {/* 5-Layer Scores */}
+                        {row.layerScores ? (
+                          <div className="grid grid-cols-4 gap-1.5 text-[10px]">
+                            {[
+                              { label: "Structure", value: row.layerScores.structure, color: "#c4893d" },
+                              { label: "Liquidity", value: row.layerScores.liquidity, color: "#4a8fc4" },
+                              { label: "Positioning", value: row.layerScores.positioning, color: "#8a6fc4" },
+                              { label: "Execution", value: row.layerScores.execution, color: "#6f9e6f" },
+                            ].map(({ label, value, color }) => (
+                              <div key={label} className="rounded-md border border-white/10 bg-[#0F1012] p-1.5 text-center">
+                                <p className="text-[#8f95a3]">{label}</p>
+                                <p className="text-sm font-semibold" style={{ color }}>{value ?? 0}</p>
+                                <div className="mx-auto mt-0.5 h-1 w-full overflow-hidden rounded-full bg-[#1a1a1e]">
+                                  <div className="h-full rounded-full" style={{ width: `${value ?? 0}%`, backgroundColor: color }} />
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        ) : null}
+                        {/* Entry Condition */}
+                        {ax.entryCondition ? (
+                          <p className="text-[11px] text-[#cfbf98]">Entry: {ax.entryCondition}</p>
+                        ) : null}
+                        {/* Invalidation */}
+                        {ax.invalidation ? (
+                          <p className="text-[11px] text-[#d6b3af]">Invalidation: {ax.invalidation}</p>
+                        ) : null}
+                        {/* TP Breakdown */}
+                        {(ax.tp1 > 0 || ax.tp2 > 0 || ax.tp3 > 0) ? (
+                          <div className="flex flex-wrap gap-1.5 text-[10px]">
+                            {ax.tp1 > 0 ? (
+                              <span className="rounded border border-[#6f765f]/50 bg-[#171f16] px-1.5 py-0.5 text-[#d8decf]">TP1 (40%) {formatPx(ax.tp1)}</span>
+                            ) : null}
+                            {ax.tp2 > 0 ? (
+                              <span className="rounded border border-[#6f765f]/50 bg-[#171f16] px-1.5 py-0.5 text-[#d8decf]">TP2 (35%) {formatPx(ax.tp2)}</span>
+                            ) : null}
+                            {ax.tp3 > 0 ? (
+                              <span className="rounded border border-[#6f765f]/50 bg-[#171f16] px-1.5 py-0.5 text-[#d8decf]">TP3 (25%) {formatPx(ax.tp3)}</span>
+                            ) : null}
+                          </div>
+                        ) : null}
+                        {/* Notes */}
+                        {ax.notes.length > 0 ? (
+                          <div className="text-[10px] text-[#8f95a3]">
+                            {ax.notes.slice(0, 3).map((note, i) => (
+                              <p key={i}>- {note}</p>
+                            ))}
+                          </div>
+                        ) : null}
+                      </div>
+                    );
+                  })() : null}
                   {isTradeCard ? (
                     <div className="mt-2 grid gap-2 text-[11px] md:grid-cols-2">
                       <div className="rounded-md border border-white/10 bg-[#0F1012] px-2 py-1.5 text-[#BFC2C7]">

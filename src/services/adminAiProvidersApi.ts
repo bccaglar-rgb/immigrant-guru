@@ -83,6 +83,20 @@ export interface AiScanRowDto {
   blockers?: string[];
   activateIf?: string[];
   watchZones?: { upper_reclaim?: number; lower_break?: number };
+  axiomAnalysis?: {
+    regime: string;
+    primaryThesis: string;
+    entryType: string;
+    entryCondition: string;
+    invalidation: string;
+    notes: string[];
+    bullishScore: number;
+    bearishScore: number;
+    rrEstimate: number;
+    tp1: number;
+    tp2: number;
+    tp3: number;
+  };
 }
 
 export interface AiTradeIdeasStateResponse {

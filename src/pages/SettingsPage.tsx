@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import type { AiModelConfig } from "../types";
 import { getAiProviderIcon, getExchangeBranding } from "../data/branding";
 import { writeExchangeAccounts } from "../hooks/useExchangeConfigs";
+import { useAuthStore } from "../hooks/useAuthStore";
 import { ConnectApiModal, type ConnectApiPayload } from "../components/exchange/ConnectApiModal";
 import { authHeaders } from "../services/exchangeApi";
 import {
@@ -186,7 +187,7 @@ export default function SettingsPage() {
   const [editingModelId, setEditingModelId] = useState<string | null>(null);
   const [modelErrors, setModelErrors] = useState<Record<string, string>>({});
 
-  const [membershipExpiry] = useState<Date>(() => readMembershipExpiry());
+  const authUser = useAuthStore((s) => s.user);
 
   const effectivePalette = useMemo(() => resolveEffectivePalette(themeState), [themeState]);
   const activePalette = useMemo(() => getPaletteById(themeState.paletteId), [themeState.paletteId]);
@@ -194,19 +195,28 @@ export default function SettingsPage() {
   const customColors = themeState.customColors ?? PREDEFINED_PALETTES[0].colors;
 
   const membership = useMemo(() => {
+    if (!authUser?.hasActivePlan) {
+      return { status: "No Active Plan", daysLeft: 0, monthsLeft: 0, expiresLabel: "-", tier: "none" };
+    }
+    const tier = authUser.activePlanTier ?? "explorer";
+    const tierLabel = tier.charAt(0).toUpperCase() + tier.slice(1);
+    if (!authUser.activePlanEndAt) {
+      return { status: `${tierLabel} Active`, daysLeft: 999, monthsLeft: 33, expiresLabel: "Unlimited", tier };
+    }
     const now = Date.now();
-    const exp = membershipExpiry.getTime();
+    const exp = new Date(authUser.activePlanEndAt).getTime();
     const diffMs = exp - now;
     const daysLeft = Math.max(0, Math.ceil(diffMs / (24 * 60 * 60 * 1000)));
     const monthsLeft = Math.max(0, Math.floor(daysLeft / 30));
-    const status = daysLeft > 0 ? "Premium Active" : "Expired";
+    const status = daysLeft > 0 ? `${tierLabel} Active` : "Expired";
     return {
       status,
       daysLeft,
       monthsLeft,
-      expiresLabel: membershipExpiry.toLocaleDateString(),
+      expiresLabel: new Date(authUser.activePlanEndAt).toLocaleDateString(),
+      tier,
     };
-  }, [membershipExpiry]);
+  }, [authUser]);
 
   const modelValidation = useMemo(() => {
     const errors: Record<string, string> = {};

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { getAuthToken } from "../services/authClient";
 import { createInvoice } from "../services/paymentsApi";
+import { useAuthStore } from "../hooks/useAuthStore";
 
 const MEMBERSHIP_EXPIRES_KEY = "membership.expiresAt";
 const MEMBERSHIP_PLAN_KEY = "membership.planId";
@@ -230,26 +231,31 @@ export default function PricingPage() {
     return () => { cancelled = true; };
   }, []);
 
-  // ── Derive membership from server data or localStorage fallback ──
+  // ── Derive membership from auth store (primary) or server/localStorage fallback ──
+  const authUser = useAuthStore((s) => s.user);
+  const authTier = authUser?.activePlanTier ?? null;
+  const authEndAt = authUser?.activePlanEndAt ? new Date(authUser.activePlanEndAt) : null;
+
   const serverExpiry = activeSub ? new Date(activeSub.endAt) : null;
   const localExpiryRaw = typeof window !== "undefined" ? window.localStorage.getItem(MEMBERSHIP_EXPIRES_KEY) : null;
   const localExpiry = localExpiryRaw ? new Date(localExpiryRaw) : null;
-  const expiryDate = serverExpiry ?? localExpiry;
-  const hasMembership = Boolean(expiryDate && !Number.isNaN(expiryDate.getTime()) && expiryDate.getTime() > Date.now());
+  const expiryDate = authEndAt ?? serverExpiry ?? localExpiry;
+  const hasMembership = authUser?.hasActivePlan ?? Boolean(expiryDate && !Number.isNaN(expiryDate.getTime()) && expiryDate.getTime() > Date.now());
   const daysRemaining = hasMembership && expiryDate ? Math.max(0, Math.ceil((expiryDate.getTime() - Date.now()) / (24 * 60 * 60 * 1000))) : 0;
   const expiryLabel = expiryDate ? expiryDate.toLocaleDateString("en-US") : "";
 
-  // ── Current plan (server-first, localStorage fallback, then default) ──
+  // ── Current plan (auth store → server → localStorage) ──
   const serverPlanId = activeSub?.planId ?? null;
   const localPlanId = typeof window !== "undefined" ? window.localStorage.getItem(MEMBERSHIP_PLAN_KEY) : null;
   const resolvedPlanId = serverPlanId ?? localPlanId ?? (hasMembership ? "explorer-6m" : null);
-  // Persist resolved planId so it sticks on next visit
   if (hasMembership && resolvedPlanId && !localPlanId) {
     try { window.localStorage.setItem(MEMBERSHIP_PLAN_KEY, resolvedPlanId); } catch { /* ignore */ }
   }
   const currentPlan = hasMembership ? parsePlanId(resolvedPlanId) : null;
-  const currentTierPrefix = currentPlan?.prefix ?? null;
+  // Auth store tier is the ground truth
+  const currentTierPrefix = authTier ?? currentPlan?.prefix ?? null;
   const currentPeriod = currentPlan?.period ?? null;
+  const TIER_RANK: Record<string, number> = { explorer: 0, trader: 1, strategist: 2, titan: 3 };
 
   // ── Single selection state: only one tier+period at a time ──
   const [selection, setSelection] = useState<{ tierName: string; period: BillingPeriod } | null>(null);
@@ -329,7 +335,12 @@ export default function PricingPage() {
                   </span>
                 ) : null}
 
-                <h2 className="text-xl font-bold text-white">{tier.name}</h2>
+                <div className="flex items-center gap-2">
+                  <h2 className="text-xl font-bold text-white">{tier.name}</h2>
+                  {isCurrentTier ? (
+                    <span className="rounded bg-[#4caf50]/20 px-2 py-0.5 text-[10px] font-bold text-[#4caf50]">Your Plan</span>
+                  ) : null}
+                </div>
                 <p className="mt-1 text-xs text-[#6B6F76]">{tier.description}</p>
 
                 {/* Features */}
@@ -358,7 +369,7 @@ export default function PricingPage() {
                   {BILLING_OPTIONS.map(({ key, label }) => {
                     const p = tier.pricing[key];
                     const isSelected = activePeriod === key;
-                    const isCurrentPlan = false;
+                    const isCurrentPlan = isCurrentTier && currentPeriod === key;
                     const isMonthly = key === "1m";
                     return (
                       <button
@@ -404,24 +415,41 @@ export default function PricingPage() {
                 </div>
 
                 {/* Subscribe button */}
-                <button
-                  type="button"
-                  onClick={() => void handleSubscribe(tier)}
-                  disabled={!tierSelected || busyTier === tier.name}
-                  className={`group mt-4 w-full rounded-lg px-4 py-2.5 text-sm font-semibold transition-all duration-300 ${
-                    !tierSelected
-                      ? "cursor-not-allowed border border-white/10 bg-[#17191d] text-[#6B6F76]"
-                      : tier.highlight
-                        ? "bg-[#F5C542] text-black hover:bg-[#e5b632] hover:shadow-[0_0_24px_rgba(245,197,66,0.4)] hover:scale-[1.02] active:scale-[0.97] active:shadow-[0_0_32px_rgba(245,197,66,0.6)]"
-                        : "border border-[#7a6840] bg-[#2b2417] text-[#F5C542] hover:bg-[#3a3020] hover:shadow-[0_0_20px_rgba(245,197,66,0.2)] hover:scale-[1.02] active:scale-[0.97] active:shadow-[0_0_28px_rgba(245,197,66,0.4)]"
-                  } disabled:opacity-50 disabled:hover:scale-100 disabled:hover:shadow-none`}
-                >
-                  {busyTier === tier.name
+                {(() => {
+                  const isHigherTier = currentTierPrefix ? (TIER_RANK[tier.planIdPrefix] ?? 0) > (TIER_RANK[currentTierPrefix] ?? 0) : false;
+                  const isLowerTier = currentTierPrefix ? (TIER_RANK[tier.planIdPrefix] ?? 0) < (TIER_RANK[currentTierPrefix] ?? 0) : false;
+                  const btnLabel = busyTier === tier.name
                     ? "Creating invoice..."
-                    : !tierSelected
-                      ? "Select a plan"
-                      : "Subscribe Now"}
-                </button>
+                    : isCurrentTier && !tierSelected
+                      ? "Current Plan"
+                      : isHigherTier && !tierSelected
+                        ? "Upgrade"
+                        : !tierSelected
+                          ? "Select a plan"
+                          : isHigherTier
+                            ? "Upgrade Now"
+                            : "Subscribe Now";
+                  return (
+                    <button
+                      type="button"
+                      onClick={() => void handleSubscribe(tier)}
+                      disabled={(isCurrentTier && !tierSelected) || isLowerTier || (!tierSelected && !isHigherTier) || busyTier === tier.name}
+                      className={`group mt-4 w-full rounded-lg px-4 py-2.5 text-sm font-semibold transition-all duration-300 ${
+                        isCurrentTier && !tierSelected
+                          ? "cursor-default border border-[#4caf50]/40 bg-[#162016] text-[#4caf50]"
+                          : isHigherTier && !tierSelected
+                            ? "border border-[#F5C542]/60 bg-[#2b2417] text-[#F5C542] hover:bg-[#3a3020] hover:scale-[1.02]"
+                            : !tierSelected
+                              ? "cursor-not-allowed border border-white/10 bg-[#17191d] text-[#6B6F76]"
+                              : tier.highlight
+                                ? "bg-[#F5C542] text-black hover:bg-[#e5b632] hover:shadow-[0_0_24px_rgba(245,197,66,0.4)] hover:scale-[1.02] active:scale-[0.97]"
+                                : "border border-[#7a6840] bg-[#2b2417] text-[#F5C542] hover:bg-[#3a3020] hover:scale-[1.02] active:scale-[0.97]"
+                      } disabled:opacity-50 disabled:hover:scale-100 disabled:hover:shadow-none`}
+                    >
+                      {btnLabel}
+                    </button>
+                  );
+                })()}
               </article>
             );
           })}

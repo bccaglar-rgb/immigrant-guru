@@ -44,6 +44,7 @@ interface Props {
   onAddExchange?: () => void;
   tradingViewSymbol?: string | null;
   chartSourceLabel?: string;
+  chartLatencyMs?: number | null;
   activeSignal?: ExchangeTradeSignal | null;
   indicatorsState?: IndicatorsState;
   liveOhlcv?: Array<{ time: number; close: number; volume: number }>;
@@ -65,6 +66,7 @@ export const ChartPanel = ({
   onAddExchange,
   tradingViewSymbol = null,
   chartSourceLabel,
+  chartLatencyMs = null,
   activeSignal = null,
   indicatorsState,
   liveOhlcv = [],
@@ -754,6 +756,26 @@ export const ChartPanel = ({
               <span className={typeof ticker?.change24hPct === "number" && ticker.change24hPct >= 0 ? "text-[#8fc9ab]" : "text-[#d49f9a]"}>
                 {formatPercent(ticker?.change24hPct)}
               </span>
+              {chartSourceLabel && (() => {
+                const isDown = chartSourceLabel.includes("N/A");
+                const exchangeName = chartSourceLabel.replace("PRIMARY:", "").replace(" | BOOK:N/A", "");
+                const latencyColor = chartLatencyMs === null ? "#6B6F76"
+                  : chartLatencyMs < 300 ? "#2bc48a"
+                  : chartLatencyMs < 800 ? "#F5C542"
+                  : "#d49f9a";
+                return (
+                  <span className="ml-auto inline-flex flex-col items-end gap-0">
+                    <span className="inline-flex items-center gap-1.5 rounded border border-white/10 bg-[#111418] px-2 py-0.5 text-[10px] text-[#8A8F98]">
+                      <span className="text-[#6B6F76]">Source:</span>
+                      <span className={`h-1.5 w-1.5 rounded-full ${isDown ? "bg-[#d49f9a]" : "bg-[#2bc48a]"}`} />
+                      <span className="font-medium text-[#BFC2C7]">{exchangeName}</span>
+                    </span>
+                    <span className="mt-0.5 text-[9px]" style={{ color: latencyColor }}>
+                      {isDown ? "Disconnected" : chartLatencyMs !== null ? `${chartLatencyMs}ms` : "..."}
+                    </span>
+                  </span>
+                );
+              })()}
           </div>
           <div className={`mt-1 grid gap-1.5 ${accountMode === "Futures" ? "grid-cols-2 md:grid-cols-4 xl:grid-cols-8" : "grid-cols-2 md:grid-cols-3"}`}>
             <MetricChip label="24h Vol(BTC)" value={formatNumber(ticker?.volume24h, 2)} />
@@ -786,11 +808,7 @@ export const ChartPanel = ({
             <span className="text-[#6B6F76]">Trading Data</span>
             <span className="text-[#6B6F76]">Trading Analysis</span>
             <span className="text-[#6B6F76]">Square</span>
-            {chartSourceLabel ? (
-              <span className="ml-2 rounded border border-white/10 bg-[#111418] px-1.5 py-0.5 text-[10px] text-[#8A8F98]">
-                Chart source: {chartSourceLabel}
-              </span>
-            ) : null}
+            {/* source label moved to floating badge on chart */}
           </div>
           <div className="flex items-center gap-2 text-[11px]">
             {timeframes.map((tf) => (

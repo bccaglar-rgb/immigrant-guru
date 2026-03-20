@@ -30,6 +30,8 @@ export interface ReferralCodeRecord {
   usedCount: number;
   active: boolean;
   expiresAt?: string;
+  grantPlanTier?: string;
+  grantDurationDays?: number;
   createdAt: string;
   updatedAt: string;
 }

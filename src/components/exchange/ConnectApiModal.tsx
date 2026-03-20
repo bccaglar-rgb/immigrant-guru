@@ -16,6 +16,13 @@ export interface ConnectApiPayload {
   testnet: boolean;
 }
 
+interface ConnectedAccount {
+  exchangeId: string;
+  accountName: string;
+  status: string;
+  enabled: boolean;
+}
+
 interface Props {
   open: boolean;
   onClose: () => void;
@@ -23,6 +30,8 @@ interface Props {
   onTest: (payload: { exchangeId: string; apiKey: string; apiSecret: string; passphrase?: string; testnet: boolean }) => Promise<{ ok: boolean; error?: string }>;
   /** Pre-select exchange + accountName when editing */
   editMode?: { exchangeId: string; accountName: string } | null;
+  /** Already connected accounts — shown as badges on exchange cards */
+  connectedAccounts?: ConnectedAccount[];
 }
 
 /** Exchanges with a working backend adapter */
@@ -47,7 +56,7 @@ const SERVER_IP = "161.35.94.191";
 
 const NEEDS_PASSPHRASE = new Set(["okx", "kucoin", "bitget"]);
 
-export const ConnectApiModal = ({ open, onClose, onSave, onTest, editMode }: Props) => {
+export const ConnectApiModal = ({ open, onClose, onSave, onTest, editMode, connectedAccounts = [] }: Props) => {
   const [step, setStep] = useState<1 | 2>(1);
   const [selectedExchange, setSelectedExchange] = useState<ExchangeOption | null>(null);
   const [accountName, setAccountName] = useState("Main");
@@ -171,15 +180,10 @@ export const ConnectApiModal = ({ open, onClose, onSave, onTest, editMode }: Pro
           </button>
         </div>
 
-        {/* Step indicator */}
-        <div className="mb-5 flex items-center gap-2 text-xs">
-          <span className={`rounded-full border px-2.5 py-0.5 font-medium transition ${step === 1 ? "border-[var(--accent)] text-[var(--accent)]" : "border-white/15 text-[var(--textMuted)]"}`}>
-            1 Select Exchange
-          </span>
-          <span className="text-[var(--textMuted)]">—</span>
-          <span className={`rounded-full border px-2.5 py-0.5 font-medium transition ${step === 2 ? "border-[var(--accent)] text-[var(--accent)]" : "border-white/15 text-[var(--textMuted)]"}`}>
-            2 API Credentials
-          </span>
+        {/* Step dots */}
+        <div className="mb-5 flex items-center gap-1.5">
+          <span className={`h-1.5 rounded-full transition-all ${step === 1 ? "w-6 bg-[var(--accent)]" : "w-1.5 bg-white/20"}`} />
+          <span className={`h-1.5 rounded-full transition-all ${step === 2 ? "w-6 bg-[var(--accent)]" : "w-1.5 bg-white/20"}`} />
         </div>
 
         {/* Step 1: Exchange Selection Grid */}
@@ -189,6 +193,8 @@ export const ConnectApiModal = ({ open, onClose, onSave, onTest, editMode }: Pro
             <div className="grid gap-2.5 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4">
               {SUPPORTED_EXCHANGES.map((ex) => {
                 const branding = getExchangeBranding(ex.id);
+                const accounts = connectedAccounts.filter((a) => a.exchangeId === ex.id);
+                const accountCount = accounts.length;
                 return (
                   <button
                     type="button"
@@ -197,10 +203,18 @@ export const ConnectApiModal = ({ open, onClose, onSave, onTest, editMode }: Pro
                     disabled={!ex.hasAdapter}
                     className={`group relative flex items-center gap-3 rounded-xl border p-3 text-left transition ${
                       ex.hasAdapter
-                        ? "border-[var(--borderSoft)] bg-[var(--panelMuted)] hover:border-[var(--accent)] hover:bg-[color-mix(in_srgb,var(--accent)_6%,transparent)]"
+                        ? accountCount > 0
+                          ? "border-[var(--accent)]/40 bg-[color-mix(in_srgb,var(--accent)_4%,transparent)] hover:border-[var(--accent)] hover:bg-[color-mix(in_srgb,var(--accent)_8%,transparent)]"
+                          : "border-[var(--borderSoft)] bg-[var(--panelMuted)] hover:border-[var(--accent)] hover:bg-[color-mix(in_srgb,var(--accent)_6%,transparent)]"
                         : "border-[var(--borderSoft)] bg-[var(--panelMuted)] opacity-50 cursor-not-allowed"
                     }`}
                   >
+                    {/* Connected account badge */}
+                    {accountCount > 0 && (
+                      <span className="absolute -top-1.5 -right-1.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-[var(--accent)] px-1 text-[10px] font-bold text-black shadow-md">
+                        {accountCount}
+                      </span>
+                    )}
                     <img
                       src={branding.iconUrl}
                       alt={ex.label}
@@ -218,10 +232,15 @@ export const ConnectApiModal = ({ open, onClose, onSave, onTest, editMode }: Pro
                         }
                       }}
                     />
-                    <div className="min-w-0">
+                    <div className="min-w-0 flex-1">
                       <p className={`text-sm font-semibold transition ${ex.hasAdapter ? "text-[var(--text)] group-hover:text-[var(--accent)]" : "text-[var(--textMuted)]"}`}>{ex.label}</p>
                       {!ex.hasAdapter && (
                         <span className="text-[10px] text-[var(--textMuted)]">Coming Soon</span>
+                      )}
+                      {accountCount > 0 && (
+                        <p className="mt-0.5 truncate text-[10px] text-[var(--accent)]/80">
+                          {accounts.map((a) => a.accountName).join(", ")}
+                        </p>
                       )}
                     </div>
                   </button>
@@ -346,12 +365,15 @@ export const ConnectApiModal = ({ open, onClose, onSave, onTest, editMode }: Pro
 
             {/* Permissions reminder */}
             <div className="mt-3 rounded-xl border border-[var(--borderSoft)] bg-[var(--panelMuted)] p-3 text-xs text-[var(--textMuted)]">
-              <p className="mb-1 font-semibold text-[var(--text)]">API Permissions</p>
+              <p className="mb-1 font-semibold text-[var(--text)]">Required API Permissions</p>
               <div className="flex flex-wrap gap-x-4 gap-y-1">
-                <span className="text-[#8fc9ab]">Read-only: enabled</span>
-                <span className="text-[#8fc9ab]">Spot/Futures trade: as needed</span>
+                <span className="text-[#8fc9ab]">Read: enabled</span>
+                <span className="text-[#8fc9ab]">Spot trade: enabled</span>
+                <span className="text-[#8fc9ab]">Futures trade: enabled</span>
+                <span className="text-[#8fc9ab]">Margin trade: enabled</span>
                 <span className="text-[#d49f9a]">Withdrawal: disabled</span>
               </div>
+              <p className="mt-1.5 text-[10px] text-[var(--textMuted)]">Enable all permissions except withdrawal for full trading capability.</p>
             </div>
 
             {/* Error messages */}

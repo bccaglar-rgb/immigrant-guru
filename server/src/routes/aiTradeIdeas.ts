@@ -6,6 +6,8 @@ import type { CoinUniverseEngine } from "../services/coinUniverseEngine.ts";
 import type { TradeIdeaStore } from "../services/tradeIdeaStore.ts";
 import type { TradeIdeaRecord } from "../services/tradeIdeaTypes.ts";
 import { redis } from "../db/redis.ts";
+import { AXIOM_SYSTEM_PROMPT, buildAxiomUserPrompt } from "../engines/aiTradeIdeas/axiomPrompt.ts";
+import { buildAxiomEdgeLayerInput } from "../services/axiomEdgeLayerBuilder.ts";
 
 const AI_STATE_REDIS_KEY = "bitrium:ai-trade-ideas:state";
 
@@ -55,39 +57,8 @@ const buildSystemPrompt = (moduleId?: AiModuleId) => {
     "13. Decision thresholds: 65 to 100 = TRADE, 45 to 64 = WATCH, 0 to 44 = NO_TRADE.",
   ];
   if (moduleId === "QWEN2") {
-    base.push(
-      "",
-      "========================",
-      "BITRIUM AXIOM — STRICT TRADE ENGINE RULES",
-      "========================",
-      "You are a professional crypto trade setup engine.",
-      "Your goal is to generate high-quality LONG, SHORT, or NO_TRADE setups based on structure, volatility, and liquidity.",
-      "Do NOT use tight stop losses or small take profits to increase win rate.",
-      "Always prioritize valid structure and strong risk/reward.",
-      "",
-      "STOP LOSS RULES:",
-      "1. Stop loss must be based on INVALIDATION (structure break), not random distance.",
-      "2. Place SL beyond: swing high/low, support/resistance, liquidity sweep levels.",
-      "3. Avoid placing SL inside normal volatility noise.",
-      "4. Use ATR to validate stop distance.",
-      "5. If stop is too tight (< 0.8 ATR), expand or reject trade.",
-      "",
-      "CALCULATIONS:",
-      "E = entry_mid, IS = invalidation_level, ATR = atr",
-      "Buffer: B = max(0.20 * ATR, 0.0015 * E)",
-      "LONG: SL = min(IS - B, E - 1.2 * ATR), R = E - SL, TP1 = E + 1R, TP2 = E + 2R, TP3 = E + 3R",
-      "SHORT: SL = max(IS + B, E + 1.2 * ATR), R = SL - E, TP1 = E - 1R, TP2 = E - 2R, TP3 = E - 3R",
-      "",
-      "REJECTION FILTERS:",
-      "Reject trade if: R < 0.8 * ATR, RR to TP2 < 1.5, confidence < 0.65, structure is unclear.",
-      "Prefer: RR >= 1.8",
-      "",
-      "STRICT:",
-      "- Do NOT place tight SL near entry.",
-      "- Do NOT place TP too close.",
-      "- Prefer NO_TRADE over bad RR.",
-      "- Always respect structure + ATR.",
-    );
+    // QWEN2 (Bitrium Axiom) uses the full institutional-grade AI trading engine prompt
+    return AXIOM_SYSTEM_PROMPT;
   }
   return base.join("\n");
 };
@@ -251,6 +222,20 @@ type AiScanRow = {
   qualityIndexQ?: number;
   upliftPoints?: number;
   calibratedScore?: number;
+  axiomAnalysis?: {
+    regime: string;
+    primaryThesis: string;
+    entryType: string;
+    entryCondition: string;
+    invalidation: string;
+    notes: string[];
+    bullishScore: number;
+    bearishScore: number;
+    rrEstimate: number;
+    tp1: number;
+    tp2: number;
+    tp3: number;
+  };
 };
 
 type SharedAiState = {
@@ -1010,6 +995,103 @@ const toScanRow = (
   const parsed = (response.parsed && typeof response.parsed === "object"
     ? response.parsed
     : {}) as Record<string, any>;
+
+  // ── Axiom (QWEN2) response normalization ──
+  // Axiom returns: { decision: "LONG"|"SHORT"|"NO TRADE", confidence: 0.0-1.0,
+  //   regime, primary_thesis, entry_type, entry_zone, stop_loss, tp1, tp2, tp3, ... }
+  if (moduleId === "QWEN2" && parsed.decision && !parsed.score) {
+    const axiomDecision = String(parsed.decision).toUpperCase().trim();
+    // Map Axiom confidence (0-1) to score (0-100)
+    let axiomConfidence = Number(parsed.confidence ?? 0);
+    if (axiomConfidence <= 1.0) axiomConfidence = axiomConfidence * 100;
+    parsed.score = clampPct(axiomConfidence);
+
+    // Map Axiom decision to standard format
+    if (axiomDecision === "LONG") {
+      parsed.decision = axiomConfidence >= 65 ? "TRADE" : axiomConfidence >= 45 ? "WATCH" : "NO_TRADE";
+      parsed.direction = "LONG";
+    } else if (axiomDecision === "SHORT") {
+      parsed.decision = axiomConfidence >= 65 ? "TRADE" : axiomConfidence >= 45 ? "WATCH" : "NO_TRADE";
+      parsed.direction = "SHORT";
+    } else {
+      parsed.decision = "NO_TRADE";
+      parsed.direction = "NONE";
+    }
+
+    // Map entry_zone array to flat fields
+    if (Array.isArray(parsed.entry_zone) && parsed.entry_zone.length >= 2) {
+      parsed.entry_zone_low = parsed.entry_zone[0];
+      parsed.entry_zone_high = parsed.entry_zone[1];
+    }
+
+    // Map stop_loss to stop_1
+    if (Number.isFinite(Number(parsed.stop_loss))) {
+      parsed.stop_1 = parsed.stop_loss;
+    }
+
+    // Map tp1/tp2/tp3 to target_1/target_2
+    if (Number.isFinite(Number(parsed.tp1))) parsed.target_1 = parsed.tp1;
+    if (Number.isFinite(Number(parsed.tp2))) parsed.target_2 = parsed.tp2;
+
+    // Map Axiom fields to standard comment/notes
+    if (parsed.primary_thesis) {
+      parsed.comment_30_words = parsed.primary_thesis;
+    }
+    if (parsed.invalidation) {
+      parsed.invalid_if = parsed.invalidation;
+    }
+    if (Array.isArray(parsed.notes) && parsed.notes.length) {
+      parsed.blockers = parsed.notes;
+    }
+
+    // Map regime to market_state
+    if (parsed.regime) {
+      const regimeStr = String(parsed.regime).toUpperCase();
+      parsed.market_state = {
+        regime: regimeStr.includes("TREND") ? "TREND" : regimeStr.includes("RANGE") ? "RANGE" : "TRANSITION",
+        trend_dir: regimeStr.includes("UP") || regimeStr.includes("BULL") ? "UP" : regimeStr.includes("DOWN") || regimeStr.includes("BEAR") ? "DOWN" : "FLAT",
+        ema_alignment: parsed.direction === "LONG" ? "BULL" : parsed.direction === "SHORT" ? "BEAR" : "NEUT",
+      };
+    }
+
+    // Map entry_type to setup
+    if (parsed.entry_type) {
+      parsed.setup = String(parsed.entry_type).toUpperCase();
+    }
+
+    // Build layer_scores from bullish/bearish scores
+    const bullish = Number(parsed.bullish_score ?? 0);
+    const bearish = Number(parsed.bearish_score ?? 0);
+    parsed.layer_scores_0_100 = {
+      structure: clampPct((bullish > bearish ? bullish : bearish) * 100),
+      liquidity: clampPct(axiomConfidence * 0.9),
+      positioning: clampPct(Math.abs(bullish - bearish) * 100 * 1.5),
+      execution: clampPct(axiomConfidence * 0.85),
+    };
+
+    // RR estimate
+    if (Number.isFinite(Number(parsed.rr_estimate))) {
+      if (!parsed.plan) parsed.plan = {};
+      parsed.plan.rr = parsed.rr_estimate;
+    }
+
+    // Axiom-specific metadata stored for frontend enrichment
+    parsed._axiomAnalysis = {
+      regime: String(parsed.regime ?? ""),
+      primaryThesis: String(parsed.primary_thesis ?? ""),
+      entryType: String(parsed.entry_type ?? ""),
+      entryCondition: String(parsed.entry_condition ?? ""),
+      invalidation: String(parsed.invalidation ?? ""),
+      notes: Array.isArray(parsed.notes) ? parsed.notes.map((n: unknown) => String(n)) : [],
+      bullishScore: Number(parsed.bullish_score ?? 0),
+      bearishScore: Number(parsed.bearish_score ?? 0),
+      rrEstimate: Number(parsed.rr_estimate ?? 0),
+      tp1: Number(parsed.tp1 ?? 0),
+      tp2: Number(parsed.tp2 ?? 0),
+      tp3: Number(parsed.tp3 ?? 0),
+    };
+  }
+
   const resolvedSymbol = String(parsed?.s ?? parsed?.meta?.symbol ?? symbol ?? "").toUpperCase() || symbol;
   const tf = String(parsed?.tf ?? parsed?.meta?.timeframe ?? compact?.tf ?? "15m").trim() || "15m";
   const scoreRaw = Number(
@@ -1392,6 +1474,7 @@ const toScanRow = (
     qualityIndexQ: Number(qualityIndexQ.toFixed(4)),
     upliftPoints: Number(upliftPoints.toFixed(2)),
     calibratedScore: Number(calibratedScoreRaw.toFixed(2)),
+    axiomAnalysis: parsed?._axiomAnalysis ?? undefined,
   };
 };
 
@@ -1427,6 +1510,19 @@ const callProvider = async (
       : [String(override?.model ?? provider.model)];
     let lastHttpError: { code: number; text: string; model: string } | null = null;
     for (const model of models) {
+      // For QWEN2 (Axiom): build edge layer input from compact payload
+      let userContent: string;
+      if (provider.id === "QWEN2" && payload && typeof payload === "object") {
+        const compact = payload as Record<string, unknown>;
+        const symbol = String(compact.s ?? compact.symbol ?? "UNKNOWN");
+        const price = Number(compact.p ?? compact.price ?? 0);
+        const tf = String(compact.tf ?? "15m");
+        const edgeLayer = buildAxiomEdgeLayerInput(symbol, price, tf, compact, null);
+        userContent = buildAxiomUserPrompt(JSON.stringify(edgeLayer, null, 2));
+      } else {
+        userContent = typeof payload === "string" ? payload : buildUserPrompt(JSON.stringify(payload));
+      }
+
       const body = {
         model,
         temperature: Number.isFinite(Number(override?.temperature))
@@ -1438,7 +1534,7 @@ const callProvider = async (
         response_format: { type: "json_object" },
         messages: [
           { role: "system", content: buildSystemPrompt(provider.id as AiModuleId) },
-          { role: "user", content: typeof payload === "string" ? payload : buildUserPrompt(JSON.stringify(payload)) },
+          { role: "user", content: userContent },
         ],
       };
       const res = await fetch(endpoint, {
@@ -2146,6 +2242,24 @@ export const registerAiTradeIdeasRoutes = (
         error: "ai_report_stats_failed",
         detail: error instanceof Error ? error.message : "unknown_error",
       });
+    }
+  });
+
+  app.post("/api/ai-trade-ideas/reset", async (_req, res) => {
+    try {
+      if (!deps.tradeIdeaStore) {
+        return res.json({ ok: true, deletedIdeas: 0, deletedEvents: 0 });
+      }
+      const result = await deps.tradeIdeaStore.clearAiIdeas();
+      // Also clear in-memory scan state
+      for (const moduleId of ALL_MODULE_IDS) {
+        sharedAiState.scansByModule[moduleId] = [];
+        sharedAiState.moduleStatus[moduleId] = { scanned: 0, running: false, lastRunAt: "", error: "" };
+      }
+      console.log(`[AI Reset] Cleared ${result.deletedIdeas} AI ideas — scan state zeroed`);
+      return res.json({ ok: true, ...result });
+    } catch (error) {
+      return res.status(500).json({ ok: false, error: "ai_reset_failed", detail: error instanceof Error ? error.message : "unknown_error" });
     }
   });
 

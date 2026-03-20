@@ -24,6 +24,7 @@ import { registerAdminProviderRoutes } from "./routes/adminProviders.ts";
 import { registerAiTradeIdeasRoutes } from "./routes/aiTradeIdeas.ts";
 import { registerTraderHubRoutes } from "./routes/traderHub.ts";
 import { registerExchangeCoreRoutes } from "./routes/exchangeCore.ts";
+import { registerPortfolioRoutes } from "./routes/portfolio.ts";
 import { ExchangeManager } from "./exchangeManager/index.ts";
 import { AuditLogService } from "./services/auditLog.ts";
 import { ConnectionService } from "./services/connectionService.ts";
@@ -67,6 +68,9 @@ import { FeatureWeightTuner } from "./services/optimizer/featureWeightTuner.ts";
 import { registerOptimizerStatsRoutes } from "./routes/optimizerStats.ts";
 import { AITradeIdeaEngine } from "./engines/aiTradeIdeas/AITradeIdeaEngine.ts";
 import { registerAiEngineV2Routes } from "./routes/aiEngineV2.ts";
+import egressProxyRouter from "./routes/egressProxy.ts";
+import egressAdminRouter from "./routes/egressAdmin.ts";
+import { initEgressController } from "./services/egress/index.ts";
 
 // PM2 cluster mode: Worker 0 = primary (runs singleton services + HTTP)
 // Worker 1, 2 = HTTP-only
@@ -82,6 +86,16 @@ const app = express();
 app.use(express.json());
 app.get("/api/health", (_req, res) => {
   res.json({ ok: true, service: "exchange-backend", worker: WORKER_ID, primary: IS_PRIMARY });
+});
+
+// ── Admin: Exchange Rate Limiter Metrics ──
+app.get("/api/admin/rate-limiter", async (_req, res) => {
+  try {
+    const { getFullMetrics } = await import("./services/binanceRateLimiter.ts");
+    res.json({ ok: true, ...getFullMetrics() });
+  } catch (err) {
+    res.status(500).json({ ok: false, error: err instanceof Error ? err.message : "unknown" });
+  }
 });
 
 const audit = new AuditLogService();
@@ -249,6 +263,7 @@ registerTradeIdeasRoutes(app, tradeIdeaStore, systemScanner);
 registerAdminProviderRoutes(app, adminProviderStore, authService);
 registerAiTradeIdeasRoutes(app, aiProviderStore, { binanceFuturesHub, coinUniverseEngine: coinUniverseEngineV2 as any, serverPort, isPrimary: IS_PRIMARY, tradeIdeaStore });
 registerExchangeCoreRoutes(app, exchangeCore, authService);
+registerPortfolioRoutes(app, exchangeManager, authService);
 registerTraderHubRoutes(app, traderHubEngine);
 registerCoinUniverseRoutes(app, coinUniverseEngineV2);
 registerOptimizerStatsRoutes(app, modePerformanceTracker, tradeOutcomeAttributor, dynamicSlTpOptimizer, regimeParameterEngine, confidenceCalibrator, selfThrottleEngine, featureWeightTuner);
@@ -260,6 +275,10 @@ registerBugReportRoutes(app, authService);
 registerMLRoutes(app);
 registerMetricsRoute(app, {});
 registerAiEngineV2Routes(app, aiTradeIdeaEngine, systemScanner, authService);
+
+// ── Egress Proxy + Admin Routes ──
+app.use(egressProxyRouter);
+app.use("/api/admin/egress", egressAdminRouter);
 
 // In production, serve the Vite-built frontend
 if (process.env.NODE_ENV === "production") {
@@ -332,6 +351,20 @@ bootstrap()
         exchangeCore.start();
         privateStreamManager.start();
         void traderHubEngine.start();
+
+        // Egress failover controller (Binance IP failover)
+        try {
+          initEgressController();
+          console.log(`[Worker ${WORKER_ID}] Egress failover controller active`);
+        } catch (err) {
+          console.error(`[Worker ${WORKER_ID}] Egress controller init failed:`, err);
+        }
+
+        // Binance rate limiter monitoring (60s interval)
+        import("./services/binanceRateLimiter.ts").then(({ logRateLimiterStatus }) => {
+          setInterval(() => logRateLimiterStatus(), 60_000);
+          console.log(`[Worker ${WORKER_ID}] Binance rate limiter monitoring active`);
+        }).catch(() => {});
         // tronMonitor.start(); // Disabled — moved to crypto-payment-engine (10.110.0.9:9100)
         adaptiveRR.start();
         optimizationScheduler.start();

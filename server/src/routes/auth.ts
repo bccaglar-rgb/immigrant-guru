@@ -68,20 +68,30 @@ export const registerAuthRoutes = (app: Express, auth: AuthService) => {
       const { email, password, twoFactorCode } = req.body ?? {};
       const result = await auth.login(String(email ?? ""), String(password ?? ""), twoFactorCode ? String(twoFactorCode) : undefined);
       let hasActivePlan = result.user.role === "ADMIN";
+      let activePlanTier: string | null = result.user.role === "ADMIN" ? "titan" : null;
+      let activePlanEndAt: string | null = result.user.role === "ADMIN" ? new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString() : null;
       if (!hasActivePlan) {
         try {
           const { pool } = await import("../db/pool.ts");
           const { rows } = await pool.query(
-            `SELECT id FROM subscriptions WHERE user_id = $1 AND LOWER(status) = 'active' AND (end_at IS NULL OR end_at > NOW()) LIMIT 1`,
+            `SELECT plan_id, end_at FROM subscriptions WHERE user_id = $1 AND LOWER(status) = 'active' AND (end_at IS NULL OR end_at > NOW()) ORDER BY end_at DESC LIMIT 1`,
             [result.user.id],
           );
-          if (rows.length > 0) { hasActivePlan = true; }
+          if (rows.length > 0) {
+            hasActivePlan = true;
+            activePlanTier = String(rows[0].plan_id ?? "").split("-")[0] || "explorer";
+            activePlanEndAt = rows[0].end_at ? new Date(rows[0].end_at).toISOString() : null;
+          }
           if (!hasActivePlan) {
             const { rows: refRows } = await pool.query(
-              `SELECT id FROM referral_redemptions WHERE user_id = $1 AND status = 'ACTIVE' AND end_at > NOW() LIMIT 1`,
+              `SELECT plan_id, end_at FROM referral_redemptions WHERE user_id = $1 AND status = 'ACTIVE' AND end_at > NOW() ORDER BY end_at DESC LIMIT 1`,
               [result.user.id],
             );
-            if (refRows.length > 0) { hasActivePlan = true; }
+            if (refRows.length > 0) {
+              hasActivePlan = true;
+              activePlanTier = String(refRows[0].plan_id ?? "").split("-")[0] || "explorer";
+              activePlanEndAt = refRows[0].end_at ? new Date(refRows[0].end_at).toISOString() : null;
+            }
           }
         } catch { /* fail-open */ }
       }
@@ -94,6 +104,8 @@ export const registerAuthRoutes = (app: Express, auth: AuthService) => {
           role: result.user.role,
           twoFactorEnabled: result.user.twoFactorEnabled,
           hasActivePlan,
+          activePlanTier,
+          activePlanEndAt,
         },
       });
     } catch (err: any) {
@@ -109,22 +121,36 @@ export const registerAuthRoutes = (app: Express, auth: AuthService) => {
     if (!ctx) return res.status(401).json({ ok: false, error: "unauthorized" });
     // Check active subscription or referral redemption (ADMIN always has full access)
     let hasActivePlan = ctx.user.role === "ADMIN";
+    let activePlanTier: string | null = ctx.user.role === "ADMIN" ? "titan" : null;
+    let activePlanEndAt: string | null = null;
+    if (ctx.user.role === "ADMIN") {
+      // Admin gets Titan perpetually — show 1 year from now
+      activePlanEndAt = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString();
+    }
     if (!hasActivePlan) {
       try {
         const { pool } = await import("../db/pool.ts");
         // Check paid subscriptions
         const { rows } = await pool.query(
-          `SELECT id FROM subscriptions WHERE user_id = $1 AND LOWER(status) = 'active' AND (end_at IS NULL OR end_at > NOW()) LIMIT 1`,
+          `SELECT plan_id, end_at FROM subscriptions WHERE user_id = $1 AND LOWER(status) = 'active' AND (end_at IS NULL OR end_at > NOW()) ORDER BY end_at DESC LIMIT 1`,
           [ctx.user.id],
         );
-        if (rows.length > 0) { hasActivePlan = true; }
+        if (rows.length > 0) {
+          hasActivePlan = true;
+          activePlanTier = String(rows[0].plan_id ?? "").split("-")[0] || "explorer";
+          activePlanEndAt = rows[0].end_at ? new Date(rows[0].end_at).toISOString() : null;
+        }
         // Check referral redemptions
         if (!hasActivePlan) {
           const { rows: refRows } = await pool.query(
-            `SELECT id FROM referral_redemptions WHERE user_id = $1 AND status = 'ACTIVE' AND end_at > NOW() LIMIT 1`,
+            `SELECT plan_id, end_at FROM referral_redemptions WHERE user_id = $1 AND status = 'ACTIVE' AND end_at > NOW() ORDER BY end_at DESC LIMIT 1`,
             [ctx.user.id],
           );
-          if (refRows.length > 0) { hasActivePlan = true; }
+          if (refRows.length > 0) {
+            hasActivePlan = true;
+            activePlanTier = String(refRows[0].plan_id ?? "").split("-")[0] || "explorer";
+            activePlanEndAt = refRows[0].end_at ? new Date(refRows[0].end_at).toISOString() : null;
+          }
         }
       } catch { /* fail-open: treat as no plan */ }
     }
@@ -136,6 +162,8 @@ export const registerAuthRoutes = (app: Express, auth: AuthService) => {
         role: ctx.user.role as Role,
         twoFactorEnabled: ctx.user.twoFactorEnabled,
         hasActivePlan,
+        activePlanTier,
+        activePlanEndAt,
       },
     });
   });
@@ -219,7 +247,7 @@ export const registerAuthRoutes = (app: Express, auth: AuthService) => {
     const ctx = await requireAdmin(auth, req, res);
     if (!ctx) return;
     try {
-      const { assignedUserId, assignedEmail, prefix, maxUses, expiresDays } = req.body ?? {};
+      const { assignedUserId, assignedEmail, prefix, maxUses, expiresDays, grantPlanTier, grantDurationDays } = req.body ?? {};
       const code = await auth.createReferralCode({
         createdByUserId: ctx.user.id,
         assignedUserId: assignedUserId ? String(assignedUserId) : undefined,
@@ -227,6 +255,8 @@ export const registerAuthRoutes = (app: Express, auth: AuthService) => {
         prefix: prefix ? String(prefix) : undefined,
         maxUses: maxUses !== undefined ? Number(maxUses) : undefined,
         expiresDays: expiresDays !== undefined ? Number(expiresDays) : undefined,
+        grantPlanTier: grantPlanTier ? String(grantPlanTier) : undefined,
+        grantDurationDays: grantDurationDays !== undefined ? Number(grantDurationDays) : undefined,
       });
       return res.json({ ok: true, item: code });
     } catch (err: any) {
@@ -309,9 +339,11 @@ export const registerAuthRoutes = (app: Express, auth: AuthService) => {
         return res.status(400).json({ ok: false, error: "already_redeemed" });
       }
 
-      // 3. Determine plan duration (default 30 days explorer)
-      const durationDays = 30;
-      const planId = "explorer-1m";
+      // 3. Determine plan from referral code settings
+      const durationDays = refCode.grant_duration_days ?? 30;
+      const planTier = refCode.grant_plan_tier ?? "explorer";
+      const durationLabel = durationDays <= 30 ? "1m" : durationDays <= 90 ? "3m" : durationDays <= 180 ? "6m" : "12m";
+      const planId = `${planTier}-${durationLabel}`;
       const now = new Date();
 
       // Check if user has existing referral subscription — extend from end
@@ -338,7 +370,7 @@ export const registerAuthRoutes = (app: Express, auth: AuthService) => {
 
       return res.json({
         ok: true,
-        message: `Referral code redeemed! ${durationDays} days Explorer plan activated.`,
+        message: `Referral code redeemed! ${durationDays} days ${planTier.charAt(0).toUpperCase() + planTier.slice(1)} plan activated.`,
         planId,
         durationDays,
         startAt: startAt.toISOString(),

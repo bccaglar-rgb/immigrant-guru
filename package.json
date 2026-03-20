@@ -18,6 +18,8 @@
     "smoke:all": "bash ./scripts/smoke-all.sh"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.750.0",
+    "@dsnp/parquetjs": "^1.8.0",
     "@radix-ui/react-accordion": "^1.2.12",
     "@radix-ui/react-avatar": "^1.1.11",
     "@radix-ui/react-dropdown-menu": "^2.1.16",
@@ -29,12 +31,11 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cors": "^2.8.5",
+    "docx": "^9.6.1",
     "express": "^4.21.2",
     "ioredis": "^5.10.0",
     "lightweight-charts": "^4.2.0",
     "lucide-react": "^0.577.0",
-    "@aws-sdk/client-s3": "^3.750.0",
-    "@dsnp/parquetjs": "^1.8.0",
     "pg": "^8.20.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",

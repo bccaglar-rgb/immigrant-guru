@@ -1,6 +1,8 @@
-import type { AiEvaluationRequest, RankedCandidate } from "./types.ts";
+import type { AiEvaluationRequest, AiEngineConfig, RankedCandidate } from "./types.ts";
+import { AXIOM_SYSTEM_PROMPT, buildAxiomBatchUserPrompt } from "./axiomPrompt.ts";
+import { buildAxiomEdgeLayerInput } from "../../services/axiomEdgeLayerBuilder.ts";
 
-const SYSTEM_PROMPT = `You are a professional crypto trade reviewer for Bitrium quantitative engine.
+const DEFAULT_SYSTEM_PROMPT = `You are a professional crypto trade reviewer for Bitrium quantitative engine.
 You will receive a batch of pre-evaluated trade candidates with quantitative scores.
 Your role is to REVIEW (not discover) these setups and make APPROVE / DOWNGRADE / REJECT decisions.
 
@@ -52,10 +54,19 @@ VERDICT MEANINGS:
 /**
  * Builds system + user prompts for AI evaluation of trade candidates.
  * One batch call per cycle (all candidates in one prompt).
+ *
+ * When provider is QWEN2 (Axiom), uses the full Axiom master prompt
+ * with structured 5-layer edge data per candidate.
  */
 export function buildEvaluationPrompt(
   candidates: AiEvaluationRequest[],
+  config?: AiEngineConfig,
 ): { systemPrompt: string; userPrompt: string } {
+  // Use Axiom prompt for QWEN2 provider
+  if (config?.aiProvider === "QWEN2") {
+    return buildAxiomEvaluationPrompt(candidates);
+  }
+
   const blocks = candidates.map((c, i) => {
     const slStr = c.slLevels.map((l) => l.toFixed(getPrecision(c))).join(", ");
     const tpStr = c.tpLevels.map((l) => l.toFixed(getPrecision(c))).join(", ");
@@ -79,13 +90,44 @@ export function buildEvaluationPrompt(
     ...blocks,
   ].join("\n");
 
-  return { systemPrompt: SYSTEM_PROMPT, userPrompt };
+  return { systemPrompt: DEFAULT_SYSTEM_PROMPT, userPrompt };
+}
+
+/**
+ * Builds Axiom-specific batch prompt with structured edge layer data.
+ */
+function buildAxiomEvaluationPrompt(
+  candidates: AiEvaluationRequest[],
+): { systemPrompt: string; userPrompt: string } {
+  const edgeCandidates = candidates.map((c) => {
+    // Build edge layer input from quant snapshot
+    const snapshot = (c as Record<string, unknown>).quantSnapshot as Record<string, unknown> | undefined;
+    const alpha = (c as Record<string, unknown>).alpha as Record<string, unknown> | undefined;
+
+    const edgeLayer = buildAxiomEdgeLayerInput(
+      c.symbol,
+      (c.entryLow + c.entryHigh) / 2,
+      c.timeframe,
+      snapshot,
+      alpha ?? null,
+    );
+
+    return {
+      symbol: c.symbol,
+      edgeLayerJson: JSON.stringify(edgeLayer, null, 2),
+    };
+  });
+
+  return {
+    systemPrompt: AXIOM_SYSTEM_PROMPT,
+    userPrompt: buildAxiomBatchUserPrompt(edgeCandidates),
+  };
 }
 
 /** Helper to convert RankedCandidate to AiEvaluationRequest */
 export function toEvaluationRequest(ranked: RankedCandidate): AiEvaluationRequest {
   const c = ranked.candidate;
-  return {
+  const req: AiEvaluationRequest = {
     symbol: c.symbol,
     direction: c.direction,
     quantScore: c.quantScore,
@@ -103,6 +145,13 @@ export function toEvaluationRequest(ranked: RankedCandidate): AiEvaluationReques
     slippageRisk: c.slippageRisk,
     softFlags: ranked.softFlags,
   };
+  // Carry through quantSnapshot and alpha for Axiom edge layer builder
+  if (c.quantSnapshot) {
+    (req as Record<string, unknown>).quantSnapshot = c.quantSnapshot;
+    const alpha = (c.quantSnapshot as Record<string, unknown>).alpha;
+    if (alpha) (req as Record<string, unknown>).alpha = alpha;
+  }
+  return req;
 }
 
 function getPrecision(c: { entryLow: number }): number {

@@ -36,13 +36,17 @@ const PricingIcon = () => <Icon><rect x="3" y="5" width="18" height="14" rx="2" 
 const AiTradeIdeasIcon = () => <Icon><rect x="4" y="6" width="16" height="12" rx="3" /><path d="M9 10h6" /><path d="M9 14h3" /><path d="M12 4v2" /><path d="M8 4.8 9 6.6" /><path d="m16 4.8-1 1.8" /></Icon>;
 const SettingsIcon = () => <Icon><path d="M12 3l2.2 1.1 2.4-.3.9 2.2 1.9 1.5-.9 2.2.4 2.3-1.9 1.5-.9 2.2-2.4-.3L12 21l-2.2-1.1-2.4.3-.9-2.2-1.9-1.5.9-2.2-.4-2.3 1.9-1.5.9-2.2 2.4.3z" /><circle cx="12" cy="12" r="2.2" /></Icon>;
 const AdminIcon = () => <Icon><path d="M12 3l3 2 4-1 1 4 3 3-3 3-1 4-4-1-3 2-3-2-4 1-1-4-3-3 3-3 1-4 4 1z" /><circle cx="12" cy="12" r="2.5" /></Icon>;
+const BotIcon = () => <Icon><rect x="3" y="11" width="18" height="10" rx="2" /><circle cx="12" cy="5" r="3" /><path d="M12 8v3" /><circle cx="8" cy="16" r="1" /><circle cx="16" cy="16" r="1" /><path d="M9 19h6" /></Icon>;
+const PortfolioIcon = () => <Icon><path d="M21.21 15.89A10 10 0 1 1 8 2.83" /><path d="M22 12A10 10 0 0 0 12 2v10z" /></Icon>;
 
 const menuItems = [
   { label: "Bitrium Quant Engine", to: "/quant-engine", accent: "var(--menu-accent-1)", icon: () => <DashboardIcon /> },
   { label: "Quant Trade Ideas", to: "/quant-trade-ideas", accent: "var(--menu-accent-2)", icon: () => <TradeIcon /> },
   { label: "AI Trade Ideas", to: "/ai-trade-ideas", accent: "var(--menu-accent-9)", icon: () => <AiTradeIdeasIcon /> },
+  { label: "Bot", to: "/bot", accent: "var(--menu-accent-10)", icon: () => <BotIcon /> },
   // AI Trader submenu inserted here in render
   { label: "Exchanges", to: "/exchanges", accent: "var(--menu-accent-3)", icon: () => <ExchangeIcon /> },
+  { label: "Portfolio", to: "/portfolio", accent: "#4ecdc4", icon: () => <PortfolioIcon /> },
   { label: "Crypto Market", to: "/crypto-market", accent: "var(--menu-accent-4)", icon: () => <MarketIcon /> },
   { label: "Coin Universe", to: "/coin-universe", accent: "var(--menu-accent-8)", icon: () => <UniverseIcon /> },
   { label: "Super Charts", to: "/super-charts", accent: "var(--menu-accent-5)", icon: () => <SuperChartIcon /> },
@@ -273,6 +277,16 @@ export const Sidebar = ({
   const versionBlock = useMemo(
     () => (
       <div className={`mt-auto border-t border-[var(--borderSoft)] pt-2 ${showText ? "px-2" : "px-0"}`}>
+        {authUser?.email ? (
+          <div className={`mb-1 flex items-center gap-2 rounded-lg px-2 py-1.5 ${showText ? "" : "justify-center"}`}>
+            <span className="inline-grid h-8 w-8 shrink-0 place-items-center rounded-full bg-[var(--accent)]/20 text-xs font-bold text-[var(--accent)]">
+              {authUser.email.charAt(0).toUpperCase()}
+            </span>
+            <span className={`truncate text-xs text-[var(--textMuted)] transition-all duration-[180ms] ${showText ? "opacity-100" : "w-0 opacity-0"}`}>
+              {authUser.email}
+            </span>
+          </div>
+        ) : null}
         <NavItem
           to={settingsItem.to}
           label={settingsItem.label}
@@ -339,7 +353,7 @@ export const Sidebar = ({
         ) : null}
       </div>
     ),
-    [onNavigate, showText, isAdmin, isAuthenticated, adminMenuOpen, adminActive],
+    [onNavigate, showText, isAdmin, isAuthenticated, adminMenuOpen, adminActive, authUser?.email],
   );
 
   useEffect(() => {
@@ -391,11 +405,11 @@ export const Sidebar = ({
   // Public paths that don't require auth
   const publicPaths = new Set(["/crypto-market", "/bitrium-token", "/pricing"]);
 
-  const topMenu = menuItems.slice(0, 3);
-  // Items between AI Trader and Tools: Exchanges..Indicators (index 3-7)
-  const midMenu = menuItems.slice(3, 8);
-  // Items after Tools: Bitrium Token, Pricing (index 8+)
-  const bottomMenu = menuItems.slice(8);
+  const topMenu = menuItems.slice(0, 4);
+  // Items between AI Trader and Tools: Exchanges..Indicators (index 4-9)
+  const midMenu = menuItems.slice(4, 10);
+  // Items after Tools: Bitrium Token, Pricing (index 10+)
+  const bottomMenu = menuItems.slice(10);
 
   return (
     <aside

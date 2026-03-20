@@ -284,6 +284,8 @@ export class AuthService {
     prefix?: string;
     maxUses?: number;
     expiresDays?: number;
+    grantPlanTier?: string;
+    grantDurationDays?: number;
   }) {
     const now = new Date();
     const nowIsoStr = now.toISOString();
@@ -295,6 +297,10 @@ export class AuthService {
     const expiresDays = Number.isFinite(input.expiresDays) ? Math.max(1, Math.min(3650, Number(input.expiresDays))) : 30;
     const expiresAt = new Date(now.getTime() + expiresDays * 24 * 60 * 60 * 1000).toISOString();
 
+    const validTiers = ["explorer", "trader", "strategist", "titan"];
+    const tier = validTiers.includes(input.grantPlanTier ?? "") ? input.grantPlanTier! : "explorer";
+    const grantDays = Number.isFinite(input.grantDurationDays) ? Math.max(1, Math.min(3650, Number(input.grantDurationDays))) : 30;
+
     const record: ReferralCodeRecord = {
       id: makeId("ref"),
       code,
@@ -305,6 +311,8 @@ export class AuthService {
       usedCount: 0,
       active: true,
       expiresAt,
+      grantPlanTier: tier,
+      grantDurationDays: grantDays,
       createdAt: nowIsoStr,
       updatedAt: nowIsoStr,
     };

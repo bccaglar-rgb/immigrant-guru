@@ -1,5 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useEffect, useMemo, useState } from "react";
 import { useDataSourceManager, type ExchangeSourceId } from "../../data/DataSourceManager";
 import { useMarketDataStatus } from "../../hooks/useMarketData";
 import { useAdminConfig } from "../../hooks/useAdminConfig";
@@ -45,8 +44,8 @@ export const ExchangeTopBar = ({ onAddExchange }: { onAddExchange?: () => void }
   const sourceStatus = useMarketDataStatus();
   const { config } = useAdminConfig();
   const { messages } = useTradeIdeasStream(config.tradeIdeas.minConfidence, selectedExchange);
-  const { registeredAccounts, enabledAccounts } = useExchangeConfigs();
-  const navigate = useNavigate();
+  const { enabledAccounts } = useExchangeConfigs();
+
   const exchangeOptions = useMemo(
     () =>
       [...enabledAccounts].sort((a, b) => {
@@ -63,8 +62,13 @@ export const ExchangeTopBar = ({ onAddExchange }: { onAddExchange?: () => void }
       }),
     [enabledAccounts],
   );
-  const [exchangeMenuOpen, setExchangeMenuOpen] = useState(false);
-  const exchangeMenuRef = useRef<HTMLDivElement | null>(null);
+
+  const activeId = useMemo(() => {
+    if (!selectedExchangeAccount) return null;
+    return exchangeOptions.find(
+      (o) => o.exchangeDisplayName === selectedExchange && o.accountName === selectedExchangeAccount,
+    )?.id ?? null;
+  }, [exchangeOptions, selectedExchange, selectedExchangeAccount]);
 
   useEffect(() => {
     if (!exchangeOptions.length) {
@@ -98,22 +102,6 @@ export const ExchangeTopBar = ({ onAddExchange }: { onAddExchange?: () => void }
     setSelectedExchangeAccount,
     setSelectedExchangeId,
   ]);
-
-  useEffect(() => {
-    const onDocClick = (event: MouseEvent) => {
-      if (!exchangeMenuRef.current) return;
-      if (!exchangeMenuRef.current.contains(event.target as Node)) setExchangeMenuOpen(false);
-    };
-    const onEsc = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setExchangeMenuOpen(false);
-    };
-    document.addEventListener("mousedown", onDocClick);
-    document.addEventListener("keydown", onEsc);
-    return () => {
-      document.removeEventListener("mousedown", onDocClick);
-      document.removeEventListener("keydown", onEsc);
-    };
-  }, []);
 
   const handleExchangeChange = (exchangeSelectionId: string) => {
     const selectedOption = exchangeOptions.find((item) => item.id === exchangeSelectionId);
@@ -153,19 +141,18 @@ export const ExchangeTopBar = ({ onAddExchange }: { onAddExchange?: () => void }
 
   const triggerTradeValidity = selectedTradeValidity === "VALID" ? "PASS" : "BLOCK";
   const triggerEntryWindow = selectedEntryWindow === "OPEN" ? "OPEN" : "CLOSED";
-  const statusUi = useMemo(() => {
-    if (!exchangeOptions.length || !selectedExchangeAccount) {
-      return { label: "N/A", dot: "bg-[#8A8F98]", cls: "border-white/15 bg-[#15171b] text-[#BFC2C7]" };
-    }
-    if (connectionStatus === "CONNECTED") return { label: "GOOD", dot: "bg-[#2bc48a]", cls: "border-[#4f6f58] bg-[#1c2620] text-[#b8d8c4]" };
-    if (connectionStatus === "CONNECTING") return { label: "CHECK", dot: "bg-[#F5C542]", cls: "border-[#7a6840] bg-[#2a2418] text-[#e7d9b3]" };
-    if (connectionStatus === "ERROR") return { label: "ERROR", dot: "bg-[#f6465d]", cls: "border-[#704844] bg-[#271a19] text-[#d6b3af]" };
-    return { label: "OFF", dot: "bg-[#8A8F98]", cls: "border-white/15 bg-[#15171b] text-[#BFC2C7]" };
-  }, [connectionStatus, exchangeOptions.length, selectedExchangeAccount]);
+
+  const healthBadge = (status: string, enabled: boolean) => {
+    if (!enabled) return { dot: "bg-[#f6465d]", label: "OFF", cls: "border-[#704844] bg-[#271a19] text-[#d6b3af]" };
+    if (status === "READY") return { dot: "bg-[#2bc48a]", label: "OK", cls: "border-[#4f6f58] bg-[#1c2620] text-[#b8d8c4]" };
+    if (status === "PARTIAL") return { dot: "bg-[#f6465d]", label: "DOWN", cls: "border-[#704844] bg-[#271a19] text-[#d6b3af]" };
+    return { dot: "bg-[#f6465d]", label: "ERROR", cls: "border-[#704844] bg-[#271a19] text-[#d6b3af]" };
+  };
 
   return (
     <section className="rounded-2xl border border-white/10 bg-[#121316] p-3">
       <div className="flex flex-wrap items-start gap-3">
+        {/* Spot / Futures toggle */}
         <div className="mr-1 inline-flex rounded border border-white/15 bg-[#0F1012] p-1 text-sm">
           {(["Spot", "Futures"] as const).map((mode) => (
             <button
@@ -182,129 +169,76 @@ export const ExchangeTopBar = ({ onAddExchange }: { onAddExchange?: () => void }
           ))}
         </div>
 
-        <div ref={exchangeMenuRef} className="relative min-w-[280px] flex-1">
-          <div className="flex items-center gap-2">
-            {exchangeOptions.length ? (
+        {/* ── Connected API list (replaces dropdown) ── */}
+        <div className="flex flex-1 flex-wrap items-center gap-2">
+          {exchangeOptions.map((option) => {
+            const isActive = option.id === activeId;
+            const branding = getExchangeBranding(option.exchangeId);
+            const health = healthBadge(option.status, option.enabled);
+            return (
               <button
+                key={option.id}
                 type="button"
-                onClick={() => setExchangeMenuOpen((v) => !v)}
-                className="inline-flex min-w-[220px] items-center justify-between rounded border border-white/15 bg-[#0F1012] px-3 py-1.5 text-base text-[#E7E9ED]"
+                onClick={() => handleExchangeChange(option.id)}
+                className={`group inline-flex items-center gap-2 rounded-lg border px-3 py-1.5 text-sm transition-all ${
+                  isActive
+                    ? "border-[var(--accent)]/40 bg-[#1d1a12] text-white shadow-[0_0_8px_rgba(245,197,66,0.08)]"
+                    : "border-white/10 bg-[#0F1012] text-[#BFC2C7] hover:border-white/20 hover:bg-[#15171c]"
+                }`}
               >
-                <span className="inline-flex min-w-0 items-center gap-2">
-                  <img
-                    src={getExchangeBranding(selectedExchange).iconUrl}
-                    alt={selectedExchange}
-                    className="h-5 w-5 rounded-full border border-white/15 bg-[#171a1f] object-cover"
-                  />
-                  <span className="max-w-[170px] truncate">
-                    {selectedExchange}
-                    {selectedExchangeAccount ? <span className="text-xs text-[#8A8F98]"> · {selectedExchangeAccount}</span> : null}
+                <img
+                  src={branding.iconUrl}
+                  alt={option.exchangeDisplayName}
+                  className="h-5 w-5 rounded-full"
+                  loading="lazy"
+                />
+                <div className="flex flex-col items-start leading-tight">
+                  <span className="text-xs font-medium">
+                    {option.exchangeDisplayName}
+                    <span className="ml-1 text-[#8A8F98]">· {option.accountName}</span>
                   </span>
-                </span>
-                <span className="text-xs text-[#8A8F98]">▾</span>
+                  <span className={`mt-0.5 inline-flex items-center gap-1 text-[9px] font-semibold ${health.cls} rounded border px-1 py-px`}>
+                    <span className="text-[#6B6F76] font-normal">User API:</span>
+                    <span className={`h-1 w-1 rounded-full ${health.dot}`} />
+                    {health.label}
+                  </span>
+                </div>
               </button>
-            ) : (
-              <button
-                type="button"
-                onClick={() => onAddExchange ? onAddExchange() : navigate("/settings#exchange-panel")}
-                className="inline-flex items-center gap-2 rounded border border-[#7a6840] bg-[#2a2418] px-3 py-1.5 text-sm font-semibold text-[#F5C542]"
-              >
-                <span className="inline-flex h-5 w-5 items-center justify-center rounded-full border border-[#7a6840] bg-[#1f1a12] text-[12px]">
-                  +
-                </span>
-                Add Exchange API
-              </button>
-            )}
-            <span className={`inline-flex items-center gap-1 rounded border px-2 py-0.5 text-[10px] font-semibold ${statusUi.cls}`}>
-              <span className={`h-1.5 w-1.5 rounded-full ${statusUi.dot}`} />
-              {statusUi.label}
-            </span>
-            <span className={`inline-flex items-center gap-1 rounded border px-1.5 py-0.5 text-[10px] font-semibold ${
-              privateStreamStatus === "subscribed" ? "border-[#4f6f58] bg-[#1c2620] text-[#b8d8c4]"
-              : privateStreamStatus === "subscribing" ? "border-[#7a6840] bg-[#2a2418] text-[#e7d9b3]"
-              : privateStreamStatus === "error" || privateStreamStatus === "disconnected" ? "border-[#704844] bg-[#271a19] text-[#d6b3af]"
-              : "border-white/15 bg-[#15171b] text-[#6B6F76]"
-            }`}>
-              <span className={`h-1.5 w-1.5 rounded-full ${
-                privateStreamStatus === "subscribed" ? "bg-[#2bc48a]"
-                : privateStreamStatus === "subscribing" ? "bg-[#F5C542] animate-pulse"
-                : privateStreamStatus === "error" || privateStreamStatus === "disconnected" ? "bg-[#f6465d]"
-                : "bg-[#6B6F76]"
-              }`} />
-              {privateStreamStatus === "subscribed" ? "LIVE" : privateStreamStatus === "subscribing" ? "CONNECTING" : privateStreamStatus === "error" ? "ERROR" : privateStreamStatus === "disconnected" ? "OFFLINE" : "IDLE"}
-            </span>
-          </div>
+            );
+          })}
 
-          {exchangeMenuOpen && exchangeOptions.length ? (
-            <div className="absolute left-0 z-30 mt-1 w-[260px] overflow-hidden rounded-lg border border-white/10 bg-[#111418] shadow-xl">
-              <div className="max-h-[260px] overflow-y-auto p-1">
-                {exchangeOptions.map((option) => (
-                  <button
-                    key={option.id}
-                    type="button"
-                    onClick={() => {
-                      handleExchangeChange(option.id);
-                      setExchangeMenuOpen(false);
-                    }}
-                    className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-sm text-[#E7E9ED] hover:bg-[#1a1f27]"
-                  >
-                    <img
-                      src={option.iconUrl}
-                      alt={option.exchangeDisplayName}
-                      className="h-5 w-5 rounded-full border border-white/15 bg-[#171a1f] object-cover"
-                    />
-                    <span className="flex min-w-0 flex-col leading-tight">
-                      <span className="truncate">{option.exchangeDisplayName}</span>
-                      <span className="truncate text-[11px] text-[#8A8F98]">
-                        {option.exchangeId} · {option.accountName}
-                      </span>
-                    </span>
-                  </button>
-                ))}
-                <div className="my-1 border-t border-white/10" />
-                <button
-                  type="button"
-                  onClick={() => {
-                    setExchangeMenuOpen(false);
-                    onAddExchange ? onAddExchange() : navigate("/settings#exchange-panel");
-                  }}
-                  className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-sm text-[#F5C542] hover:bg-[#2b2417]"
-                >
-                  <span className="inline-flex h-5 w-5 items-center justify-center rounded-full border border-[#7a6840] bg-[#2a2418] text-[12px] font-semibold">
-                    +
-                  </span>
-                  Add Exchange API
-                </button>
-              </div>
+          {/* Add Exchange button */}
+          <button
+            type="button"
+            onClick={() => onAddExchange?.()}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-dashed border-[#7a6840] bg-[#1a1510] px-3 py-2 text-xs font-semibold text-[#F5C542] transition hover:border-[#F5C542]/60 hover:bg-[#2a2418]"
+          >
+            <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M12 5v14M5 12h14" /></svg>
+            Add Exchange
+          </button>
+
+          {/* Connection status badges */}
+          {exchangeOptions.length > 0 && (
+            <div className="flex items-center gap-1.5 ml-1">
+              <span className={`inline-flex items-center gap-1 rounded border px-1.5 py-0.5 text-[10px] font-semibold ${
+                privateStreamStatus === "subscribed" ? "border-[#4f6f58] bg-[#1c2620] text-[#b8d8c4]"
+                : privateStreamStatus === "subscribing" ? "border-[#7a6840] bg-[#2a2418] text-[#e7d9b3]"
+                : privateStreamStatus === "error" || privateStreamStatus === "disconnected" ? "border-[#704844] bg-[#271a19] text-[#d6b3af]"
+                : "border-white/15 bg-[#15171b] text-[#6B6F76]"
+              }`}>
+                <span className={`h-1.5 w-1.5 rounded-full ${
+                  privateStreamStatus === "subscribed" ? "bg-[#2bc48a]"
+                  : privateStreamStatus === "subscribing" ? "bg-[#F5C542] animate-pulse"
+                  : privateStreamStatus === "error" || privateStreamStatus === "disconnected" ? "bg-[#f6465d]"
+                  : "bg-[#6B6F76]"
+                }`} />
+                {privateStreamStatus === "subscribed" ? "LIVE" : privateStreamStatus === "subscribing" ? "SYNC" : privateStreamStatus === "error" ? "ERR" : privateStreamStatus === "disconnected" ? "OFF" : "IDLE"}
+              </span>
             </div>
-          ) : null}
-
-          <div className="mt-1 flex flex-wrap items-center gap-1.5 text-[11px] text-[#8A8F98]">
-            {registeredAccounts.length ? (
-              <>
-                <span className="mr-1 text-[#9AA0AA]">Registered APIs:</span>
-                {registeredAccounts.map((account) => (
-                  <span
-                    key={`${account.exchangeId}:${account.accountName}:${account.connectionId ?? "na"}`}
-                    className={`rounded border px-2 py-0.5 ${
-                      account.enabled
-                        ? account.status === "READY"
-                          ? "border-[#4f6f58] bg-[#1c2620] text-[#b8d8c4]"
-                          : "border-[#7a6840] bg-[#2a2418] text-[#e7d9b3]"
-                        : "border-[#704844] bg-[#271a19] text-[#d6b3af]"
-                    }`}
-                  >
-                    {account.exchangeId.toUpperCase()} · {account.accountName}
-                    {account.connectionId ? ` · ${account.connectionId.slice(0, 8)}` : ""}
-                  </span>
-                ))}
-              </>
-            ) : (
-              <span>No exchange API registered. Use “Add Exchange API”.</span>
-            )}
-          </div>
+          )}
         </div>
 
+        {/* ── Signal panel (right side) ── */}
         <div className="ml-auto w-full rounded-xl border border-white/10 bg-[#0f1115] p-1.5 text-[11px] text-[#BFC2C7] xl:w-[410px] xl:min-w-[380px] xl:max-w-[420px]">
           <div className="flex items-start justify-between gap-2 rounded-lg border border-white/10 bg-[#10141b] p-1.5">
             <div className="min-w-0 flex-1">
@@ -370,7 +304,6 @@ export const ExchangeTopBar = ({ onAddExchange }: { onAddExchange?: () => void }
               </div>
             </div>
           </div>
-
         </div>
       </div>
     </section>

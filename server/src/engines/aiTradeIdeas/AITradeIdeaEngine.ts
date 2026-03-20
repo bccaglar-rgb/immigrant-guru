@@ -132,9 +132,9 @@ export class AITradeIdeaEngine {
       const ranked = rankCandidates(survivors, this.config.maxCandidatesForAi);
       if (!ranked.length) return;
 
-      // 5. Build AI prompt
+      // 5. Build AI prompt (passes config so Axiom/QWEN2 gets its own prompt)
       const requests = ranked.map((r) => toEvaluationRequest(r));
-      const { systemPrompt, userPrompt } = buildEvaluationPrompt(requests);
+      const { systemPrompt, userPrompt } = buildEvaluationPrompt(requests, this.config);
 
       // 6. Call AI
       const aiResult = await callAi(
@@ -142,9 +142,10 @@ export class AITradeIdeaEngine {
         systemPrompt, userPrompt,
       );
 
-      // 7. Parse response
+      // 7. Parse response (Axiom format when provider=QWEN2)
+      const isAxiom = this.config.aiProvider === "QWEN2";
       const aiResponses = aiResult.ok && aiResult.raw
-        ? parseAiResponse(aiResult.raw)
+        ? parseAiResponse(aiResult.raw, isAxiom)
         : [];
 
       if (!aiResult.ok) {

@@ -100,6 +100,24 @@ export interface AiEvaluationResponse {
   riskFlags: string[];
   comment: string;           // Turkish, max 50 words
   reasoning: string;         // English, max 80 words
+  // Axiom-specific analysis (populated when provider=QWEN2)
+  axiomAnalysis?: AxiomAnalysis;
+}
+
+// ── Axiom Analysis (QWEN2 provider enrichment) ───────────────
+export interface AxiomAnalysis {
+  regime: string;              // "trend_up" | "range" | "transition" etc.
+  primaryThesis: string;       // One-line trade rationale
+  entryType: string;           // "pullback" | "breakout" | "reclaim" etc.
+  entryCondition: string;      // Condition for entry activation
+  invalidation: string;        // When thesis is invalid
+  notes: string[];             // AI notes and warnings
+  bullishScore: number;        // 0-1 weighted bullish alignment
+  bearishScore: number;        // 0-1 weighted bearish alignment
+  rrEstimate: number;          // AI-computed risk/reward ratio
+  tp1: number;                 // Take profit level 1 (40%)
+  tp2: number;                 // Take profit level 2 (35%)
+  tp3: number;                 // Take profit level 3 (25%)
 }
 
 // ── Validated output ──────────────────────────────────────────
@@ -113,6 +131,8 @@ export interface ValidatedResult {
   entryHigh: number;
   slLevels: number[];
   tpLevels: number[];
+  // Axiom-specific analysis carried through from AI response
+  axiomAnalysis?: AxiomAnalysis;
 }
 
 // ── Cycle metrics ─────────────────────────────────────────────

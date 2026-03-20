@@ -56,10 +56,10 @@ export class ExchangeMarketHub {
     const gate = new GateFuturesMarketAdapter();
     const bybit = new BybitFuturesMarketAdapter();
     const okx = new OkxFuturesMarketAdapter();
-    this.adapters.set(binance.exchange, binance);
-    this.adapters.set(gate.exchange, gate);
-    this.adapters.set(bybit.exchange, bybit);
-    this.adapters.set(okx.exchange, okx);
+    this.registerAdapter(binance);
+    this.registerAdapter(gate);
+    this.registerAdapter(bybit);
+    this.registerAdapter(okx);
     this.router = new HealthScoreRouter(this.adapters, {
       order: ["BINANCE", "BYBIT", "GATEIO", "OKX"],
       degradeHoldMs: 7_000,
@@ -69,12 +69,14 @@ export class ExchangeMarketHub {
       minAdvantageScore: 8,
       switchBackStableMs: 18_000,
     });
+  }
 
-    for (const adapter of this.adapters.values()) {
-      adapter.onEvent((event) => {
-        for (const listener of this.listeners) listener(event);
-      });
-    }
+  /** Register an exchange adapter as a market data provider. */
+  registerAdapter(adapter: IExchangeMarketAdapter): void {
+    this.adapters.set(adapter.exchange, adapter);
+    adapter.onEvent((event) => {
+      for (const listener of this.listeners) listener(event);
+    });
   }
 
   start(): void {

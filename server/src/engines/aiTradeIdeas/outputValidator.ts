@@ -106,6 +106,8 @@ export function validateOutputs(
       entryHigh: finalEntryHigh,
       slLevels: finalSl,
       tpLevels: finalTp,
+      // Carry through Axiom analysis from AI response
+      axiomAnalysis: ai.axiomAnalysis,
     });
   }
 
