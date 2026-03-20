@@ -262,7 +262,7 @@ export function initEgressController(): EgressController {
 
   // ── Configure Binance egress paths ──
   const standbyHost = process.env.EGRESS_STANDBY_HOST ?? "10.110.0.8";
-  const standbyPort = process.env.EGRESS_STANDBY_PORT ?? "3000";
+  const standbyPort = process.env.EGRESS_STANDBY_PORT ?? "8090";
   const primaryIp = process.env.EGRESS_PRIMARY_IP ?? "161.35.94.191";
   const standbyIp = process.env.EGRESS_STANDBY_IP ?? "178.62.198.35";
 
