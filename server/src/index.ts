@@ -319,6 +319,14 @@ bootstrap()
       // Redis bridge subscriber: ALL workers receive hub events via Redis pub/sub
       hubEventBridge.startSubscriber();
 
+      // Egress failover controller — ALL workers (admin API accessible from any worker)
+      try {
+        initEgressController();
+        console.log(`[Worker ${WORKER_ID}] Egress failover controller active`);
+      } catch (err) {
+        console.error(`[Worker ${WORKER_ID}] Egress controller init failed:`, err);
+      }
+
       if (IS_PRIMARY) {
         // ── Market Data Hub: local vs external ──
         if (!HUB_EXTERNAL) {
@@ -351,14 +359,6 @@ bootstrap()
         exchangeCore.start();
         privateStreamManager.start();
         void traderHubEngine.start();
-
-        // Egress failover controller (Binance IP failover)
-        try {
-          initEgressController();
-          console.log(`[Worker ${WORKER_ID}] Egress failover controller active`);
-        } catch (err) {
-          console.error(`[Worker ${WORKER_ID}] Egress controller init failed:`, err);
-        }
 
         // Binance rate limiter monitoring (60s interval)
         import("./services/binanceRateLimiter.ts").then(({ logRateLimiterStatus }) => {
