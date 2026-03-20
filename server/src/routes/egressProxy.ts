@@ -137,14 +137,16 @@ router.post("/internal/egress-proxy", async (req: Request, res: Response) => {
 
   try {
     // ── Forward the request ──
+    // Build clean headers (remove hop-by-hop headers from forwarded set)
+    const cleanHeaders: Record<string, string> = {};
+    for (const [k, v] of Object.entries(targetHeaders)) {
+      const lower = k.toLowerCase();
+      if (lower === "host" || lower === "connection" || lower === "content-length") continue;
+      if (typeof v === "string") cleanHeaders[k] = v;
+    }
     const upstream = await fetch(targetUrl, {
       method,
-      headers: {
-        ...targetHeaders,
-        // Remove hop-by-hop headers
-        "Host": undefined as unknown as string,
-        "Connection": undefined as unknown as string,
-      },
+      headers: cleanHeaders,
       body: method !== "GET" && method !== "HEAD" ? targetBody : undefined,
       signal: AbortSignal.timeout(10_000),
     });
