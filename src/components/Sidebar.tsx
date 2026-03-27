@@ -169,8 +169,7 @@ const SignInIcon = () => <Icon>
 </Icon>;
 const menuItems = [
   { label: "Bitrium Quant Engine", to: "/quant-engine", accent: "var(--menu-accent-1)", icon: () => <DashboardIcon /> },
-  { label: "Quant Trade Ideas", to: "/quant-trade-ideas", accent: "var(--menu-accent-2)", icon: () => <TradeIcon /> },
-  { label: "AI Trade Ideas", to: "/ai-trade-ideas", accent: "var(--menu-accent-9)", icon: () => <AiTradeIdeasIcon /> },
+  // Quant Trade Ideas & AI Trade Ideas moved to Admin submenu
   // AI Trader submenu inserted here in render
   { label: "Exchanges", to: "/exchanges", accent: "var(--menu-accent-3)", icon: () => <ExchangeIcon /> },
   { label: "Bots", to: "/bot", accent: "var(--menu-accent-10)", icon: () => <BotIcon /> },
@@ -283,6 +282,8 @@ const adminSubItems = [
   { label: "Payment Review", to: "/admin/payments", accent: "#ef4444", icon: () => <Icon><path d="M2 7h20" /><rect x="2" y="4" width="20" height="16" rx="2" /><path d="M2 12h20" /></Icon> },
   { label: "Logs", to: "/admin/logs", accent: "#a8dadc", icon: () => <Icon><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><path d="M14 2v6h6" /><path d="M16 13H8" /><path d="M16 17H8" /><path d="M10 9H8" /></Icon> },
   { label: "Bug Reports", to: "/admin/bug-reports", accent: "#f4a460", icon: () => <Icon><path d="M8 2l1.88 1.88" /><path d="M14.12 3.88L16 2" /><path d="M9 7.13v-1a3 3 0 1 1 6 0v1" /><path d="M12 20c-3.3 0-6-2.7-6-6v-3a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v3c0 3.3-2.7 6-6 6" /></Icon> },
+  { label: "Quant Trade Ideas", to: "/quant-trade-ideas", accent: "var(--menu-accent-2)", icon: () => <TradeIcon /> },
+  { label: "AI Trade Ideas", to: "/ai-trade-ideas", accent: "var(--menu-accent-9)", icon: () => <AiTradeIdeasIcon /> },
   { label: "Optimizer", to: "/optimizer", accent: "#66b3ff", icon: () => <Icon><path d="M4 14l4-8 4 4 4-6 4 10" /><path d="M4 18h16" /></Icon> },
   { label: "System Monitor", to: "/system-monitor", accent: "#4ade80", icon: () => <Icon><circle cx="12" cy="12" r="9" /><path d="M12 8v4l3 3" /></Icon> },
   { label: "ML Explorer", to: "/ml-explorer", accent: "#a78bfa", icon: () => <Icon><rect x="4" y="4" width="16" height="16" rx="2" /><path d="M8 12h8" /><path d="M12 8v8" /></Icon> },

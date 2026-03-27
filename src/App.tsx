@@ -124,13 +124,14 @@ function App() {
         <Route path="/crypto-market" element={<RequireAuth><Suspense fallback={<PageLoader />}><CryptoMarketPage /></Suspense></RequireAuth>} />
 
         {/* Plan-gated pages — redirect to /pricing if no active subscription */}
-        <Route path="/quant-trade-ideas" element={<RequirePlan><Suspense fallback={<PageLoader />}><TradeIdeasPage /></Suspense></RequirePlan>} />
+        {/* Trade Ideas pages — admin only */}
+        <Route path="/quant-trade-ideas" element={<RequireAdmin><Suspense fallback={<PageLoader />}><TradeIdeasPage /></Suspense></RequireAdmin>} />
         <Route path="/trade-ideas" element={<Navigate to="/quant-trade-ideas" replace />} />
         <Route path="/bitrium-trade-ideas" element={<Navigate to="/quant-trade-ideas" replace />} />
-        <Route path="/ai-trade-ideas" element={<RequirePlan><Suspense fallback={<PageLoader />}><TradeIdeasPage /></Suspense></RequirePlan>} />
-        <Route path="/quant-trade-ideas/report" element={<RequirePlan><Suspense fallback={<PageLoader />}><TradeIdeasReportPage /></Suspense></RequirePlan>} />
+        <Route path="/ai-trade-ideas" element={<RequireAdmin><Suspense fallback={<PageLoader />}><TradeIdeasPage /></Suspense></RequireAdmin>} />
+        <Route path="/quant-trade-ideas/report" element={<RequireAdmin><Suspense fallback={<PageLoader />}><TradeIdeasReportPage /></Suspense></RequireAdmin>} />
         <Route path="/trade-ideas/report" element={<Navigate to="/quant-trade-ideas/report" replace />} />
-        <Route path="/ai-trade-ideas/report" element={<RequirePlan><Suspense fallback={<PageLoader />}><TradeIdeasReportPage /></Suspense></RequirePlan>} />
+        <Route path="/ai-trade-ideas/report" element={<RequireAdmin><Suspense fallback={<PageLoader />}><TradeIdeasReportPage /></Suspense></RequireAdmin>} />
         <Route path="/ai-trader/leaderboard" element={<RequirePlan><Suspense fallback={<PageLoader />}><AiTraderLeaderboardPage /></Suspense></RequirePlan>} />
         <Route path="/ai-trader/dashboard" element={<RequirePlan><Suspense fallback={<PageLoader />}><AiTraderDashboardPage /></Suspense></RequirePlan>} />
         <Route path="/ai-trader/strategy" element={<RequirePlan><Suspense fallback={<PageLoader />}><AiTraderStrategyPage /></Suspense></RequirePlan>} />
