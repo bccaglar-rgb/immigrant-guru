@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { getAuthToken } from "../services/authClient";
+import { placeExchangeOrder } from "../services/exchangeApi";
 
 /* ── Types ── */
 
@@ -39,7 +40,7 @@ interface UniverseCoin {
     oiShock: { shockType: string; oiShockScore: number } | null;
     volatility: { volatilityRegime: string; compressionScore: number; expansionForecast: number } | null;
     delta: { cvdTrend: string; deltaImbalanceScore: number; buySellPressureRatio: number } | null;
-    multiTf: { htfTrendBias: string; multiTfAlignmentScore: number; htfTrendStrength: number } | null;
+    multiTf: { htfTrendBias: string; multiTfAlignmentScore: number; htfTrendStrength: number; ltfPullbackQuality?: number } | null;
     liquidation: { cascadeScore: number; dominantRisk: string; longSqueezeProb: number; shortSqueezeProb: number } | null;
     timing: { timingGrade: string; momentumIgnitionScore: number; triggerCandleScore: number } | null;
     liquidity: { liquiditySweepProbability: number; liquidityHeatmapScore: number; stopDensityIndex: number } | null;
@@ -108,28 +109,19 @@ const tierBadge = (tier: string) => {
 
 const directionFromCoin = (c: UniverseCoin): { label: string; cls: string } => {
   const s = c.compositeScore;
-  const regime = c.regime;
   const htf = c.alpha?.multiTf?.htfTrendBias;
   const flow = c.aggressorFlow;
   const change = c.change24hPct;
-
-  // Strong signals
-  if (s >= 65 && (htf === "BULLISH" || flow === "BUY") && change > 0)
-    return { label: "LONG", cls: "bg-[#2cc497] text-white" };
-  if (s >= 65 && (htf === "BEARISH" || flow === "SELL") && change < 0)
-    return { label: "SHORT", cls: "bg-[#f6465d] text-white" };
-  // Medium signals
-  if (s >= 55 && change > 1)
-    return { label: "LONG", cls: "bg-[#2cc497] text-white" };
-  if (s >= 55 && change < -1)
-    return { label: "SHORT", cls: "bg-[#f6465d] text-white" };
+  if (s >= 65 && (htf === "BULLISH" || flow === "BUY") && change > 0) return { label: "LONG", cls: "bg-[#2cc497] text-white" };
+  if (s >= 65 && (htf === "BEARISH" || flow === "SELL") && change < 0) return { label: "SHORT", cls: "bg-[#f6465d] text-white" };
+  if (s >= 55 && change > 1) return { label: "LONG", cls: "bg-[#2cc497] text-white" };
+  if (s >= 55 && change < -1) return { label: "SHORT", cls: "bg-[#f6465d] text-white" };
   return { label: "WATCH", cls: "bg-[#333] text-[#999]" };
 };
 
 const htfBar = (c: UniverseCoin) => {
   const htfStr = c.alpha?.multiTf?.htfTrendStrength ?? c.trendStrength;
-  const score = Math.min(20, Math.round(htfStr / 5));
-  return score;
+  return Math.min(20, Math.round(htfStr / 5));
 };
 
 const structureLabel = (c: UniverseCoin) => {
@@ -140,18 +132,16 @@ const structureLabel = (c: UniverseCoin) => {
   return { tag: "RAN", val: Math.round(ts / 25), cls: "text-[#888]" };
 };
 
-const sessionScore = (c: UniverseCoin) => {
-  const now = new Date();
-  const hour = now.getUTCHours();
-  // Approximate session activity
-  if (hour >= 13 && hour <= 21) return 10; // US session
-  if (hour >= 7 && hour <= 15) return 8;   // EU session
-  return 5; // Asia/off hours
+const sessionScore = () => {
+  const hour = new Date().getUTCHours();
+  if (hour >= 13 && hour <= 21) return 10;
+  if (hour >= 7 && hour <= 15) return 8;
+  return 5;
 };
 
 const checklistDots = (c: UniverseCoin) => {
   let pass = 0;
-  let total = 6;
+  const total = 6;
   if (c.compositeScore >= 50) pass++;
   if (c.trendStrength >= 40) pass++;
   if (c.volume24hUsd > 1_000_000) pass++;
@@ -159,6 +149,55 @@ const checklistDots = (c: UniverseCoin) => {
   if (!c.alpha?.timing || c.alpha.timing.timingGrade !== "D") pass++;
   if (!c.universeScore?.falsePenalty || c.universeScore.falsePenalty.total < 10) pass++;
   return { pass, total };
+};
+
+/** Derive signal tags from coin data */
+const deriveSignalTags = (c: UniverseCoin): { label: string; cls: string }[] => {
+  const tags: { label: string; cls: string }[] = [];
+  // Regime
+  if (c.regime === "TREND") tags.push({ label: "Trending", cls: "bg-[#2cc497]/15 text-[#2cc497] border-[#2cc497]/30" });
+  if (c.regime === "BREAKOUT") tags.push({ label: "Breakout", cls: "bg-[#F5C542]/15 text-[#F5C542] border-[#F5C542]/30" });
+  // Liquidity sweep
+  if (c.alpha?.liquidity && c.alpha.liquidity.liquiditySweepProbability > 40)
+    tags.push({ label: "Liquidity Sweep", cls: "bg-[#6B8AFF]/15 text-[#6B8AFF] border-[#6B8AFF]/30" });
+  // Confidence
+  const conf = Math.round(c.compositeScore);
+  tags.push({ label: `Confidence ${conf}%`, cls: conf >= 65 ? "bg-[#2cc497]/15 text-[#2cc497] border-[#2cc497]/30" : "bg-[#F5C542]/15 text-[#F5C542] border-[#F5C542]/30" });
+  // Timing
+  const tg = c.alpha?.timing?.timingGrade;
+  if (tg === "A" || tg === "B") tags.push({ label: `Entry: 15-30 min`, cls: "bg-[#2cc497]/15 text-[#2cc497] border-[#2cc497]/30" });
+  else if (tg === "C") tags.push({ label: `Entry: 30-60 min`, cls: "bg-[#e0a040]/15 text-[#e0a040] border-[#e0a040]/30" });
+  // Trap
+  const trap = c.universeScore?.falsePenalty?.trapProbability ?? 0;
+  if (trap > 0) tags.push({ label: `Trap ${trap > 30 ? "HIGH" : "LOW"}`, cls: trap > 30 ? "bg-[#f6465d]/15 text-[#f6465d] border-[#f6465d]/30" : "bg-[#e0a040]/15 text-[#e0a040] border-[#e0a040]/30" });
+  // Aggressor
+  if (c.aggressorFlow === "SELL") tags.push({ label: "Sell Aggression", cls: "bg-[#f6465d]/15 text-[#f6465d] border-[#f6465d]/30" });
+  if (c.aggressorFlow === "BUY") tags.push({ label: "Buy Aggression", cls: "bg-[#2cc497]/15 text-[#2cc497] border-[#2cc497]/30" });
+  // Volume spike
+  if (c.volumeSpike) tags.push({ label: "Volume Spike", cls: "bg-[#F5C542]/15 text-[#F5C542] border-[#F5C542]/30" });
+  // Late entry risk
+  if (c.alpha?.structure && c.alpha.structure.trendExhaustionProbability > 50)
+    tags.push({ label: "Late entry risk", cls: "bg-[#f6465d]/15 text-[#f6465d] border-[#f6465d]/30" });
+  return tags;
+};
+
+/** Derive trade entry/SL/TP from coin data */
+const deriveTradeInfo = (c: UniverseCoin) => {
+  const dir = directionFromCoin(c);
+  const entry = c.price;
+  const atr = c.atrPct ? c.price * (c.atrPct / 100) : c.price * 0.02;
+  const isLong = dir.label === "LONG";
+  const sl = isLong ? entry - atr * 1.5 : entry + atr * 1.5;
+  const tp1 = isLong ? entry + atr * 1.0 : entry - atr * 1.0;
+  const tp2 = isLong ? entry + atr * 2.0 : entry - atr * 2.0;
+  const risk = Math.abs(entry - sl);
+  const reward = Math.abs(tp1 - entry);
+  const rr = risk > 0 ? (reward / risk).toFixed(1) : "0";
+  const rrQuality = parseFloat(rr) >= 2 ? "Good" : parseFloat(rr) >= 1 ? "Fair" : "Poor";
+  const strength = c.trendStrength >= 60 ? "STRONG" : c.trendStrength >= 40 ? "MODERATE" : "WEAK";
+  const action = c.alpha?.structure?.trendExhaustionProbability && c.alpha.structure.trendExhaustionProbability > 50
+    ? "Wait for reclaim" : "Entry ready";
+  return { dir, entry, sl, tp1, tp2, rr, rrQuality, strength, action, isLong };
 };
 
 /* ── Constants ── */
@@ -182,14 +221,445 @@ const DotBar = ({ value, max, size = "sm" }: { value: number; max: number; size?
   return (
     <div className="flex items-center gap-0.5">
       {Array.from({ length: max }, (_, i) => (
-        <span
-          key={i}
-          className={`${dotSize} rounded-full`}
-          style={{ backgroundColor: i < value ? colors[Math.min(i, colors.length - 1)] : "#333" }}
-        />
+        <span key={i} className={`${dotSize} rounded-full`} style={{ backgroundColor: i < value ? colors[Math.min(i, colors.length - 1)] : "#333" }} />
       ))}
       <span className="ml-1 text-[9px] text-[#888]">{value}/{max}</span>
     </div>
+  );
+};
+
+/* ── Inline Quick Trade Panel ── */
+const InlineTradePanel = ({ coin }: { coin: UniverseCoin }) => {
+  const [tab, setTab] = useState<"Open" | "Close">("Open");
+  const [marginMode, setMarginMode] = useState<"Isolated" | "Cross">("Isolated");
+  const [leverage, setLeverage] = useState(5);
+  const [showLevDropdown, setShowLevDropdown] = useState(false);
+  const [price, setPrice] = useState(String(coin.price));
+  const [amount, setAmount] = useState("50");
+  const [tpSlEnabled, setTpSlEnabled] = useState(false);
+  const [orderStatus, setOrderStatus] = useState<string | null>(null);
+  const sym = coin.symbol.replace("USDT", "");
+
+  const submitOrder = async (side: "BUY" | "SELL") => {
+    const numPrice = parseFloat(price);
+    const numAmount = parseFloat(amount);
+    if (!numAmount || numAmount <= 0) { setOrderStatus("Invalid amount"); return; }
+    try {
+      setOrderStatus("Submitting...");
+      await placeExchangeOrder({
+        exchange: "binance",
+        symbol: coin.symbol,
+        side,
+        orderType: "Market",
+        amount: numAmount,
+        price: numPrice || undefined,
+        accountMode: "Futures",
+        leverage,
+        marginMode: marginMode === "Cross" ? "Cross" : "Isolated",
+        positionAction: tab,
+        tpSl: { enabled: tpSlEnabled },
+      });
+      setOrderStatus(`${side} order placed!`);
+      setTimeout(() => setOrderStatus(null), 3000);
+    } catch (e: any) {
+      setOrderStatus(`Error: ${e?.message ?? "Failed"}`);
+      setTimeout(() => setOrderStatus(null), 5000);
+    }
+  };
+
+  return (
+    <div className="flex items-center gap-2 flex-wrap text-[11px]">
+      {/* API badge */}
+      <span className="text-[10px] text-[#555]">API</span>
+      <span className="rounded bg-[#F5C542]/10 px-1.5 py-0.5 text-[10px] text-[#F5C542] font-medium">Binance</span>
+
+      {/* Margin mode */}
+      <button onClick={() => setMarginMode(m => m === "Isolated" ? "Cross" : "Isolated")} className="rounded bg-white/5 px-2 py-1 text-[10px] text-[#ccc] hover:bg-white/10">
+        {marginMode} &#9662;
+      </button>
+
+      {/* Leverage */}
+      <div className="relative">
+        <button onClick={() => setShowLevDropdown(!showLevDropdown)} className="rounded bg-white/5 px-2 py-1 text-[10px] text-[#F5C542] font-bold hover:bg-white/10">
+          {leverage}x
+        </button>
+        {showLevDropdown && (
+          <div className="absolute top-full left-0 mt-1 z-50 rounded-lg border border-white/10 bg-[#1a1c22] p-1 grid grid-cols-5 gap-1 min-w-[160px]">
+            {[1, 2, 3, 5, 10, 15, 20, 25, 50, 75, 100, 125].map((l) => (
+              <button key={l} onClick={() => { setLeverage(l); setShowLevDropdown(false); }}
+                className={`rounded px-2 py-1 text-[10px] font-medium ${leverage === l ? "bg-[#F5C542]/20 text-[#F5C542]" : "text-[#888] hover:bg-white/5"}`}>
+                {l}x
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Open/Close tabs */}
+      <div className="flex rounded bg-white/5 overflow-hidden">
+        <button onClick={() => setTab("Open")} className={`px-3 py-1 text-[10px] font-semibold transition ${tab === "Open" ? "bg-[#2cc497]/20 text-[#2cc497]" : "text-[#666] hover:text-[#999]"}`}>Open</button>
+        <button onClick={() => setTab("Close")} className={`px-3 py-1 text-[10px] font-semibold transition ${tab === "Close" ? "bg-[#f6465d]/20 text-[#f6465d]" : "text-[#666] hover:text-[#999]"}`}>Close</button>
+      </div>
+
+      {/* Price */}
+      <div className="flex items-center gap-1">
+        <span className="text-[10px] text-[#555]">PRICE</span>
+        <input value={price} onChange={(e) => setPrice(e.target.value)}
+          className="w-24 rounded border border-white/10 bg-[#0B0B0C] px-2 py-1 text-[11px] text-white outline-none focus:border-[#F5C542]/40" />
+      </div>
+
+      {/* Amount */}
+      <div className="flex items-center gap-1">
+        <span className="text-[10px] text-[#555]">AMOUNT</span>
+        <input value={amount} onChange={(e) => setAmount(e.target.value)}
+          className="w-16 rounded border border-white/10 bg-[#0B0B0C] px-2 py-1 text-[11px] text-white outline-none focus:border-[#F5C542]/40" />
+        <span className="text-[10px] text-[#888]">USDT</span>
+      </div>
+
+      {/* TP/SL */}
+      <button onClick={() => setTpSlEnabled(!tpSlEnabled)}
+        className={`rounded px-2 py-1 text-[10px] font-medium ${tpSlEnabled ? "bg-[#F5C542]/15 text-[#F5C542]" : "bg-white/5 text-[#666]"}`}>
+        TP/SL
+      </button>
+
+      {/* Open Long / Open Short */}
+      <button onClick={() => submitOrder("BUY")} className="rounded bg-[#2cc497] px-3 py-1 text-[10px] font-bold text-white hover:bg-[#25b088] transition">
+        Open Long
+      </button>
+      <button onClick={() => submitOrder("SELL")} className="rounded bg-[#f6465d] px-3 py-1 text-[10px] font-bold text-white hover:bg-[#d93b4f] transition">
+        Open Short
+      </button>
+
+      {/* Exchange link */}
+      <a href={`https://www.binance.com/en/futures/${sym}USDT`} target="_blank" rel="noreferrer"
+        className="rounded bg-[#F5C542]/15 px-3 py-1 text-[10px] font-bold text-[#F5C542] hover:bg-[#F5C542]/25 transition flex items-center gap-1">
+        Exchange <span className="text-[8px]">&#x2197;</span>
+      </a>
+
+      {orderStatus && <span className="text-[10px] text-[#F5C542] animate-pulse">{orderStatus}</span>}
+    </div>
+  );
+};
+
+/* ── Expanded Detail Panel ── */
+const ExpandedPanel = ({ coin, onClose }: { coin: UniverseCoin; onClose: () => void }) => {
+  const [signalsOpen, setSignalsOpen] = useState(true);
+  const us = coin.universeScore;
+  const a = coin.alpha;
+  const sym = coin.symbol.replace("USDT", "");
+  const tags = deriveSignalTags(coin);
+  const trade = deriveTradeInfo(coin);
+
+  const layers = [
+    { name: "Structure", score: us?.structure?.total ?? 0, max: 25 },
+    { name: "Liquidity", score: us?.liquidity?.total ?? 0, max: 25 },
+    { name: "Position", score: us?.positioning?.total ?? 0, max: 15 },
+    { name: "Execution", score: us?.execution?.total ?? 0, max: 15 },
+    { name: "Momentum", score: us?.momentum?.total ?? 0, max: 20 },
+  ];
+
+  // Add Volatility & Risk & On-Chain to layer scores
+  const volPct = a?.volatility ? Math.round((a.volatility.compressionScore + a.volatility.expansionForecast) / 2) : 0;
+  const riskPct = us?.falsePenalty ? Math.round(100 - us.falsePenalty.total) : 50;
+  const onChainPct = coin.dataQuality ? Math.round(coin.dataQuality.score * 0.46) : 0;
+  const allLayers = [
+    ...layers,
+    { name: "Volatility", score: volPct, max: 100 },
+    { name: "Risk", score: riskPct, max: 100 },
+    { name: "On-Chain", score: onChainPct, max: 100 },
+  ];
+
+  const categoryCards = [
+    {
+      num: 1, title: "Market Regime", score: us?.structure?.total ?? 0, maxScore: 25, color: "#2cc497",
+      rows: [
+        ["Market Regime", coin.regime],
+        ["Trend Direction", trade.isLong ? "UP" : coin.change24hPct < 0 ? "DOWN" : "NEUTRAL"],
+        ["Trend Strength", `${Math.round(coin.trendStrength)}`],
+        ["Trend Phase", a?.structure?.trendExhaustionProbability != null ? (a.structure.trendExhaustionProbability > 50 ? "EXHAUSTION" : "IMPULSE") : "N/A"],
+        ["Structure Age", coin.regime === "TREND" ? "MATURE" : coin.regime === "BREAKOUT" ? "YOUNG" : "N/A"],
+        ["Market Intent", coin.regime === "TREND" ? "TREND_CONTINUATION" : coin.regime === "BREAKOUT" ? "BREAKOUT_PLAY" : "RANGE_BOUND"],
+      ],
+    },
+    {
+      num: 2, title: "Liquidity", score: us?.liquidity?.total ?? 0, maxScore: 25, color: "#6B8AFF",
+      rows: [
+        ["Liquidity Cluster Nearby", a?.liquidity?.liquidityHeatmapScore != null ? (a.liquidity.liquidityHeatmapScore > 50 ? "YES" : "N/A") : "N/A"],
+        ["Orderbook Imbalance", coin.aggressorFlow === "BUY" ? "BUY" : coin.aggressorFlow === "SELL" ? "SELL" : "NEUTRAL"],
+        ["Liquidity Density", a?.liquidity?.stopDensityIndex != null ? (a.liquidity.stopDensityIndex > 50 ? "HIGH" : "LOW") : "N/A"],
+        ["Stop Cluster Probability", a?.liquidity?.stopDensityIndex != null ? `${Math.round(a.liquidity.stopDensityIndex)}%` : "N/A"],
+        ["Depth Quality", us?.execution?.depthQuality != null ? (us.execution.depthQuality > 50 ? "GOOD" : "POOR") : "N/A"],
+        ["Aggressor Flow", coin.aggressorFlow || "N/A"],
+        ["Liquidity Refill Behaviour", "N/A"],
+      ],
+    },
+    {
+      num: 3, title: "Positioning", score: us?.positioning?.total ?? 0, maxScore: 15, color: "#e0a040",
+      rows: [
+        ["Funding Bias", a?.funding?.fundingDirection ?? "N/A"],
+        ["Liquidations Bias", a?.liquidation?.dominantRisk ?? "BALANCED"],
+        ["OI Change (1h)", a?.oiShock?.shockType ?? "N/A"],
+        ["Buy/Sell Imbalance", a?.delta?.buySellPressureRatio != null ? (a.delta.buySellPressureRatio > 1.2 ? "BUY_HEAVY" : a.delta.buySellPressureRatio < 0.8 ? "SELL_HEAVY" : "NEUTRAL") : "N/A"],
+        ["Spot vs Derivatives Pressure", a?.delta?.cvdTrend ? (a.delta.cvdTrend === "RISING" ? "SPOT_LED" : "DERIV_LED") : "N/A"],
+        ["Real Momentum Score", a?.delta?.deltaImbalanceScore != null ? `${Math.round(a.delta.deltaImbalanceScore)}` : "N/A"],
+      ],
+    },
+    {
+      num: 4, title: "Execution Quality", score: us?.execution?.total ?? 0, maxScore: 15, color: "#f6465d",
+      rows: [
+        ["Spread Regime", coin.spreadBps != null ? (coin.spreadBps > 10 ? "WIDE" : coin.spreadBps > 5 ? "NORMAL" : "TIGHT") : "N/A"],
+        ["Entry Quality Score", us?.execution?.spreadQuality != null ? (us.execution.spreadQuality > 50 ? "GOOD" : "OK") : "N/A"],
+        ["Slippage Risk", coin.spreadBps != null ? (coin.spreadBps > 15 ? "HIGH" : "LOW") : "N/A"],
+        ["Entry Timing Window", a?.timing?.timingGrade === "A" ? "OPEN" : a?.timing?.timingGrade === "D" ? "CLOSED" : "NARROWING"],
+        ["Orderbook Stability", a?.marketMaker?.spoofingProbability != null ? (a.marketMaker.spoofingProbability > 30 ? "SPOOF_RISK" : "STABLE") : "N/A"],
+        ["Reaction Sensitivity", "N/A"],
+      ],
+    },
+    {
+      num: 5, title: "Volatility State", score: volPct, maxScore: 100, color: "#9B7DFF",
+      rows: [
+        ["Compression", a?.volatility?.compressionScore != null ? (a.volatility.compressionScore > 50 ? "ON" : "OFF") : "N/A"],
+        ["Expansion Probability", a?.volatility?.expansionForecast != null ? (a.volatility.expansionForecast > 50 ? "HIGH" : "LOW") : "N/A"],
+        ["Market Speed", a?.volatility?.volatilityRegime === "HIGH" ? "FAST" : a?.volatility?.volatilityRegime === "LOW" ? "SLOW" : "MODERATE"],
+        ["ATR Regime", coin.atrPct != null ? (coin.atrPct > 5 ? "HIGH" : coin.atrPct > 2 ? "MODERATE" : "LOW") : "N/A"],
+        ["Sudden Move Risk", a?.volatility?.expansionForecast != null ? (a.volatility.expansionForecast > 70 ? "HIGH" : "LOW") : "N/A"],
+        ["Breakout Risk", a?.structure?.breakoutQualityScore != null ? (a.structure.breakoutQualityScore > 50 ? "HIGH" : "LOW") : "N/A"],
+      ],
+    },
+  ];
+
+  const valBadgeCls = (v: string) => {
+    const lower = v.toLowerCase();
+    if (["trend", "bullish", "rising", "buy", "pass", "low", "a", "spike", "up", "good", "open", "tight", "spot_led", "stable", "on", "impulse", "young", "off"].some((k) => lower === k || lower.includes(k)))
+      return "bg-[#2cc497]/15 text-[#2cc497]";
+    if (["bearish", "sell", "falling", "high", "wide", "panic", "d", "poor", "crowded_short", "spoof", "risk", "down", "closed", "exhaustion", "fast", "deriv_led", "buy_heavy", "sell_heavy"].some((k) => lower === k || lower.includes(k)))
+      return "bg-[#f6465d]/15 text-[#f6465d]";
+    if (["neutral", "normal", "flat", "range", "balanced", "ok", "c", "compressed", "mean_reverting", "moderate", "narrowing", "slow", "n/a"].some((k) => lower === k || lower.includes(k)))
+      return "bg-white/5 text-[#999]";
+    return "bg-[#F5C542]/10 text-[#F5C542]";
+  };
+
+  // Metric count for display
+  const metricCount = categoryCards.reduce((sum, c) => sum + c.rows.length, 0) + allLayers.length + 9; // +9 for bottom cards
+
+  return (
+    <td colSpan={16} className="p-0">
+      <div className="bg-[#0e0f12] border-t border-white/[0.04]">
+
+        {/* ── TradingView Chart ── */}
+        <div className="relative" style={{ height: 420 }}>
+          <iframe
+            src={`https://s.tradingview.com/widgetembed/?frameElementId=tv_chart&symbol=BINANCE:${sym}USDT.P&interval=15&hidesidetoolbar=0&symboledit=0&saveimage=0&toolbarbg=0B0B0C&studies=[]&theme=dark&style=1&timezone=exchange&withdateranges=1&hide_top_toolbar=0&hide_legend=0&allow_symbol_change=1&details=0&calendar=0&hotlist=0&show_popup_button=0&locale=en&utm_source=bitrium`}
+            className="w-full h-full border-0"
+            allow="encrypted-media"
+          />
+          {/* Indicators badge & close button overlay */}
+          <div className="absolute top-2 right-2 flex items-center gap-2 z-10">
+            <span className="rounded bg-[#1a1c22]/90 px-2 py-1 text-[10px] text-[#888]">Indicators <b className="text-white">{3}</b></span>
+            <button onClick={(e) => { e.stopPropagation(); onClose(); }}
+              className="rounded bg-[#1a1c22]/90 px-2 py-1 text-[12px] text-[#888] hover:text-white transition">✕</button>
+          </div>
+        </div>
+
+        {/* ── Signal Tags ── */}
+        <div className="px-4 py-2 flex flex-wrap items-center gap-1.5 border-b border-white/[0.04]">
+          {tags.map((t, i) => (
+            <span key={i} className={`rounded-full border px-2.5 py-0.5 text-[10px] font-medium ${t.cls}`}>{t.label}</span>
+          ))}
+          {/* Invalid above/below level */}
+          {trade.sl && (
+            <span className="rounded-full border border-[#f6465d]/30 bg-[#f6465d]/10 px-2.5 py-0.5 text-[10px] font-medium text-[#f6465d]">
+              ✕ Invalid {trade.isLong ? "Below" : "Above"} {fmtPrice(trade.sl)}
+            </span>
+          )}
+        </div>
+
+        {/* ── Trade Info Bar ── */}
+        <div className="px-4 py-2 flex flex-wrap items-center gap-3 border-b border-white/[0.04] text-[11px]">
+          <span className="flex items-center gap-1.5">
+            <span className="h-4 w-4 rounded bg-white/5 flex items-center justify-center text-[9px]">&#x1F4CB;</span>
+            <span className="text-[#888]">{trade.action}</span>
+          </span>
+          <span className={`rounded px-2 py-0.5 font-bold text-[10px] ${trade.dir.cls}`}>
+            {trade.dir.label === "LONG" ? "\u25BC" : "\u25B2"} {trade.dir.label}
+          </span>
+          <span className={`rounded px-1.5 py-0.5 text-[9px] font-semibold ${trade.strength === "STRONG" ? "bg-[#2cc497]/15 text-[#2cc497]" : trade.strength === "MODERATE" ? "bg-[#F5C542]/15 text-[#F5C542]" : "bg-white/5 text-[#888]"}`}>
+            {trade.strength}
+          </span>
+
+          <span className="text-[#555]">ENTRY</span>
+          <span className="text-white font-medium">{fmtPrice(trade.entry)}</span>
+
+          <span className="text-[#f6465d]">SL</span>
+          <span className="text-[#f6465d] font-medium">{fmtPrice(trade.sl)}</span>
+          <span className="text-[9px] text-[#f6465d]/60">{fmtPct(((trade.sl - trade.entry) / trade.entry) * 100)}</span>
+
+          <span className="text-[#2cc497]">TP1</span>
+          <span className="text-[#2cc497] font-medium">{fmtPrice(trade.tp1)}</span>
+          <span className="text-[9px] text-[#2cc497]/60">{fmtPct(((trade.tp1 - trade.entry) / trade.entry) * 100)}</span>
+
+          <span className="text-[#2cc497]">TP2</span>
+          <span className="text-[#2cc497] font-medium">{fmtPrice(trade.tp2)}</span>
+          <span className="text-[9px] text-[#2cc497]/60">{fmtPct(((trade.tp2 - trade.entry) / trade.entry) * 100)}</span>
+
+          <span className={`font-bold ${parseFloat(trade.rr) >= 1.5 ? "text-[#2cc497]" : parseFloat(trade.rr) >= 1 ? "text-[#F5C542]" : "text-[#f6465d]"}`}>
+            R:R 1:{trade.rr}
+          </span>
+          <span className={`text-[10px] ${trade.rrQuality === "Good" ? "text-[#2cc497]" : trade.rrQuality === "Fair" ? "text-[#F5C542]" : "text-[#f6465d]"}`}>
+            {trade.rrQuality}
+          </span>
+        </div>
+
+        {/* ── Quick Trade Panel ── */}
+        <div className="px-4 py-2 border-b border-white/[0.04]">
+          <InlineTradePanel coin={coin} />
+        </div>
+
+        {/* ── SIGNALS Section ── */}
+        <div className="px-4 py-2">
+          <button onClick={() => setSignalsOpen(!signalsOpen)} className="flex items-center gap-2 text-[11px] font-bold text-[#F5C542] mb-2">
+            <span className={`transition-transform ${signalsOpen ? "" : "-rotate-90"}`}>{signalsOpen ? "\u25BC" : "\u25B6"}</span>
+            SIGNALS
+            <span className="text-[#555] font-normal ml-1">{signalsOpen ? "click to collapse" : "click to expand"}</span>
+            <span className="ml-auto text-[10px] text-[#555] font-normal">{metricCount} METRICS</span>
+          </button>
+
+          {signalsOpen && (
+            <>
+              {/* Layer Scores */}
+              <div className="mb-4">
+                <h3 className="text-[10px] font-semibold uppercase tracking-wider text-[#555] mb-2">LAYER SCORES</h3>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-6 gap-y-1.5">
+                  {allLayers.map((l) => {
+                    const pct = l.max === 100 ? l.score : Math.round((l.score / l.max) * 100);
+                    return (
+                      <div key={l.name} className="flex items-center gap-2">
+                        <span className="text-[10px] text-[#888] w-16">{l.name}</span>
+                        <div className="flex-1 h-2 rounded-full bg-white/5 overflow-hidden">
+                          <div className="h-full rounded-full" style={{
+                            width: `${pct}%`,
+                            backgroundColor: pct >= 70 ? "#2cc497" : pct >= 50 ? "#F5C542" : pct >= 30 ? "#e0a040" : "#f6465d",
+                          }} />
+                        </div>
+                        <span className={`text-[11px] font-bold w-8 text-right ${scoreClr(pct)}`}>{pct}%</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Category Cards */}
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 mb-3">
+                {categoryCards.map((card) => {
+                  const pct = card.maxScore === 100 ? card.score : Math.round((card.score / card.maxScore) * 100);
+                  return (
+                    <div key={card.title} className="rounded-lg border border-white/[0.06] bg-[#121316] overflow-hidden">
+                      <div className="flex items-center justify-between px-3 py-2 border-b border-white/[0.04]" style={{ borderLeftColor: card.color, borderLeftWidth: 3 }}>
+                        <span className="text-[11px] text-white">
+                          <span className="text-[#555] mr-1">{card.num}</span>
+                          <b>{card.title}</b>
+                        </span>
+                        <span className={`text-[11px] font-bold ${scoreClr(pct)}`}>{pct}%</span>
+                      </div>
+                      <div className="px-3 py-2 space-y-1.5">
+                        {card.rows.map(([label, value]) => (
+                          <div key={label} className="flex items-center justify-between">
+                            <span className="text-[10px] text-[#666]">{label}</span>
+                            <span className={`rounded px-1.5 py-0.5 text-[10px] font-semibold ${valBadgeCls(value)}`}>{value}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Multiplier, Risk Filters, Context */}
+              <div className="grid gap-3 sm:grid-cols-3">
+                {/* Multiplier */}
+                <div className="rounded-lg border border-white/[0.06] bg-[#121316] overflow-hidden">
+                  <div className="flex items-center justify-between px-3 py-2 border-b border-white/[0.04]">
+                    <span className="text-[10px] font-bold text-[#F5C542]">&#x26A1; Multiplier</span>
+                    <span className="text-[9px] text-[#555] cursor-pointer hover:text-[#888]">Kazanc Carpani</span>
+                  </div>
+                  <div className="px-3 py-2 space-y-1.5 text-[10px]">
+                    <div className="flex justify-between"><span className="text-[#666]">RR Potential</span><span className={`rounded px-1.5 py-0.5 font-bold ${valBadgeCls(trade.rrQuality === "Good" ? "HIGH" : "NORMAL")}`}>{trade.rrQuality === "Good" ? "HIGH" : "NORMAL"}</span></div>
+                    <div className="flex justify-between"><span className="text-[#666]">Asymmetry Score</span><span className={`rounded px-1.5 py-0.5 font-bold ${valBadgeCls(a?.alphaGrade === "A" ? "ALPHA_DOMINANT" : "RISK_DOMINANT")}`}>{a?.alphaGrade === "A" ? "ALPHA_DOMINANT" : "RISK_DOMINANT"}</span></div>
+                    <div className="flex justify-between"><span className="text-[#666]">Alpha Grade</span><span className={`rounded px-1.5 py-0.5 font-bold ${valBadgeCls(a?.alphaGrade ?? "N/A")}`}>{a?.alphaGrade ?? "N/A"}</span></div>
+                    <div className="flex justify-between"><span className="text-[#666]">Alpha Bonus</span><span className="text-[#2cc497] font-medium">+{a?.alphaBonus ?? 0}</span></div>
+                    <div className="flex justify-between"><span className="text-[#666]">Alpha Penalty</span><span className="text-[#f6465d] font-medium">-{a?.alphaPenalty ?? 0}</span></div>
+                  </div>
+                </div>
+
+                {/* Risk Filters */}
+                <div className="rounded-lg border border-white/[0.06] bg-[#121316] overflow-hidden">
+                  <div className="flex items-center justify-between px-3 py-2 border-b border-white/[0.04]">
+                    <span className="text-[10px] font-bold text-[#e0a040]">&#x26A0; Risk Filters</span>
+                    <span className="text-[9px] text-[#555] cursor-pointer hover:text-[#888]">Risk Filtreleri</span>
+                  </div>
+                  <div className="px-3 py-2 space-y-1.5 text-[10px]">
+                    <div className="flex justify-between">
+                      <span className="text-[#666]">Risk Gate</span>
+                      <span className={`rounded px-1.5 py-0.5 font-bold ${(us?.falsePenalty?.total ?? 0) < 15 ? "bg-[#2cc497]/15 text-[#2cc497]" : "bg-[#f6465d]/15 text-[#f6465d]"}`}>
+                        {(us?.falsePenalty?.total ?? 0) < 15 ? "PASS" : "FAIL"}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-[#666]">Signal Conflict Level</span>
+                      <span className={`rounded px-1.5 py-0.5 font-bold ${(us?.falsePenalty?.signalConflict ?? 0) < 10 ? "bg-[#2cc497]/15 text-[#2cc497]" : "bg-[#f6465d]/15 text-[#f6465d]"}`}>
+                        {(us?.falsePenalty?.signalConflict ?? 0) < 10 ? "LOW" : "HIGH"}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-[#666]">False Penalty</span>
+                      <span className="text-[#999] font-medium">{us?.falsePenalty?.total ?? 0}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-[#666]">Trap Probability</span>
+                      <span className="text-[#999] font-medium">{us?.falsePenalty?.trapProbability ?? 0}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Context */}
+                <div className="rounded-lg border border-white/[0.06] bg-[#121316] overflow-hidden">
+                  <div className="flex items-center justify-between px-3 py-2 border-b border-white/[0.04]">
+                    <span className="text-[10px] font-bold text-[#6B8AFF]">&#x1F30D; Context</span>
+                    <span className="text-[9px] text-[#555] cursor-pointer hover:text-[#888]">Yeri Onemli</span>
+                  </div>
+                  <div className="px-3 py-2 space-y-1.5 text-[10px]">
+                    <div className="flex justify-between">
+                      <span className="text-[#666]">EMA Alignment</span>
+                      <span className={`rounded px-1.5 py-0.5 font-bold ${valBadgeCls(coin.change24hPct > 0 ? "BULL" : "BEAR")}`}>
+                        {coin.change24hPct > 0 ? "BULL" : "BEAR"}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-[#666]">VWAP Position</span>
+                      <span className="text-[#999] font-medium">{coin.change24hPct > 0 ? "ABOVE" : "BELOW"}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-[#666]">Risk On/Off</span>
+                      <span className="text-[#999] font-medium">{a?.crossMarket?.riskOnOffIndex != null ? Math.round(a.crossMarket.riskOnOffIndex) : "N/A"}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-[#666]">Volume Spike</span>
+                      <span className={`rounded px-1.5 py-0.5 font-bold ${coin.volumeSpike ? "bg-[#F5C542]/15 text-[#F5C542]" : "bg-white/5 text-[#555]"}`}>
+                        {coin.volumeSpike ? "ON" : "OFF"}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-[#666]">Data Quality</span>
+                      <span className="text-[#999] font-medium">{coin.dataQuality?.score ?? 0}/100</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+    </td>
   );
 };
 
@@ -292,9 +762,7 @@ export default function SniperPage() {
             <button
               onClick={() => setLive(!live)}
               className={`flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-[11px] font-semibold transition ${
-                live
-                  ? "border-[#2cc497]/30 bg-[#2cc497]/10 text-[#2cc497]"
-                  : "border-white/10 bg-[#0F1012] text-[#555]"
+                live ? "border-[#2cc497]/30 bg-[#2cc497]/10 text-[#2cc497]" : "border-white/10 bg-[#0F1012] text-[#555]"
               }`}
             >
               <span className={`h-2 w-2 rounded-full ${live ? "animate-pulse bg-[#2cc497]" : "bg-[#555]"}`} />
@@ -386,7 +854,7 @@ export default function SniperPage() {
                   const dir = directionFromCoin(coin);
                   const htf = htfBar(coin);
                   const st = structureLabel(coin);
-                  const sess = sessionScore(coin);
+                  const sess = sessionScore();
                   const cl = checklistDots(coin);
                   const liqSweep = coin.alpha?.liquidity?.liquiditySweepProbability ?? 0;
                   const liqVal = Math.round(liqSweep / 10);
@@ -396,316 +864,96 @@ export default function SniperPage() {
                   const tb = tierBadge(coin.tier);
                   const isExpanded = expandedCoin === coin.symbol;
                   const sym = coin.symbol.replace("USDT", "");
-
-                  // Rough R:R from alpha structure
                   const rr = coin.alpha?.structure ? Math.max(1, Math.round(coin.alpha.structure.breakoutQualityScore / 20)) : null;
 
                   return (
-                    <tr
-                      key={coin.symbol}
-                      className={`border-b border-white/[0.03] transition cursor-pointer ${
-                        isExpanded ? "bg-[#15171c]" : "hover:bg-white/[0.02]"
-                      }`}
-                      onClick={() => setExpandedCoin(isExpanded ? null : coin.symbol)}
-                    >
-                      {/* # */}
-                      <td className="px-2 py-2.5 text-[11px] text-[#555] font-medium">{idx + 1}</td>
-
-                      {/* Coin */}
-                      <td className="px-2 py-2.5">
-                        <div className="flex items-center gap-1.5">
-                          <span className={`flex h-5 w-5 items-center justify-center rounded-full border text-[8px] font-bold ${tb.bg}`}>
-                            {tb.letter}
+                    <>
+                      {/* Coin Row */}
+                      <tr
+                        key={coin.symbol}
+                        className={`border-b border-white/[0.03] transition cursor-pointer ${
+                          isExpanded ? "bg-[#15171c]" : "hover:bg-white/[0.02]"
+                        }`}
+                        onClick={() => setExpandedCoin(isExpanded ? null : coin.symbol)}
+                      >
+                        <td className="px-2 py-2.5 text-[11px] text-[#555] font-medium">{idx + 1}</td>
+                        <td className="px-2 py-2.5">
+                          <div className="flex items-center gap-1.5">
+                            <span className={`flex h-5 w-5 items-center justify-center rounded-full border text-[8px] font-bold ${tb.bg}`}>{tb.letter}</span>
+                            <span className="text-[12px] font-bold text-white">{sym}</span>
+                            <span className="text-[9px] text-[#555]">/USDT</span>
+                            <span className={`ml-0.5 text-[8px] font-medium ${coin.tier === "ALPHA" ? "text-[#F5C542]" : "text-[#555]"}`}>{coin.tier.charAt(0).toLowerCase()}</span>
+                            {coin.selected && <span className="h-2 w-2 rounded-full bg-[#2cc497]" title="Selected" />}
+                          </div>
+                        </td>
+                        <td className="px-2 py-2.5 text-center">
+                          <span className={`inline-block rounded px-2 py-0.5 text-[12px] font-bold ${scoreBg(coin.compositeScore)} ${scoreClr(coin.compositeScore)}`}>
+                            {Math.round(coin.compositeScore)}
                           </span>
-                          <span className="text-[12px] font-bold text-white">{sym}</span>
-                          <span className="text-[9px] text-[#555]">/USDT</span>
-                          <span className={`ml-0.5 text-[8px] font-medium ${coin.tier === "ALPHA" ? "text-[#F5C542]" : "text-[#555]"}`}>{coin.tier.charAt(0).toLowerCase()}</span>
-                          {coin.selected && <span className="h-2 w-2 rounded-full bg-[#2cc497]" title="Selected" />}
-                        </div>
-                      </td>
+                        </td>
+                        <td className="px-2 py-2.5 text-center">
+                          <span className={`inline-block rounded px-2 py-0.5 text-[10px] font-bold ${dir.cls}`}>
+                            {dir.label === "LONG" ? "\u25B2" : dir.label === "SHORT" ? "\u25BC" : "\u25CF"} {dir.label}
+                          </span>
+                        </td>
+                        <td className="px-2 py-2.5 text-center">
+                          <BarMini value={htf} max={20} color={htf >= 12 ? "#2cc497" : htf >= 8 ? "#F5C542" : "#f6465d"} />
+                        </td>
+                        <td className="px-2 py-2.5 text-center">
+                          <span className="text-[11px] text-[#999]">{liqVal}</span>
+                          <span className={`ml-1 h-1.5 w-1.5 rounded-full inline-block ${liqVal >= 7 ? "bg-[#f6465d]" : liqVal >= 4 ? "bg-[#F5C542]" : "bg-[#2cc497]"}`} />
+                        </td>
+                        <td className="px-2 py-2.5 text-right">
+                          <span className="text-[11px] text-[#999]">{fmtVol(coin.volume24hUsd)}</span>
+                          {coin.volumeSpike && <span className="ml-1 text-[8px] text-[#F5C542]">&#x26A1;</span>}
+                        </td>
+                        <td className="px-2 py-2.5 text-center">
+                          <span className="text-[11px] text-[#999]">{rr ?? "-"}</span>
+                        </td>
+                        <td className="px-2 py-2.5 text-center">
+                          <span className={`text-[10px] font-semibold ${st.cls}`}>{st.tag}</span>
+                          <span className="ml-1 text-[10px] text-[#888]">{st.val}</span>
+                        </td>
+                        <td className="px-2 py-2.5 text-center text-[11px] text-[#888]">{sess}</td>
+                        <td className="px-2 py-2.5 text-center">
+                          {bos !== null ? (
+                            <span className={`h-2.5 w-2.5 rounded-full inline-block ${bos > 20 ? "bg-[#2cc497]" : bos < -20 ? "bg-[#f6465d]" : "bg-[#555]"}`} />
+                          ) : <span className="text-[10px] text-[#333]">-</span>}
+                        </td>
+                        <td className="px-2 py-2.5 text-right">
+                          <span className="text-[11px] text-[#ddd]">{fmtPrice(coin.price)}</span>
+                        </td>
+                        <td className="px-2 py-2.5 text-right">
+                          <span className={`text-[11px] font-medium ${coin.change24hPct >= 0 ? "text-[#2cc497]" : "text-[#f6465d]"}`}>
+                            {fmtPct(coin.change24hPct)}
+                          </span>
+                        </td>
+                        <td className="px-2 py-2.5 text-center">
+                          <span className={`text-[11px] font-bold ${
+                            timing === "A" ? "text-[#2cc497]" : timing === "B" ? "text-[#F5C542]" : timing === "C" ? "text-[#e0a040]" : "text-[#f6465d]"
+                          }`}>{timing}</span>
+                        </td>
+                        <td className="px-2 py-2.5 text-center">
+                          <span className="text-[11px] text-[#888]">{pullback ?? "-"}</span>
+                        </td>
+                        <td className="px-2 py-2.5 text-center">
+                          <DotBar value={cl.pass} max={cl.total} size="xs" />
+                        </td>
+                      </tr>
 
-                      {/* Score */}
-                      <td className="px-2 py-2.5 text-center">
-                        <span className={`inline-block rounded px-2 py-0.5 text-[12px] font-bold ${scoreBg(coin.compositeScore)} ${scoreClr(coin.compositeScore)}`}>
-                          {Math.round(coin.compositeScore)}
-                        </span>
-                      </td>
-
-                      {/* Direction */}
-                      <td className="px-2 py-2.5 text-center">
-                        <span className={`inline-block rounded px-2 py-0.5 text-[10px] font-bold ${dir.cls}`}>
-                          {dir.label === "LONG" ? "\u25B2" : dir.label === "SHORT" ? "\u25BC" : "\u25CF"} {dir.label}
-                        </span>
-                      </td>
-
-                      {/* HTF */}
-                      <td className="px-2 py-2.5 text-center">
-                        <BarMini value={htf} max={20} color={htf >= 12 ? "#2cc497" : htf >= 8 ? "#F5C542" : "#f6465d"} />
-                      </td>
-
-                      {/* Liq Sweep */}
-                      <td className="px-2 py-2.5 text-center">
-                        <span className="text-[11px] text-[#999]">{liqVal}</span>
-                        <span className={`ml-1 h-1.5 w-1.5 rounded-full inline-block ${liqVal >= 7 ? "bg-[#f6465d]" : liqVal >= 4 ? "bg-[#F5C542]" : "bg-[#2cc497]"}`} />
-                      </td>
-
-                      {/* Volume */}
-                      <td className="px-2 py-2.5 text-right">
-                        <span className="text-[11px] text-[#999]">{fmtVol(coin.volume24hUsd)}</span>
-                        {coin.volumeSpike && <span className="ml-1 text-[8px] text-[#F5C542]">&#x26A1;</span>}
-                      </td>
-
-                      {/* R:R */}
-                      <td className="px-2 py-2.5 text-center">
-                        <span className="text-[11px] text-[#999]">{rr ?? "-"}</span>
-                      </td>
-
-                      {/* Structure */}
-                      <td className="px-2 py-2.5 text-center">
-                        <span className={`text-[10px] font-semibold ${st.cls}`}>{st.tag}</span>
-                        <span className="ml-1 text-[10px] text-[#888]">{st.val}</span>
-                      </td>
-
-                      {/* Session */}
-                      <td className="px-2 py-2.5 text-center text-[11px] text-[#888]">{sess}</td>
-
-                      {/* BOS */}
-                      <td className="px-2 py-2.5 text-center">
-                        {bos !== null ? (
-                          <span className={`h-2.5 w-2.5 rounded-full inline-block ${bos > 20 ? "bg-[#2cc497]" : bos < -20 ? "bg-[#f6465d]" : "bg-[#555]"}`} />
-                        ) : <span className="text-[10px] text-[#333]">-</span>}
-                      </td>
-
-                      {/* Price */}
-                      <td className="px-2 py-2.5 text-right">
-                        <span className="text-[11px] text-[#ddd]">{fmtPrice(coin.price)}</span>
-                      </td>
-
-                      {/* 24H */}
-                      <td className="px-2 py-2.5 text-right">
-                        <span className={`text-[11px] font-medium ${coin.change24hPct >= 0 ? "text-[#2cc497]" : "text-[#f6465d]"}`}>
-                          {fmtPct(coin.change24hPct)}
-                        </span>
-                      </td>
-
-                      {/* Timing */}
-                      <td className="px-2 py-2.5 text-center">
-                        <span className={`text-[11px] font-bold ${
-                          timing === "A" ? "text-[#2cc497]" : timing === "B" ? "text-[#F5C542]" : timing === "C" ? "text-[#e0a040]" : "text-[#f6465d]"
-                        }`}>
-                          {timing}
-                        </span>
-                      </td>
-
-                      {/* Pullback */}
-                      <td className="px-2 py-2.5 text-center">
-                        <span className="text-[11px] text-[#888]">{pullback ?? "-"}</span>
-                      </td>
-
-                      {/* Checklist */}
-                      <td className="px-2 py-2.5 text-center">
-                        <DotBar value={cl.pass} max={cl.total} size="xs" />
-                      </td>
-                    </tr>
+                      {/* Expanded Detail Panel - inline below the row */}
+                      {isExpanded && (
+                        <tr key={`${coin.symbol}-expanded`} className="bg-[#0e0f12]">
+                          <ExpandedPanel coin={coin} onClose={() => setExpandedCoin(null)} />
+                        </tr>
+                      )}
+                    </>
                   );
                 })}
               </tbody>
             </table>
           </div>
         )}
-
-        {/* ── Expanded Detail Panel ── */}
-        {expandedCoin && (() => {
-          const coin = filteredCoins.find((c) => c.symbol === expandedCoin);
-          if (!coin) return null;
-          const us = coin.universeScore;
-          const a = coin.alpha;
-
-          const layers = [
-            { name: "Structure", score: us?.structure?.total ?? 0, max: 25 },
-            { name: "Liquidity", score: us?.liquidity?.total ?? 0, max: 25 },
-            { name: "Positioning", score: us?.positioning?.total ?? 0, max: 15 },
-            { name: "Execution", score: us?.execution?.total ?? 0, max: 15 },
-            { name: "Momentum", score: us?.momentum?.total ?? 0, max: 20 },
-          ];
-
-          const categoryCards = [
-            {
-              title: "Market Regime", score: us?.structure?.total ?? 0, color: "#2cc497",
-              rows: [
-                ["Market Regime", coin.regime],
-                ["Trend Strength", `${Math.round(coin.trendStrength)}`],
-                ["HTF Bias", a?.multiTf?.htfTrendBias ?? "N/A"],
-                ["MTF Alignment", a?.multiTf?.multiTfAlignmentScore != null ? `${Math.round(a.multiTf.multiTfAlignmentScore)}` : "N/A"],
-                ["Exhaustion Prob", a?.structure?.trendExhaustionProbability != null ? `${Math.round(a.structure.trendExhaustionProbability)}%` : "N/A"],
-              ],
-            },
-            {
-              title: "Liquidity", score: us?.liquidity?.total ?? 0, color: "#6B8AFF",
-              rows: [
-                ["Sweep Probability", a?.liquidity?.liquiditySweepProbability != null ? `${Math.round(a.liquidity.liquiditySweepProbability)}%` : "N/A"],
-                ["Heatmap Score", a?.liquidity?.liquidityHeatmapScore != null ? `${Math.round(a.liquidity.liquidityHeatmapScore)}` : "N/A"],
-                ["Stop Density", a?.liquidity?.stopDensityIndex != null ? `${Math.round(a.liquidity.stopDensityIndex)}` : "N/A"],
-                ["Depth Quality", us?.execution?.depthQuality != null ? `${Math.round(us.execution.depthQuality)}` : "N/A"],
-                ["Aggressor Flow", coin.aggressorFlow],
-              ],
-            },
-            {
-              title: "Positioning", score: us?.positioning?.total ?? 0, color: "#e0a040",
-              rows: [
-                ["Funding Bias", a?.funding?.fundingDirection ?? "N/A"],
-                ["OI Shock Type", a?.oiShock?.shockType ?? "N/A"],
-                ["CVD Trend", a?.delta?.cvdTrend ?? "N/A"],
-                ["Cascade Risk", a?.liquidation?.dominantRisk ?? "N/A"],
-                ["Buy/Sell Pressure", a?.delta?.buySellPressureRatio != null ? `${a.delta.buySellPressureRatio.toFixed(2)}` : "N/A"],
-              ],
-            },
-            {
-              title: "Execution Quality", score: us?.execution?.total ?? 0, color: "#f6465d",
-              rows: [
-                ["Spread", coin.spreadBps != null ? `${coin.spreadBps.toFixed(1)} bps` : "N/A"],
-                ["Timing Grade", a?.timing?.timingGrade ?? "N/A"],
-                ["Trigger Candle", a?.timing?.triggerCandleScore != null ? `${Math.round(a.timing.triggerCandleScore)}` : "N/A"],
-                ["Spoof Probability", a?.marketMaker?.spoofingProbability != null ? `${Math.round(a.marketMaker.spoofingProbability)}%` : "N/A"],
-                ["MM Control", a?.marketMaker?.marketMakerControlScore != null ? `${Math.round(a.marketMaker.marketMakerControlScore)}` : "N/A"],
-              ],
-            },
-            {
-              title: "Volatility State", score: us?.momentum?.total ?? 0, color: "#9B7DFF",
-              rows: [
-                ["Vol Regime", a?.volatility?.volatilityRegime ?? "N/A"],
-                ["Compression", a?.volatility?.compressionScore != null ? `${Math.round(a.volatility.compressionScore)}` : "N/A"],
-                ["Expansion Prob", a?.volatility?.expansionForecast != null ? `${Math.round(a.volatility.expansionForecast)}%` : "N/A"],
-                ["ATR%", coin.atrPct != null ? `${coin.atrPct.toFixed(2)}%` : "N/A"],
-                ["RSI", coin.rsi14 != null ? `${Math.round(coin.rsi14)}` : "N/A"],
-              ],
-            },
-          ];
-
-          const valBadgeCls = (v: string) => {
-            const lower = v.toLowerCase();
-            if (["trend", "bullish", "rising", "buy", "pass", "low", "a", "spike"].some((k) => lower.includes(k))) return "bg-[#2cc497]/15 text-[#2cc497]";
-            if (["bearish", "sell", "falling", "high", "wide", "panic", "d", "poor", "crowded_short", "spoof", "risk"].some((k) => lower.includes(k))) return "bg-[#f6465d]/15 text-[#f6465d]";
-            if (["neutral", "normal", "flat", "range", "balanced", "ok", "c", "compressed", "mean_reverting"].some((k) => lower.includes(k))) return "bg-white/5 text-[#999]";
-            return "bg-[#F5C542]/10 text-[#F5C542]";
-          };
-
-          return (
-            <div className="mt-1 mb-4 rounded-xl border border-white/[0.06] bg-[#0e0f12] p-4">
-              {/* Layer Scores Bar */}
-              <div className="mb-4">
-                <h3 className="text-[10px] font-semibold uppercase tracking-wider text-[#555] mb-2">Layer Scores</h3>
-                <div className="flex flex-wrap gap-x-6 gap-y-1">
-                  {layers.map((l) => {
-                    const pct = Math.round((l.score / l.max) * 100);
-                    return (
-                      <div key={l.name} className="flex items-center gap-2 min-w-[180px]">
-                        <span className="text-[10px] text-[#888] w-16">{l.name}</span>
-                        <div className="flex-1 h-2 rounded-full bg-white/5 overflow-hidden w-20">
-                          <div
-                            className="h-full rounded-full"
-                            style={{
-                              width: `${pct}%`,
-                              backgroundColor: pct >= 70 ? "#2cc497" : pct >= 50 ? "#F5C542" : pct >= 30 ? "#e0a040" : "#f6465d",
-                            }}
-                          />
-                        </div>
-                        <span className={`text-[11px] font-bold w-8 text-right ${scoreClr(pct)}`}>{pct}%</span>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Category Cards */}
-              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
-                {categoryCards.map((card) => (
-                  <div key={card.title} className="rounded-lg border border-white/[0.06] bg-[#121316] overflow-hidden">
-                    <div className="flex items-center justify-between px-3 py-2 border-b border-white/[0.04]" style={{ borderLeftColor: card.color, borderLeftWidth: 3 }}>
-                      <span className="text-[11px] font-bold text-white">{card.title}</span>
-                      <span className={`text-[11px] font-bold ${scoreClr(card.score * 4)}`}>{Math.round(card.score * 4)}%</span>
-                    </div>
-                    <div className="px-3 py-2 space-y-1.5">
-                      {card.rows.map(([label, value]) => (
-                        <div key={label} className="flex items-center justify-between">
-                          <span className="text-[10px] text-[#666]">{label}</span>
-                          <span className={`rounded px-1.5 py-0.5 text-[10px] font-semibold ${valBadgeCls(value)}`}>
-                            {value}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              {/* Risk & Context Row */}
-              <div className="mt-3 grid gap-3 sm:grid-cols-3">
-                <div className="rounded-lg border border-white/[0.06] bg-[#121316] p-3">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-[10px] font-bold text-[#F5C542]">&#x26A1; Multiplier</span>
-                  </div>
-                  <div className="space-y-1.5 text-[10px]">
-                    <div className="flex justify-between">
-                      <span className="text-[#666]">Alpha Grade</span>
-                      <span className={`rounded px-1.5 py-0.5 font-bold ${valBadgeCls(a?.alphaGrade ?? "N/A")}`}>{a?.alphaGrade ?? "N/A"}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-[#666]">Alpha Bonus</span>
-                      <span className="text-[#2cc497] font-medium">+{a?.alphaBonus ?? 0}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-[#666]">Alpha Penalty</span>
-                      <span className="text-[#f6465d] font-medium">-{a?.alphaPenalty ?? 0}</span>
-                    </div>
-                  </div>
-                </div>
-                <div className="rounded-lg border border-white/[0.06] bg-[#121316] p-3">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-[10px] font-bold text-[#e0a040]">&#x26A0; Risk Filters</span>
-                  </div>
-                  <div className="space-y-1.5 text-[10px]">
-                    <div className="flex justify-between">
-                      <span className="text-[#666]">False Penalty</span>
-                      <span className={`rounded px-1.5 py-0.5 font-bold ${(us?.falsePenalty?.total ?? 0) < 10 ? "bg-[#2cc497]/15 text-[#2cc497]" : "bg-[#f6465d]/15 text-[#f6465d]"}`}>
-                        {us?.falsePenalty?.total ?? 0}
-                      </span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-[#666]">Signal Conflict</span>
-                      <span className="text-[#999] font-medium">{us?.falsePenalty?.signalConflict ?? 0}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-[#666]">Trap Probability</span>
-                      <span className="text-[#999] font-medium">{us?.falsePenalty?.trapProbability ?? 0}</span>
-                    </div>
-                  </div>
-                </div>
-                <div className="rounded-lg border border-white/[0.06] bg-[#121316] p-3">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-[10px] font-bold text-[#6B8AFF]">&#x1F30D; Context</span>
-                  </div>
-                  <div className="space-y-1.5 text-[10px]">
-                    <div className="flex justify-between">
-                      <span className="text-[#666]">Risk On/Off</span>
-                      <span className="text-[#999] font-medium">{a?.crossMarket?.riskOnOffIndex != null ? Math.round(a.crossMarket.riskOnOffIndex) : "N/A"}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-[#666]">Volume Spike</span>
-                      <span className={`rounded px-1.5 py-0.5 font-bold ${coin.volumeSpike ? "bg-[#F5C542]/15 text-[#F5C542]" : "bg-white/5 text-[#555]"}`}>
-                        {coin.volumeSpike ? "ON" : "OFF"}
-                      </span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-[#666]">Data Quality</span>
-                      <span className="text-[#999] font-medium">{coin.dataQuality?.score ?? 0}/100</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          );
-        })()}
       </div>
     </main>
   );
