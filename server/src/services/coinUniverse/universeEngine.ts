@@ -36,6 +36,7 @@ import { applyHardFilter } from "./hardFilter.ts";
 import { computeUniverseScore } from "./universeScorer.ts";
 import { selectTopCoins } from "./universeSelector.ts";
 import { computeAllAlphaSignals, type FundingHistoryStore, type CrossMarketContext } from "./alpha/index.ts";
+import { explainSignals } from "./alpha/signalExplainer.ts";
 import { loadAlphaConfig, type AlphaConfig } from "./alpha/alphaConfig.ts";
 import { exchangeFetch, isExchangeAvailable, isPrimaryWorker } from "../binanceRateLimiter.ts";
 
@@ -259,6 +260,22 @@ function computeDataQuality(coin: RawCoinData, hasKlines: boolean): DataQuality 
   if (hasFunding) score += 20;
   if (hasOrderbook) score += 25;
   if (coin.spreadBps !== null) score += 15;
+
+  // Attach per-symbol health data (from real-time health tracking)
+  let healthStatus: string | undefined;
+  let healthConfidence: string | undefined;
+  try {
+    const { marketHealth } = require("../marketHealth.ts");
+    const h = marketHealth.getHealth(coin.symbol);
+    if (h) {
+      healthStatus = h.status;
+      healthConfidence = h.confidence;
+      // Penalize score if health is degraded/stale
+      if (h.status === "degraded") score = Math.max(0, score - 10);
+      if (h.status === "stale") score = Math.max(0, score - 25);
+      if (h.status === "unavailable") score = Math.max(0, score - 40);
+    }
+  } catch { /* health module not available */ }
 
   return { hasKlines, hasOi, hasFunding, hasOrderbook, score };
 }
@@ -511,6 +528,7 @@ export class CoinUniverseEngineV2 {
         volumeSpike: coin.volumeSpike, oiChange: coin.oiChange, aggressorFlow: coin.aggressorFlow,
         universeScore: score, compositeScore: score.final, dataQuality: dq,
         alpha: coin.alpha,
+        signalExplanation: coin.alpha ? explainSignals(coin, coin.alpha) : null,
         tier: "GAMMA" as const, // default — upgraded by selector
         selected: false, rejectedReason: null,
         status: isCooling ? "COOLDOWN" as const : isNew ? "NEW" as const : "ACTIVE" as const,
@@ -548,7 +566,7 @@ export class CoinUniverseEngineV2 {
       oiChange: null, aggressorFlow: "NEUTRAL" as const,
       universeScore: { raw: 0, penalty: 0, final: 0, liquidity: { total: 0, volumeScore: 0, depthScore: 0, spreadScore: 0 }, structure: { total: 0, srProximity: 0, regimeScore: 0, trendScore: 0 }, momentum: { total: 0, priceChange: 0, rsiScore: 0, volumeSpikeScore: 0 }, positioning: { total: 0, fundingScore: 0, oiScore: 0, flowScore: 0 }, execution: { total: 0, spreadQuality: 0, depthQuality: 0, imbalanceScore: 0 }, falsePenalty: { total: 0, fakeBreakout: 0, signalConflict: 0, trapProbability: 0, cascadeRisk: 0, newsRisk: 0 }, alphaBonus: 0, alphaPenalty: 0 },
       compositeScore: 0, dataQuality: { hasKlines: false, hasOi: false, hasFunding: false, hasOrderbook: false, score: 0 },
-      alpha: null,
+      alpha: null, signalExplanation: null,
       tier: "GAMMA" as const, selected: false, rejectedReason: r.reason, status: "REJECTED" as const,
       cooldownRoundsLeft: null, scanner_selected: false,
     }));

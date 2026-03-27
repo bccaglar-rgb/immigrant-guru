@@ -43,6 +43,16 @@ interface UniverseCoin {
     delta?: { cvdTrend: string } | null;
     multiTf?: { htfTrendBias: string; multiTfAlignmentScore: number } | null;
   } | null;
+  signalExplanation?: {
+    summary: string;
+    gradeReason: string;
+    bullish: string[];
+    bearish: string[];
+    risks: string[];
+    dataNote: string | null;
+    regimeContext: string;
+  } | null;
+  dataQuality?: { score: number; hasKlines: boolean; hasOi: boolean; hasFunding: boolean; hasOrderbook: boolean };
   tier: string;
   status: string;
 }
@@ -135,8 +145,28 @@ const buildCardData = (
     keyReasons.push(`OI change ${coin.oiChange > 0 ? "+" : ""}${coin.oiChange.toFixed(1)}%`);
   if (scan?.setup) keyReasons.push(scan.setup);
 
-  // AI Comment
-  const aiComment = generateAiComment(coin, scan, direction, decision, score);
+  // AI Comment — use signal explanation if available, fallback to generated
+  const explanation = coin.signalExplanation;
+  const aiComment = explanation
+    ? [
+        explanation.summary,
+        explanation.gradeReason,
+        ...(explanation.bullish.length > 0 ? [`Bullish: ${explanation.bullish.slice(0, 2).join("; ")}`] : []),
+        ...(explanation.bearish.length > 0 ? [`Bearish: ${explanation.bearish.slice(0, 2).join("; ")}`] : []),
+        ...(explanation.risks.length > 0 ? [`Risk: ${explanation.risks[0]}`] : []),
+        ...(explanation.dataNote ? [`⚠ ${explanation.dataNote}`] : []),
+      ].join("\n")
+    : generateAiComment(coin, scan, direction, decision, score);
+
+  // Enrich key reasons with explanation bullish/bearish if available
+  if (explanation) {
+    for (const b of explanation.bullish.slice(0, 2)) {
+      if (!keyReasons.some(r => r.includes(b.slice(0, 20)))) keyReasons.push(b);
+    }
+    for (const b of explanation.bearish.slice(0, 1)) {
+      if (!keyReasons.some(r => r.includes(b.slice(0, 20)))) keyReasons.push(b);
+    }
+  }
 
   // Intent
   const intent = coin.regime === "TREND"
@@ -257,6 +287,15 @@ const buildDetailSignals = (coin: UniverseCoin, scan: ScanResult | null): Detail
   if (coin.alpha?.alphaGrade) signals.push({ category: "Risk", label: "Alpha Grade", value: coin.alpha.alphaGrade, badge: coin.alpha.alphaGrade === "S" || coin.alpha.alphaGrade === "A" ? "positive" : coin.alpha.alphaGrade === "D" ? "negative" : "neutral" });
   signals.push({ category: "Risk", label: "24h Change", value: `${coin.change24hPct >= 0 ? "+" : ""}${coin.change24hPct.toFixed(2)}%`, badge: Math.abs(coin.change24hPct) > 5 ? "negative" : "neutral" });
   signals.push({ category: "Risk", label: "Tier", value: coin.tier, badge: coin.tier === "ALPHA" ? "positive" : coin.tier === "GAMMA" ? "negative" : "neutral" });
+
+  // Data Quality
+  if (coin.dataQuality) {
+    const dq = coin.dataQuality;
+    signals.push({ category: "Data Quality", label: "Score", value: `${dq.score}/100`, badge: dq.score >= 80 ? "positive" : dq.score >= 50 ? "neutral" : "negative" });
+    signals.push({ category: "Data Quality", label: "Klines", value: dq.hasKlines ? "YES" : "NO", badge: dq.hasKlines ? "positive" : "negative" });
+    signals.push({ category: "Data Quality", label: "Funding", value: dq.hasFunding ? "YES" : "NO", badge: dq.hasFunding ? "positive" : "negative" });
+    signals.push({ category: "Data Quality", label: "Orderbook", value: dq.hasOrderbook ? "YES" : "NO", badge: dq.hasOrderbook ? "positive" : "negative" });
+  }
 
   return signals;
 };

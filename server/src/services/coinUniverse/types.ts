@@ -180,6 +180,9 @@ export interface UniverseCoinRow {
   // Alpha signals (null if disabled)
   alpha: import("./alpha/alphaTypes.ts").AlphaSignals | null;
 
+  // Signal explanation (human-readable reasoning)
+  signalExplanation: import("./alpha/signalExplainer.ts").SignalExplanation | null;
+
   // Data quality
   dataQuality: DataQuality;
 
