@@ -28,12 +28,10 @@ interface ChartGroup {
 
 const DEFAULT_GROUPS: ChartGroup[] = [
   { id: "TOP10", label: "Top 10 Coins", builtin: true, coins: ["BTC/USDT", "ETH/USDT", "SOL/USDT", "BNB/USDT", "XRP/USDT", "ADA/USDT", "DOGE/USDT", "AVAX/USDT", "LINK/USDT", "TRX/USDT"] },
-  { id: "MEME", label: "Meme Coins", builtin: true, coins: ["DOGE/USDT", "SHIB/USDT", "PEPE/USDT", "WIF/USDT", "FLOKI/USDT", "BONK/USDT", "BOME/USDT", "MEME/USDT", "TURBO/USDT", "MOG/USDT"] },
-  { id: "AI", label: "AI Coins", builtin: true, coins: ["FET/USDT", "AGIX/USDT", "OCEAN/USDT", "RNDR/USDT", "TAO/USDT", "WLD/USDT", "ARKM/USDT", "NMR/USDT", "GRT/USDT", "AI16Z/USDT"] },
 ];
 
 const TF_BUTTONS: Tf[] = ["1m", "5m", "15m", "1h", "4h", "1d", "1w"];
-const GROUPS_STORAGE_KEY = "super-charts-groups-v2";
+const GROUPS_STORAGE_KEY = "super-charts-groups-v3";
 const FAVORITE_KEY = "super-charts-favorites-v1";
 
 const loadGroups = (): ChartGroup[] => {
@@ -505,14 +503,21 @@ export default function SuperChartsPage() {
                 ) : (
                   <button
                     type="button"
-                    onClick={() => handleGroupChange(g.id)}
-                    onDoubleClick={() => { setEditingGroupId(g.id); setEditLabel(g.label); }}
+                    onClick={() => {
+                      if (activeGroupId === g.id) {
+                        // Already active — start rename
+                        setEditingGroupId(g.id);
+                        setEditLabel(g.label);
+                      } else {
+                        handleGroupChange(g.id);
+                      }
+                    }}
                     className={`rounded border px-2.5 py-1 text-xs transition ${
                       activeGroupId === g.id
                         ? "border-[#7a6840] bg-[#2a2418] text-[#F5C542]"
                         : "border-white/10 bg-[#0F1012] text-[#BFC2C7] hover:border-white/20"
                     }`}
-                    title="Double-click to rename"
+                    title="Click to rename"
                   >
                     {g.label}
                   </button>
