@@ -123,7 +123,9 @@ export function registerMissionControlRoute(app: Express, deps: MissionControlDe
         const stale = all.filter((h) => h.status === "stale").length;
         const degraded = all.filter((h) => h.status === "degraded").length;
         const healthy = all.filter((h) => h.status === "healthy").length;
-        return { aggregate, summary: { total: all.length, healthy, degraded, stale } };
+        const seqOutOfSync = all.filter((h) => !h.seqSynced).length;
+        const wsDisconnected = all.filter((h) => !h.wsConnected).length;
+        return { aggregate, summary: { total: all.length, healthy, degraded, stale, seqOutOfSync, wsDisconnected } };
       }, "marketHealth"),
 
       // 4: Kill Switch
@@ -167,12 +169,14 @@ export function registerMissionControlRoute(app: Express, deps: MissionControlDe
         const getDrops = g.__gwBackpressureDrops as (() => number) | undefined;
         const getClients = g.__gwClientCount as (() => number) | undefined;
         const getSubs = g.__gwSubscriptionCount as (() => number) | undefined;
+        const getChannels = g.__gwChannelStats as (() => Array<{ symbol: string; subscribers: number }>) | undefined;
         const pipelines = g.__gwPipelineStats ?? {};
         return {
           clients: getClients?.() ?? 0,
           subscriptions: getSubs?.() ?? 0,
           backpressureDrops: getDrops?.() ?? 0,
           pipelines,
+          topChannels: getChannels?.() ?? [],
         };
       }, "wsGateway"),
 

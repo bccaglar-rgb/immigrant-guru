@@ -2012,7 +2012,26 @@ const fetchBinanceLive = async (
       candles: ohlcv.length > 0 ? "verified" : "unavailable",
     },
     sourceTs: Date.now(),
+    symbolHealth: null as Record<string, unknown> | null,
   };
+
+  // Attach per-symbol health metadata (backward-compatible — old readers ignore)
+  try {
+    const { marketHealth } = await import("../services/marketHealth.ts");
+    const h = marketHealth.getHealth(normalizedSymbol);
+    if (h) {
+      payload.symbolHealth = {
+        status: h.status,
+        confidence: h.confidence,
+        source: h.source,
+        depthAgeMs: h.depthAgeMs,
+        tickerAgeMs: h.tickerAgeMs,
+        depthLevels: h.depthLevels,
+        wsConnected: h.wsConnected,
+        seqSynced: h.seqSynced,
+      };
+    }
+  } catch { /* health lookup best-effort */ }
 
   // Write preferred source to Redis so all workers + frontend converge on the same source
   // This prevents source flickering: backend decides, frontend just displays.

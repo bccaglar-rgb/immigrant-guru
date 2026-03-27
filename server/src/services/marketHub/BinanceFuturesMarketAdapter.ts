@@ -1268,6 +1268,8 @@ export class BinanceFuturesMarketAdapter implements IExchangeMarketAdapter {
     if (!applied.ok && applied.gap) {
       this.gapCount += 1;
       this.pushReason(`depth_gap:${symbol}:${startSeq}-${endSeq}`);
+      // Notify health system: symbol out of sync
+      import("../marketHealth.ts").then(m => m.marketHealth.updateSeqSync(symbol, false)).catch(() => {});
       this.resetSymbolSyncState(symbol);
       this.enqueueSnapshot(symbol);
       return;
@@ -1374,6 +1376,8 @@ export class BinanceFuturesMarketAdapter implements IExchangeMarketAdapter {
       };
       this.emit(snapshotEvent);
       this.orderbooks.applySnapshot(symbol, seq, bids, asks);
+      // Notify health system: symbol back in sync after snapshot
+      import("../marketHealth.ts").then(m => m.marketHealth.updateSeqSync(symbol, true)).catch(() => {});
       this.lastSnapshotAtBySymbol.set(symbol, Date.now());
       this.snapshotFailuresBySymbol.set(symbol, 0);
       this.snapshotFailures = Math.max(0, this.snapshotFailures - 1);
@@ -1396,6 +1400,7 @@ export class BinanceFuturesMarketAdapter implements IExchangeMarketAdapter {
           if (!applied.ok && applied.gap) {
             this.gapCount += 1;
             this.pushReason(`snapshot_reconcile_gap:${symbol}`);
+            import("../marketHealth.ts").then(m => m.marketHealth.updateSeqSync(symbol, false)).catch(() => {});
             this.resetSymbolSyncState(symbol);
             this.resyncs += 1;
             this.pendingSnapshotSymbols.delete(symbol);

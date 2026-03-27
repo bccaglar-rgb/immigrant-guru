@@ -189,6 +189,7 @@ export default function ExchangeTerminalPage() {
   const [noDataTimeout, setNoDataTimeout] = useState(false);
   const [activeFeedLabel, setActiveFeedLabel] = useState<string>("NONE");
   const [feedLatencyMs, setFeedLatencyMs] = useState<number | null>(null);
+  const [dataHealthStatus, setDataHealthStatus] = useState<string | null>(null);
   const exchangeHint = useMemo<"BINANCE" | "BYBIT" | "OKX" | "GATEIO">(() => {
     const raw = selectedExchange.toLowerCase();
     if (raw === "bybit") return "BYBIT";
@@ -377,6 +378,9 @@ export default function ExchangeTerminalPage() {
           (live?.orderbookLevels?.asks?.length ?? 0) > 0;
         const obSource = (live as any)?.orderbookSource as string | undefined;
         const isFallback = obSource && obSource !== "NONE" && obSource !== "BINANCE" && obSource !== selectedExchange?.toUpperCase();
+        // Extract health metadata (backward-compatible — may be absent)
+        const health = (live as any)?.symbolHealth as { status?: string; confidence?: string; depthAgeMs?: number; seqSynced?: boolean } | null;
+        setDataHealthStatus(health?.status ?? null);
 
         setChartBundle(live);
         setStrictBookBundle(strictHasBookLevels ? live : null);
@@ -719,12 +723,28 @@ export default function ExchangeTerminalPage() {
           resetIndicator={indicators.resetIndicator}
         />
         {sourceWarning || liveError || (!exchangeBlocked && !chartBundle && !noDataTimeout) || noDataTimeout ? (
-          <div className="mt-2 rounded-lg border border-[#7a6840] bg-[#2a2418] px-3 py-2 text-xs text-[#e7d9b3]">
-            {sourceWarning
+          <div className="mt-2 rounded-lg border border-[#7a6840] bg-[#2a2418] px-3 py-2 text-xs text-[#e7d9b3] flex items-center gap-2">
+            <span>{sourceWarning
               ?? liveError
               ?? (noDataTimeout
                 ? `No live data for ${selectedExchange} / ${selectedSymbol}. Check exchange API permissions or symbol availability.`
-                : `Connecting ${selectedExchange} live feed...`)}
+                : `Connecting ${selectedExchange} live feed...`)}</span>
+            {dataHealthStatus && dataHealthStatus !== "healthy" && (
+              <span className={`ml-auto shrink-0 rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase ${
+                dataHealthStatus === "degraded" ? "bg-yellow-900/60 text-yellow-300" :
+                dataHealthStatus === "stale" ? "bg-orange-900/60 text-orange-300" :
+                "bg-red-900/60 text-red-300"
+              }`}>{dataHealthStatus}</span>
+            )}
+          </div>
+        ) : dataHealthStatus && dataHealthStatus !== "healthy" ? (
+          <div className="mt-2 rounded-lg border border-[#7a6840] bg-[#2a2418] px-3 py-2 text-xs text-[#e7d9b3] flex items-center gap-2">
+            <span>Data quality: {dataHealthStatus}</span>
+            <span className={`ml-auto shrink-0 rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase ${
+              dataHealthStatus === "degraded" ? "bg-yellow-900/60 text-yellow-300" :
+              dataHealthStatus === "stale" ? "bg-orange-900/60 text-orange-300" :
+              "bg-red-900/60 text-red-300"
+            }`}>{dataHealthStatus}</span>
           </div>
         ) : null}
 

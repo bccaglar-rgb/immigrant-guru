@@ -476,7 +476,8 @@ export class CoinUniverseEngineV2 {
       universeTotalCount: enriched.length,
     } : null;
 
-    // 4c. Alpha signal enrichment
+    // 4c. Alpha signal enrichment (with compute latency tracking)
+    const alphaT0 = Date.now();
     for (const coin of enriched) {
       coin.alpha = computeAllAlphaSignals(coin, this.fundingHistory, this.alphaConfig, crossMarketCtx);
       // Update funding history ring buffer
@@ -487,6 +488,7 @@ export class CoinUniverseEngineV2 {
         this.fundingHistory.set(coin.symbol, hist);
       }
     }
+    const alphaComputeMs = Date.now() - alphaT0;
 
     // 5. Score + select
     const expansionProbs = new Map<string, number>();
@@ -594,6 +596,8 @@ export class CoinUniverseEngineV2 {
       activeExchange,
       exchangeStatus,
       cycleMs,
+      alphaComputeMs,
+      enrichedCoins: enriched.length,
     };
     this.lastTelemetry = telemetry;
 
@@ -604,7 +608,7 @@ export class CoinUniverseEngineV2 {
     console.log(
       `[CoinUniverseV2] Refresh #${this.currentRound}: ${wsRows.length} scanned, ` +
       `${hardRejected.length} hard-filtered, ${passed.length} scored, ` +
-      `${selection.selected.length} selected, ${klinesHitCount} klines (${klinesSource}) — ${mode} — ${elapsed}s`,
+      `${selection.selected.length} selected, ${klinesHitCount} klines (${klinesSource}) — ${mode} — ${elapsed}s (alpha=${alphaComputeMs}ms)`,
     );
   }
 

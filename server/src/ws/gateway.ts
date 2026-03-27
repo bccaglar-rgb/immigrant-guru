@@ -633,6 +633,20 @@ export const createGateway = (httpServer: HttpServer, opts?: GatewayOpts) => {
     for (const [, state] of sockets.entries()) total += state.subscribedSymbols.size;
     return total;
   };
+  // FAZ 5.6: Per-channel subscriber counts for scale monitoring
+  (globalThis as Record<string, unknown>).__gwChannelStats = () => {
+    const channels = new Map<string, number>();
+    for (const [, state] of sockets.entries()) {
+      for (const sym of state.subscribedSymbols) {
+        channels.set(sym, (channels.get(sym) ?? 0) + 1);
+      }
+    }
+    // Return top 20 channels by subscriber count
+    return [...channels.entries()]
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 20)
+      .map(([symbol, count]) => ({ symbol, subscribers: count }));
+  };
 
   // ── Gateway diagnostics: 30s interval ──
   let _gwTickFlushCount = 0;
