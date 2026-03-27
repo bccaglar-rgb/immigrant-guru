@@ -35,7 +35,7 @@ import type {
 import { applyHardFilter } from "./hardFilter.ts";
 import { computeUniverseScore } from "./universeScorer.ts";
 import { selectTopCoins } from "./universeSelector.ts";
-import { computeAllAlphaSignals, type FundingHistoryStore } from "./alpha/index.ts";
+import { computeAllAlphaSignals, type FundingHistoryStore, type CrossMarketContext } from "./alpha/index.ts";
 import { loadAlphaConfig, type AlphaConfig } from "./alpha/alphaConfig.ts";
 import { exchangeFetch, isExchangeAvailable, isPrimaryWorker } from "../binanceRateLimiter.ts";
 
@@ -457,9 +457,27 @@ export class CoinUniverseEngineV2 {
     const mode: EngineMode = klinesHitCount > 0 ? "full" : "degraded";
     const dataQualityLevel = klinesHitCount >= 40 ? "full" : klinesHitCount > 0 ? "degraded" : "minimal";
 
-    // 4b. Alpha signal enrichment
+    // 4b. Build cross-market context from BTC/ETH data
+    const btcCoin = enriched.find((c) => c.symbol === "BTCUSDT");
+    const ethCoin = enriched.find((c) => c.symbol === "ETHUSDT");
+    const universeMeanChange = enriched.length > 0
+      ? enriched.reduce((s, c) => s + c.change24hPct, 0) / enriched.length
+      : 0;
+    const universeUpCount = enriched.filter((c) => c.change24hPct > 0).length;
+    const crossMarketCtx: CrossMarketContext | null = btcCoin && ethCoin ? {
+      btcChange24h: btcCoin.change24hPct,
+      btcVolume24h: btcCoin.volume24hUsd,
+      btcTrendStrength: btcCoin.trendStrength,
+      ethChange24h: ethCoin.change24hPct,
+      ethVolume24h: ethCoin.volume24hUsd,
+      universeMeanChange,
+      universeUpCount,
+      universeTotalCount: enriched.length,
+    } : null;
+
+    // 4c. Alpha signal enrichment
     for (const coin of enriched) {
-      coin.alpha = computeAllAlphaSignals(coin, this.fundingHistory, this.alphaConfig);
+      coin.alpha = computeAllAlphaSignals(coin, this.fundingHistory, this.alphaConfig, crossMarketCtx);
       // Update funding history ring buffer
       if (coin.fundingRate != null) {
         const hist = this.fundingHistory.get(coin.symbol) ?? [];

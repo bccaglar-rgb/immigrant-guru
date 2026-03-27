@@ -66,6 +66,41 @@ export interface TradeTimingSignals {
   timingGrade: "A" | "B" | "C" | "D";
 }
 
+// ── Module 8: Liquidity Intelligence ─────────────────────────
+export interface LiquidityIntelligenceSignals {
+  liquidityHeatmapScore: number;       // 0-100
+  stopDensityIndex: number;            // 0-100
+  liquiditySweepProbability: number;   // 0-100
+  liquidityMagnetScore: number;        // 0-100
+  liquidityAbsorptionStrength: number; // 0-100
+  liquidityRefillRate: number;         // 0-100
+}
+
+// ── Module 9: Market Maker Detection ─────────────────────────
+export interface MarketMakerDetectionSignals {
+  spoofingProbability: number;         // 0-100
+  icebergOrderScore: number;           // 0-100
+  quoteStuffingScore: number;          // 0-100
+  marketMakerControlScore: number;     // 0-100
+  fakeLiquidityScore: number;          // 0-100
+  spreadManipulationIndex: number;     // 0-100
+}
+
+// ── Module 10: Cross Market Intelligence ─────────────────────
+export interface CrossMarketIntelligenceSignals {
+  btcDominanceMomentum: number;        // -100 to +100
+  ethBtcStrengthRatio: number;         // 0-100
+  riskOnOffIndex: number;              // 0-100
+}
+
+// ── Module 11: Structure Advanced ────────────────────────────
+export interface StructureAdvancedSignals {
+  trendExhaustionProbability: number;  // 0-100
+  breakoutQualityScore: number;        // 0-100
+  orderflowMomentum: number;           // -100 to +100
+  trappedRatio: number;                // -100 to +100 (pos = longs trapped, neg = shorts)
+}
+
 // ── Combined ───────────────────────────────────────────────────
 export interface AlphaSignals {
   funding: FundingIntelligenceSignals | null;
@@ -75,7 +110,11 @@ export interface AlphaSignals {
   multiTf: MultiTimeframeSignals | null;
   liquidation: LiquidationCascadeSignals | null;
   timing: TradeTimingSignals | null;
-  alphaBonus: number;     // 0 to +15
-  alphaPenalty: number;    // 0 to +10
+  liquidity: LiquidityIntelligenceSignals | null;
+  marketMaker: MarketMakerDetectionSignals | null;
+  crossMarket: CrossMarketIntelligenceSignals | null;
+  structure: StructureAdvancedSignals | null;
+  alphaBonus: number;     // 0 to +20
+  alphaPenalty: number;    // 0 to +15
   alphaGrade: "S" | "A" | "B" | "C" | "D";
 }

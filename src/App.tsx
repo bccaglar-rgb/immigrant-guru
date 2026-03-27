@@ -58,6 +58,7 @@ const SystemMonitorPage = lazyRetry(() => import("./pages/SystemMonitorPage"));
 const MLExplorerPage = lazyRetry(() => import("./pages/MLExplorerPage"));
 const BotPage = lazyRetry(() => import("./pages/BotPage"));
 const PortfolioPage = lazyRetry(() => import("./pages/PortfolioPage"));
+const SniperPage = lazyRetry(() => import("./pages/SniperPage"));
 
 const PageLoader = () => (
   <div className="flex min-h-[60vh] items-center justify-center">
@@ -140,6 +141,7 @@ function App() {
         <Route path="/bot" element={<RequirePlan><Suspense fallback={<PageLoader />}><BotPage /></Suspense></RequirePlan>} />
         <Route path="/coin-universe" element={<RequirePlan><Suspense fallback={<PageLoader />}><CoinUniversePage /></Suspense></RequirePlan>} />
         <Route path="/coin-insight" element={<RequirePlan><Suspense fallback={<PageLoader />}><CoinInsightPage /></Suspense></RequirePlan>} />
+        <Route path="/sniper" element={<RequirePlan><Suspense fallback={<PageLoader />}><SniperPage /></Suspense></RequirePlan>} />
         <Route path="/super-charts" element={<RequirePlan><Suspense fallback={<PageLoader />}><SuperChartsPage /></Suspense></RequirePlan>} />
         <Route path="/indicators" element={<RequirePlan><Suspense fallback={<PageLoader />}><IndicatorsPage /></Suspense></RequirePlan>} />
         <Route path="/games" element={<RequirePlan><Suspense fallback={<PageLoader />}><GamesPage /></Suspense></RequirePlan>} />

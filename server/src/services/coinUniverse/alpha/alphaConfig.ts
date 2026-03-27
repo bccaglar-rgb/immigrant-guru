@@ -15,6 +15,10 @@ export interface AlphaConfig {
     multiTimeframe: AlphaModuleConfig;
     liquidationCascade: AlphaModuleConfig;
     tradeTiming: AlphaModuleConfig;
+    liquidityIntelligence: AlphaModuleConfig;
+    marketMakerDetection: AlphaModuleConfig;
+    crossMarketIntelligence: AlphaModuleConfig;
+    structureAdvanced: AlphaModuleConfig;
   };
 }
 
@@ -25,16 +29,20 @@ export function loadAlphaConfig(): AlphaConfig {
   };
   return {
     globalEnabled: envBool("ALPHA_SIGNALS_ENABLED", true),
-    maxAlphaBonus: 15,
-    maxAlphaPenalty: 10,
+    maxAlphaBonus: 20,
+    maxAlphaPenalty: 15,
     modules: {
-      fundingIntelligence:   { enabled: envBool("ALPHA_FUNDING_ENABLED", true),      weight: 1.0 },
-      oiShockDetection:      { enabled: envBool("ALPHA_OI_SHOCK_ENABLED", true),     weight: 1.0 },
-      advancedVolatility:    { enabled: envBool("ALPHA_VOLATILITY_ENABLED", true),   weight: 1.0 },
-      deltaImbalance:        { enabled: envBool("ALPHA_DELTA_ENABLED", true),        weight: 1.0 },
-      multiTimeframe:        { enabled: envBool("ALPHA_MTF_ENABLED", true),          weight: 1.0 },
-      liquidationCascade:    { enabled: envBool("ALPHA_CASCADE_ENABLED", true),      weight: 1.0 },
-      tradeTiming:           { enabled: envBool("ALPHA_TIMING_ENABLED", true),       weight: 1.0 },
+      fundingIntelligence:      { enabled: envBool("ALPHA_FUNDING_ENABLED", true),      weight: 1.0 },
+      oiShockDetection:         { enabled: envBool("ALPHA_OI_SHOCK_ENABLED", true),     weight: 1.0 },
+      advancedVolatility:       { enabled: envBool("ALPHA_VOLATILITY_ENABLED", true),   weight: 1.0 },
+      deltaImbalance:           { enabled: envBool("ALPHA_DELTA_ENABLED", true),        weight: 1.0 },
+      multiTimeframe:           { enabled: envBool("ALPHA_MTF_ENABLED", true),          weight: 1.0 },
+      liquidationCascade:       { enabled: envBool("ALPHA_CASCADE_ENABLED", true),      weight: 1.0 },
+      tradeTiming:              { enabled: envBool("ALPHA_TIMING_ENABLED", true),       weight: 1.0 },
+      liquidityIntelligence:    { enabled: envBool("ALPHA_LIQUIDITY_ENABLED", true),    weight: 1.0 },
+      marketMakerDetection:     { enabled: envBool("ALPHA_MM_ENABLED", true),           weight: 1.0 },
+      crossMarketIntelligence:  { enabled: envBool("ALPHA_CROSS_MARKET_ENABLED", true), weight: 1.0 },
+      structureAdvanced:        { enabled: envBool("ALPHA_STRUCTURE_ENABLED", true),    weight: 1.0 },
     },
   };
 }

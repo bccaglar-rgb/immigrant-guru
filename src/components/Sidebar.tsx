@@ -99,6 +99,15 @@ const CreatorIcon = () => <Icon>
 const ToolsIcon = () => <Icon>
   <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.8-3.8a5 5 0 0 1-7.1 6.3L8 18.2a2.1 2.1 0 1 1-3-3l6.4-6.4a5 5 0 0 1 6.3-7.1z" fill="url(#iconGoldLight)" stroke="url(#iconGold)" strokeWidth="1.2" />
 </Icon>;
+const SniperIcon = () => <Icon>
+  <circle cx="12" cy="12" r="9" stroke="url(#iconGold)" strokeWidth="1.2" fill="url(#iconGoldLight)" />
+  <circle cx="12" cy="12" r="5.5" stroke="url(#iconGold)" strokeWidth="0.9" fill="none" />
+  <circle cx="12" cy="12" r="2" fill="url(#iconGold)" />
+  <path d="M12 3v4" stroke="url(#iconGold)" strokeWidth="1.2" />
+  <path d="M12 17v4" stroke="url(#iconGold)" strokeWidth="1.2" />
+  <path d="M3 12h4" stroke="url(#iconGold)" strokeWidth="1.2" />
+  <path d="M17 12h4" stroke="url(#iconGold)" strokeWidth="1.2" />
+</Icon>;
 const CoinInsightIcon = () => <Icon>
   <path d="M3 12h2l3-8 4 16 3-12 2 4h4" stroke="url(#iconGold)" strokeWidth="1.3" fill="none" strokeLinecap="round" strokeLinejoin="round" />
   <circle cx="19" cy="12" r="2" fill="url(#iconGold)" />
@@ -177,6 +186,7 @@ const menuItems = [
   { label: "Crypto Market", to: "/crypto-market", accent: "var(--menu-accent-4)", icon: () => <MarketIcon /> },
   { label: "Coin Universe", to: "/coin-universe", accent: "var(--menu-accent-8)", icon: () => <UniverseIcon /> },
   { label: "Coin Insight", to: "/coin-insight", accent: "#00e0ff", icon: () => <CoinInsightIcon /> },
+  { label: "Sniper", to: "/sniper", accent: "#f6465d", icon: () => <SniperIcon /> },
   { label: "Super Charts", to: "/super-charts", accent: "var(--menu-accent-5)", icon: () => <SuperChartIcon /> },
   { label: "Indicators", to: "/indicators", accent: "var(--menu-accent-6)", icon: () => <IndicatorIcon /> },
   // Tools submenu inserted here in render
