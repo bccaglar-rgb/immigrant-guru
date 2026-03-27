@@ -177,19 +177,19 @@ const SignInIcon = () => <Icon>
   <circle cx="12" cy="7" r="1.2" fill="url(#iconGold)" />
 </Icon>;
 const menuItems = [
+  // 0: Top section
   { label: "Bitrium Quant Engine", to: "/quant-engine", accent: "var(--menu-accent-1)", icon: () => <DashboardIcon /> },
-  // Quant Trade Ideas & AI Trade Ideas moved to Admin submenu
-  // AI Trader submenu inserted here in render
+  { label: "Sniper", to: "/sniper", accent: "#f6465d", icon: () => <SniperIcon /> },
+  { label: "Coin Insight", to: "/coin-insight", accent: "#00e0ff", icon: () => <CoinInsightIcon /> },
+  { label: "Super Charts", to: "/super-charts", accent: "var(--menu-accent-5)", icon: () => <SuperChartIcon /> },
+  { label: "Coin Universe", to: "/coin-universe", accent: "var(--menu-accent-8)", icon: () => <UniverseIcon /> },
+  { label: "Crypto Market", to: "/crypto-market", accent: "var(--menu-accent-4)", icon: () => <MarketIcon /> },
+  // 6: AI Trader submenu inserted here in render
   { label: "Exchanges", to: "/exchanges", accent: "var(--menu-accent-3)", icon: () => <ExchangeIcon /> },
   { label: "Bots", to: "/bot", accent: "var(--menu-accent-10)", icon: () => <BotIcon /> },
   { label: "Portfolio", to: "/portfolio", accent: "#4ecdc4", icon: () => <PortfolioIcon /> },
-  { label: "Crypto Market", to: "/crypto-market", accent: "var(--menu-accent-4)", icon: () => <MarketIcon /> },
-  { label: "Coin Universe", to: "/coin-universe", accent: "var(--menu-accent-8)", icon: () => <UniverseIcon /> },
-  { label: "Coin Insight", to: "/coin-insight", accent: "#00e0ff", icon: () => <CoinInsightIcon /> },
-  { label: "Sniper", to: "/sniper", accent: "#f6465d", icon: () => <SniperIcon /> },
-  { label: "Super Charts", to: "/super-charts", accent: "var(--menu-accent-5)", icon: () => <SuperChartIcon /> },
   { label: "Indicators", to: "/indicators", accent: "var(--menu-accent-6)", icon: () => <IndicatorIcon /> },
-  // Tools submenu inserted here in render
+  // 10: Tools submenu inserted here in render
   { label: "Bitrium Token", to: "/bitrium-token", accent: "var(--menu-accent-11)", icon: () => <BitriumTokenIcon /> },
   { label: "Pricing", to: "/pricing", accent: "var(--menu-accent-13)", icon: () => <PricingIcon /> },
 ] as const;
@@ -569,11 +569,11 @@ export const Sidebar = ({
   // Public paths that don't require auth
   const publicPaths = new Set(["/crypto-market", "/bitrium-token", "/pricing"]);
 
-  const topMenu = menuItems.slice(0, 4);
-  // Items between AI Trader and Tools: Exchanges..Coin Insight (index 4-10)
-  const midMenu = menuItems.slice(4, 11);
-  // Items after Tools: Bitrium Token, Pricing (index 11+)
-  const bottomMenu = menuItems.slice(11);
+  const topMenu = menuItems.slice(0, 6);
+  // Items between AI Trader and Tools: Exchanges..Indicators (index 6-10)
+  const midMenu = menuItems.slice(6, 10);
+  // Items after Tools: Bitrium Token, Pricing (index 10+)
+  const bottomMenu = menuItems.slice(10);
 
   return (
     <aside
