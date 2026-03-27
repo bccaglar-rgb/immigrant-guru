@@ -268,75 +268,68 @@ const InlineTradePanel = ({ coin }: { coin: UniverseCoin }) => {
   };
 
   return (
-    <div className="flex items-center gap-2 flex-wrap text-[11px]">
-      {/* API badge */}
-      <span className="text-[10px] text-[#555]">API</span>
-      <span className="rounded bg-[#F5C542]/10 px-1.5 py-0.5 text-[10px] text-[#F5C542] font-medium">Binance</span>
+    <div className="flex items-center justify-between text-[11px]">
+      {/* Left side: API, margin, leverage, open/close */}
+      <div className="flex items-center gap-2">
+        <span className="text-[10px] text-[#555]">API</span>
+        <span className="rounded bg-[#F5C542]/10 px-1.5 py-0.5 text-[10px] text-[#F5C542] font-medium">Binance</span>
 
-      {/* Margin mode */}
-      <button onClick={() => setMarginMode(m => m === "Isolated" ? "Cross" : "Isolated")} className="rounded bg-white/5 px-2 py-1 text-[10px] text-[#ccc] hover:bg-white/10">
-        {marginMode} &#9662;
-      </button>
-
-      {/* Leverage */}
-      <div className="relative">
-        <button onClick={() => setShowLevDropdown(!showLevDropdown)} className="rounded bg-white/5 px-2 py-1 text-[10px] text-[#F5C542] font-bold hover:bg-white/10">
-          {leverage}x
+        <button onClick={() => setMarginMode(m => m === "Isolated" ? "Cross" : "Isolated")} className="rounded bg-white/5 px-2 py-1 text-[10px] text-[#ccc] hover:bg-white/10">
+          {marginMode} &#9662;
         </button>
-        {showLevDropdown && (
-          <div className="absolute top-full left-0 mt-1 z-50 rounded-lg border border-white/10 bg-[#1a1c22] p-1 grid grid-cols-5 gap-1 min-w-[160px]">
-            {[1, 2, 3, 5, 10, 15, 20, 25, 50, 75, 100, 125].map((l) => (
-              <button key={l} onClick={() => { setLeverage(l); setShowLevDropdown(false); }}
-                className={`rounded px-2 py-1 text-[10px] font-medium ${leverage === l ? "bg-[#F5C542]/20 text-[#F5C542]" : "text-[#888] hover:bg-white/5"}`}>
-                {l}x
-              </button>
-            ))}
-          </div>
-        )}
+
+        <div className="relative">
+          <button onClick={() => setShowLevDropdown(!showLevDropdown)} className="rounded bg-white/5 px-2 py-1 text-[10px] text-[#F5C542] font-bold hover:bg-white/10">
+            {leverage}x
+          </button>
+          {showLevDropdown && (
+            <div className="absolute top-full left-0 mt-1 z-50 rounded-lg border border-white/10 bg-[#1a1c22] p-1 grid grid-cols-5 gap-1 min-w-[160px]">
+              {[1, 2, 3, 5, 10, 15, 20, 25, 50, 75, 100, 125].map((l) => (
+                <button key={l} onClick={() => { setLeverage(l); setShowLevDropdown(false); }}
+                  className={`rounded px-2 py-1 text-[10px] font-medium ${leverage === l ? "bg-[#F5C542]/20 text-[#F5C542]" : "text-[#888] hover:bg-white/5"}`}>
+                  {l}x
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div className="flex rounded bg-white/5 overflow-hidden">
+          <button onClick={() => setTab("Open")} className={`px-3 py-1 text-[10px] font-semibold transition ${tab === "Open" ? "bg-[#2cc497]/20 text-[#2cc497]" : "text-[#666] hover:text-[#999]"}`}>Open</button>
+          <button onClick={() => setTab("Close")} className={`px-3 py-1 text-[10px] font-semibold transition ${tab === "Close" ? "bg-[#f6465d]/20 text-[#f6465d]" : "text-[#666] hover:text-[#999]"}`}>Close</button>
+        </div>
+
+        {orderStatus && <span className="text-[10px] text-[#F5C542] animate-pulse ml-1">{orderStatus}</span>}
       </div>
 
-      {/* Open/Close tabs */}
-      <div className="flex rounded bg-white/5 overflow-hidden">
-        <button onClick={() => setTab("Open")} className={`px-3 py-1 text-[10px] font-semibold transition ${tab === "Open" ? "bg-[#2cc497]/20 text-[#2cc497]" : "text-[#666] hover:text-[#999]"}`}>Open</button>
-        <button onClick={() => setTab("Close")} className={`px-3 py-1 text-[10px] font-semibold transition ${tab === "Close" ? "bg-[#f6465d]/20 text-[#f6465d]" : "text-[#666] hover:text-[#999]"}`}>Close</button>
-      </div>
-
-      {/* Price */}
-      <div className="flex items-center gap-1">
+      {/* Right side: price, amount, TP/SL, buttons, exchange */}
+      <div className="flex items-center gap-2">
         <span className="text-[10px] text-[#555]">PRICE</span>
         <input value={price} onChange={(e) => setPrice(e.target.value)}
           className="w-24 rounded border border-white/10 bg-[#0B0B0C] px-2 py-1 text-[11px] text-white outline-none focus:border-[#F5C542]/40" />
-      </div>
 
-      {/* Amount */}
-      <div className="flex items-center gap-1">
         <span className="text-[10px] text-[#555]">AMOUNT</span>
         <input value={amount} onChange={(e) => setAmount(e.target.value)}
           className="w-16 rounded border border-white/10 bg-[#0B0B0C] px-2 py-1 text-[11px] text-white outline-none focus:border-[#F5C542]/40" />
         <span className="text-[10px] text-[#888]">USDT</span>
+
+        <button onClick={() => setTpSlEnabled(!tpSlEnabled)}
+          className={`rounded px-2 py-1 text-[10px] font-medium ${tpSlEnabled ? "bg-[#F5C542]/15 text-[#F5C542]" : "bg-white/5 text-[#666]"}`}>
+          TP/SL
+        </button>
+
+        <button onClick={() => submitOrder("BUY")} className="rounded bg-[#2cc497] px-3 py-1 text-[10px] font-bold text-white hover:bg-[#25b088] transition">
+          Open Long
+        </button>
+        <button onClick={() => submitOrder("SELL")} className="rounded bg-[#f6465d] px-3 py-1 text-[10px] font-bold text-white hover:bg-[#d93b4f] transition">
+          Open Short
+        </button>
+
+        <a href={`https://www.binance.com/en/futures/${sym}USDT`} target="_blank" rel="noreferrer"
+          className="rounded bg-[#F5C542]/15 px-3 py-1 text-[10px] font-bold text-[#F5C542] hover:bg-[#F5C542]/25 transition flex items-center gap-1">
+          Exchange <span className="text-[8px]">&#x2197;</span>
+        </a>
       </div>
-
-      {/* TP/SL */}
-      <button onClick={() => setTpSlEnabled(!tpSlEnabled)}
-        className={`rounded px-2 py-1 text-[10px] font-medium ${tpSlEnabled ? "bg-[#F5C542]/15 text-[#F5C542]" : "bg-white/5 text-[#666]"}`}>
-        TP/SL
-      </button>
-
-      {/* Open Long / Open Short */}
-      <button onClick={() => submitOrder("BUY")} className="rounded bg-[#2cc497] px-3 py-1 text-[10px] font-bold text-white hover:bg-[#25b088] transition">
-        Open Long
-      </button>
-      <button onClick={() => submitOrder("SELL")} className="rounded bg-[#f6465d] px-3 py-1 text-[10px] font-bold text-white hover:bg-[#d93b4f] transition">
-        Open Short
-      </button>
-
-      {/* Exchange link */}
-      <a href={`https://www.binance.com/en/futures/${sym}USDT`} target="_blank" rel="noreferrer"
-        className="rounded bg-[#F5C542]/15 px-3 py-1 text-[10px] font-bold text-[#F5C542] hover:bg-[#F5C542]/25 transition flex items-center gap-1">
-        Exchange <span className="text-[8px]">&#x2197;</span>
-      </a>
-
-      {orderStatus && <span className="text-[10px] text-[#F5C542] animate-pulse">{orderStatus}</span>}
     </div>
   );
 };
