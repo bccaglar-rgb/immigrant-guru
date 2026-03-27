@@ -189,27 +189,6 @@ export const QuickTradePanel = ({ symbol, price: livePrice, idea, onTradeComplet
 
   return (
     <div className="flex flex-col gap-1.5 text-[11px]">
-      {/* ── Trade Idea Card (compact) ── */}
-      {idea && (
-        <div className="space-y-1 rounded border border-[#7a6840]/40 bg-[#15140f] p-1.5">
-          <p className="line-clamp-1 font-semibold text-[10px] text-[#F5C542]">{idea.setup}</p>
-          <div className="grid grid-cols-2 gap-0.5">
-            <span className="rounded bg-[#2a2418] px-1 py-0.5 text-[9px] text-[#e7d9b3] truncate">
-              Entry {fmt(idea.entry.low)} - {fmt(idea.entry.high)}
-            </span>
-            <span className="rounded bg-[#1f251b] px-1 py-0.5 text-[9px] text-[#d8decf] truncate">
-              TP {fmt(idea.targets[0]?.price)} / {fmt(idea.targets[1]?.price)}
-            </span>
-            <span className="rounded bg-[#271a19] px-1 py-0.5 text-[9px] text-[#d6b3af] truncate">
-              SL {fmt(idea.stops[0]?.price)} / {fmt(idea.stops[1]?.price)}
-            </span>
-            <span className="rounded bg-[#11141a] px-1 py-0.5 text-[9px] text-[#BFC2C7] truncate">
-              {idea.direction} · {idea.tradeValidity}
-            </span>
-          </div>
-        </div>
-      )}
-
       {/* ── Open / Close Tabs ── */}
       <div className="flex rounded-md overflow-hidden border border-white/[0.06]">
         <button

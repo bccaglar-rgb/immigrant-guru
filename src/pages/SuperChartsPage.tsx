@@ -16,24 +16,42 @@ import { TILE_DEFINITIONS } from "../data/tileDefinitions";
 import type { TileState, TradePlan } from "../types";
 import type { ExchangeTradeSignal } from "../types/exchange";
 
-type GroupKey = "TOP10" | "MEME" | "AI" | "FAVORITE";
 type Tf = "1m" | "5m" | "15m" | "1h" | "4h" | "1d" | "1w";
 
-const GROUP_LABELS: Record<GroupKey, string> = {
-  TOP10: "Top 10 Coins",
-  MEME: "Meme Coins",
-  AI: "AI Coins",
-  FAVORITE: "Favorite",
-};
+/* ── Custom Group System ── */
+interface ChartGroup {
+  id: string;
+  label: string;
+  coins: string[];
+  builtin?: boolean;  // true = cannot delete
+}
 
-const GROUPS: Record<Exclude<GroupKey, "FAVORITE">, string[]> = {
-  TOP10: ["BTC/USDT", "ETH/USDT", "SOL/USDT", "BNB/USDT", "XRP/USDT", "ADA/USDT", "DOGE/USDT", "AVAX/USDT", "LINK/USDT", "TRX/USDT"],
-  MEME: ["DOGE/USDT", "SHIB/USDT", "PEPE/USDT", "WIF/USDT", "FLOKI/USDT", "BONK/USDT", "BOME/USDT", "MEME/USDT", "TURBO/USDT", "MOG/USDT"],
-  AI: ["FET/USDT", "AGIX/USDT", "OCEAN/USDT", "RNDR/USDT", "TAO/USDT", "WLD/USDT", "ARKM/USDT", "NMR/USDT", "GRT/USDT", "AI16Z/USDT"],
-};
+const DEFAULT_GROUPS: ChartGroup[] = [
+  { id: "TOP10", label: "Top 10 Coins", builtin: true, coins: ["BTC/USDT", "ETH/USDT", "SOL/USDT", "BNB/USDT", "XRP/USDT", "ADA/USDT", "DOGE/USDT", "AVAX/USDT", "LINK/USDT", "TRX/USDT"] },
+  { id: "MEME", label: "Meme Coins", builtin: true, coins: ["DOGE/USDT", "SHIB/USDT", "PEPE/USDT", "WIF/USDT", "FLOKI/USDT", "BONK/USDT", "BOME/USDT", "MEME/USDT", "TURBO/USDT", "MOG/USDT"] },
+  { id: "AI", label: "AI Coins", builtin: true, coins: ["FET/USDT", "AGIX/USDT", "OCEAN/USDT", "RNDR/USDT", "TAO/USDT", "WLD/USDT", "ARKM/USDT", "NMR/USDT", "GRT/USDT", "AI16Z/USDT"] },
+];
 
 const TF_BUTTONS: Tf[] = ["1m", "5m", "15m", "1h", "4h", "1d", "1w"];
+const GROUPS_STORAGE_KEY = "super-charts-groups-v2";
 const FAVORITE_KEY = "super-charts-favorites-v1";
+
+const loadGroups = (): ChartGroup[] => {
+  try {
+    const raw = window.localStorage.getItem(GROUPS_STORAGE_KEY);
+    if (!raw) return DEFAULT_GROUPS;
+    const parsed = JSON.parse(raw) as ChartGroup[];
+    if (!Array.isArray(parsed) || parsed.length === 0) return DEFAULT_GROUPS;
+    // Ensure builtins always exist with latest coins
+    const builtinIds = new Set(DEFAULT_GROUPS.map((g) => g.id));
+    const customs = parsed.filter((g) => !builtinIds.has(g.id));
+    return [...DEFAULT_GROUPS, ...customs];
+  } catch { return DEFAULT_GROUPS; }
+};
+
+const saveGroups = (groups: ChartGroup[]) => {
+  try { window.localStorage.setItem(GROUPS_STORAGE_KEY, JSON.stringify(groups)); } catch { /* noop */ }
+};
 
 const toRaw = (symbol: string) => symbol.replace("/", "");
 const mapTfForApi = (tf: Tf): "1m" | "5m" | "15m" | "1h" | "4h" | "1d" | "1w" => tf;
@@ -346,10 +364,17 @@ export default function SuperChartsPage() {
     resetIndicator: indReset,
   } = useIndicatorsStore();
 
-  const [group, setGroup] = useState<GroupKey>("TOP10");
+  const [groups, setGroups] = useState<ChartGroup[]>(loadGroups);
+  const [activeGroupId, setActiveGroupId] = useState("TOP10");
   const [timeframe, setTimeframe] = useState<Tf>("1h");
   const [favorites, setFavorites] = useState<string[]>([]);
   const [slotOverrides, setSlotOverrides] = useState<Record<number, SlotOverride>>({});
+  const [editingGroupId, setEditingGroupId] = useState<string | null>(null);
+  const [editLabel, setEditLabel] = useState("");
+  const editInputRef = useRef<HTMLInputElement>(null);
+
+  // Persist groups
+  useEffect(() => { saveGroups(groups); }, [groups]);
 
   useEffect(() => {
     try {
@@ -364,13 +389,44 @@ export default function SuperChartsPage() {
     try { window.localStorage.setItem(FAVORITE_KEY, JSON.stringify(favorites.slice(0, 10))); } catch { /* noop */ }
   }, [favorites]);
 
-  /* Base rows from group */
+  // Focus edit input when editing starts
+  useEffect(() => {
+    if (editingGroupId) editInputRef.current?.focus();
+  }, [editingGroupId]);
+
+  const activeGroup = useMemo(() => groups.find((g) => g.id === activeGroupId) ?? groups[0], [groups, activeGroupId]);
+
+  /* Base rows from active group */
   const baseRows = useMemo(() => {
-    const list = group === "FAVORITE" ? favorites : GROUPS[group];
+    const list = activeGroup.coins;
     if (list.length >= 10) return list.slice(0, 10);
-    const filler = GROUPS.TOP10.filter((s) => !list.includes(s));
+    const filler = DEFAULT_GROUPS[0].coins.filter((s) => !list.includes(s));
     return [...list, ...filler].slice(0, 10);
-  }, [favorites, group]);
+  }, [activeGroup]);
+
+  const addGroup = () => {
+    const id = `custom-${Date.now()}`;
+    const newGroup: ChartGroup = { id, label: "New Group", coins: ["BTC/USDT", "ETH/USDT", "SOL/USDT"] };
+    setGroups((prev) => [...prev, newGroup]);
+    setActiveGroupId(id);
+    // Auto-start editing
+    setEditingGroupId(id);
+    setEditLabel("New Group");
+  };
+
+  const deleteGroup = (id: string) => {
+    setGroups((prev) => prev.filter((g) => g.id !== id));
+    if (activeGroupId === id) setActiveGroupId("TOP10");
+  };
+
+  const commitRename = () => {
+    if (!editingGroupId) return;
+    const trimmed = editLabel.trim();
+    if (trimmed) {
+      setGroups((prev) => prev.map((g) => g.id === editingGroupId ? { ...g, label: trimmed } : g));
+    }
+    setEditingGroupId(null);
+  };
 
   /* Effective rows with per-slot overrides */
   const effectiveRows = useMemo(() =>
@@ -405,25 +461,13 @@ export default function SuperChartsPage() {
     navigate("/exchange-terminal");
   };
 
-  const handleGroupChange = (g: GroupKey) => {
-    setGroup(g);
+  const handleGroupChange = (id: string) => {
+    setActiveGroupId(id);
     // Clear symbol overrides on group change, keep TF overrides
     setSlotOverrides((prev) => {
       const next: Record<number, SlotOverride> = {};
       for (const [k, v] of Object.entries(prev)) {
         if (v.tf) next[Number(k)] = { tf: v.tf };
-      }
-      return next;
-    });
-  };
-
-  const handleGlobalTf = (tf: Tf) => {
-    setTimeframe(tf);
-    // Clear all per-chart TF overrides
-    setSlotOverrides((prev) => {
-      const next: Record<number, SlotOverride> = {};
-      for (const [k, v] of Object.entries(prev)) {
-        if (v.symbol) next[Number(k)] = { symbol: v.symbol };
       }
       return next;
     });
@@ -445,46 +489,62 @@ export default function SuperChartsPage() {
             <h1 className="text-lg font-semibold text-white">Super Charts</h1>
             <p className="text-xs text-[#555]">10-chart stack with coin-level trade context and fast trade routing.</p>
           </div>
-          <div className="mt-2 flex flex-wrap items-center gap-2">
-            {(Object.keys(GROUP_LABELS) as GroupKey[]).map((k) => (
-              <button
-                key={k}
-                type="button"
-                onClick={() => handleGroupChange(k)}
-                className={`rounded border px-2.5 py-1 text-xs ${group === k ? "border-[#7a6840] bg-[#2a2418] text-[#F5C542]" : "border-white/10 bg-[#0F1012] text-[#BFC2C7]"}`}
-              >
-                {GROUP_LABELS[k]}
-              </button>
+          <div className="mt-2 flex flex-wrap items-center gap-1.5">
+            {groups.map((g) => (
+              <div key={g.id} className="relative group/tab flex items-center">
+                {editingGroupId === g.id ? (
+                  <input
+                    ref={editInputRef}
+                    type="text"
+                    value={editLabel}
+                    onChange={(e) => setEditLabel(e.target.value)}
+                    onBlur={commitRename}
+                    onKeyDown={(e) => { if (e.key === "Enter") commitRename(); if (e.key === "Escape") setEditingGroupId(null); }}
+                    className="rounded border border-[#F5C542] bg-[#2a2418] px-2.5 py-1 text-xs text-[#F5C542] outline-none w-28"
+                  />
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => handleGroupChange(g.id)}
+                    onDoubleClick={() => { setEditingGroupId(g.id); setEditLabel(g.label); }}
+                    className={`rounded border px-2.5 py-1 text-xs transition ${
+                      activeGroupId === g.id
+                        ? "border-[#7a6840] bg-[#2a2418] text-[#F5C542]"
+                        : "border-white/10 bg-[#0F1012] text-[#BFC2C7] hover:border-white/20"
+                    }`}
+                    title="Double-click to rename"
+                  >
+                    {g.label}
+                  </button>
+                )}
+                {/* Delete button for custom groups */}
+                {!g.builtin && activeGroupId !== g.id && (
+                  <button
+                    type="button"
+                    onClick={(e) => { e.stopPropagation(); deleteGroup(g.id); }}
+                    className="absolute -top-1.5 -right-1.5 hidden group-hover/tab:flex h-4 w-4 items-center justify-center rounded-full bg-[#f6465d] text-[8px] text-white font-bold hover:bg-[#d83c51] transition z-10"
+                    title="Delete group"
+                  >
+                    ✕
+                  </button>
+                )}
+              </div>
             ))}
-            <span className="mx-1 h-4 w-px bg-white/10" />
-            {TF_BUTTONS.map((tf) => (
-              <button
-                key={tf}
-                type="button"
-                onClick={() => handleGlobalTf(tf)}
-                className={`rounded px-2 py-1 text-xs ${tf === timeframe ? "bg-[#1d2130] text-white" : "text-[#8e95a1]"}`}
-                title="Apply to all charts"
-              >
-                {tf}
-              </button>
-            ))}
-            <span className="mx-1 h-4 w-px bg-white/10" />
-            <IndicatorsDropdown
-              state={indicatorsState}
-              enabledCount={indicatorsEnabledCount}
-              setMaster={indSetMaster}
-              setGroup={indSetGroup}
-              setIndicatorEnabled={indSetEnabled}
-              setIndicatorSetting={indSetSetting}
-              resetIndicator={indReset}
-            />
+            {/* + ADD button */}
+            <button
+              type="button"
+              onClick={addGroup}
+              className="rounded border border-dashed border-white/20 px-2.5 py-1 text-xs text-[#8A8F98] hover:border-[#F5C542]/40 hover:text-[#F5C542] transition"
+            >
+              + Add
+            </button>
           </div>
         </header>
 
         <section className="space-y-2">
           {effectiveRows.map((row) => (
             <CoinChartRow
-              key={`${row.index}-${row.symbol}-${group}`}
+              key={`${row.index}-${row.symbol}-${activeGroupId}`}
               symbol={row.symbol}
               tf={row.tf}
               index={row.index}
