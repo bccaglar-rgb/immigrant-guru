@@ -1,23 +1,5 @@
-node_modules/
-dist/
+node_modules
+dist
 .env
+.env.local
 .DS_Store
-*.log
-
-# runtime store (too large for git)
-server/data/trade_ideas.json
-
-# local archives / nested repos
-Bitrium Scoial-local-archive/
-Bitrium Scoial/
-=
-
-Bitrium Scoial/
-Bitrium Scoial-local-archive/
-server/data/trade_ideas.json
-=
-
-Bitrium Scoial/
-Bitrium Scoial-local-archive/
-server/data/trade_ideas.json
-=

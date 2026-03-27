@@ -111,11 +111,10 @@ test("Velocity entry CLOSED => entry gate BLOCK, final capped <= 40, decision NO
     dataHealth: healthyData,
   });
 
-  // Entry gate is always PASS in Velocity mode (no entry window restriction)
-  assert.equal(out.gates.entry, "PASS");
-  // With CLOSED entry + MED slippage, momentum is still high enough
-  // Decision depends on final score (quality gates may apply)
-  assert.ok(out.finalScore > 0, `finalScore should be > 0, got ${out.finalScore}`);
+  // Entry gate blocks when entry window is CLOSED
+  assert.equal(out.gates.entry, "BLOCK");
+  // With CLOSED entry, score should be capped and decision should be NO_TRADE or WATCHLIST
+  assert.ok(out.finalScore <= 55, `finalScore should be <= 55, got ${out.finalScore}`);
 });
 
 test("Velocity stress HIGH + cascade HIGH => risk gate BLOCK => NO_TRADE", () => {

@@ -44,6 +44,7 @@ const BitriumTokenPage = lazyRetry(() => import("./pages/BitriumTokenPage"));
 const CoinCalculatorPage = lazyRetry(() => import("./pages/CoinCalculatorPage"));
 const TokenCreatorPage = lazyRetry(() => import("./pages/TokenCreatorPage"));
 const CoinUniversePage = lazyRetry(() => import("./pages/CoinUniversePage"));
+const CoinInsightPage = lazyRetry(() => import("./pages/CoinInsightPage"));
 const PricingPage = lazyRetry(() => import("./pages/PricingPage"));
 const LoginPage = lazyRetry(() => import("./pages/LoginPage"));
 const SignupPage = lazyRetry(() => import("./pages/SignupPage"));
@@ -137,6 +138,7 @@ function App() {
         <Route path="/ai-trader/backtest" element={<RequirePlan><Suspense fallback={<PageLoader />}><AiTraderComingSoonPage title="AI Trader · Backtest" note="Backtest module is coming soon." /></Suspense></RequirePlan>} />
         <Route path="/bot" element={<RequirePlan><Suspense fallback={<PageLoader />}><BotPage /></Suspense></RequirePlan>} />
         <Route path="/coin-universe" element={<RequirePlan><Suspense fallback={<PageLoader />}><CoinUniversePage /></Suspense></RequirePlan>} />
+        <Route path="/coin-insight" element={<RequirePlan><Suspense fallback={<PageLoader />}><CoinInsightPage /></Suspense></RequirePlan>} />
         <Route path="/super-charts" element={<RequirePlan><Suspense fallback={<PageLoader />}><SuperChartsPage /></Suspense></RequirePlan>} />
         <Route path="/indicators" element={<RequirePlan><Suspense fallback={<PageLoader />}><IndicatorsPage /></Suspense></RequirePlan>} />
         <Route path="/games" element={<RequirePlan><Suspense fallback={<PageLoader />}><GamesPage /></Suspense></RequirePlan>} />

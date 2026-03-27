@@ -1013,7 +1013,7 @@ export const generateAiPanel = (
 
   const penalties: Array<{ label: string; value: number; reason: string }> = [];
   if (riskChecks.executionCertainty && consensusInputs.slippage && slippage === "HIGH") {
-    penalties.push({ label: "Slippage High", value: 12, reason: "Execution impact risk is high." });
+    penalties.push({ label: "Slippage High", value: 18, reason: "Execution impact risk is high." });
   }
   if (riskChecks.stressFilter && consensusInputs.marketStress && marketStress === "HIGH") {
     penalties.push({ label: "Stress High", value: 10, reason: "Stress regime suppresses risk-adjusted edge." });
@@ -1028,9 +1028,9 @@ export const generateAiPanel = (
     penalties.push({ label: "Chop Regime", value: 5, reason: "Directional edge decays in choppy regimes." });
   }
   if (riskChecks.stressFilter && consensusInputs.marketStress && crowdingRisk === "HIGH") {
-    penalties.push({ label: "Crowding High", value: 8, reason: "Crowded positioning increases trap probability." });
+    penalties.push({ label: "Crowding High", value: 12, reason: "Crowded positioning increases trap probability." });
   }
-  const totalPenalty = Math.min(40, penalties.reduce((sum, penalty) => sum + penalty.value, 0));
+  const totalPenalty = Math.min(55, penalties.reduce((sum, penalty) => sum + penalty.value, 0));
   const fillFailure = clamp((0.45 - pFill) / 0.25, 0, 1);
   const slippageFailure = slippage === "LOW" ? 0 : slippage === "MED" ? 0.5 : 1;
   const depthFailure = depthQuality === "GOOD" ? 0 : depthQuality === "OK" ? 0.4 : depthQuality === "MID" ? 0.4 : 1;
@@ -1053,7 +1053,7 @@ export const generateAiPanel = (
       ? (0.30 * structureScore) + (0.20 * liquidityScore) + (0.20 * positioningScore) + (0.20 * executionScore) + (0.10 * volatilityScore)
       : (0.33 * structureScore) + (0.14 * liquidityScore) + (0.34 * positioningScore) + (0.19 * executionScore);
   const stressCascadeBlock = !isAggressiveMode && marketStress === "HIGH" && cascadeRisk === "HIGH";
-  const hardExecutionBlock = pFill < 0.2 || (depthQuality === "POOR" && spreadRegime === "WIDE" && slippage === "HIGH");
+  const hardExecutionBlock = pFill < 0.25 || (depthQuality === "POOR" && slippage === "HIGH") || (spreadRegime === "WIDE" && slippage === "HIGH");
   const degradedFeedsCount = Object.values(dataHealth?.feedSources ?? {}).filter((source) => !source.healthy).length;
   const normalizedDepthQuality =
     depthQuality === "OK" ? "MID" : depthQuality;
@@ -1129,9 +1129,9 @@ export const generateAiPanel = (
           ? true  // FLOW: risk gate never hard-blocks — user controls via Flow penalties
           : !stressCascadeBlock && (!riskChecks.riskGate || provisionalRiskGate === "PASS"),
     entryWindow: !entryTimingGateEnabled || entryTiming === "OPEN",
-    fillProb: !fillGateEnabled || (isCapitalGuardMode ? pFill >= 0.38 : isBalancedMode ? pFill >= 0.25 : isFlowUserMode ? pFill >= 0.05 : pFill >= 0.15),
-    edge: isCapitalGuardMode ? riskAdjustedEdgeR >= 0.06 : isBalancedMode ? riskAdjustedEdgeR >= 0.04 : (isAggressiveMode || isFlowUserMode) ? true : edgeNetR >= modeConfig.gates.minEdgeR,
-    capacity: isCapitalGuardMode ? capacityFactor >= 0.35 : isFlowUserMode ? capacityFactor >= 0.05 : capacityFactor >= 0.15,
+    fillProb: !fillGateEnabled || (isCapitalGuardMode ? pFill >= 0.45 : isBalancedMode ? pFill >= 0.35 : isFlowUserMode ? pFill >= 0.15 : pFill >= 0.30),
+    edge: isCapitalGuardMode ? riskAdjustedEdgeR >= 0.06 : isBalancedMode ? riskAdjustedEdgeR >= 0.04 : isAggressiveMode ? riskAdjustedEdgeR >= 0.02 : isFlowUserMode ? edgeNetR >= 0.01 : edgeNetR >= modeConfig.gates.minEdgeR,
+    capacity: isCapitalGuardMode ? capacityFactor >= 0.35 : isFlowUserMode ? capacityFactor >= 0.15 : capacityFactor >= 0.25,
   };
   const effectiveGatingFlags = scoreResult.gatingFlags.filter((flag) => {
     // FLOW mode: skip all gating flags — user controls scoring via Flow panels
@@ -1156,6 +1156,13 @@ export const generateAiPanel = (
     (marketStress === "HIGH" && cascadeRisk !== "LOW") ||
     riskAdjustedEdgeR < 0.02
   );
+  // --- Hard block: entry CLOSED + slippage HIGH is never tradeable ---
+  const entrySlippageBlock = entryTiming === "CLOSED" && slippage === "HIGH";
+  // --- Hard block: negative or near-zero edge is never tradeable ---
+  const negativeEdgeBlock = edgeNetR <= 0;
+  // --- Hard block: liquidity too thin (score <= 30) ---
+  const liquidityTooThinBlock = liquidityScore <= 30 && liquidityDensity === "LOW";
+
   const hardBlocked =
     !hardGates.tradeValidity ||
     !hardGates.dataHealth ||
@@ -1164,17 +1171,20 @@ export const generateAiPanel = (
     (!isFlowUserMode && hardExecutionBlock) ||
     (!isFlowUserMode && stressCascadeBlock) ||
     capitalGuardStrictBlock ||
-    balancedStrictBlock;
+    balancedStrictBlock ||
+    entrySlippageBlock ||
+    negativeEdgeBlock ||
+    liquidityTooThinBlock;
 
   const aggressiveWaitCondition =
     isAggressiveMode &&
-    ((entryTimingGateEnabled && entryTiming === "CLOSED") || pFill < 0.3 || (consensusInputs.slippage && slippage === "HIGH") || liquidityDensity === "LOW");
+    ((entryTimingGateEnabled && entryTiming === "CLOSED") || pFill < 0.4 || (consensusInputs.slippage && slippage === "HIGH") || liquidityDensity === "LOW" || riskAdjustedEdgeR < 0.04);
 
   if (hardBlocked) {
-    const hardBlockConsensusCap = isCapitalGuardMode ? 38 : isBalancedMode ? 44 : isFlowUserMode ? 58 : 48;
+    const hardBlockConsensusCap = isCapitalGuardMode ? 30 : isBalancedMode ? 35 : isFlowUserMode ? 45 : 38;
     finalScore = Math.min(finalScore, hardBlockConsensusCap);
   } else if (entryTimingGateEnabled && entryTiming === "CLOSED") {
-    const waitConsensusCap = isCapitalGuardMode ? 62 : isBalancedMode ? 68 : isFlowUserMode ? 88 : 78;
+    const waitConsensusCap = isCapitalGuardMode ? 50 : isBalancedMode ? 55 : isFlowUserMode ? 65 : 60;
     finalScore = Math.min(finalScore, waitConsensusCap);
   }
 
@@ -1194,9 +1204,9 @@ export const generateAiPanel = (
                   ? "TRADE_ELIGIBLE"
                   : "HIGH_CONFIDENCE"
           : isAggressiveMode
-            ? finalScore < 38
+            ? finalScore < 52
               ? "WATCHLIST"
-              : finalScore < 52
+              : finalScore < 68
                 ? "TRADE_ELIGIBLE"
                 : "HIGH_CONFIDENCE"
             : isBalancedMode

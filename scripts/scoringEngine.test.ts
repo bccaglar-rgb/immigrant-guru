@@ -29,8 +29,8 @@ test("gates keep real computed score and expose flags", () => {
   const result = computeScore({
     mode: "BALANCED",
     edgeNetR: 0.25,
-    pFill: 0.3,
-    capacity: 0.2,
+    pFill: 0.1,
+    capacity: 0.1,
     inputModifier: 1,
     stress: 0.2,
     shock: 0.2,

@@ -79,7 +79,7 @@ export const SCORING_CONFIG: Record<ScoringMode, ScoringConfig> = {
       liquiditySweep: 0.12,
       chopPenalty: 0.05,
     },
-    gates: { minFillProb: 0.08, minEdgeR: -0.05, minCapacity: 0.08 },
+    gates: { minFillProb: 0.25, minEdgeR: 0.01, minCapacity: 0.20 },
   },
   // Slightly more conservative than AGGRESSIVE: moderate gates, balanced risk/reward.
   // Tuned to produce more trade ideas while maintaining quality.
@@ -91,7 +91,7 @@ export const SCORING_CONFIG: Record<ScoringMode, ScoringConfig> = {
     penaltyModel: "MULTIPLY",
     linearRiskSlope: 0.40,
     linearRiskFloor: 0.46,
-    gates: { minFillProb: 0.08, minEdgeR: -0.06, minCapacity: 0.08 },
+    gates: { minFillProb: 0.30, minEdgeR: 0.0, minCapacity: 0.20 },
   },
   // User-configurable mode — all tuning via FlowScoringTuning panel.
   // Default: permissive — users tighten via Flow Settings.
@@ -103,7 +103,7 @@ export const SCORING_CONFIG: Record<ScoringMode, ScoringConfig> = {
     penaltyModel: "MULTIPLY",
     linearRiskSlope: 0.4,
     linearRiskFloor: 0.45,
-    gates: { minFillProb: 0.08, minEdgeR: -0.05, minCapacity: 0.08 },
+    gates: { minFillProb: 0.15, minEdgeR: 0.0, minCapacity: 0.15 },
   },
   // Slightly tighter than BALANCED — one extra layer of selectivity.
   // Tuned to produce more trade ideas with better risk protection.
@@ -115,7 +115,7 @@ export const SCORING_CONFIG: Record<ScoringMode, ScoringConfig> = {
     penaltyModel: "MULTIPLY",
     linearRiskSlope: 0.42,
     linearRiskFloor: 0.44,
-    gates: { minFillProb: 0.10, minEdgeR: -0.05, minCapacity: 0.10 },
+    gates: { minFillProb: 0.35, minEdgeR: 0.02, minCapacity: 0.25 },
   },
 };
 

@@ -99,6 +99,11 @@ const CreatorIcon = () => <Icon>
 const ToolsIcon = () => <Icon>
   <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.8-3.8a5 5 0 0 1-7.1 6.3L8 18.2a2.1 2.1 0 1 1-3-3l6.4-6.4a5 5 0 0 1 6.3-7.1z" fill="url(#iconGoldLight)" stroke="url(#iconGold)" strokeWidth="1.2" />
 </Icon>;
+const CoinInsightIcon = () => <Icon>
+  <path d="M3 12h2l3-8 4 16 3-12 2 4h4" stroke="url(#iconGold)" strokeWidth="1.3" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+  <circle cx="19" cy="12" r="2" fill="url(#iconGold)" />
+  <circle cx="19" cy="12" r="3.5" stroke="url(#iconGold)" strokeWidth="0.6" fill="none" opacity="0.4" />
+</Icon>;
 const UniverseIcon = () => <Icon>
   <circle cx="12" cy="12" r="9" stroke="url(#iconGold)" strokeWidth="1.2" fill="url(#iconGoldLight)" />
   <ellipse cx="12" cy="12" rx="9" ry="4" stroke="url(#iconGold)" strokeWidth="0.9" fill="none" />
@@ -172,6 +177,7 @@ const menuItems = [
   { label: "Portfolio", to: "/portfolio", accent: "#4ecdc4", icon: () => <PortfolioIcon /> },
   { label: "Crypto Market", to: "/crypto-market", accent: "var(--menu-accent-4)", icon: () => <MarketIcon /> },
   { label: "Coin Universe", to: "/coin-universe", accent: "var(--menu-accent-8)", icon: () => <UniverseIcon /> },
+  { label: "Coin Insight", to: "/coin-insight", accent: "#00e0ff", icon: () => <CoinInsightIcon /> },
   { label: "Super Charts", to: "/super-charts", accent: "var(--menu-accent-5)", icon: () => <SuperChartIcon /> },
   { label: "Indicators", to: "/indicators", accent: "var(--menu-accent-6)", icon: () => <IndicatorIcon /> },
   // Tools submenu inserted here in render
@@ -552,10 +558,10 @@ export const Sidebar = ({
   const publicPaths = new Set(["/crypto-market", "/bitrium-token", "/pricing"]);
 
   const topMenu = menuItems.slice(0, 4);
-  // Items between AI Trader and Tools: Exchanges..Indicators (index 4-9)
-  const midMenu = menuItems.slice(4, 10);
-  // Items after Tools: Bitrium Token, Pricing (index 10+)
-  const bottomMenu = menuItems.slice(10);
+  // Items between AI Trader and Tools: Exchanges..Coin Insight (index 4-10)
+  const midMenu = menuItems.slice(4, 11);
+  // Items after Tools: Bitrium Token, Pricing (index 11+)
+  const bottomMenu = menuItems.slice(11);
 
   return (
     <aside
