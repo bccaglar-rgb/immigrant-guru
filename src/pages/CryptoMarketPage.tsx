@@ -177,7 +177,7 @@ export default function CryptoMarketPage() {
               return next;
             })
           }
-          onRowClick={(row) => navigate(`/quant-engine?symbol=${row.symbol}`)}
+          onRowClick={(row) => navigate(`/exchange-terminal?symbol=${row.symbol}`)}
           favoriteSymbols={favoriteSymbols}
         />
 

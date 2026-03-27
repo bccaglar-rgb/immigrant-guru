@@ -773,7 +773,7 @@ export default function CoinUniversePage() {
                   key={c.symbol}
                   c={c}
                   idx={idx}
-                  onClick={() => navigate(`/quant-engine?symbol=${c.symbol}`)}
+                  onClick={() => navigate(`/exchange-terminal?symbol=${c.symbol}`)}
                 />
               ))
             )}
