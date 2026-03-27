@@ -134,11 +134,11 @@ function App() {
         <Route path="/quant-trade-ideas/report" element={<RequireAdmin><Suspense fallback={<PageLoader />}><TradeIdeasReportPage /></Suspense></RequireAdmin>} />
         <Route path="/trade-ideas/report" element={<Navigate to="/quant-trade-ideas/report" replace />} />
         <Route path="/ai-trade-ideas/report" element={<RequireAdmin><Suspense fallback={<PageLoader />}><TradeIdeasReportPage /></Suspense></RequireAdmin>} />
-        <Route path="/ai-trader/leaderboard" element={<RequirePlan><Suspense fallback={<PageLoader />}><AiTraderLeaderboardPage /></Suspense></RequirePlan>} />
-        <Route path="/ai-trader/dashboard" element={<RequirePlan><Suspense fallback={<PageLoader />}><AiTraderDashboardPage /></Suspense></RequirePlan>} />
-        <Route path="/ai-trader/strategy" element={<RequirePlan><Suspense fallback={<PageLoader />}><AiTraderStrategyPage /></Suspense></RequirePlan>} />
-        <Route path="/ai-trader/arena" element={<RequirePlan><Suspense fallback={<PageLoader />}><AiTraderComingSoonPage title="AI Trader · AI Arena" note="AI Arena module is coming soon." /></Suspense></RequirePlan>} />
-        <Route path="/ai-trader/backtest" element={<RequirePlan><Suspense fallback={<PageLoader />}><AiTraderComingSoonPage title="AI Trader · Backtest" note="Backtest module is coming soon." /></Suspense></RequirePlan>} />
+        <Route path="/ai-trader/leaderboard" element={<RequireAuth><Suspense fallback={<PageLoader />}><AiTraderLeaderboardPage /></Suspense></RequireAuth>} />
+        <Route path="/ai-trader/dashboard" element={<RequireAuth><Suspense fallback={<PageLoader />}><AiTraderDashboardPage /></Suspense></RequireAuth>} />
+        <Route path="/ai-trader/strategy" element={<RequireAuth><Suspense fallback={<PageLoader />}><AiTraderStrategyPage /></Suspense></RequireAuth>} />
+        <Route path="/ai-trader/arena" element={<RequireAuth><Suspense fallback={<PageLoader />}><AiTraderComingSoonPage title="AI Trader · AI Arena" note="AI Arena module is coming soon." /></Suspense></RequireAuth>} />
+        <Route path="/ai-trader/backtest" element={<RequireAuth><Suspense fallback={<PageLoader />}><AiTraderComingSoonPage title="AI Trader · Backtest" note="Backtest module is coming soon." /></Suspense></RequireAuth>} />
         <Route path="/bot" element={<RequirePlan><Suspense fallback={<PageLoader />}><BotPage /></Suspense></RequirePlan>} />
         <Route path="/coin-universe" element={<RequirePlan><Suspense fallback={<PageLoader />}><CoinUniversePage /></Suspense></RequirePlan>} />
         <Route path="/coin-insight" element={<RequirePlan><Suspense fallback={<PageLoader />}><CoinInsightPage /></Suspense></RequirePlan>} />
