@@ -2273,24 +2273,35 @@ const fetchGateLive = async (
     }
   }
 
-  // Gate.io: fetch real orderbook depth from REST (rate-limited via exchangeFetch)
+  // Gate.io: try Redis cache first, only fallback to REST if cache miss
   let depthRaw: { bids: string[][]; asks: string[][] } = { bids: [], asks: [] };
   try {
-    const { exchangeFetch } = await import("../services/binanceRateLimiter.ts");
-    const depthRes = await exchangeFetch({
-      url: `${GATE_FUTURES_BASE}/futures/usdt/order_book?contract=${pair}&limit=${safeBookLimit}&with_id=true`,
-      priority: "normal",
-      dedupKey: `gate:depth:${pair}:${safeBookLimit}`,
-      weight: 10,
-      exchange: "gateio",
-    });
-    if (depthRes.ok) {
-      const depthJson = await depthRes.json() as { bids?: Array<{ p: string; s: number }>; asks?: Array<{ p: string; s: number }> };
-      const bids = (depthJson.bids ?? []).map((row) => [String(row.p), String(row.s)]);
-      const asks = (depthJson.asks ?? []).map((row) => [String(row.p), String(row.s)]);
+    // Cache-first: check if marketDataCache has fresh depth for this symbol
+    const { readDepth } = await import("../services/marketDataCache.ts");
+    const cachedDepth = await readDepth(pair.replace("_", ""));
+    if (cachedDepth && cachedDepth.data && cachedDepth.confidence !== "unavailable") {
+      const bids = (cachedDepth.data.bids ?? []).map((l: any) => [String(l[0]), String(l[1])]);
+      const asks = (cachedDepth.data.asks ?? []).map((l: any) => [String(l[0]), String(l[1])]);
       if (bids.length > 1) depthRaw = { bids, asks };
     }
-  } catch { /* REST depth failed or rate limited */ }
+    // Only hit REST if cache is empty/stale (significantly reduces Gate.io REST load)
+    if (depthRaw.bids.length === 0) {
+      const { exchangeFetch } = await import("../services/binanceRateLimiter.ts");
+      const depthRes = await exchangeFetch({
+        url: `${GATE_FUTURES_BASE}/futures/usdt/order_book?contract=${pair}&limit=${safeBookLimit}&with_id=true`,
+        priority: "low",
+        dedupKey: `gate:depth:${pair}:${safeBookLimit}`,
+        weight: 10,
+        exchange: "gateio",
+      });
+      if (depthRes.ok) {
+        const depthJson = await depthRes.json() as { bids?: Array<{ p: string; s: number }>; asks?: Array<{ p: string; s: number }> };
+        const bids = (depthJson.bids ?? []).map((row) => [String(row.p), String(row.s)]);
+        const asks = (depthJson.asks ?? []).map((row) => [String(row.p), String(row.s)]);
+        if (bids.length > 1) depthRaw = { bids, asks };
+      }
+    }
+  } catch { /* depth fetch failed — will use fallback below */ }
   // Fallback: hub top-of-book with synthetic levels
   if (depthRaw.bids.length === 0 && hubRow?.topBid && hubRow?.topAsk && hubRow?.depthUsd && hubRow.depthUsd > 0) {
     const topBid = hubRow.topBid;

@@ -189,6 +189,10 @@ interface SchedulerRunLog {
  *   4. AI pipeline: Gate → Rank → Prompt → AI Call → Parse → Confidence filter → Validate → Persist
  *   5. All 4 modules run in parallel
  */
+// Per-provider cooldown: stop retrying when credit depleted or rate limited
+const PROVIDER_COOLDOWN_MS = 5 * 60_000; // 5 minutes
+const PROVIDER_COOLDOWN_ERRORS = new Set(["http_400", "http_401", "http_402", "http_429"]);
+
 export class AiModuleScheduler {
   private deps: AiModuleSchedulerDeps;
   private running = false;
@@ -196,9 +200,30 @@ export class AiModuleScheduler {
   private processing = false;
   private lastRunLog: SchedulerRunLog | null = null;
   private runCount = 0;
+  /** Per-provider cooldown: providerId → cooldownUntil timestamp */
+  private providerCooldowns = new Map<string, number>();
 
   constructor(deps: AiModuleSchedulerDeps) {
     this.deps = deps;
+  }
+
+  /** Check if a provider is in cooldown (credit depleted, rate limited, etc.) */
+  private isProviderCoolingDown(providerId: string): boolean {
+    const until = this.providerCooldowns.get(providerId);
+    if (!until) return false;
+    if (Date.now() >= until) {
+      this.providerCooldowns.delete(providerId);
+      console.log(`${PREFIX} Provider ${providerId} cooldown expired, re-enabling`);
+      return false;
+    }
+    return true;
+  }
+
+  /** Put a provider into cooldown after a billing/rate error */
+  private cooldownProvider(providerId: string, error: string): void {
+    const until = Date.now() + PROVIDER_COOLDOWN_MS;
+    this.providerCooldowns.set(providerId, until);
+    console.warn(`${PREFIX} Provider ${providerId} cooldown for ${PROVIDER_COOLDOWN_MS / 1000}s due to: ${error}`);
   }
 
   start(): void {
@@ -328,6 +353,18 @@ export class AiModuleScheduler {
         const moduleCoins = moduleSymbolMap[slot.providerId] ?? [];
         const moduleScan = moduleScanResults[slot.providerId] ?? [];
         assignments[slot.providerId] = moduleCoins;
+
+        // Skip providers in cooldown (billing/rate errors)
+        if (this.isProviderCoolingDown(slot.providerId)) {
+          console.log(`${PREFIX} [${runId}] ${slot.label} skipped (provider ${slot.providerId} in cooldown)`);
+          modulePromises.push(Promise.resolve({
+            providerId: slot.providerId, label: slot.label, symbols: moduleCoins,
+            candidates: 0, afterGate: 0, sentToAi: 0, aiApproved: 0, persisted: 0,
+            durationMs: 0, error: "provider_cooldown",
+          }));
+          continue;
+        }
+
         modulePromises.push(this.runModule(slot, moduleScan, runId));
       }
 
@@ -338,10 +375,20 @@ export class AiModuleScheduler {
         const result = settled[i];
         if (result.status === "fulfilled") {
           moduleResults.push(result.value);
-          if (result.value.error) errors.push(`${MODULE_SLOTS[i].label}: ${result.value.error}`);
+          if (result.value.error) {
+            errors.push(`${MODULE_SLOTS[i].label}: ${result.value.error}`);
+            // Trigger cooldown for billing/rate errors
+            if (PROVIDER_COOLDOWN_ERRORS.has(result.value.error)) {
+              this.cooldownProvider(MODULE_SLOTS[i].providerId, result.value.error);
+            }
+          }
         } else {
           const errMsg = result.reason instanceof Error ? result.reason.message : String(result.reason);
           errors.push(`${MODULE_SLOTS[i].label}: ${errMsg}`);
+          // Trigger cooldown for billing/rate errors from thrown exceptions
+          if (PROVIDER_COOLDOWN_ERRORS.has(errMsg)) {
+            this.cooldownProvider(MODULE_SLOTS[i].providerId, errMsg);
+          }
           moduleResults.push({
             providerId: MODULE_SLOTS[i].providerId,
             label: MODULE_SLOTS[i].label,

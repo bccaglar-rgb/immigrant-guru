@@ -46,7 +46,8 @@ import { exchangeFetch, isExchangeAvailable, isPrimaryWorker } from "../binanceR
 const KLINES_CACHE_TTL_MS = 5 * 60 * 1000;
 const KLINES_BARS = 100;
 const KLINES_INTERVAL = "15m";
-const KLINES_CONCURRENT = 10;
+const KLINES_CONCURRENT = 4;          // reduced from 10 to prevent burst weight spikes
+const KLINES_BATCH_DELAY_MS = 1500;   // delay between batches to spread weight over time
 const COOLDOWN_ROUNDS = 0; // no cooldown — scanner always gets fresh top 28
 const SELECTED_TOP_28 = 28;
 
@@ -758,7 +759,10 @@ export class CoinUniverseEngineV2 {
           failCount++;
         }
       }
-      await new Promise<void>((r) => setImmediate(r));
+      // Throttle between batches to prevent REST weight burst
+      if (i + KLINES_CONCURRENT < remaining.length) {
+        await new Promise<void>((r) => setTimeout(r, KLINES_BATCH_DELAY_MS));
+      }
     }
 
     if (successCount === 0) {

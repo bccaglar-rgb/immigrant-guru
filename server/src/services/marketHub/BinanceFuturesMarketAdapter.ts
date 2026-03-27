@@ -38,7 +38,8 @@ const SYMBOL_DELTA_STALE_MS = 14_000;
 const SNAPSHOT_SANITY_INTERVAL_MS = 20_000;
 const SNAPSHOT_REFRESH_MIN_MS = 90_000;
 const SNAPSHOT_SANITY_BATCH = 3;
-const SNAPSHOT_REQUEST_GAP_MS = 350;
+const SNAPSHOT_REQUEST_GAP_MS = 600;   // increased from 350ms to spread reconnect snapshot load
+const SNAPSHOT_RECONNECT_STAGGER_MS = 800; // extra stagger per symbol after reconnect
 const SNAPSHOT_BLOCK_COOLDOWN_MS = 120_000; // 2 min — IP ban lifted, fast recovery preferred
 const CONTRACT_REFRESH_INTERVAL_MS = 45 * 60_000;
 const RECONNECT_BASE_MS = 500;
@@ -659,9 +660,13 @@ export class BinanceFuturesMarketAdapter implements IExchangeMarketAdapter {
     // Subscribe all current depth symbols
     this.subscribeDepthStreams([...this.depthSymbols]);
 
-    for (const symbol of this.depthSymbols) {
+    // Stagger snapshot requests after reconnect to prevent REST burst
+    const depthArr = [...this.depthSymbols];
+    for (let i = 0; i < depthArr.length; i++) {
+      const symbol = depthArr[i];
       this.resetSymbolSyncState(symbol);
-      this.enqueueSnapshot(symbol);
+      // Stagger: enqueue with increasing delay to avoid snapshot storm
+      setTimeout(() => this.enqueueSnapshot(symbol), i * SNAPSHOT_RECONNECT_STAGGER_MS);
     }
     // Backfill candles only if REST API is not blocked (403 = IP ban)
     if (this.snapshotBlockedUntil <= Date.now()) {
