@@ -5,8 +5,8 @@ import { computeBalancedConsensus } from "../../../src/data/balancedConsensus.ts
 import { computeCapitalGuardConsensus } from "../../../src/data/capitalGuardConsensus.ts";
 import { getConsensusBucketLabel, isTradeIdeaEligibleBucket } from "../../../src/data/consensusBuckets.ts";
 import { computeExtremeConsensus } from "../../../src/data/extremeConsensus.ts";
-import { computeVelocityConsensus } from "../../../src/data/velocityConsensus.ts";
-import { normalizeScoringMode, SCORING_MODES, type ScoringMode } from "../services/scoringMode.ts";
+import { computeVelocityConsensus, computeFlowGoldSetup, computeAggressiveGoldSetup } from "../../../src/data/velocityConsensus.ts";
+import { normalizeScoringMode, SCORING_MODES, DETERMINISTIC_SCORING_MODES, type ScoringMode } from "../services/scoringMode.ts";
 import type { AdminProviderStore } from "../services/adminProviderStore.ts";
 import type { BinanceFuturesHub } from "../services/binanceFuturesHub.ts";
 import type { ExchangeMarketHub } from "../services/marketHub/index.ts";
@@ -441,6 +441,80 @@ const buildConsensusDataHealth = (snapshot: BitriumSnapshot) => {
   };
 };
 
+/**
+ * Build FLOW GOLD SETUP signals for AI consumption.
+ * Extracts all 5 signal groups + consensus metrics from the snapshot.
+ * This is the same data computeFlowGoldSetup() uses to score FLOW mode.
+ */
+const buildFlowSignals = (snapshot: BitriumSnapshot) => {
+  const panel = snapshot.aiPanel;
+  const consensusCore = panel.consensusEngine;
+  const dh = buildConsensusDataHealth(snapshot);
+  return {
+    // Signal Group 1: Market Regime (25 pts in FLOW)
+    regime: mapRegime(snapshotTileState(snapshot, "market-regime")),
+    trendStrength: mapTrendStrength(snapshotTileState(snapshot, "trend-strength")),
+    emaAlignment: (() => { const s = snapshotTileState(snapshot, "ema-alignment"); return s === "BULL" || s === "BEAR" || s === "MIXED" ? s : "UNKNOWN"; })(),
+    compression: (() => { const s = snapshotTileState(snapshot, "compression"); return s === "ON" || s === "OFF" ? s : "UNKNOWN"; })(),
+    breakoutRisk: mapTriRisk(snapshotTileState(snapshot, "breakout-risk")),
+    // Signal Group 2: Liquidity (25 pts in FLOW)
+    liquidityDensity: mapLiquidityDensity(snapshotTileState(snapshot, "liquidity-density")),
+    depthQuality: mapDepthQuality(snapshotTileState(snapshot, "depth-quality")),
+    spoofRisk: mapSpoofRisk(snapshotTileState(snapshot, "orderbook-stability")),
+    liquidityScore: Number.isFinite(panel.confidenceDrivers.liquidity) ? panel.confidenceDrivers.liquidity : 50,
+    // Signal Group 3: Edge (20 pts in FLOW)
+    riskAdjEdgeR: Number.isFinite(consensusCore.riskAdjustedEdgeR) ? consensusCore.riskAdjustedEdgeR : 0,
+    pWin: clamp(consensusCore.pWin, 0, 1),
+    expectedRR: Number.isFinite(consensusCore.expectedRR) ? consensusCore.expectedRR : 0,
+    asymmetry: (() => { const s = snapshotTileState(snapshot, "asymmetry-score"); return s === "REWARD_DOMINANT" || s === "RISK_DOMINANT" ? s : "UNKNOWN"; })(),
+    rrPotential: mapTriRisk(snapshotTileState(snapshot, "rr-potential")),
+    // Signal Group 4: Execution (20 pts in FLOW)
+    pFill: clamp(consensusCore.pFill, 0, 1),
+    slippageLevel: mapSlippageLevel(snapshotTileState(snapshot, "slippage-risk")),
+    entryQuality: (() => { const s = snapshotTileState(snapshot, "entry-quality"); if (s === "BAD" || s === "MID" || s === "GOOD") return s; if (s === "POOR" || s === "WEAK") return "BAD"; if (s === "OK") return "MID"; if (s === "STRONG") return "GOOD"; return "UNKNOWN"; })(),
+    spreadRegime: mapSpreadRegime(snapshotTileState(snapshot, "spread-regime")),
+    // Signal Group 5: Volatility (10 pts in FLOW)
+    atrRegime: mapAtrRegime(snapshotTileState(snapshot, "atr-regime")),
+    marketSpeed: mapMarketSpeed(snapshotTileState(snapshot, "market-speed")),
+    suddenMoveRisk: mapTriRisk(snapshotTileState(snapshot, "sudden-move-risk")),
+    volumeSpike: (() => { const s = snapshotTileState(snapshot, "volume-spike"); return s === "ON" || s === "OFF" ? s : "UNKNOWN"; })(),
+    // Context & Safety
+    vwapPosition: mapVwapPosition(snapshotTileState(snapshot, "vwap-position")),
+    fakeBreakoutProb: mapTriRisk(snapshotTileState(snapshot, "fake-breakout-prob")),
+    impulseReadiness: mapTriRisk(snapshotTileState(snapshot, "impulse-readiness")),
+    cascadeRisk: mapTriRisk(snapshotTileState(snapshot, "cascade-risk")),
+    stressLevel: mapTriRisk(snapshotTileState(snapshot, "market-stress-level")),
+    entryWindow: mapEntryWindow(snapshotTileState(snapshot, "entry-timing-window")),
+    crowdingRisk: mapTriRisk(String(panel.crowdingRisk ?? "UNKNOWN")),
+    conflictLevel: mapTriRisk(String(panel.conflictLevel ?? "UNKNOWN")),
+    // Derivatives & Positioning
+    orderbookImbalance: mapOrderbookImbalance(snapshotTileState(snapshot, "orderbook-imbalance")),
+    fundingBias: mapFundingBiasVelocity(snapshotTileState(snapshot, "funding-bias")),
+    rsiState: mapRsiState(snapshotTileState(snapshot, "rsi-state")),
+    oiChangeStrength: mapOiChangeStrength(snapshotTileState(snapshot, "oi-change")),
+    liquidationPoolBias: mapLiquidationPoolBias(snapshotTileState(snapshot, "liquidity-cluster")),
+    spotVsDerivativesPressure: mapSpotVsDerivativesPressure(snapshotTileState(snapshot, "spot-vs-derivatives-pressure")),
+    exchangeFlow: mapExchangeFlow(snapshotTileState(snapshot, "exchange-inflow-outflow")),
+    whaleActivity: inferWhaleActivity(snapshotTileState(snapshot, "whale-activity"), mapExchangeFlow(snapshotTileState(snapshot, "exchange-inflow-outflow")), mapOrderbookImbalance(snapshotTileState(snapshot, "orderbook-imbalance"))),
+    // Consensus Engine
+    structureScore: Number.isFinite(panel.confidenceDrivers.structure) ? panel.confidenceDrivers.structure : 50,
+    positioningScore: Number.isFinite(panel.confidenceDrivers.positioning) ? panel.confidenceDrivers.positioning : 50,
+    executionScore: Number.isFinite(panel.confidenceDrivers.execution) ? panel.confidenceDrivers.execution : 50,
+    capacity: clamp(consensusCore.capacityFactor, 0, 1),
+    pStop: clamp(consensusCore.pStop, 0, 1),
+    costR: Number.isFinite(consensusCore.costR) ? consensusCore.costR : 0,
+    alignedCount: Number.isFinite(panel.modelAgreement.aligned) ? panel.modelAgreement.aligned : 0,
+    totalModels: Number.isFinite(panel.modelAgreement.totalModels) ? panel.modelAgreement.totalModels : 1,
+    // Data Health
+    dataHealth: {
+      staleFeed: dh.staleFeed,
+      missingFields: dh.missingFields,
+      latencyMs: dh.latencyMs,
+      feeds: dh.feeds,
+    },
+  };
+};
+
 const makeModeBreakdown = (
   mode: ScoringMode,
   snapshot: BitriumSnapshot,
@@ -544,8 +618,8 @@ const makeModeBreakdown = (
   };
 
   if (mode === "FLOW") {
-    // FLOW uses the same engine as AGGRESSIVE (VelocityConsensus) — identical scoring logic
-    const out = computeVelocityConsensus({
+    // FLOW uses GOLD SETUP — 5-signal decision engine (Regime/Liquidity/Edge/Execution/Volatility)
+    const out = computeFlowGoldSetup({
       ...commonFields,
       regime,
       trendStrength,
@@ -590,7 +664,21 @@ const makeModeBreakdown = (
   }
 
   if (mode === "AGGRESSIVE") {
-    const out = computeVelocityConsensus({
+    // AGG direction inference: EMA + VWAP + orderbook voting
+    const longVotes =
+      (emaAlignment === "BULL" ? 1 : 0) +
+      (vwapPosition === "ABOVE" ? 1 : 0) +
+      (orderbookImbalance === "BUY" ? 1 : 0) +
+      (rsiState === "OVERSOLD" ? 1 : 0);
+    const shortVotes =
+      (emaAlignment === "BEAR" ? 1 : 0) +
+      (vwapPosition === "BELOW" ? 1 : 0) +
+      (orderbookImbalance === "SELL" ? 1 : 0) +
+      (rsiState === "OVERBOUGHT" ? 1 : 0);
+    const hintDirection: "LONG" | "SHORT" | "NEUTRAL" =
+      longVotes > shortVotes ? "LONG" : shortVotes > longVotes ? "SHORT" : "NEUTRAL";
+
+    const out = computeAggressiveGoldSetup({
       ...commonFields,
       regime,
       trendStrength,
@@ -613,6 +701,24 @@ const makeModeBreakdown = (
       stressLevel,
       entryWindow,
       breakoutOnly,
+      // AGG-specific tactical signals
+      hintDirection,
+      orderbookImbalance,
+      aggressorFlow: snapshotTileState(snapshot, "aggressor-flow"),
+      liquidationPoolBias,
+      oiChangeStrength,
+      oiChangePct,
+      fundingBias,
+      fundingStateRaw,
+      fundingRatePct,
+      rangePosition: snapshotTileState(snapshot, "range-position"),
+      trapProbability: mapTriRisk(snapshotTileState(snapshot, "trap-probability")),
+      stopClusterProb: mapTriRisk(snapshotTileState(snapshot, "stop-cluster-probability")),
+      spotVsDerivativesPressure,
+      exchangeFlow,
+      whaleActivity,
+      relativeStrength,
+      rsiState,
     });
     const gatingFlags = [
       ...(out.gates.risk === "BLOCK" ? ["RISK_BLOCK"] : []),
@@ -693,7 +799,8 @@ const makeModeBreakdown = (
       edgeAdj: Number.isFinite(consensusCore.edgeNetR) ? consensusCore.edgeNetR : 0,
       riskAdj: Number.isFinite(consensusCore.riskAdjustment) ? consensusCore.riskAdjustment : 0,
       gatingFlags,
-      decision: Math.round(out.finalScore) >= 56 && out.gates.data === "PASS" && out.gates.safety === "PASS" ? "TRADE" : Math.round(out.finalScore) >= 40 ? "WATCH" : "NO_TRADE",
+      // BAL: ≥60% TRADE, 45-59% WATCH, <45% NO_TRADE
+      decision: Math.round(out.finalScore) >= 60 && out.gates.data === "PASS" && out.gates.safety === "PASS" ? "TRADE" : Math.round(out.finalScore) >= 45 ? "WATCH" : "NO_TRADE",
     };
   }
 
@@ -747,7 +854,8 @@ const makeModeBreakdown = (
     edgeAdj: Number.isFinite(consensusCore.edgeNetR) ? consensusCore.edgeNetR : 0,
     riskAdj: Number.isFinite(consensusCore.riskAdjustment) ? consensusCore.riskAdjustment : 0,
     gatingFlags,
-    decision: Math.round(out.finalScore) >= 50 && out.gates.data === "PASS" && out.gates.safety === "PASS" ? "TRADE" : Math.round(out.finalScore) >= 35 ? "WATCH" : "NO_TRADE",
+    // CG: ≥65% TRADE, 45-64% WATCH, <45% NO_TRADE
+    decision: Math.round(out.finalScore) >= 65 && out.gates.data === "PASS" && out.gates.safety === "PASS" ? "TRADE" : Math.round(out.finalScore) >= 45 ? "WATCH" : "NO_TRADE",
   };
 };
 
@@ -1530,15 +1638,38 @@ const normalizeBookLevels = (
     .sort((a, b) => (side === "bid" ? b.price - a.price : a.price - b.price))
     .slice(0, Math.max(10, Math.min(100, limit)));
 
+  if (parsedRaw.length === 0) return [];
+
+  // ── Auto-adjust step when it would collapse too many levels ──
+  // For low/mid-priced coins the default step=0.1 can collapse 20 raw levels
+  // into 1-3 buckets (e.g. ADA $0.27, SOL $90, XRP $1.4). We count the
+  // actual distinct buckets the step would produce and disable grouping
+  // if too many levels collapse.
+  let effectiveStep = step;
+  if (effectiveStep > 0 && parsedRaw.length >= 5) {
+    const testBuckets = new Set<number>();
+    for (const row of parsedRaw) {
+      const bucket =
+        side === "bid"
+          ? Math.floor(row.price / effectiveStep) * effectiveStep
+          : Math.ceil(row.price / effectiveStep) * effectiveStep;
+      testBuckets.add(Number(bucket.toFixed(8)));
+    }
+    // If grouping produces fewer than 40% of raw levels (min 5), disable it
+    if (testBuckets.size < Math.max(5, Math.floor(parsedRaw.length * 0.4))) {
+      effectiveStep = 0; // fall back to raw levels (no grouping)
+    }
+  }
+
   const parsed =
-    step > 0
+    effectiveStep > 0
       ? (() => {
           const grouped = new Map<number, number>();
           for (const row of parsedRaw) {
             const bucket =
               side === "bid"
-                ? Math.floor(row.price / step) * step
-                : Math.ceil(row.price / step) * step;
+                ? Math.floor(row.price / effectiveStep) * effectiveStep
+                : Math.ceil(row.price / effectiveStep) * effectiveStep;
             const key = Number(bucket.toFixed(8));
             grouped.set(key, (grouped.get(key) ?? 0) + row.amount);
           }
@@ -1633,9 +1764,11 @@ const fetchBinanceLive = async (
   // Case 1: secondary workers have no hub → hubRow is null → build full hubRow from Redis.
   // Case 2: primary hub routes to Gate.io (Binance REST 418) → hubRow exists but lacks
   //         lastTradePrice/markPrice → enrich from Redis.
+  let redisEnriched = false;
   if (marketHubEventBridge) {
     const redisSnap = await marketHubEventBridge.getLiveSnapshot(normalizedSymbol);
     if (redisSnap) {
+      redisEnriched = true;
       if (!hubRow) {
         // Case 1: no hub data at all → use Redis as full hubRow
         hubRow = {
@@ -1685,32 +1818,41 @@ const fetchBinanceLive = async (
     }
   }
 
-  const feedExchange = routerLive?.exchangeUsed ? hubExchangeToName(routerLive.exchangeUsed) : "Binance";
+  // If Redis enrichment provided Binance WS prices (even when hub routed to Gate.io),
+  // report Binance as the actual data source — the prices/depth/klines are Binance-sourced.
+  const feedExchange = redisEnriched ? "Binance" : (routerLive?.exchangeUsed ? hubExchangeToName(routerLive.exchangeUsed) : "Binance");
   const wsCandles = marketExchangeHub?.getCandlesFromExchange(normalizedSymbol, "Binance", interval, safeLimit) ?? [];
   const wsTrades = marketExchangeHub?.getRecentTradesFromExchange(normalizedSymbol, "Binance", 240) ?? [];
 
-  // Fetch real orderbook depth from Binance REST for multi-level display (rate-limited).
-  // Falls back to synthetic single-level from hub bookTicker if REST fails or rate limited.
+  // ── FAZ 1.4: CACHE-FIRST DEPTH — never hit exchange REST per user request ──
+  // Background ingestion (Worker 0) populates Redis cache every 5s.
+  // API routes read from cache ONLY. User count does NOT increase exchange requests.
   let depthRaw: { bids: string[][]; asks: string[][] } = { bids: [], asks: [] };
   let orderbookSource = "NONE";
+  let preferredSource: string | null = null;
+  let depthConfidence: import("../services/marketDataCache.ts").DataConfidence = "unavailable";
+
+  // Read preferred source from Redis (backend-decided, prevents frontend flicker)
   try {
-    const { binanceFetch } = await import("../services/binanceRateLimiter.ts");
-    const depthRes = await binanceFetch({
-      url: `https://fapi.binance.com/fapi/v1/depth?symbol=${normalizedSymbol}&limit=${safeBookLimit}`,
-      init: { headers: { accept: "application/json" } },
-      priority: "normal",
-      dedupKey: `depth:${normalizedSymbol}:${safeBookLimit}`,
-      weight: 10,
-    });
-    if (depthRes.ok) {
-      const depthJson = await depthRes.json() as { bids?: string[][]; asks?: string[][] };
-      if (Array.isArray(depthJson.bids) && depthJson.bids.length > 1) {
-        depthRaw = { bids: depthJson.bids, asks: depthJson.asks ?? [] };
-        orderbookSource = "BINANCE";
-      }
+    const { getPreferredSource } = await import("../services/marketHub/ProbeStateManager.ts");
+    preferredSource = await getPreferredSource("binance", normalizedSymbol);
+  } catch { /* ignore */ }
+
+  // 1. Read from Redis cache (fast, no exchange REST call)
+  try {
+    const { readDepth, requestDepthSymbol } = await import("../services/marketDataCache.ts");
+    // Register this symbol so background ingestion loop fetches it (fire-and-forget)
+    void requestDepthSymbol(normalizedSymbol);
+
+    const cached = await readDepth(normalizedSymbol);
+    if (cached && cached.data.bids.length > 1) {
+      depthRaw = { bids: cached.data.bids, asks: cached.data.asks };
+      orderbookSource = cached.source;
+      depthConfidence = cached.confidence;
     }
-  } catch { /* REST depth failed or rate limited */ }
-  // If REST depth failed (IP ban etc.), try other exchange adapters' depth data
+  } catch { /* cache read failed — fall through to hub adapters */ }
+
+  // 2. If cache empty, try in-memory hub adapters (zero REST calls)
   if (depthRaw.bids.length === 0 && marketExchangeHub) {
     for (const altExchange of ["BYBIT", "OKX", "GATEIO"] as const) {
       try {
@@ -1725,35 +1867,17 @@ const fetchBinanceLive = async (
             asks: altBook.asks.map((l: { price: number; qty: number }) => [String(l.price), String(l.qty)]),
           };
           orderbookSource = altExchange;
+          depthConfidence = "cached";
           break;
         }
       } catch { /* continue to next exchange */ }
     }
   }
-  // Final fallback: generate synthetic levels from hub top-of-book spread
-  if (depthRaw.bids.length === 0 && hubRow?.topBid && hubRow?.topAsk && hubRow?.depthUsd && hubRow.depthUsd > 0) {
-    const topBid = hubRow.topBid;
-    const topAsk = hubRow.topAsk;
-    const totalDepthUsd = hubRow.depthUsd;
-    const imbalance = Math.max(-0.98, Math.min(0.98, Number(hubRow.imbalance ?? 0)));
-    const bidUsd = Math.max(0, (totalDepthUsd * (1 + imbalance)) / 2);
-    const askUsd = Math.max(0, totalDepthUsd - bidUsd);
-    // Generate 10 synthetic levels with decreasing depth
-    const syntheticLevels = 10;
-    const tickSize = topBid > 100 ? 0.1 : topBid > 10 ? 0.01 : 0.001;
-    const synBids: string[][] = [];
-    const synAsks: string[][] = [];
-    for (let i = 0; i < syntheticLevels; i++) {
-      const factor = Math.pow(0.75, i); // decreasing depth per level
-      const bidPrice = topBid - i * tickSize;
-      const askPrice = topAsk + i * tickSize;
-      const bidQty = bidPrice > 0 ? (bidUsd * factor * 0.3) / bidPrice : 0;
-      const askQty = askPrice > 0 ? (askUsd * factor * 0.3) / askPrice : 0;
-      if (bidPrice > 0 && bidQty > 0) synBids.push([String(bidPrice), String(bidQty)]);
-      if (askPrice > 0 && askQty > 0) synAsks.push([String(askPrice), String(askQty)]);
-    }
-    depthRaw = { bids: synBids, asks: synAsks };
-    orderbookSource = "SYNTHETIC";
+
+  // 3. No data anywhere → LOADING state for frontend animation
+  if (depthRaw.bids.length === 0) {
+    orderbookSource = "LOADING";
+    depthConfidence = "unavailable";
   }
 
   const premiumIndexRaw = hubRow && (hubRow.markPrice !== null || hubRow.fundingRate !== null)
@@ -1879,10 +2003,25 @@ const fetchBinanceLive = async (
     },
     lastTradePrice: hubLastPrice ?? null,
     feedExchange,
-    feedSource: liveHubRow ? "WS_HUB" : (hubRow ? "REDIS_SNAPSHOT" : "REST"),
+    feedSource: redisEnriched ? "BINANCE_REDIS" : (liveHubRow ? "WS_HUB" : (hubRow ? "REDIS_SNAPSHOT" : "REST")),
     orderbookSource,
+    preferredSource: preferredSource ?? orderbookSource,
+    dataConfidence: {
+      depth: depthConfidence,
+      price: redisEnriched || liveHubRow ? "verified" : (hubRow ? "cached" : "unavailable"),
+      candles: ohlcv.length > 0 ? "verified" : "unavailable",
+    },
     sourceTs: Date.now(),
   };
+
+  // Write preferred source to Redis so all workers + frontend converge on the same source
+  // This prevents source flickering: backend decides, frontend just displays.
+  if (orderbookSource !== "NONE" && orderbookSource !== "LOADING") {
+    try {
+      const { setPreferredSource } = await import("../services/marketHub/ProbeStateManager.ts");
+      void setPreferredSource("binance", normalizedSymbol, orderbookSource);
+    } catch { /* ignore — non-critical */ }
+  }
   // Only throw "empty candles" if we have NO price data at all.
   // On secondary workers with Redis-backed hubRow, candles may be empty
   // (all Binance REST endpoints are 403/418 from this datacenter IP).
@@ -3947,8 +4086,29 @@ export const registerMarketRoutes = (
         bookLimit,
         bookStep,
       });
+
+      // FAZ 1.3: Attach per-symbol health metadata
+      let symbolHealth: Record<string, unknown> | null = null;
+      try {
+        const { marketHealth } = await import("../services/marketHealth.ts");
+        const h = marketHealth.getHealth(symbol);
+        if (h) {
+          symbolHealth = {
+            status: h.status,
+            confidence: h.confidence,
+            source: h.source,
+            depthAgeMs: h.depthAgeMs,
+            tickerAgeMs: h.tickerAgeMs,
+            depthLevels: h.depthLevels,
+            wsConnected: h.wsConnected,
+            seqSynced: h.seqSynced,
+            lastStateChangeTs: h.lastStateChangeTs,
+          };
+        }
+      } catch { /* health lookup best-effort */ }
+
       res.set("Cache-Control", "public, max-age=2");
-      res.json(payload);
+      res.json({ ...payload, symbolHealth });
     } catch (err) {
       res.status(500).json({ ok: false, error: err instanceof Error ? err.message : "live fetch failed" });
     }
@@ -4034,7 +4194,7 @@ export const registerMarketRoutes = (
 
       const scenario = ENGINE_SCENARIO_BY_HORIZON[normalizedHorizon as keyof typeof ENGINE_SCENARIO_BY_HORIZON];
       const snapshotsByMode = Object.fromEntries(
-        SCORING_MODES.map((mode) => [
+        DETERMINISTIC_SCORING_MODES.map((mode) => [
           mode,
           buildBitriumIntelligenceSnapshot({
             live: liveState,
@@ -4047,14 +4207,16 @@ export const registerMarketRoutes = (
         ]),
       ) as Record<ScoringMode, ReturnType<typeof buildBitriumIntelligenceSnapshot>>;
 
-      const selectedSnapshot = snapshotsByMode[scoringMode];
+      // PRIME_AI is LLM-based, not deterministic — fall back to BALANCED for snapshot
+      const effectiveScoringMode = (scoringMode === "PRIME_AI" ? "BALANCED" : scoringMode) as typeof DETERMINISTIC_SCORING_MODES[number];
+      const selectedSnapshot = snapshotsByMode[effectiveScoringMode];
       if (!selectedSnapshot) throw new Error("BITRIUM_ENGINE_EMPTY_SNAPSHOT");
 
       const tileState = (key: string, fallback: string): string =>
         selectedSnapshot.tiles.find((tile) => tile.key === key)?.state ?? fallback;
 
       const modeBreakdown = Object.fromEntries(
-        SCORING_MODES.map((mode) => {
+        DETERMINISTIC_SCORING_MODES.map((mode) => {
           const snapshot = snapshotsByMode[mode];
           if (!snapshot) {
             return [mode, {
@@ -4085,25 +4247,29 @@ export const registerMarketRoutes = (
       const srBoostBase = supportResistanceBoost(nearestLevelDistance);
       if (srBoostBase > 0) {
         const modeMultiplier: Record<ScoringMode, number> = {
-          FLOW: 1.3,
-          AGGRESSIVE: 1.1,
-          BALANCED: 1.15,
-          CAPITAL_GUARD: 1.1,
+          FLOW: 0.8,          // Raised 0.5→0.8: FLOW needs S/R boost to reach trade threshold
+          AGGRESSIVE: 0.8,    // Raised 0.7→0.8: AGG benefits from S/R proximity
+          BALANCED: 0.9,      // BAL optimized
+          CAPITAL_GUARD: 0.8, // CG optimized — benefit from S/R
         };
-        // Per-mode TRADE decision thresholds — must stay aligned with consensus functions
+        // Per-mode TRADE decision thresholds — strict confidence gates
+        // AGG: ≥50% TRADE, 40-49% WATCH, <40% NO_TRADE
+        // FLOW: ≥50% TRADE, 40-49% WATCH, <40% NO_TRADE
+        // BAL: ≥60% TRADE, 45-59% WATCH, <45% NO_TRADE
+        // CG: ≥65% TRADE, 45-64% WATCH, <45% NO_TRADE
         const modeTradeThreshold: Record<ScoringMode, number> = {
-          FLOW: 66,
-          AGGRESSIVE: 60,
-          BALANCED: 56,
-          CAPITAL_GUARD: 50,
+          FLOW: 50,
+          AGGRESSIVE: 50,
+          BALANCED: 60,
+          CAPITAL_GUARD: 65,
         };
         const modeWatchThreshold: Record<ScoringMode, number> = {
-          FLOW: 50,
+          FLOW: 40,
           AGGRESSIVE: 40,
-          BALANCED: 40,
-          CAPITAL_GUARD: 35,
+          BALANCED: 45,
+          CAPITAL_GUARD: 45,
         };
-        for (const mode of SCORING_MODES) {
+        for (const mode of DETERMINISTIC_SCORING_MODES) {
           const boost = srBoostBase * modeMultiplier[mode];
           const boostedFinal = clamp(modeBreakdown[mode].final + boost, 0, 100);
           modeBreakdown[mode] = {
@@ -4123,12 +4289,12 @@ export const registerMarketRoutes = (
       // Only in borderline zone: [tradeThreshold - 15, tradeThreshold + 5)
       {
         const confluenceTradeThreshold: Record<ScoringMode, number> = {
-          FLOW: 66, AGGRESSIVE: 60, BALANCED: 56, CAPITAL_GUARD: 50,
+          FLOW: 50, AGGRESSIVE: 50, BALANCED: 60, CAPITAL_GUARD: 65,
         };
         const confluenceWatchThreshold: Record<ScoringMode, number> = {
-          FLOW: 50, AGGRESSIVE: 40, BALANCED: 40, CAPITAL_GUARD: 35,
+          FLOW: 40, AGGRESSIVE: 40, BALANCED: 45, CAPITAL_GUARD: 45,
         };
-        for (const targetMode of SCORING_MODES) {
+        for (const targetMode of DETERMINISTIC_SCORING_MODES) {
           const tradeTh = confluenceTradeThreshold[targetMode];
           const watchTh = confluenceWatchThreshold[targetMode];
           const current = modeBreakdown[targetMode].final;
@@ -4136,13 +4302,13 @@ export const registerMarketRoutes = (
           if (current < tradeTh - 15 || current >= tradeTh + 5) continue;
           // Count how many OTHER modes are at their WATCH threshold or above
           let agreeingModes = 0;
-          for (const otherMode of SCORING_MODES) {
+          for (const otherMode of DETERMINISTIC_SCORING_MODES) {
             if (otherMode === targetMode) continue;
             if (Math.round(modeBreakdown[otherMode].final) >= confluenceWatchThreshold[otherMode]) {
               agreeingModes++;
             }
           }
-          const bonus = agreeingModes >= 3 ? 5 : agreeingModes >= 2 ? 3 : 0;
+          const bonus = agreeingModes >= 3 ? 3 : agreeingModes >= 2 ? 1 : 0;  // Reduced from 5/3 — confluence shouldn't rescue weak setups
           if (bonus > 0) {
             const boosted = clamp(current + bonus, 0, 100);
             modeBreakdown[targetMode] = {
@@ -4155,22 +4321,37 @@ export const registerMarketRoutes = (
         }
       }
 
+      // ── FINAL confidence gate enforcement — always runs after all boosts ──
+      // Ensures decisions strictly follow confidence thresholds regardless of S/R boost or confluence
+      {
+        const finalTradeGate: Record<ScoringMode, number> = { FLOW: 50, AGGRESSIVE: 50, BALANCED: 60, CAPITAL_GUARD: 65 };
+        const finalWatchGate: Record<ScoringMode, number> = { FLOW: 40, AGGRESSIVE: 40, BALANCED: 45, CAPITAL_GUARD: 45 };
+        for (const mode of DETERMINISTIC_SCORING_MODES) {
+          const score = Math.round(modeBreakdown[mode].final);
+          const correctDecision = score >= finalTradeGate[mode] ? "TRADE"
+            : score >= finalWatchGate[mode] ? "WATCH" : "NO_TRADE";
+          if (modeBreakdown[mode].decision !== correctDecision) {
+            modeBreakdown[mode] = { ...modeBreakdown[mode], decision: correctDecision };
+          }
+        }
+      }
+
       const modeScores = Object.fromEntries(
-        SCORING_MODES.map((mode) => [mode, Number((modeBreakdown[mode].final / 100).toFixed(4))]),
+        DETERMINISTIC_SCORING_MODES.map((mode) => [mode, Number((modeBreakdown[mode].final / 100).toFixed(4))]),
       ) as Record<ScoringMode, number>;
-      const confidence = modeScores[scoringMode] ?? 0;
-      const modeIdeaMinScorePct: Record<ScoringMode, number> = {
-        FLOW: 40,
-        AGGRESSIVE: 40,
-        BALANCED: 40,
-        CAPITAL_GUARD: 40,
+      const confidence = modeScores[effectiveScoringMode] ?? 0;
+      const modeIdeaMinScorePct: Record<string, number> = {
+        FLOW: 40,          // FLOW: WATCH starts at 40%
+        AGGRESSIVE: 40,    // AGG: WATCH starts at 40%
+        BALANCED: 45,      // BAL: WATCH starts at 45%
+        CAPITAL_GUARD: 45, // CG: WATCH starts at 45%
       };
-      const approvedModes = SCORING_MODES.filter((mode) => {
+      const approvedModes = DETERMINISTIC_SCORING_MODES.filter((mode) => {
         const scorePct = Number((modeScores[mode] ?? 0) * 100);
         return Number.isFinite(scorePct) && scorePct >= modeIdeaMinScorePct[mode];
       });
       const decisionTraceByMode = Object.fromEntries(
-        SCORING_MODES.map((mode) => [mode, makeDecisionTrace(modeBreakdown[mode], modeScores[mode] ?? 0)]),
+        DETERMINISTIC_SCORING_MODES.map((mode) => [mode, makeDecisionTrace(modeBreakdown[mode], modeScores[mode] ?? 0)]),
       ) as Record<ScoringMode, ModeDecisionTrace>;
 
       const selectedPanel = selectedSnapshot.aiPanel;
@@ -4178,7 +4359,7 @@ export const registerMarketRoutes = (
       const direction = resolveDirectionFromSnapshot(selectedSnapshot);
       // Keep trade validity aligned with the active scoring mode decision.
       // This avoids false VALIDITY_BLOCK cases where mode score passes but panel-level static validity lags behind.
-      const activeModeDecision = modeBreakdown[scoringMode]?.decision ?? "NO_TRADE";
+      const activeModeDecision = modeBreakdown[effectiveScoringMode]?.decision ?? "NO_TRADE";
       const tradeValidity: "VALID" | "WEAK" | "NO-TRADE" =
         activeModeDecision === "TRADE"
           ? "VALID"
@@ -4223,52 +4404,41 @@ export const registerMarketRoutes = (
       if (entryLow > entryHigh) [entryLow, entryHigh] = [entryHigh, entryLow];
       const entryWidth = entryHigh - entryLow;
 
-      // ── SL buffer: max(ATR*slBufferFactor, entry zone width) ──
-      const buffer = Math.max(atrValue * optCfg.slBufferFactor, entryWidth);
+      // ── Margin-based single TP + single SL (matching hub configs) ──
+      const SCANNER_LEVERAGE = 10;
+      // Per-mode TP/SL ranges (margin % at leverage) — differentiated for each mode's philosophy
+      // FLOW: moderate TP, fast exit | AGG: widest TP, tolerant SL | BAL: balanced | CG: wider TP for profit
+      // Single TP level per mode — min 3% max 20% margin profit at leverage
+      const SCANNER_TPSL_RANGES: Record<string, { tpRange: [number, number]; slRange: [number, number] }> = {
+        FLOW:          { tpRange: [3, 8],   slRange: [8, 14] },
+        AGGRESSIVE:    { tpRange: [5, 20],  slRange: [10, 18] },
+        BALANCED:      { tpRange: [4, 14],  slRange: [8, 14] },
+        CAPITAL_GUARD: { tpRange: [4, 12],  slRange: [6, 12] },
+      };
+      const tpSlCfg = SCANNER_TPSL_RANGES[scoringMode] ?? SCANNER_TPSL_RANGES.BALANCED;
+      const scoreFactor = Math.min(Math.max(confidence, 0), 1);
 
-      let sl1: number, sl2: number, tp1: number, tp2: number;
+      // TP margin %: higher score → higher target (min 3%, max 20%)
+      const [tpMin, tpMax] = tpSlCfg.tpRange;
+      let tpMarginPct = tpMin + scoreFactor * (tpMax - tpMin);
+      tpMarginPct = Math.min(Math.max(tpMarginPct, 3), 20);
+      tpMarginPct = Math.round(tpMarginPct * 100) / 100;
 
-      if (direction === "LONG") {
-        // SL below nearest supports; fallback keeps 1:2 RR consistency
-        sl1 = supports.length >= 1 ? supports[0].price - buffer : close - atrValue * 1.0;
-        sl2 = supports.length >= 2 ? supports[1].price - buffer : close - atrValue * 2.0;
+      // SL margin %: higher score → tighter SL (more confident = tighter stop)
+      const [slMin, slMax] = tpSlCfg.slRange;
+      let slMarginPct = slMax - scoreFactor * (slMax - slMin);
+      slMarginPct = Math.min(Math.max(slMarginPct, 2), 20);
+      slMarginPct = Math.round(slMarginPct * 100) / 100;
 
-        // Hybrid TP: max(structure level, RR target) → adaptive RR from optimizer
-        const risk1 = close - sl1;
-        const risk2 = close - sl2;
-        const rrTp1 = close + risk1 * optCfg.rr;
-        const rrTp2 = close + risk2 * (optCfg.rr * 1.25);
-        tp1 = resistances.length >= 1 ? Math.max(resistances[0].price, rrTp1) : rrTp1;
-        tp2 = resistances.length >= 2 ? Math.max(resistances[1].price, rrTp2) : rrTp2;
-      } else {
-        // SHORT
-        sl1 = resistances.length >= 1 ? resistances[0].price + buffer : close + atrValue * 1.0;
-        sl2 = resistances.length >= 2 ? resistances[1].price + buffer : close + atrValue * 2.0;
+      // Convert margin % to price %
+      const tpPricePct = tpMarginPct / 100 / SCANNER_LEVERAGE;
+      const slPricePct = slMarginPct / 100 / SCANNER_LEVERAGE;
 
-        const risk1 = sl1 - close;
-        const risk2 = sl2 - close;
-        const rrTp1 = close - risk1 * optCfg.rr;
-        const rrTp2 = close - risk2 * (optCfg.rr * 1.25);
-        tp1 = supports.length >= 1 ? Math.min(supports[0].price, rrTp1) : rrTp1;
-        tp2 = supports.length >= 2 ? Math.min(supports[1].price, rrTp2) : rrTp2;
-      }
+      // Calculate TP and SL price levels
+      const tp = roundTick(direction === "LONG" ? close * (1 + tpPricePct) : close * (1 - tpPricePct));
+      const sl = roundTick(direction === "LONG" ? close * (1 - slPricePct) : close * (1 + slPricePct));
 
-      // Ensure correct ordering (sl1 closest to price, tp1 closest to price)
-      if (direction === "LONG") {
-        if (sl2 > sl1) [sl1, sl2] = [sl2, sl1];
-        if (tp2 < tp1) [tp1, tp2] = [tp2, tp1];
-      } else {
-        if (sl2 < sl1) [sl1, sl2] = [sl2, sl1];
-        if (tp2 > tp1) [tp1, tp2] = [tp2, tp1];
-      }
-
-      // Round all to Binance tick size
-      entryLow = roundTick(entryLow);
-      entryHigh = roundTick(entryHigh);
-      sl1 = roundTick(sl1);
-      sl2 = roundTick(sl2);
-      tp1 = roundTick(tp1);
-      tp2 = roundTick(tp2);
+      const rrRatio = slMarginPct > 0 ? Math.round((tpMarginPct / slMarginPct) * 100) / 100 : 0;
 
       const validBars = Math.max(0, Number(selectedPanel.freshness.validForBars ?? 0));
       const tfMin = timeframe === "1m" ? 1 : timeframe === "5m" ? 5 : timeframe === "15m" ? 15 : timeframe === "30m" ? 30 : timeframe === "1h" ? 60 : timeframe === "4h" ? 240 : 1440;
@@ -4304,13 +4474,11 @@ Time: ${now.toISOString()} | Valid ~${validBars} bars (until ${until.toISOString
 ENTRY ZONE
 ${entryLow.toLocaleString(undefined, { minimumFractionDigits: pricePrecision, maximumFractionDigits: pricePrecision })} – ${entryHigh.toLocaleString(undefined, { minimumFractionDigits: pricePrecision, maximumFractionDigits: pricePrecision })}
 
-STOP LEVELS
-SL1: ${sl1.toLocaleString(undefined, { minimumFractionDigits: pricePrecision, maximumFractionDigits: pricePrecision })}    Share %50
-SL2: ${sl2.toLocaleString(undefined, { minimumFractionDigits: pricePrecision, maximumFractionDigits: pricePrecision })}    Share %50
+STOP LEVEL
+SL: ${sl.toLocaleString(undefined, { minimumFractionDigits: pricePrecision, maximumFractionDigits: pricePrecision })}  (${slMarginPct}% margin)
 
-TARGETS
-TP1: ${tp1.toLocaleString(undefined, { minimumFractionDigits: pricePrecision, maximumFractionDigits: pricePrecision })}     Share %50
-TP2: ${tp2.toLocaleString(undefined, { minimumFractionDigits: pricePrecision, maximumFractionDigits: pricePrecision })}     Share %50
+TARGET
+TP: ${tp.toLocaleString(undefined, { minimumFractionDigits: pricePrecision, maximumFractionDigits: pricePrecision })}  (${tpMarginPct}% margin)  RR: ${rrRatio}
 
 MARKET STATE
 Trend: ${trendLabel}
@@ -4382,15 +4550,15 @@ Always manage your own risk.`;
         mode_scores: modeScores,
         mode_breakdown: modeBreakdown,
         decision_trace: {
-          selected: decisionTraceByMode[scoringMode],
+          selected: decisionTraceByMode[effectiveScoringMode],
           by_mode: decisionTraceByMode,
         },
         approved_modes: approvedModes,
         oi_change_1h: liveBundle.derivatives?.oiChange1h ?? null,
         entry_low: entryLow,
         entry_high: entryHigh,
-        sl_levels: [sl1, sl2],
-        tp_levels: [tp1, tp2],
+        sl_levels: [sl],
+        tp_levels: [tp],
         price_precision: pricePrecision,
         direction,
         trade_validity: tradeValidity,
@@ -4403,6 +4571,7 @@ Always manage your own risk.`;
         invalidation_triggers: selectedPanel.invalidationTriggers.slice(0, 2),
         key_levels: keyLevelsResponse,
         quant_snapshot: quantSnapshot,
+        flow_signals: buildFlowSignals(selectedSnapshot),
         // Full snapshot data for AI consumers (opt-in via ?include_snapshot=1)
         ...(String(req.query.include_snapshot ?? "0") === "1" ? {
           snapshot_tiles: selectedSnapshot.tiles
@@ -4433,6 +4602,7 @@ Always manage your own risk.`;
         } : {}),
       });
     } catch (err) {
+      console.error("[trade-idea] ERROR:", err instanceof Error ? err.stack : err);
       res.status(500).json({ ok: false, error: err instanceof Error ? err.message : "trade idea fetch failed" });
     }
   });

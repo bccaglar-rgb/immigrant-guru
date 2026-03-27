@@ -1,0 +1,34 @@
+{
+  "FLOW": {
+    "currentRR": 2,
+    "recommendedRR": 2,
+    "totalR": 0,
+    "winRate": 0,
+    "tradeCount": 0,
+    "updatedAt": "2026-03-21T07:32:46.636Z"
+  },
+  "AGGRESSIVE": {
+    "currentRR": 2,
+    "recommendedRR": 2,
+    "totalR": 0,
+    "winRate": 0,
+    "tradeCount": 0,
+    "updatedAt": "2026-03-21T07:32:46.636Z"
+  },
+  "BALANCED": {
+    "currentRR": 2,
+    "recommendedRR": 2,
+    "totalR": 0,
+    "winRate": 0,
+    "tradeCount": 0,
+    "updatedAt": "2026-03-21T07:32:46.636Z"
+  },
+  "CAPITAL_GUARD": {
+    "currentRR": 2,
+    "recommendedRR": 2,
+    "totalR": 0,
+    "winRate": 0,
+    "tradeCount": 0,
+    "updatedAt": "2026-03-21T07:32:46.636Z"
+  }
+}

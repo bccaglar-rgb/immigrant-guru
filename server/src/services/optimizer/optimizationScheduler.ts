@@ -1,5 +1,5 @@
 import { TradeIdeaStore } from "../tradeIdeaStore.ts";
-import { SCORING_MODES } from "../scoringMode.ts";
+import { SCORING_MODES, DETERMINISTIC_SCORING_MODES, type ScoringMode } from "../scoringMode.ts";
 import { groupTradesByModeAndSegment, groupTradesByMode } from "./segmentAnalyzer.ts";
 import { optimizeModeGlobal, optimizeModeSegments } from "./moduleOptimizer.ts";
 import { ccManager } from "./championChallengerManager.ts";
@@ -43,6 +43,9 @@ export class OptimizationScheduler {
   }
 
   async run(): Promise<void> {
+    // DISABLED: tracking only — no parameter changes until manual review
+    console.log("[Optimizer] DISABLED — tracking only, skipping optimization run");
+    return;
     try {
       console.log("[Optimizer] Starting optimization run...");
 
@@ -59,7 +62,7 @@ export class OptimizationScheduler {
       // Group by mode + segment (needs DB snapshots)
       const byModeAndSegment = await groupTradesByModeAndSegment(allResolved);
 
-      for (const mode of SCORING_MODES) {
+      for (const mode of DETERMINISTIC_SCORING_MODES) {
         const trades = byMode.get(mode) ?? [];
         const modeState = ccManager.getModeState(mode);
         const currentChampion = modeState?.global.champion;

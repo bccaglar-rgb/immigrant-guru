@@ -6,6 +6,7 @@ import type { HubEventBridge } from "../services/marketHub/HubEventBridge.ts";
 import type { NormalizedTradeEvent } from "../services/marketHub/types.ts";
 import { OrderflowAggregator } from "../services/marketHub/OrderflowAggregator.ts";
 import type { BinanceFuturesHub, BinanceFuturesHubEvent } from "../services/binanceFuturesHub.ts";
+import { getSharedBinanceWsPool } from "../services/marketHub/SharedBinanceWsPool.ts";
 
 type Interval = "1m" | "5m" | "15m" | "30m" | "1h" | "4h" | "1d";
 type ExchangeName = "Binance" | "Bybit" | "OKX" | "Gate.io";
@@ -75,131 +76,67 @@ let _wsAuthFn: WsAuthFn | null = null;
 
 export const setWsAuthFunction = (fn: WsAuthFn) => { _wsAuthFn = fn; };
 
+// FAZ 1: Health module reference — set lazily when Pipeline 9 loads
+let _healthRef: { updateTicker(s: string, src: string): void; updateDepth(s: string, opts: { source: string; levels: number; seqSynced: boolean; wsConnected: boolean }): void; onStatusChange(cb: (s: string, p: string, n: string, h: unknown) => void): () => void; start(): void } | null = null;
+
 export const createGateway = (httpServer: HttpServer, opts?: GatewayOpts) => {
   const wss = new WebSocketServer({ server: httpServer, path: "/ws" });
   const sockets = new Map<WebSocket, SocketState>();
 
   // ═══════════════════════════════════════════════════════════════════
-  // BINANCE DEPTH STREAM RELAY — depth20@500ms for actively viewed symbols
-  // Uses Binance partial book depth stream instead of bookTicker (top-of-book only).
+  // BINANCE DEPTH STREAM RELAY — depth20@500ms via SharedBinanceWsPool
+  // Uses SharedBinanceWsPool for multiplexed WS — shares connection with Hub adapter.
   // Subscribes dynamically when clients view a symbol, unsubscribes when no clients need it.
   // ═══════════════════════════════════════════════════════════════════
-  const BINANCE_FSTREAM_WS = "wss://fstream.binance.com/ws";
   const depthRefCounts = new Map<string, number>(); // symbol → number of clients needing depth
-  let depthWs: WebSocket | null = null;
-  let depthWsReady = false;
-  let depthReconnectTimer: ReturnType<typeof setTimeout> | null = null;
-  let depthSubIdCounter = 1;
+  const depthPool = getSharedBinanceWsPool();
+  const DEPTH_CONSUMER_ID = "gateway-depth";
 
-  const connectDepthWs = () => {
-    // Already connected — skip
-    if (depthWs && depthWs.readyState === WebSocket.OPEN) return;
-    // Already connecting — don't open another
-    if (depthWs && depthWs.readyState === WebSocket.CONNECTING) return;
-    // Clean up stale/closed WS
-    if (depthWs) {
-      const old = depthWs;
-      depthWs = null;
-      depthWsReady = false;
-      try { old.removeAllListeners(); } catch { /* no-op */ }
-      try { if (old.readyState !== WebSocket.CLOSED) old.close(); } catch { /* no-op */ }
-    }
-    console.log("[DepthRelay] Connecting to Binance fstream WS...");
-    let ws: WebSocket;
+  // Register Gateway as a consumer of the shared pool
+  depthPool.registerConsumer(DEPTH_CONSUMER_ID, (stream: string, data: unknown) => {
     try {
-      ws = new WebSocket(BINANCE_FSTREAM_WS);
-    } catch (e) { console.error("[DepthRelay] WS constructor failed:", e); return; }
-    depthWs = ws;
-    ws.on("open", () => {
-      depthWsReady = true;
-      // Re-subscribe all active symbols
-      const syms = [...depthRefCounts.keys()];
-      console.log(`[DepthRelay] Connected. Re-subscribing ${syms.length} symbols:`, syms.join(","));
-      if (syms.length > 0) {
-        const params = syms.map((s) => `${s.toLowerCase()}@depth20@500ms`);
-        depthWs!.send(JSON.stringify({ method: "SUBSCRIBE", params, id: depthSubIdCounter++ }));
+      const d = data as Record<string, unknown>;
+      // Determine symbol from stream name or event data
+      let symbol = "";
+      if (typeof stream === "string" && stream.includes("@")) {
+        symbol = stream.split("@")[0]?.toUpperCase() ?? "";
+      } else if (d.s) {
+        symbol = String(d.s).toUpperCase();
       }
-    });
-    depthWs.on("message", (raw) => {
-      try {
-        const msg = JSON.parse(String(raw));
-        // Skip subscription confirmations and errors
-        if (msg.result !== undefined || msg.id !== undefined) return;
-        // Format: { stream: "btcusdt@depth20@500ms", data: {...} } OR direct { lastUpdateId, bids, asks, E, T }
-        const data = msg.data ?? msg;
-        const streamStr = msg.stream ?? msg.e ?? "";
-        // Determine symbol from stream name or event data
-        let symbol = "";
-        if (typeof streamStr === "string" && streamStr.includes("@")) {
-          symbol = streamStr.split("@")[0]?.toUpperCase() ?? "";
-        } else if (data.s) {
-          symbol = String(data.s).toUpperCase();
+      if (!symbol || (!d.bids && !d.b)) return;
+      const bids: Array<[number, number]> = ((d.bids ?? d.b) as Array<[string, string]> ?? []).map((r) => [Number(r[0]), Number(r[1])]);
+      const asks: Array<[number, number]> = ((d.asks ?? d.a) as Array<[string, string]> ?? []).map((r) => [Number(r[0]), Number(r[1])]);
+      const seq = Number(d.lastUpdateId ?? d.u ?? 0);
+      const ts = Number(d.T ?? d.E ?? Date.now());
+      if (bids.length < 2) return; // skip if not enough depth data
+      // Broadcast as dom_snapshot to subscribed clients (reuses existing Pipeline 3)
+      const body = JSON.stringify({ type: "dom_snapshot", symbol, seq, bids, asks, ts, serverTs: Date.now() });
+      for (const [socket, state] of sockets.entries()) {
+        if (socket.readyState !== WebSocket.OPEN) continue;
+        if (state.subscribedSymbols.has(symbol)) {
+          state.domSynced.add(symbol);
+          socket.send(body);
         }
-        if (!symbol || !data.bids && !data.b) return;
-        const bids: Array<[number, number]> = (data.bids ?? data.b ?? []).map((r: [string, string]) => [Number(r[0]), Number(r[1])]);
-        const asks: Array<[number, number]> = (data.asks ?? data.a ?? []).map((r: [string, string]) => [Number(r[0]), Number(r[1])]);
-        const seq = Number(data.lastUpdateId ?? data.u ?? 0);
-        const ts = Number(data.T ?? data.E ?? Date.now());
-        if (bids.length < 2) return; // skip if not enough depth data
-        // Broadcast as dom_snapshot to subscribed clients (reuses existing Pipeline 3)
-        const body = JSON.stringify({ type: "dom_snapshot", symbol, seq, bids, asks, ts, serverTs: Date.now() });
-        for (const [socket, state] of sockets.entries()) {
-          if (socket.readyState !== WebSocket.OPEN) continue;
-          if (state.subscribedSymbols.has(symbol)) {
-            state.domSynced.add(symbol);
-            socket.send(body);
-          }
-        }
-      } catch { /* ignore parse errors */ }
-    });
-    depthWs.on("close", () => {
-      depthWs = null;
-      depthWsReady = false;
-      if (depthRefCounts.size > 0 && !depthReconnectTimer) {
-        depthReconnectTimer = setTimeout(() => { depthReconnectTimer = null; connectDepthWs(); }, 2000);
       }
-    });
-    depthWs.on("error", (err) => {
-      console.error("[DepthRelay] WS error:", err instanceof Error ? err.message : err);
-      depthWsReady = false;
-      try { depthWs?.close(); } catch { /* no-op */ }
-    });
-  };
+    } catch { /* ignore parse errors */ }
+  });
+  console.log(`[DepthRelay] Using SharedBinanceWsPool (consumers=${depthPool.getConsumerCount()})`);
 
   const depthSubscribe = (symbol: string) => {
     const prev = depthRefCounts.get(symbol) ?? 0;
     depthRefCounts.set(symbol, prev + 1);
-    if (prev > 0) return; // already subscribed
-    console.log(`[DepthRelay] Subscribe depth for ${symbol} (wsReady=${depthWsReady})`);
-    if (!depthWs || !depthWsReady || depthWs.readyState !== WebSocket.OPEN) {
-      connectDepthWs();
-      return;
-    }
-    try {
-      depthWs.send(JSON.stringify({ method: "SUBSCRIBE", params: [`${symbol.toLowerCase()}@depth20@500ms`], id: depthSubIdCounter++ }));
-    } catch {
-      console.log(`[DepthRelay] Send failed for ${symbol}, reconnecting...`);
-      depthWsReady = false;
-      try { depthWs.close(); } catch { /* no-op */ }
-    }
+    if (prev > 0) return; // already subscribed via pool
+    console.log(`[DepthRelay] Subscribe depth for ${symbol} via SharedPool`);
+    depthPool.subscribe(DEPTH_CONSUMER_ID, [`${symbol.toLowerCase()}@depth20@500ms`]);
   };
 
   const depthUnsubscribe = (symbol: string) => {
     const prev = depthRefCounts.get(symbol) ?? 0;
     if (prev <= 1) {
       depthRefCounts.delete(symbol);
-      if (depthWs && depthWsReady && depthWs.readyState === WebSocket.OPEN) {
-        try {
-          depthWs.send(JSON.stringify({ method: "UNSUBSCRIBE", params: [`${symbol.toLowerCase()}@depth20@500ms`], id: depthSubIdCounter++ }));
-        } catch { /* no-op */ }
-      }
+      depthPool.unsubscribe(DEPTH_CONSUMER_ID, [`${symbol.toLowerCase()}@depth20@500ms`]);
     } else {
       depthRefCounts.set(symbol, prev - 1);
-    }
-    if (depthRefCounts.size === 0 && depthWs) {
-      try { depthWs.close(); } catch {}
-      depthWs = null;
-      depthWsReady = false;
     }
   };
 
@@ -449,6 +386,8 @@ export const createGateway = (httpServer: HttpServer, opts?: GatewayOpts) => {
         const tradeEvent = event as unknown as NormalizedTradeEvent;
         ingestTick(tradeEvent);
         orderflowAggregator.ingestTrade(tradeEvent);
+        // FAZ 1: Update ticker health on ALL workers (via handleHubEvent)
+        try { _healthRef?.updateTicker(String(event.symbol), "BINANCE"); } catch { /* best-effort */ }
       }
     }
 
@@ -490,6 +429,16 @@ export const createGateway = (httpServer: HttpServer, opts?: GatewayOpts) => {
         event.asks as Array<[number, number]>,
         Number(event.ts),
       );
+      // FAZ 1: Update depth health on ALL workers
+      try {
+        const bids = event.bids as Array<[number, number]> | undefined;
+        _healthRef?.updateDepth(String(event.symbol), {
+          source: "BINANCE_WS",
+          levels: Math.min(bids?.length ?? 0, 20),
+          seqSynced: true,
+          wsConnected: true,
+        });
+      } catch { /* best-effort */ }
     }
     if (event.type === "book_delta") {
       broadcastDomDelta(
@@ -522,6 +471,168 @@ export const createGateway = (httpServer: HttpServer, opts?: GatewayOpts) => {
   } else if (opts?.exchangeMarketHub) {
     opts.exchangeMarketHub.onEvent(handleHubEvent);
   }
+
+  // ═══════════════════════════════════════════════════════════════════
+  // PIPELINE 7: Depth Cache Updates (FAZ 2.2/2.3)
+  //  Source: MarketDataCache Redis Pub/Sub (mdc:depth_update channel)
+  //  Output: depth_cache_update → subscribed clients (250ms batched)
+  // ═══════════════════════════════════════════════════════════════════
+  const DEPTH_BATCH_MS = 250;
+  const pendingDepthUpdates = new Map<string, { bids: string[][]; asks: string[][]; source: string }>();
+  let depthBatchTimer: ReturnType<typeof setInterval> | null = null;
+
+  import("../services/marketDataCache.ts").then(({ onDepthUpdate }) => {
+    onDepthUpdate((symbol, data) => {
+      // Collect into batch — 250ms flush
+      pendingDepthUpdates.set(symbol, { bids: data.bids, asks: data.asks, source: data.source });
+    });
+
+    depthBatchTimer = setInterval(() => {
+      if (pendingDepthUpdates.size === 0) return;
+      for (const [symbol, depth] of pendingDepthUpdates.entries()) {
+        const body = JSON.stringify({
+          type: "depth_cache_update",
+          symbol,
+          bids: depth.bids.slice(0, 20),
+          asks: depth.asks.slice(0, 20),
+          source: depth.source,
+          ts: Date.now(),
+        });
+        for (const [socket, state] of sockets.entries()) {
+          if (socket.readyState !== WebSocket.OPEN) continue;
+          if (state.subscribedSymbols.has(symbol)) socket.send(body);
+        }
+      }
+      pendingDepthUpdates.clear();
+    }, DEPTH_BATCH_MS);
+
+    console.log("[Gateway] Pipeline 7: Depth cache Pub/Sub listener active (250ms batch)");
+  }).catch(() => {
+    console.warn("[Gateway] MarketDataCache import failed — depth Pub/Sub disabled");
+  });
+
+  // ═══════════════════════════════════════════════════════════════════
+  // PIPELINE 9: Health Status Updates (FAZ 1.5)
+  //  Source: marketHealth.onStatusChange() — fires on status transitions
+  //  Output: health_update → subscribed clients (per-symbol)
+  // ═══════════════════════════════════════════════════════════════════
+  import("../services/marketHealth.ts").then(({ marketHealth }) => {
+    marketHealth.start(); // start 5s sweep timer
+    _healthRef = marketHealth as any; // FAZ 1: expose to handleHubEvent for all-worker health tracking
+
+    marketHealth.onStatusChange((symbol, prev, next, health) => {
+      const body = JSON.stringify({
+        type: "health_update",
+        symbol,
+        prev,
+        status: next,
+        confidence: health.confidence,
+        source: health.source,
+        depthAgeMs: health.depthAgeMs,
+        tickerAgeMs: health.tickerAgeMs,
+        depthLevels: health.depthLevels,
+        wsConnected: health.wsConnected,
+        seqSynced: health.seqSynced,
+        ts: Date.now(),
+      });
+      for (const [socket, state] of sockets.entries()) {
+        if (socket.readyState !== WebSocket.OPEN) continue;
+        if (state.subscribedSymbols.has(symbol)) socket.send(body);
+      }
+    });
+
+    console.log("[Gateway] Pipeline 9: Market health status broadcast active");
+  }).catch(() => {
+    console.warn("[Gateway] MarketHealth import failed — Pipeline 9 disabled");
+  });
+
+  // ═══════════════════════════════════════════════════════════════════
+  // PIPELINE 10: Signal Broadcast (FAZ 5.2)
+  //  Source: MarketDataCache Redis Pub/Sub (mdc:signal_update channel)
+  //  Output: signal_update → subscribed clients (1s batched)
+  //  Cold-start: on subscribe, send cached signal immediately (FAZ 5.3)
+  // ═══════════════════════════════════════════════════════════════════
+  const SIGNAL_BATCH_MS = 1_000;
+  const pendingSignalUpdates = new Map<string, Record<string, unknown>>();
+  let signalBatchTimer: ReturnType<typeof setInterval> | null = null;
+
+  // FAZ 5.4: Fan-out metrics
+  const pipelineStats = {
+    signal_update: { broadcasts: 0, clientsReached: 0, lastTs: 0 },
+    depth_cache: { broadcasts: 0, clientsReached: 0, lastTs: 0 },
+    health_update: { broadcasts: 0, clientsReached: 0, lastTs: 0 },
+  };
+
+  // FAZ 5.5: Backpressure check — skip non-critical sends for slow clients
+  const BACKPRESSURE_THRESHOLD = 64 * 1024; // 64KB
+  let backpressureDrops = 0;
+  function safeSend(socket: WebSocket, body: string, critical: boolean): boolean {
+    if (socket.readyState !== WebSocket.OPEN) return false;
+    // Non-critical messages (signals, health) are dropped for slow clients
+    if (!critical && socket.bufferedAmount > BACKPRESSURE_THRESHOLD) {
+      backpressureDrops++;
+      return false;
+    }
+    socket.send(body);
+    return true;
+  }
+
+  import("../services/marketDataCache.ts").then(({ onSignalUpdate, readSignal: _readSignal }) => {
+    // Store readSignal for cold-start use on subscribe (FAZ 5.3)
+    _signalCacheReader = _readSignal;
+
+    onSignalUpdate((symbol, data) => {
+      // Collect into batch — 1s flush
+      pendingSignalUpdates.set(symbol, data as Record<string, unknown>);
+    });
+
+    signalBatchTimer = setInterval(() => {
+      if (pendingSignalUpdates.size === 0) return;
+      for (const [symbol, signal] of pendingSignalUpdates.entries()) {
+        const body = JSON.stringify({
+          type: "signal_update",
+          symbol,
+          direction: signal.direction,
+          confidence: signal.confidence,
+          mode: signal.mode,
+          setup: signal.setup,
+          entry: { low: signal.entryLow, high: signal.entryHigh },
+          sl: signal.slLevels,
+          tp: signal.tpLevels,
+          timeframe: signal.timeframe,
+          ts: signal.scannedAt ?? Date.now(),
+        });
+        let reached = 0;
+        for (const [socket, state] of sockets.entries()) {
+          if (!state.subscribedSymbols.has(symbol)) continue;
+          if (safeSend(socket, body, false)) reached++;
+        }
+        if (reached > 0) {
+          pipelineStats.signal_update.broadcasts++;
+          pipelineStats.signal_update.clientsReached += reached;
+          pipelineStats.signal_update.lastTs = Date.now();
+        }
+      }
+      pendingSignalUpdates.clear();
+    }, SIGNAL_BATCH_MS);
+
+    console.log("[Gateway] Pipeline 10: Signal broadcast active (1s batch)");
+  }).catch(() => {
+    console.warn("[Gateway] MarketDataCache signal import failed — Pipeline 10 disabled");
+  });
+
+  // FAZ 5.3: Cold-start signal reader — set by Pipeline 10 import above
+  let _signalCacheReader: ((symbol: string) => Promise<{ data: unknown } | null>) | null = null;
+
+  // FAZ 5.4: Export pipeline stats for admin endpoint
+  (globalThis as Record<string, unknown>).__gwPipelineStats = pipelineStats;
+  (globalThis as Record<string, unknown>).__gwBackpressureDrops = () => backpressureDrops;
+  (globalThis as Record<string, unknown>).__gwClientCount = () => sockets.size;
+  (globalThis as Record<string, unknown>).__gwSubscriptionCount = () => {
+    let total = 0;
+    for (const [, state] of sockets.entries()) total += state.subscribedSymbols.size;
+    return total;
+  };
 
   // ── Gateway diagnostics: 30s interval ──
   let _gwTickFlushCount = 0;
@@ -762,6 +873,8 @@ export const createGateway = (httpServer: HttpServer, opts?: GatewayOpts) => {
     clearInterval(tickFlushTimer);
     clearInterval(staleCheckTimer);
     clearInterval(marketListFlushTimer);
+    if (signalBatchTimer) clearInterval(signalBatchTimer);
+    if (depthBatchTimer) clearInterval(depthBatchTimer);
     orderflowAggregator.stop();
   });
 
@@ -828,6 +941,28 @@ export const createGateway = (httpServer: HttpServer, opts?: GatewayOpts) => {
 
         // Subscribe to Binance depth@20@500ms WebSocket stream for real-time orderbook
         depthSubscribe(symbol);
+
+        // FAZ 5.3: Cold-start — send cached signal immediately on subscribe
+        if (_signalCacheReader) {
+          _signalCacheReader(symbol).then((cached) => {
+            if (cached?.data && socket.readyState === WebSocket.OPEN) {
+              const sig = cached.data as Record<string, unknown>;
+              socket.send(JSON.stringify({
+                type: "signal_snapshot",
+                symbol,
+                direction: sig.direction,
+                confidence: sig.confidence,
+                mode: sig.mode,
+                setup: sig.setup,
+                entry: { low: sig.entryLow, high: sig.entryHigh },
+                sl: sig.slLevels,
+                tp: sig.tpLevels,
+                timeframe: sig.timeframe,
+                ts: sig.scannedAt ?? Date.now(),
+              }));
+            }
+          }).catch(() => { /* best-effort */ });
+        }
       } else if (parsed?.type === "unsubscribe_market") {
         const symbol = String(parsed.symbol ?? "BTCUSDT").toUpperCase();
         const interval = asInterval(parsed.interval);

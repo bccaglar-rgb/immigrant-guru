@@ -373,7 +373,7 @@ const score8Signals = (input: CapitalGuardConsensusInput, dir: TradeDirection): 
   scores.push(s8);
   labels.push("VolSpike");
 
-  const aligned = scores.filter((s) => s >= 45).length;
+  const aligned = scores.filter((s) => s >= 55).length;
   return { scores, aligned, labels };
 };
 
@@ -583,10 +583,10 @@ export const computeCapitalGuardConsensus = (
   const riskEvents = computeRiskEvents(input);
 
   // ── 4. Layer alignment check (relaxed for trade generation) ──
-  const structureAligned = structure.score >= 38;
-  const positioningAligned = positioning.score >= 36;
-  const executionAligned = execution.score >= 32;
-  const flowAligned = flow.score >= 36;
+  const structureAligned = structure.score >= 45;
+  const positioningAligned = positioning.score >= 42;
+  const executionAligned = execution.score >= 40;
+  const flowAligned = flow.score >= 42;
   const alignedLayers = [structureAligned, positioningAligned, executionAligned, flowAligned].filter(Boolean).length;
 
   // ── 5. Base score = equal-weight 4 layers ──
@@ -660,10 +660,10 @@ export const computeCapitalGuardConsensus = (
 
   // Win rate filter: need ≥ 2/8 aligned signals for TRADE (relaxed for more ideas)
   // If < 2 aligned, cap at WATCH zone (max 47)
-  const winRatePass = signals.aligned >= 2 && input.conflictLevel !== "HIGH";
+  const winRatePass = signals.aligned >= 3 && input.conflictLevel !== "HIGH";
   if (!winRatePass && finalScore >= 48) {
     finalScore = 47;
-    addReason(reasons, `Win rate filter: ${signals.aligned}/8 aligned (need 2+)`, 90);
+    addReason(reasons, `Win rate filter: ${signals.aligned}/8 aligned (need 3+)`, 90);
   }
 
   // Quant engine confidence boost: if edge + pWin are strong, add small uplift
@@ -695,11 +695,11 @@ export const computeCapitalGuardConsensus = (
     sizeHint = 0;
   } else if (finalScore >= 82) {
     sizeHint = 1.0;
-  } else if (finalScore >= 66) {
+  } else if (finalScore >= 72) {
     sizeHint = 0.70;
-  } else if (finalScore >= 48) {
+  } else if (finalScore >= 60) {
     sizeHint = 0.40;
-  } else if (finalScore >= 36) {
+  } else if (finalScore >= 48) {
     sizeHint = 0.15;
   } else {
     sizeHint = 0;

@@ -5,7 +5,7 @@ const MODE_WEIGHTS: Record<ScoringMode, number> = {
   FLOW: 25,
   AGGRESSIVE: 20,
   BALANCED: 15,
-  CAPITAL_GUARD: 10,
+  CAPITAL_GUARD: 20,  // Raised from 10 — CG setups are high-quality, shouldn't lose to weak FLOW/AGG
 };
 
 /**

@@ -143,11 +143,11 @@ export function buildAxiomEdgeLayerInput(
     execution: buildExecution(ex, lq, ed),
     context: buildContext(st, ag, o, aDelta, aMultiTf),
     risk_model: {
-      min_rr: 2.0,
-      max_signal_conflict: 0.45,
-      max_market_stress: 0.65,
-      min_liquidity_clarity: 0.60,
-      min_confidence: 0.62,
+      min_rr: 2.5,                    // Raised from 2.0 — higher RR to compensate for win rate
+      max_signal_conflict: 0.35,      // Stricter: lower conflict tolerance
+      max_market_stress: 0.55,        // Stricter: avoid stressed markets
+      min_liquidity_clarity: 0.65,    // Need clearer liquidity targets
+      min_confidence: 0.68,           // Raised from 0.65 — higher conviction bar to reduce losing trades
     },
   };
 }
@@ -479,4 +479,200 @@ function round(v: number): number {
   if (v >= 1) return Math.round(v * 10000) / 10000;
   if (v >= 0.01) return Math.round(v * 1000000) / 1000000;
   return Math.round(v * 100000000) / 100000000;
+}
+
+// ── FLOW GOLD SETUP Edge Builder ─────────────────────────────────
+
+export interface FlowEdgeInput {
+  symbol: string;
+  timeframe: string;
+  price: number;
+  direction: string;        // LONG | SHORT | NEUTRAL
+  quantScore: number;       // 0-100 FLOW score
+  rrRatio: number;          // computed RR
+
+  regime: {
+    state: string;          // TREND|RANGE|MIXED|UNKNOWN
+    trendStrength: string;  // LOW|MID|HIGH|UNKNOWN
+    emaAlignment: string;   // BULL|BEAR|MIXED|UNKNOWN
+    compression: string;    // ON|OFF|UNKNOWN
+    breakoutRisk: string;   // LOW|MID|HIGH|UNKNOWN
+    vwapPosition: string;   // ABOVE|BELOW|AT|UNKNOWN
+  };
+
+  liquidity: {
+    density: string;        // LOW|MID|HIGH|UNKNOWN
+    depthQuality: string;   // GOOD|MID|POOR|UNKNOWN
+    spoofRisk: string;      // LOW|MID|HIGH|UNKNOWN
+    liquidityScore: number; // 0-100
+    orderbookImbalance: string; // BUY|SELL|NEUTRAL
+  };
+
+  edge: {
+    riskAdjEdgeR: number;
+    pWin: number;           // 0-1
+    expectedRR: number;
+    asymmetry: string;      // REWARD_DOMINANT|RISK_DOMINANT|UNKNOWN
+    rrPotential: string;    // LOW|MID|HIGH|UNKNOWN
+  };
+
+  execution: {
+    pFill: number;          // 0-1
+    slippageLevel: string;  // LOW|MED|HIGH|UNKNOWN
+    entryQuality: string;   // BAD|MID|GOOD|UNKNOWN
+    spreadRegime: string;   // TIGHT|MID|WIDE|UNKNOWN
+    entryWindow: string;    // OPEN|CLOSED|UNKNOWN
+    capacity: number;       // 0-1
+  };
+
+  volatility: {
+    atrRegime: string;      // LOW|MID|HIGH|UNKNOWN
+    marketSpeed: string;    // SLOW|NORMAL|FAST|UNKNOWN
+    suddenMoveRisk: string; // LOW|MID|HIGH|UNKNOWN
+    volumeSpike: string;    // ON|OFF|UNKNOWN
+    impulseReadiness: string; // LOW|MID|HIGH|UNKNOWN
+    fakeBreakoutProb: string; // LOW|MID|HIGH|UNKNOWN
+  };
+
+  risk: {
+    cascadeRisk: string;    // LOW|MID|HIGH|UNKNOWN
+    stressLevel: string;    // LOW|MID|HIGH|UNKNOWN
+    crowdingRisk: string;   // LOW|MID|HIGH|UNKNOWN
+    conflictLevel: string;  // LOW|MID|HIGH|UNKNOWN
+    pStop: number;          // 0-1
+    costR: number;
+  };
+
+  positioning: {
+    fundingBias: string;    // BULLISH|BEARISH|NEUTRAL|EXTREME
+    rsiState: string;       // OVERSOLD|OVERBOUGHT|NEUTRAL|UNKNOWN
+    oiChangeStrength: string; // LOW|MID|HIGH|UNKNOWN
+    liquidationPoolBias: string; // UP|DOWN|MIXED|UNKNOWN
+    spotVsDerivatives: string;  // SPOT_DOM|DERIV_DOM|BALANCED
+    exchangeFlow: string;   // INFLOW|OUTFLOW|NEUTRAL
+    whaleActivity: string;  // ACCUMULATION|DISTRIBUTION|NEUTRAL
+  };
+
+  consensus: {
+    structureScore: number; // 0-100
+    liquidityScore: number; // 0-100
+    positioningScore: number; // 0-100
+    executionScore: number; // 0-100
+    alignedCount: number;
+    totalModels: number;
+  };
+
+  dataHealth: {
+    staleFeed: boolean;
+    missingFields: number;
+    latencyMs: number;
+    feeds: Record<string, string>;
+  };
+}
+
+/**
+ * Build structured FLOW GOLD SETUP input for the Axiom AI engine.
+ * Uses the pre-computed flow_signals from the market API.
+ */
+export function buildFlowEdgeInput(
+  symbol: string,
+  price: number,
+  timeframe: string,
+  direction: string,
+  quantScore: number,
+  rrRatio: number,
+  flowSignals: Record<string, unknown> | undefined,
+): FlowEdgeInput {
+  const fs = flowSignals ?? {};
+  const s = (key: string, fb = "UNKNOWN"): string => String(fs[key] ?? fb);
+  const n = (key: string, fb = 0): number => { const v = Number(fs[key]); return Number.isFinite(v) ? v : fb; };
+  const dh = (fs.dataHealth ?? {}) as Record<string, unknown>;
+  const feeds = (dh.feeds ?? {}) as Record<string, string>;
+
+  return {
+    symbol,
+    timeframe,
+    price,
+    direction,
+    quantScore,
+    rrRatio: round2(rrRatio),
+
+    regime: {
+      state: s("regime"),
+      trendStrength: s("trendStrength"),
+      emaAlignment: s("emaAlignment"),
+      compression: s("compression"),
+      breakoutRisk: s("breakoutRisk"),
+      vwapPosition: s("vwapPosition"),
+    },
+
+    liquidity: {
+      density: s("liquidityDensity"),
+      depthQuality: s("depthQuality"),
+      spoofRisk: s("spoofRisk"),
+      liquidityScore: n("liquidityScore", 50),
+      orderbookImbalance: s("orderbookImbalance"),
+    },
+
+    edge: {
+      riskAdjEdgeR: round2(n("riskAdjEdgeR")),
+      pWin: round2(n("pWin")),
+      expectedRR: round2(n("expectedRR")),
+      asymmetry: s("asymmetry"),
+      rrPotential: s("rrPotential"),
+    },
+
+    execution: {
+      pFill: round2(n("pFill")),
+      slippageLevel: s("slippageLevel"),
+      entryQuality: s("entryQuality"),
+      spreadRegime: s("spreadRegime"),
+      entryWindow: s("entryWindow"),
+      capacity: round2(n("capacity")),
+    },
+
+    volatility: {
+      atrRegime: s("atrRegime"),
+      marketSpeed: s("marketSpeed"),
+      suddenMoveRisk: s("suddenMoveRisk"),
+      volumeSpike: s("volumeSpike"),
+      impulseReadiness: s("impulseReadiness"),
+      fakeBreakoutProb: s("fakeBreakoutProb"),
+    },
+
+    risk: {
+      cascadeRisk: s("cascadeRisk"),
+      stressLevel: s("stressLevel"),
+      crowdingRisk: s("crowdingRisk"),
+      conflictLevel: s("conflictLevel"),
+      pStop: round2(n("pStop")),
+      costR: round2(n("costR")),
+    },
+
+    positioning: {
+      fundingBias: s("fundingBias"),
+      rsiState: s("rsiState"),
+      oiChangeStrength: s("oiChangeStrength"),
+      liquidationPoolBias: s("liquidationPoolBias"),
+      spotVsDerivatives: s("spotVsDerivativesPressure"),
+      exchangeFlow: s("exchangeFlow"),
+      whaleActivity: s("whaleActivity"),
+    },
+
+    consensus: {
+      structureScore: n("structureScore", 50),
+      liquidityScore: n("liquidityScore", 50),
+      positioningScore: n("positioningScore", 50),
+      executionScore: n("executionScore", 50),
+      alignedCount: n("alignedCount"),
+      totalModels: n("totalModels", 1),
+    },
+
+    dataHealth: {
+      staleFeed: Boolean(dh.staleFeed),
+      missingFields: Number(dh.missingFields ?? 0),
+      latencyMs: Number(dh.latencyMs ?? 0),
+      feeds,
+    },
+  };
 }

@@ -23,6 +23,8 @@ import type { ScoringMode } from "./scoringMode.ts";
 import { computeEnhancedScore } from "./coinScoring.ts";
 import type { CoinUniverseEngine } from "./coinUniverseEngine.ts";
 import { runtimeDecision } from "./optimizer/runtimeDecisionEngine.ts";
+import { exchangeFetch, isExchangeAvailable, isPrimaryWorker } from "./binanceRateLimiter.ts";
+// Reconciler still available for admin endpoint — no longer used in auto-expire path
 
 const SCAN_CACHE_REDIS_KEY = "scanner:scan_cache";
 const SCAN_CACHE_REDIS_TTL = 120; // 2 minutes — scanner cycles every 60s
@@ -35,24 +37,23 @@ const SCAN_COUNTS_MAX_AGE_MS = 8 * 24 * 60 * 60 * 1000; // keep 8 days
 
 const UNIVERSE_SIZE = 300; // Lock top 300 Binance Futures coins
 const UNIVERSE_REFRESH_MS = 4 * 60 * 60 * 1000; // Refresh universe every 4 hours
-const SELECTED_COINS = 28; // 4 modes × 7 coins = 28 coins for output
-const TOP_FIXED_SLOTS = 20; // Top 20 by enhanced score always scanned
-const DIVERSITY_SLOTS = 20; // 20 rotated from remaining pool for diversity
+const SELECTED_COINS = 32; // 4 modes × 8 coins = 32 coins for output
+const COINS_PER_MODE = 8;  // Each mode gets 8 unique coins
 const SCAN_CONCURRENCY = 4;
-const SCAN_INTERVAL_MS = 20_000; // 20 seconds between cycles
+const SCAN_INTERVAL_MS = 15_000; // 20 seconds between cycles
 const STARTUP_DELAY_MS = 20_000; // Wait for WS hubs to connect
-const IDEA_MIN_SCORE_PCT = 48;
+const IDEA_MIN_SCORE_PCT = 38;  // Global floor (lowered 48→38)
 const IDEA_MIN_SCORE_BY_MODE: Record<string, number> = {
-  FLOW: 55,
-  AGGRESSIVE: 60,
-  BALANCED: 48,
-  CAPITAL_GUARD: 42,
+  FLOW: 25,          // Aligned with FLOW APPROVED threshold (42) minus margin
+  AGGRESSIVE: 20,    // Aligned with AGG APPROVED threshold (48) minus margin
+  BALANCED: 25,      // BAL optimized — lowered from 40
+  CAPITAL_GUARD: 30, // CG optimized — lowered from 48
 };
 const MAX_TRADE_PER_MODE: Record<string, number> = {
-  FLOW: 999,
-  AGGRESSIVE: 999,
-  BALANCED: 999,
-  CAPITAL_GUARD: 999,
+  FLOW: 8,           // 8 coins per mode
+  AGGRESSIVE: 8,     // 8 coins per mode
+  BALANCED: 8,       // Raised 6→8: match coins per mode
+  CAPITAL_GUARD: 8,  // Raised 6→8: match coins per mode
 };
 
 // Stablecoins to exclude from universe
@@ -60,6 +61,11 @@ const EXCLUDED_BASE_ASSETS = new Set([
   "USDC", "FDUSD", "BUSD", "TUSD", "USDP", "DAI", "PYUSD", "EURC",
   "GUSD", "USDD", "USDE", "UST", "USTC", "FRAX", "LUSD", "SUSD",
 ]);
+
+// 2-by-2 round-robin dispatch constants
+const DISPATCH_BATCH_SIZE = 2;  // Each mode gets 2 coins per round
+const DISPATCH_MODE_ORDER: ScoringMode[] = ["AGGRESSIVE", "BALANCED", "CAPITAL_GUARD", "FLOW"];
+const MODE_COUNT = DISPATCH_MODE_ORDER.length; // 4
 
 interface BinanceFuturesHub {
   getUniverseRows(): Array<{
@@ -130,6 +136,7 @@ interface EnrichedScanResult extends SystemScanResult {
   timeframe: "1m" | "5m" | "15m" | "30m" | "1h" | "4h" | "1d";
   pricePrecision?: number;
   quantSnapshot?: Record<string, unknown>;
+  flowSignals?: Record<string, unknown>;
 }
 
 interface SystemScannerDeps {
@@ -178,15 +185,28 @@ export class SystemScannerService {
   // Track open ideas per mode to avoid duplicates
   private openIdeasBySymbol = new Map<string, Set<ScoringMode>>();
 
+  // FAZ 3.4+3.5: Signal cache output + duplicate prevention
+  private _writeSignal: ((symbol: string, data: unknown) => Promise<void>) | null = null;
+  private _writeSignalLoading = false;
+  private _lastSignalHash = new Map<string, string>(); // symbol → hash of last written signal
+
   constructor(deps: SystemScannerDeps) {
     this.deps = deps;
   }
 
   start(): void {
     if (this.running) return;
+
+    // ONLY run scanner on PM2 cluster instance 0 to prevent duplicate creation
+    const instanceId = Number(process.env.NODE_APP_INSTANCE ?? process.env.pm_id ?? "0");
+    if (instanceId !== 0) {
+      console.log(`[SystemScanner] SKIP start: running on worker ${instanceId}, scanner only runs on worker 0`);
+      return;
+    }
+
     this.running = true;
     this.startedAt = Date.now();
-    console.log(`[SystemScanner] Starting in ${STARTUP_DELAY_MS / 1000}s...`);
+    console.log(`[SystemScanner] Starting on worker 0 in ${STARTUP_DELAY_MS / 1000}s...`);
     this.timer = setTimeout(() => {
       console.log("[SystemScanner] Scanner active — beginning first scan cycle");
       void this.scanLoop();
@@ -229,6 +249,83 @@ export class SystemScannerService {
       redis.set(SCAN_CACHE_REDIS_KEY, payload, "EX", SCAN_CACHE_REDIS_TTL).catch(() => {});
     } catch {
       // best-effort
+    }
+  }
+
+  /**
+   * FAZ 3.4: Write qualifying scan results to mdc:signal:{symbol} Redis cache.
+   * FAZ 3.5: Skip write if signal hash unchanged (duplicate compute prevention).
+   * This enables Gateway Pipeline 10 (signal broadcast) in FAZ 5.
+   */
+  private async writeSignalsToCache(results: SystemScanResult[]): Promise<void> {
+    // Lazy-load writeSignal from marketDataCache
+    if (!this._writeSignal && !this._writeSignalLoading) {
+      this._writeSignalLoading = true;
+      try {
+        const mod = await import("./marketDataCache.ts");
+        this._writeSignal = mod.writeSignal;
+      } catch { this._writeSignalLoading = false; return; }
+    }
+    if (!this._writeSignal) return;
+
+    // Only write TRADE decisions — these are the qualifying signals
+    const tradeResults = results.filter((r) => r.decision === "TRADE");
+    if (!tradeResults.length) return;
+
+    // Group by symbol — pick highest-scoring mode per symbol for the signal
+    const bestBySymbol = new Map<string, SystemScanResult>();
+    for (const r of tradeResults) {
+      const existing = bestBySymbol.get(r.symbol);
+      if (!existing || r.scorePct > existing.scorePct) {
+        bestBySymbol.set(r.symbol, r);
+      }
+    }
+
+    let written = 0;
+    let skipped = 0;
+    for (const [symbol, result] of bestBySymbol) {
+      try {
+        // FAZ 3.5: Compute hash of key signal fields for duplicate prevention
+        const signalPayload = {
+          symbol: result.symbol,
+          direction: result.direction,
+          confidence: result.scorePct,
+          mode: result.mode,
+          setup: result.setup,
+          entryLow: result.entryLow,
+          entryHigh: result.entryHigh,
+          slLevels: result.slLevels,
+          tpLevels: result.tpLevels,
+          horizon: result.horizon,
+          timeframe: result.timeframe,
+          scannedAt: result.scannedAt,
+        };
+        const hash = JSON.stringify([
+          result.direction,
+          result.scorePct,
+          result.mode,
+          result.entryLow,
+          result.entryHigh,
+          result.slLevels[0],
+          result.tpLevels[0],
+        ]);
+
+        const prevHash = this._lastSignalHash.get(symbol);
+        if (prevHash === hash) {
+          skipped++;
+          continue; // Signal unchanged — skip write + pub/sub
+        }
+
+        await this._writeSignal!(symbol, signalPayload);
+        this._lastSignalHash.set(symbol, hash);
+        written++;
+      } catch {
+        // best-effort
+      }
+    }
+
+    if (written > 0 || skipped > 0) {
+      console.log(`[SystemScanner] Signal cache: wrote=${written} skipped=${skipped} (${bestBySymbol.size} symbols)`);
     }
   }
 
@@ -287,11 +384,27 @@ export class SystemScannerService {
     this.rotationIndex = 0;
     this.enhancedUniverse = [];
     this.openIdeasBySymbol.clear();
+    this._lastSignalHash.clear();
     // Also clear persisted scan_counts from PostgreSQL
     pool.query(`DELETE FROM scan_counts`).catch((err) => {
       console.error("[SystemScanner] Failed to clear scan_counts:", err);
     });
     console.log("[SystemScanner] Stats reset — counters zeroed, scan_counts cleared, fresh start");
+  }
+
+  /** Reset scan counts for a specific mode — used by per-mode reset endpoint */
+  resetModeStats(mode: string): void {
+    if (mode in this.totalScansByMode) {
+      (this.totalScansByMode as Record<string, number>)[mode] = 0;
+    }
+    if (mode in this.highScoreByMode) {
+      (this.highScoreByMode as Record<string, number>)[mode] = 0;
+    }
+    // Remove this mode's count from all scan_counts rows via JSONB operator
+    pool.query(`UPDATE scan_counts SET counts = counts::jsonb - $1`, [mode]).catch((err) => {
+      console.error(`[SystemScanner] Failed to clear scan_counts for ${mode}:`, err);
+    });
+    console.log(`[SystemScanner] Mode ${mode} scan counts reset`);
   }
 
   // ---- internal ----
@@ -402,55 +515,54 @@ export class SystemScannerService {
    * Returns enriched coins with enhanced scoring (funding/spread null from REST).
    */
   private async fetchUniverseFromBinanceRest(): Promise<EnhancedUniverseCoin[]> {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 10_000);
+    // Check ban status first
+    if (!isExchangeAvailable("binance")) throw new Error("Binance REST unavailable (cooldown)");
+    const res = await exchangeFetch({
+      url: "https://fapi.binance.com/fapi/v1/ticker/24hr",
+      exchange: "binance",
+      priority: "low",
+      weight: 40,
+      dedupKey: "scanner-ticker24hr",
+      init: { signal: AbortSignal.timeout(10_000) },
+    });
 
-    try {
-      const res = await fetch("https://fapi.binance.com/fapi/v1/ticker/24hr", {
-        signal: controller.signal,
-      });
-      clearTimeout(timeout);
+    if (!res.ok) throw new Error(`Binance API ${res.status}`);
 
-      if (!res.ok) throw new Error(`Binance API ${res.status}`);
+    const tickers = (await res.json()) as BinanceFuturesTicker[];
+    if (!Array.isArray(tickers)) throw new Error("Invalid response");
 
-      const tickers = (await res.json()) as BinanceFuturesTicker[];
-      if (!Array.isArray(tickers)) throw new Error("Invalid response");
+    // Filter, sort by volume, take top 300
+    const filtered = tickers
+      .filter((t) => {
+        if (!t.symbol || !t.symbol.endsWith("USDT")) return false;
+        const base = t.symbol.replace("USDT", "");
+        if (EXCLUDED_BASE_ASSETS.has(base)) return false;
+        const vol = Number(t.quoteVolume);
+        return Number.isFinite(vol) && vol > 0;
+      })
+      .sort((a, b) => Number(b.quoteVolume) - Number(a.quoteVolume))
+      .slice(0, UNIVERSE_SIZE);
 
-      // Filter, sort by volume, take top 300
-      const filtered = tickers
-        .filter((t) => {
-          if (!t.symbol || !t.symbol.endsWith("USDT")) return false;
-          const base = t.symbol.replace("USDT", "");
-          if (EXCLUDED_BASE_ASSETS.has(base)) return false;
-          const vol = Number(t.quoteVolume);
-          return Number.isFinite(vol) && vol > 0;
-        })
-        .sort((a, b) => Number(b.quoteVolume) - Number(a.quoteVolume))
-        .slice(0, UNIVERSE_SIZE);
-
-      return filtered.map((t) => {
-        const volume24hUsd = Number(t.quoteVolume);
-        const change24hPct = Number(t.priceChangePercent);
-        return {
-          symbol: t.symbol,
-          baseAsset: t.symbol.replace("USDT", ""),
-          price: Number(t.lastPrice),
+    return filtered.map((t) => {
+      const volume24hUsd = Number(t.quoteVolume);
+      const change24hPct = Number(t.priceChangePercent);
+      return {
+        symbol: t.symbol,
+        baseAsset: t.symbol.replace("USDT", ""),
+        price: Number(t.lastPrice),
+        volume24hUsd,
+        change24hPct,
+        spreadBps: null, // not available from REST
+        fundingRate: null, // not available from REST
+        enhancedScore: computeEnhancedScore({
           volume24hUsd,
-          change24hPct,
-          spreadBps: null, // not available from REST
-          fundingRate: null, // not available from REST
-          enhancedScore: computeEnhancedScore({
-            volume24hUsd,
-            absChange24hPct: Math.abs(change24hPct),
-            marketCapRank: null,
-            fundingRate: null,
-            spreadBps: null,
-          }),
-        };
-      });
-    } finally {
-      clearTimeout(timeout);
-    }
+          absChange24hPct: Math.abs(change24hPct),
+          marketCapRank: null,
+          fundingRate: null,
+          spreadBps: null,
+        }),
+      };
+    });
   }
 
   /**
@@ -593,29 +705,8 @@ export class SystemScannerService {
 
     if (!rankedSymbols.length) return [];
 
-    const batch = new Set<string>();
-
-    // 1. Discovery shortlisted coins get priority (already ranked at top by engine)
-    //    The CoinUniverseEngine sorts shortlisted coins first, so they'll be in rankedSymbols[0..N]
-    //    We just need to ensure top slots include them
-    const fixedCount = Math.min(TOP_FIXED_SLOTS, rankedSymbols.length);
-    for (let i = 0; i < fixedCount; i++) {
-      batch.add(rankedSymbols[i]);
-    }
-
-    // 2. Rotate through remaining coins for diversity
-    const remaining = rankedSymbols.slice(fixedCount);
-    if (remaining.length > 0) {
-      const diversityCount = Math.min(DIVERSITY_SLOTS, remaining.length);
-      let idx = this.rotationIndex % remaining.length;
-      for (let i = 0; i < diversityCount; i++) {
-        batch.add(remaining[idx % remaining.length]);
-        idx++;
-      }
-      this.rotationIndex = idx % remaining.length;
-    }
-
-    return [...batch];
+    // Top 32 coins by CoinUniverse composite score — these get distributed 8 per mode
+    return rankedSymbols.slice(0, SELECTED_COINS);
   }
 
   private async runFullScan(): Promise<void> {
@@ -631,7 +722,7 @@ export class SystemScannerService {
     // 0. Refresh scores with latest WS hub data
     this.refreshScores();
 
-    // 1. Pick scored batch (top 20 by score + 20 diversity = ~40 coins)
+    // 1. Pick top 32 coins by CoinUniverse score (8 per mode after assignment)
     const batch = this.pickScoredBatch();
     if (!batch.length) return;
 
@@ -659,39 +750,13 @@ export class SystemScannerService {
       await new Promise<void>((r) => setImmediate(r));
     }
 
-    // 4. Select top 28 coins by CoinUniverseEngine composite score (or scan score fallback)
-    //    CoinUniverseEngine ranking = S/R proximity + ATR + RSI + WS data
-    const scannedSymbolSet = new Set(allResults.map((r) => r.symbol));
-    let rankedSymbols: string[];
+    // 4. Assign each coin to ONE mode (8 coins per mode) — greedy by best mode score
+    //    Each coin goes to the mode where it scores highest, capped at COINS_PER_MODE per mode.
+    //    This ensures each mode gets unique coins suited to its scoring criteria.
+    const assigned = this.assignCoinsToBestMode(allResults);
+    const assignedSymbols = [...new Set(assigned.map((r) => r.symbol))];
 
-    if (this.deps.coinUniverseEngine) {
-      // Use CoinUniverseEngine composite score order — only include coins that were scanned
-      rankedSymbols = this.deps.coinUniverseEngine
-        .getActiveSymbolsRanked()
-        .filter((s) => scannedSymbolSet.has(s))
-        .slice(0, SELECTED_COINS);
-    }
-    // Fallback: rank by best Quant Engine scan score (when engine has no data, e.g. scanner-worker)
-    if (!rankedSymbols.length) {
-      const bestScoreBySymbol = new Map<string, number>();
-      for (const r of allResults) {
-        const current = bestScoreBySymbol.get(r.symbol) ?? 0;
-        if (r.scorePct > current) bestScoreBySymbol.set(r.symbol, r.scorePct);
-      }
-      rankedSymbols = [...bestScoreBySymbol.entries()]
-        .sort((a, b) => b[1] - a[1])
-        .slice(0, SELECTED_COINS)
-        .map(([sym]) => sym);
-    }
-
-    const selectedSet = new Set(rankedSymbols);
-    const filteredResults = allResults.filter((r) => selectedSet.has(r.symbol));
-
-    // 5. Assign each coin to exactly ONE mode — the mode where it scores highest.
-    //    Greedy assignment: highest-scoring coins pick first; max 7 per mode.
-    const assigned = this.assignCoinsToBestMode(filteredResults);
-
-    // 5b. Increment cumulative scan counts per mode + persist to disk
+    // 5. Increment cumulative scan counts per mode + persist to disk
     const cycleCounts: Record<string, number> = {};
     for (const r of assigned) {
       this.totalScansByMode[r.mode] = (this.totalScansByMode[r.mode] ?? 0) + 1;
@@ -714,38 +779,61 @@ export class SystemScannerService {
       tradeCounts[mode] = Math.min(modeResults.length, cap);
     }
 
+    // Count coins assigned per mode
+    const coinsPerMode: Record<string, number> = {};
+    for (const r of assigned) coinsPerMode[r.mode] = (coinsPerMode[r.mode] ?? 0) + 1;
+
     const elapsed = ((Date.now() - t0) / 1000).toFixed(1);
     console.log(
-      `[SystemScanner] Round ${round}: scanned ${batch.length} → selected ${rankedSymbols.length}/${this.lockedUniverse.length} coins in ${elapsed}s → ` +
-      `FLOW ${tradeCounts.FLOW ?? 0} | AGG ${tradeCounts.AGGRESSIVE ?? 0} | BAL ${tradeCounts.BALANCED ?? 0} | CG ${tradeCounts.CAPITAL_GUARD ?? 0} TRADE`,
+      `[SystemScanner] Round ${round}: scanned ${batch.length} → assigned ${assignedSymbols.length} coins (` +
+      `F:${coinsPerMode.FLOW ?? 0} A:${coinsPerMode.AGGRESSIVE ?? 0} B:${coinsPerMode.BALANCED ?? 0} CG:${coinsPerMode.CAPITAL_GUARD ?? 0}) in ${elapsed}s → ` +
+      `TRADE: FLOW ${tradeCounts.FLOW ?? 0} | AGG ${tradeCounts.AGGRESSIVE ?? 0} | BAL ${tradeCounts.BALANCED ?? 0} | CG ${tradeCounts.CAPITAL_GUARD ?? 0}`,
     );
 
     // 7. Sync existing trade ideas' scores FIRST (so ideas are updated before cache goes live)
     await this.syncExistingIdeaScores(assigned);
 
-    // 8. Create trade ideas for qualifying results (using SAME data, no re-fetch)
-    await this.createQualifyingIdeas(assigned);
+    // 8. Create trade ideas — FLOW first, then AGG, then BAL, then CG
+    //    Priority ordering ensures FLOW/AGG/BAL get slots before CG fills the global cap
+    const MODE_CREATION_ORDER: ScoringMode[] = ["FLOW", "AGGRESSIVE", "BALANCED", "CAPITAL_GUARD"];
+    const sortedForCreation = [...assigned].sort((a, b) => {
+      const ai = MODE_CREATION_ORDER.indexOf(a.mode as ScoringMode);
+      const bi = MODE_CREATION_ORDER.indexOf(b.mode as ScoringMode);
+      if (ai !== bi) return ai - bi;
+      return b.scorePct - a.scorePct; // within same mode: highest score first
+    });
+    await this.createQualifyingIdeas(sortedForCreation);
 
-    // 9. Replace cache with ONLY the latest 28 scanned coins (7 per mode).
-    //    The scan row always shows the freshest scan results.
-    this.cache = assigned.map(({ text, ...publicFields }) => publicFields);
+    // 9. Replace cache — each coin is assigned to exactly ONE mode (8 coins per mode)
+    //    bestByModeSymbol keeps 1 entry per (mode,symbol) pair for display
+    const bestByModeSymbol = new Map<string, typeof assigned[0]>();
+    for (const r of assigned) {
+      const key = `${r.mode}:${r.symbol}`;
+      const existing = bestByModeSymbol.get(key);
+      if (!existing || r.scorePct > existing.scorePct) bestByModeSymbol.set(key, r);
+    }
+    this.cache = [...bestByModeSymbol.values()].map(({ text, ...publicFields }) => publicFields);
     this.lastScanAt = Date.now();
 
     // 9b. Store scan cache in Redis so market-workers can serve it
     //     (scanner runs in separate process, market-workers need to read from Redis)
     this.storeScanCacheToRedis();
 
+    // 9c. FAZ 3.4: Write qualifying signals to mdc:signal:{symbol} Redis cache
+    //     Enables Pipeline 10 (signal broadcast) + provides cache-first signal reads
+    void this.writeSignalsToCache(assigned);
+
     // 10. Notify CoinUniverseEngine: mark selected coins for cooldown & scanner badge
     if (this.deps.coinUniverseEngine) {
-      this.deps.coinUniverseEngine.markAsSentToQuant(rankedSymbols);
-      this.deps.coinUniverseEngine.markScannerSelected(rankedSymbols);
+      this.deps.coinUniverseEngine.markAsSentToQuant(assignedSymbols);
+      this.deps.coinUniverseEngine.markScannerSelected(assignedSymbols);
     }
   }
 
   /**
    * Assign each coin to exactly ONE mode — the mode where it scores highest.
    *
-   * Uses greedy assignment with MAX_PER_MODE=7 cap to balance across 4 modes (28 coins total).
+   * Uses greedy assignment with MAX_PER_MODE=10 cap to balance across 4 modes (40 coins total).
    * Highest-scoring coins get their preferred mode first; overflow spills to second-best mode.
    *
    * This ensures:
@@ -755,37 +843,32 @@ export class SystemScannerService {
    *   - BAL/CG get coins that actually score well in those modes
    */
   private assignCoinsToBestMode(results: EnrichedScanResult[]): EnrichedScanResult[] {
-    const MAX_PER_MODE = 7;
+    // 2-by-2 round-robin distribution: coins ranked by CoinUniverse score get distributed
+    // in pairs across modes. Coins 1-2→AGG, 3-4→BAL, 5-6→CG, 7-8→FLOW, then repeat.
+    // This ensures each mode gets equally high-quality coins with paired diversity.
 
-    // Group results by symbol
+    // Group results by symbol, preserving CoinUniverse rank order
+    const symbolOrder: string[] = [];
     const bySymbol = new Map<string, EnrichedScanResult[]>();
     for (const r of results) {
+      if (!bySymbol.has(r.symbol)) symbolOrder.push(r.symbol);
       const arr = bySymbol.get(r.symbol) ?? [];
       arr.push(r);
       bySymbol.set(r.symbol, arr);
     }
 
-    // Build preference list: for each coin, modes sorted by score descending
-    const coinPrefs: Array<{ symbol: string; prefs: EnrichedScanResult[] }> = [];
-    for (const [symbol, symbolResults] of bySymbol) {
-      coinPrefs.push({ symbol, prefs: [...symbolResults].sort((a, b) => b.scorePct - a.scorePct) });
-    }
-
-    // Sort coins by best score descending — highest-scoring coins pick first
-    coinPrefs.sort((a, b) => (b.prefs[0]?.scorePct ?? 0) - (a.prefs[0]?.scorePct ?? 0));
-
-    // Greedy assignment
-    const modeCounts: Record<string, number> = {};
+    // Round-robin assignment by CoinUniverse rank
     const assigned: EnrichedScanResult[] = [];
 
-    for (const coin of coinPrefs) {
-      for (const pref of coin.prefs) {
-        const count = modeCounts[pref.mode] ?? 0;
-        if (count < MAX_PER_MODE) {
-          assigned.push(pref);
-          modeCounts[pref.mode] = count + 1;
-          break;
-        }
+    for (let i = 0; i < symbolOrder.length; i++) {
+      // 2-by-2: coins 0-1→AGG, 2-3→BAL, 4-5→CG, 6-7→FLOW, 8-9→AGG ...
+      const targetMode = DISPATCH_MODE_ORDER[Math.floor(i / DISPATCH_BATCH_SIZE) % MODE_COUNT];
+      const symbolResults = bySymbol.get(symbolOrder[i]);
+      if (!symbolResults) continue;
+      // Pick the result for the assigned mode
+      const modeResult = symbolResults.find((r) => r.mode === targetMode);
+      if (modeResult) {
+        assigned.push(modeResult);
       }
     }
 
@@ -851,6 +934,33 @@ export class SystemScannerService {
       const apiTpLevels = Array.isArray(data.tp_levels) ? data.tp_levels.map(Number).filter(Number.isFinite) : [];
       const apiPricePrecision = Number(data.price_precision ?? 8);
 
+      // ── Per-mode margin-based SL/TP config (margin % at 10x leverage) ──
+      // V10: Data-driven TP range narrowed from [3,20] → [3,7]
+      //      ROOT CAUSE: TP [3,20] gave natural RR 2-4, MAX_RR cap widened SL artificially
+      //      → larger losses per trade. Data: RR 1.0-1.5 = best EV zone (48.9% win, -$0.58)
+      //      New TP [3,7] + SL [1,5] gives natural RR 1.1-1.8 — no cap needed
+      //
+      //      Score 30%: TP=4.2%, SL=3.8% → RR=1.11 → Win $4.20, Lose $3.80
+      //      Score 40%: TP=4.6%, SL=3.4% → RR=1.35 → Win $4.60, Lose $3.40
+      //      Score 50%: TP=5.0%, SL=3.0% → RR=1.67 → Win $5.00, Lose $3.00
+      //
+      //      FLOW re-enabled: root cause was OLD symmetric [3,8]/[3,8] range → RR 0.67
+      //      Signal quality was VERIFIED correct (100% correlation with CG on same coins)
+      const SCANNER_TPSL_RANGES: Record<string, { tpRange: [number, number]; slRange: [number, number] }> = {
+        FLOW:          { tpRange: [3, 7],  slRange: [1, 5] },
+        AGGRESSIVE:    { tpRange: [3, 7],  slRange: [1, 5] },
+        BALANCED:      { tpRange: [3, 7],  slRange: [1, 5] },
+        CAPITAL_GUARD: { tpRange: [3, 7],  slRange: [1, 5] },
+      };
+      // V9: Flat MIN_RR = 1.20 for all scores
+      //     DATA FINDING (825 trades): dynamic MIN_RR destroyed win rates:
+      //       RR 1-1.5 → 48.9% win (best), RR 2-3 → 21.1%, RR 3-4 → 9.7%, RR 4+ → 6.7%
+      //     High RR pushed by old dynamicMinRR made TP unreachable.
+      //     Sweet spot is RR 1.0-1.5, so we use flat 1.20 floor.
+      const FLAT_MIN_RR = 1.20;
+      const SCANNER_LEVERAGE = 10;
+      const closePrice = Number(data.price_value ?? 0) || ((apiEntryLow + apiEntryHigh) / 2);
+
       // Extract a result for EACH mode from this single API response
       const results: EnrichedScanResult[] = [];
       for (const mode of ALL_MODES) {
@@ -861,6 +971,46 @@ export class SystemScannerService {
 
         // Derive tradeValidity PER MODE from the mode's own decision (not shared AGGRESSIVE-based text)
         const modeTradeValidity = decision === "TRADE" ? "VALID" : decision === "WATCH" ? "WEAK" : "NO-TRADE";
+
+        // ── Calculate SL ──
+        const slCfg = SCANNER_TPSL_RANGES[mode] ?? SCANNER_TPSL_RANGES.BALANCED;
+        const slSf = Math.min(Math.max(score, 0), 1);
+        const [sMin, sMax] = slCfg.slRange;
+        let slM = sMax - slSf * (sMax - sMin); // High score → tight SL, low score → wide SL
+        slM = Math.min(Math.max(slM, 1), 20); // Floor at 1% margin ($1 loss)
+        const slPP = slM / 100 / SCANNER_LEVERAGE;
+        let slVal = direction === "LONG" ? closePrice * (1 - slPP) : closePrice * (1 + slPP);
+
+        // ── Calculate TP ──
+        const tpCfg = SCANNER_TPSL_RANGES[mode] ?? SCANNER_TPSL_RANGES.BALANCED;
+        const tpSf = Math.min(Math.max(score, 0), 1);
+        const [tMin, tMax] = tpCfg.tpRange;
+        let tpM = tMin + tpSf * (tMax - tMin); // High score → wide TP, low score → tight TP
+        tpM = Math.min(Math.max(tpM, 3), 7); // V10: cap at 7 (was 20)
+        const tpPP = tpM / 100 / SCANNER_LEVERAGE;
+        let tpVal = direction === "LONG" ? closePrice * (1 + tpPP) : closePrice * (1 - tpPP);
+
+        // ── V9: Enforce flat MIN_RR 1.20 + cap MAX_RR at 2.0 ──
+        // Data: RR 1-1.5 = best EV (-$0.58), RR >2.0 = catastrophic (win <21%)
+        const tpDist = Math.abs(tpVal - closePrice);
+        const slDist = Math.abs(slVal - closePrice);
+        const rawRR = slDist > 0 ? tpDist / slDist : 0;
+        // Floor: tighten SL if RR below 1.20
+        if (rawRR < FLAT_MIN_RR && tpDist > 0) {
+          const targetSlDist = tpDist / FLAT_MIN_RR;
+          slVal = direction === "LONG" ? closePrice - targetSlDist : closePrice + targetSlDist;
+        }
+        // Ceiling: widen SL if RR above 2.0 (prevents unreachable TP)
+        const MAX_RR = 2.0;
+        const slDist2 = Math.abs(slVal - closePrice);
+        const rr2 = slDist2 > 0 ? tpDist / slDist2 : 0;
+        if (rr2 > MAX_RR && tpDist > 0) {
+          const targetSlDist = tpDist / MAX_RR;
+          slVal = direction === "LONG" ? closePrice - targetSlDist : closePrice + targetSlDist;
+        }
+
+        const slRounded = Number(slVal.toFixed(apiPricePrecision));
+        const tpRounded = Number(tpVal.toFixed(apiPricePrecision));
 
         results.push({
           symbol,
@@ -877,12 +1027,13 @@ export class SystemScannerService {
           modeScores: modeScores ?? {},
           entryLow: apiEntryLow,
           entryHigh: apiEntryHigh,
-          slLevels: apiSlLevels,
-          tpLevels: apiTpLevels,
+          slLevels: Number.isFinite(slRounded) && slRounded > 0 ? [slRounded] : apiSlLevels,
+          tpLevels: Number.isFinite(tpRounded) && tpRounded > 0 ? [tpRounded] : apiTpLevels,
           horizon: horizon as "SCALP" | "INTRADAY" | "SWING",
           timeframe: timeframe as "5m" | "15m" | "4h",
           pricePrecision: apiPricePrecision,
           quantSnapshot: data.quant_snapshot as Record<string, unknown> | undefined,
+          flowSignals: data.flow_signals as Record<string, unknown> | undefined,
         });
       }
       return results;
@@ -913,13 +1064,13 @@ export class SystemScannerService {
   /**
    * Update existing open trade ideas' scores to match the latest scan.
    * This keeps the scan row and trade card always showing the same number.
+   * Auto-expires ideas whose score drops well below the mode threshold.
    */
   private async syncExistingIdeaScores(results: EnrichedScanResult[]): Promise<void> {
     for (const result of results) {
       const openModes = this.openIdeasBySymbol.get(result.symbol);
       if (!openModes?.has(result.mode)) continue;
 
-      // Find the existing idea and update its score
       try {
         const existing = await this.deps.tradeIdeaStore.findOpenIdea(
           SYSTEM_USER_ID,
@@ -928,7 +1079,7 @@ export class SystemScannerService {
         );
         if (!existing) continue;
 
-        // Update confidence and mode_scores to match latest scan
+        // Always update to latest score — scores are dynamic and reflect current market conditions
         await this.deps.tradeIdeaStore.updateIdea(existing.id, {
           confidence_pct: result.scorePct,
           mode_scores: result.modeScores,
@@ -946,14 +1097,73 @@ export class SystemScannerService {
   private async createQualifyingIdeas(results: EnrichedScanResult[]): Promise<void> {
     let created = 0;
 
+    // NO CAPS: Every TRADE decision creates an idea. Period.
+    // The "already open" dedup prevents duplicates (same symbol+mode).
+    // TradeIdeaTracker resolves ideas within minutes-hours via SL/TP/expiry.
+    // Natural bound: ~50-80 unique symbols × 4 modes ≈ max ~300 active ideas.
+    // Caps were causing TRADE items in "Last Scanned" to not appear in the Report.
+
+    // Count open ideas for logging
+    let totalOpen = 0;
+    const openByMode: Record<string, number> = {};
+    try {
+      const openIdeas = await this.deps.tradeIdeaStore.listIdeas({
+        userId: SYSTEM_USER_ID,
+        statuses: ["PENDING", "ACTIVE"],
+        limit: 5000,
+      });
+      for (const idea of openIdeas) {
+        totalOpen++;
+        const m = idea.scoring_mode ?? "UNKNOWN";
+        openByMode[m] = (openByMode[m] ?? 0) + 1;
+      }
+    } catch {
+      for (const [, modes] of this.openIdeasBySymbol) {
+        for (const m of modes) {
+          totalOpen++;
+          openByMode[m] = (openByMode[m] ?? 0) + 1;
+        }
+      }
+    }
+
+    const tradeResults = results.filter(r => r.decision === "TRADE");
+    console.log(`[SystemScanner] CREATE-GATE: totalOpen=${totalOpen}, openByMode=${JSON.stringify(openByMode)}, tradeResults=${tradeResults.length}, tradeList=[${tradeResults.map(r => `${r.symbol}:${r.mode}:${r.scorePct}%`).join(',')}]`);
+
+    // ── V12: Per-mode minimum score thresholds ────────────────────
+    // DATA: 7-day analysis (534 ideas, 34.9% WR) shows low-confidence ideas destroy P&L.
+    //   system-scanner created ideas with confidence as low as 2% (AGGRESSIVE) and 5% (FLOW).
+    //   Ideas below 55% have catastrophic win rates (<30%).
+    //   CAPITAL_GUARD produced 351 ideas in 48h with avg conf 59% but min 25% — too noisy.
+    // FIX: Hard minimum per mode. Only high-conviction quant signals become ideas.
+    const MODE_MIN_SCORE: Record<string, number> = {
+      AGGRESSIVE:    55,  // Strong momentum required
+      BALANCED:      50,  // Moderate conviction
+      CAPITAL_GUARD: 60,  // Highest bar — was creating 300+/week of garbage
+      FLOW:          55,  // Flow signals need clarity
+    };
+
+    // ── V12: Global max open ideas per mode ─────────────────────
+    // Prevent any single mode from flooding the system.
+    // CG was creating 351 ideas in 48h — now capped at 30 open per mode.
+    const MAX_OPEN_PER_MODE = 30;
+
     for (const result of results) {
-      const modeMinScore = IDEA_MIN_SCORE_BY_MODE[result.mode] ?? IDEA_MIN_SCORE_PCT;
-      if (result.scorePct < modeMinScore) {
-        if (result.decision === "TRADE") console.log(`[SystemScanner] SKIP ${result.symbol} ${result.mode}: score ${result.scorePct}% < min ${modeMinScore}%`);
+      // Only accept TRADE decisions — WATCH/NO_TRADE are not high enough conviction
+      if (result.decision !== "TRADE") continue;
+
+      // V12: Per-mode minimum score gate — reject low-confidence quant signals
+      const minScore = MODE_MIN_SCORE[result.mode] ?? 55;
+      if (result.scorePct < minScore) {
+        console.log(`[SystemScanner] SKIP ${result.symbol} ${result.mode} ${result.scorePct}%: below min score ${minScore}`);
         continue;
       }
-      if (result.decision !== "TRADE") continue;
-      // tradeValidity is informational — don't block idea creation for qualifying TRADE decisions
+
+      // V12: Per-mode open ideas cap — prevent flooding
+      const currentModeOpen = openByMode[result.mode] ?? 0;
+      if (currentModeOpen >= MAX_OPEN_PER_MODE) {
+        console.log(`[SystemScanner] SKIP ${result.symbol} ${result.mode}: mode cap reached (${currentModeOpen}/${MAX_OPEN_PER_MODE})`);
+        continue;
+      }
 
       // Need valid entry/SL/TP levels
       if (!result.entryLow || !result.entryHigh) {
@@ -965,7 +1175,8 @@ export class SystemScannerService {
         continue;
       }
 
-      // RR filter: skip ideas with Risk/Reward < 1.5 on the primary TP/SL pair
+      // V9: RR safety gate — floor 0.80, ceiling 2.50
+      // Data: RR 1-1.5 best (EV=-$0.58), RR >2 toxic (win <21%)
       const entryMid = (result.entryLow + result.entryHigh) / 2;
       const sl1 = result.slLevels[0];
       const tp1 = result.tpLevels[0];
@@ -973,9 +1184,12 @@ export class SystemScannerService {
         const risk = Math.abs(entryMid - sl1);
         const reward = Math.abs(tp1 - entryMid);
         const rr = risk > 0 ? reward / risk : 0;
-        const rrCfg = runtimeDecision.getConfig(result.mode);
-        if (rr < rrCfg.minRRFilter) {
-          console.log(`[SystemScanner] SKIP ${result.symbol} ${result.mode}: RR ${rr.toFixed(2)} < ${rrCfg.minRRFilter}`);
+        if (rr < 0.80) {
+          console.log(`[SystemScanner] SKIP ${result.symbol} ${result.mode}: RR ${rr.toFixed(2)} < 0.80 (floor)`);
+          continue;
+        }
+        if (rr > 2.50) {
+          console.log(`[SystemScanner] SKIP ${result.symbol} ${result.mode}: RR ${rr.toFixed(2)} > 2.50 (ceiling — toxic win rate)`);
           continue;
         }
       }
@@ -989,14 +1203,16 @@ export class SystemScannerService {
 
       console.log(`[SystemScanner] CREATING ${result.symbol} ${result.mode} ${result.scorePct}% ${result.direction}`);
       try {
+        // approved_modes: which other modes also have a meaningful score for this coin
+        // Uses 20% floor (informational, not a gate) — primary mode is always included below
         const approvedModes = Object.entries(result.modeScores)
-          .filter(([, v]) => (v ?? 0) * 100 >= IDEA_MIN_SCORE_PCT)
+          .filter(([, v]) => (v ?? 0) * 100 >= 20)
           .map(([k]) => k as ScoringMode);
         if (!approvedModes.includes(result.mode)) approvedModes.push(result.mode);
 
         const nowIso = new Date().toISOString();
         const tfMinutes = result.timeframe === "5m" ? 5 : result.timeframe === "4h" ? 240 : 15;
-        const validUntilBars = result.horizon === "SCALP" ? 12 : result.horizon === "SWING" ? 6 : 16;
+        const validUntilBars = result.horizon === "SCALP" ? 12 : result.horizon === "SWING" ? 6 : 8;
         const validUntilUtc = new Date(Date.now() + tfMinutes * validUntilBars * 60_000).toISOString();
 
         // Build a full TradeIdeaRecord using the SAME scorePct from scanSymbol
@@ -1058,6 +1274,7 @@ export class SystemScannerService {
         }
 
         created += 1;
+        openByMode[result.mode] = (openByMode[result.mode] ?? 0) + 1; // Track per-mode count
         // Increment highScoreByMode only when a real trade idea is created
         this.highScoreByMode[result.mode] = (this.highScoreByMode[result.mode] ?? 0) + 1;
 

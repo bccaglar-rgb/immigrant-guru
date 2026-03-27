@@ -22,11 +22,24 @@ function normalizeEndpoint(urlRaw: string, fallback: string): string {
   return `${base.replace(/\/+$/, "")}/chat/completions`;
 }
 
+function isAnthropicEndpoint(url: string): boolean {
+  return url.toLowerCase().includes("anthropic.com");
+}
+
 function resolveEndpoint(provider: AiProviderRecord): string {
+  // Anthropic API uses /v1/messages (not /chat/completions)
+  if (provider.id === "CLAUDE") {
+    const base = String(provider.baseUrl ?? "").trim();
+    if (base && isAnthropicEndpoint(base)) return base.replace(/\/+$/, "").replace(/\/v1\/messages$/, "") + "/v1/messages";
+    return "https://api.anthropic.com/v1/messages";
+  }
   if (provider.id === "CHATGPT" || provider.id === "QWEN2") {
     return normalizeEndpoint(provider.baseUrl, "https://api.openai.com/v1/chat/completions");
   }
   if (provider.id === "QWEN") {
+    // QWEN may point to Anthropic API or OpenRouter
+    const base = String(provider.baseUrl ?? "").trim();
+    if (base && isAnthropicEndpoint(base)) return base.replace(/\/+$/, "").replace(/\/v1\/messages$/, "") + "/v1/messages";
     return normalizeEndpoint(provider.baseUrl, "https://openrouter.ai/api/v1/chat/completions");
   }
   return normalizeEndpoint(provider.baseUrl, "");
@@ -83,9 +96,12 @@ async function tryProvider(
 
   // Build model fallback chain
   const isOpenAi = provider.id === "CHATGPT" || provider.id === "QWEN2";
+  const isAnthropic = provider.id === "CLAUDE" || (provider.id === "QWEN" && isAnthropicEndpoint(provider.baseUrl));
   const models = isOpenAi
     ? [config.aiModel, ...OPENAI_MODEL_FALLBACKS.filter((m) => m !== config.aiModel)]
-    : [provider.model || config.aiModel];
+    : isAnthropic
+      ? [provider.model || "claude-sonnet-4-6"]
+      : [provider.model || config.aiModel];
 
   for (const model of models) {
     const result = await tryModel(endpoint, apiKey, model, config, systemPrompt, userPrompt);
@@ -115,7 +131,14 @@ async function tryModel(
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), config.aiTimeoutMs);
 
+  // Detect Anthropic API (different format than OpenAI)
+  const isAnthropic = isAnthropicEndpoint(endpoint);
+
   try {
+    if (isAnthropic) {
+      return await callAnthropicModel(endpoint, apiKey, model, config, systemPrompt, userPrompt, controller.signal);
+    }
+
     const headers: Record<string, string> = {
       "Content-Type": "application/json",
       Authorization: `Bearer ${apiKey}`,
@@ -170,4 +193,64 @@ async function tryModel(
   } finally {
     clearTimeout(timer);
   }
+}
+
+/**
+ * Anthropic Messages API handler.
+ * Uses x-api-key header, different body/response format.
+ */
+async function callAnthropicModel(
+  endpoint: string,
+  apiKey: string,
+  model: string,
+  config: AiEngineConfig,
+  systemPrompt: string,
+  userPrompt: string,
+  signal: AbortSignal,
+): Promise<AiCallResult> {
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    "x-api-key": apiKey,
+    "anthropic-version": "2023-06-01",
+  };
+
+  // Anthropic Claude doesn't support response_format: json_object
+  // Enforce JSON output via system prompt suffix
+  const jsonEnforcedSystem = systemPrompt + "\n\nIMPORTANT: You MUST respond with valid JSON only. No markdown, no code blocks, no explanation text. Output a single JSON object starting with { and ending with }.";
+
+  const res = await fetch(endpoint, {
+    method: "POST",
+    headers,
+    body: JSON.stringify({
+      model,
+      system: jsonEnforcedSystem,
+      messages: [
+        { role: "user", content: userPrompt + "\n\nRespond with valid JSON only." },
+      ],
+      temperature: config.aiTemperature,
+      max_tokens: config.aiMaxTokens,
+    }),
+    signal,
+  });
+
+  if (!res.ok) {
+    if (res.status === 404) {
+      return { ok: false, error: "model_not_found" };
+    }
+    const body = await res.text().catch(() => "");
+    console.error(`${PREFIX} Anthropic HTTP ${res.status} from ${model}: ${body.slice(0, 300)}`);
+    return { ok: false, error: `http_${res.status}` };
+  }
+
+  // Anthropic response format: { content: [{ type: "text", text: "..." }] }
+  const json = await res.json() as {
+    content?: Array<{ type?: string; text?: string }>;
+  };
+  const content = json.content?.[0]?.text;
+
+  if (!content) {
+    return { ok: false, error: "empty_response" };
+  }
+
+  return { ok: true, raw: content };
 }

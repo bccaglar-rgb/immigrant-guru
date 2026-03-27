@@ -1,0 +1,242 @@
+/**
+ * Balanced Mode Hub — Data Extractor (v4)
+ *
+ * Transforms flat trade-idea API response → typed HubInput.
+ * Uses flow_signals + quant_snapshot + top-level fields.
+ * V4.1: Direction consensus bias (2/3 agreement required). Fixes 92% SHORT bias.
+ */
+
+import type { HubInput, SlippageLevel, EntryWindowState } from "./types.ts";
+
+type R = Record<string, unknown>;
+
+/* ── helpers ── */
+function num(obj: R | undefined, key: string, fallback = 0): number {
+  if (!obj) return fallback;
+  const v = obj[key];
+  if (typeof v === "number" && isFinite(v)) return v;
+  if (typeof v === "string") { const n = Number(v); if (isFinite(n)) return n; }
+  return fallback;
+}
+
+function str(obj: R | undefined, key: string, fallback = ""): string {
+  if (!obj) return fallback;
+  const v = obj[key];
+  return typeof v === "string" ? v : fallback;
+}
+
+function clamp01(v: number): number { return Math.max(0, Math.min(1, v)); }
+
+function strToScore(val: string, map: Record<string, number>, fallback = 0.5): number {
+  return map[val.toUpperCase()] ?? fallback;
+}
+
+const STRENGTH_MAP: Record<string, number> = { STRONG: 0.9, MODERATE: 0.7, MID: 0.5, LOW: 0.3, NONE: 0.1 };
+const QUALITY_MAP: Record<string, number> = { EXCELLENT: 0.95, GOOD: 0.8, MID: 0.5, POOR: 0.25, BAD: 0.1 };
+const RISK_MAP: Record<string, number> = { HIGH: 0.85, MODERATE: 0.55, MED: 0.55, LOW: 0.2, NONE: 0.05 };
+const BIAS_MAP: Record<string, number> = { BULL: 1, BEAR: -1, NEUTRAL: 0, BALANCED: 0, LONG: 1, SHORT: -1, UNKNOWN: 0 };
+const WINDOW_MAP: Record<string, EntryWindowState> = { OPEN: "OPEN", NARROW: "NARROW", CLOSING: "CLOSING", CLOSED: "CLOSED" };
+const SLIP_MAP: Record<string, SlippageLevel> = { LOW: "LOW", MODERATE: "MODERATE", MED: "MODERATE", HIGH: "HIGH" };
+const DIRECTION_MAP: Record<string, number> = { UP: 1, DOWN: -1, BULL: 1, BEAR: -1, NEUTRAL: 0, FLAT: 0 };
+
+/**
+ * Extract HubInput from the flat trade-idea API response.
+ */
+export function extractHubInput(
+  symbol: string,
+  timeframe: string,
+  price: number,
+  apiResponse: R,
+): HubInput {
+  const fs = (apiResponse.flow_signals ?? {}) as R;
+  const qs = (apiResponse.quant_snapshot ?? {}) as R;
+  const dh = (fs.dataHealth ?? {}) as R;
+
+  /* ── Structure ── */
+  const trendDir = str(fs, "trendStrength") || str(qs, "trendStrength");
+  const trendDirection = str(qs, "trendDirection") || str(fs, "trendDirection", "NEUTRAL");
+  const htfTrend = strToScore(trendDir, STRENGTH_MAP, 0.5);
+  const emaAlignment = strToScore(str(fs, "emaAlignment", "NEUTRAL"), { BULL: 0.9, BEAR: 0.9, MIXED: 0.4, NEUTRAL: 0.5 }, 0.5);
+  const vwapPosition = str(fs, "vwapPosition", "AT");
+  const trendStrength = strToScore(trendDir, STRENGTH_MAP, 0.5);
+  const compression = str(fs, "compression") === "ON" ? 0.8 : 0.3;
+  const regime = str(fs, "regime") || str(qs, "regime", "RANGE");
+
+  /* ── Liquidity ── */
+  const liquidityDensity = strToScore(str(fs, "liquidityDensity") || str(qs, "liquidityDensity", "LOW"), STRENGTH_MAP, 0.3);
+  const depthQuality = strToScore(str(fs, "depthQuality", "MID"), QUALITY_MAP, 0.5);
+  const spoofRisk = strToScore(str(fs, "spoofRisk", "LOW"), RISK_MAP, 0.2);
+  const liquidityScore = num(fs, "liquidityScore", 50);
+
+  /* ── Positioning ── */
+  const oiChangeStrength = strToScore(str(fs, "oiChangeStrength", "LOW"), STRENGTH_MAP, 0.3);
+  const fundingBias = strToScore(str(fs, "fundingBias") || str(qs, "fundingBias", "NEUTRAL"), BIAS_MAP, 0);
+  const crowdingRisk = strToScore(str(fs, "crowdingRisk", "LOW"), RISK_MAP, 0.2);
+  const spotVsDeriv = str(fs, "spotVsDerivativesPressure", "BALANCED");
+  const orderbookImbalance = str(fs, "orderbookImbalance", "NEUTRAL");
+
+  /* ── Execution ── */
+  const fillProbability = clamp01(num(fs, "pFill", 0.5));
+  const slippage = SLIP_MAP[str(fs, "slippageLevel", "LOW").toUpperCase()] ?? "LOW";
+  const entryWindowRaw = str(fs, "entryWindow", "CLOSED").toUpperCase();
+  const entryWindow = WINDOW_MAP[entryWindowRaw] ?? "CLOSED";
+  const spreadRegime = str(fs, "spreadRegime") || str(qs, "spreadRegime", "NORMAL");
+  const capacity = clamp01(num(fs, "capacity", 0.5));
+  const executionScore = num(fs, "executionScore", 50);
+
+  /* ── Volatility ── */
+  const atrPct = num(qs, "atrPct") || num(fs, "atrPct", 0.01);
+  const atrRegime = str(fs, "atrRegime", "NORMAL");
+  const marketSpeed = str(fs, "marketSpeed", "NORMAL");
+  const suddenMoveRisk = strToScore(str(fs, "suddenMoveRisk", "LOW"), RISK_MAP, 0.2);
+  const fakeBreakoutProb = strToScore(str(fs, "fakeBreakoutProb", "LOW"), RISK_MAP, 0.2);
+  const volumeSpike = str(fs, "volumeSpike") === "ON" ? 0.8 : 0.2;
+  const volatilityState = str(qs, "volatilityState") || str(fs, "volatilityState", "NORMAL");
+
+  /* ── Risk ── */
+  const stressLevel = strToScore(str(fs, "stressLevel") || str(qs, "marketStress", "LOW"), RISK_MAP, 0.2);
+  const conflictLevel = strToScore(str(fs, "conflictLevel", "LOW"), RISK_MAP, 0.2);
+
+  /* ── Edge ── */
+  // Cap pWin at 0.58 — raw quant values (0.83-0.88) are fantasy.
+  // No system sustains 88% win rate. 58% is realistic ceiling.
+  const rawPWin = clamp01(num(fs, "pWin") || num(qs, "pWin", 0.5));
+  const pWin = Math.min(rawPWin, 0.58);
+  // Cap avgWinR at 2.5R — prevents unrealistic edge inflation
+  const rawRR = num(qs, "expectedRR") || num(fs, "expectedRR", 1.0);
+  const expectedRR = Math.min(rawRR, 2.5);
+  const costR = num(fs, "costR", 0.15);
+
+  /* ── Data Health ── */
+  const staleFeed = Boolean(dh.staleFeed);
+  const missingFields = num(dh as R, "missingFields", 0);
+  const feedHealthy = !staleFeed && missingFields <= 2;
+  const dataHealthScore = feedHealthy ? (missingFields === 0 ? 0.98 : 0.90) : 0.70;
+
+  /* ── Levels (from API top-level) ── */
+  const entryLow = num(apiResponse, "entry_low", price * 0.998);
+  const entryHigh = num(apiResponse, "entry_high", price * 1.002);
+  const slLevels = Array.isArray(apiResponse.sl_levels) ? (apiResponse.sl_levels as number[]) : [];
+  const tpLevels = Array.isArray(apiResponse.tp_levels) ? (apiResponse.tp_levels as number[]) : [];
+
+  /* ── Alpha ── */
+  const structureScore = num(fs, "structureScore", 50);
+  const positioningScore = num(fs, "positioningScore", 50);
+
+  /* ── Bias direction helpers ── */
+  // V4.1: Direction consensus — quant trendDirection alone caused 92% SHORT trades
+  // Require 2/3 agreement (trend + vwap + ema) before committing to strong direction
+  const rawTrendDir = DIRECTION_MAP[trendDirection.toUpperCase()] ?? 0;  // -1/0/+1
+  const vwapDir = vwapPosition === "ABOVE" ? 1 : vwapPosition === "BELOW" ? -1 : 0;
+  const emaRaw = str(fs, "emaAlignment");
+  const emaDir = emaRaw === "BULL" ? 1 : emaRaw === "BEAR" ? -1 : 0;
+
+  const dirSignals = rawTrendDir + vwapDir + emaDir;  // range -3 to +3
+  let trendBias: number;
+  if (dirSignals >= 2) trendBias = 0.8;        // 2+ bullish → strong bullish
+  else if (dirSignals <= -2) trendBias = -0.8;  // 2+ bearish → strong bearish
+  else if (dirSignals === 1) trendBias = 0.3;   // 1 net bullish → weak
+  else if (dirSignals === -1) trendBias = -0.3;  // 1 net bearish → weak
+  else trendBias = 0;                            // neutral / conflict
+
+  const vwapBias = vwapPosition === "ABOVE" ? 0.5 : vwapPosition === "BELOW" ? -0.5 : 0;
+  const emaBias = emaRaw === "BULL" ? 0.5 : emaRaw === "BEAR" ? -0.5 : 0;
+  const orderflowBias = BIAS_MAP[orderbookImbalance.toUpperCase()] ?? 0;
+  const positioningBias = fundingBias;
+
+  return {
+    symbol,
+    timeframe,
+    price,
+
+    /* Structure */
+    htfTrend,
+    emaAlignment,
+    vwapPosition,
+    trendStrength,
+    compression,
+    regime,
+    levelReaction: 0.5,
+    midRangeTrap: regime === "RANGE" ? 0.6 : 0.2,
+    trendMaturity: trendStrength > 0.8 ? 0.7 : 0.3,
+    weakAcceptance: conflictLevel > 0.5 ? 0.7 : 0.2,
+    chasedEntry: fillProbability < 0.3 ? 0.7 : 0.2,
+
+    /* Liquidity */
+    poolProximity: liquidityDensity,
+    sweepReclaim: liquidityScore / 100,
+    liquidityDensity,
+    obStability: depthQuality > 0.6 ? 0.7 : 0.4,
+    spoofRisk,
+    depthQuality,
+    spreadTightness: spreadRegime === "TIGHT" ? 0.85 : spreadRegime === "WIDE" ? 0.3 : 0.55,
+    failedSweep: fakeBreakoutProb > 0.5 ? 0.7 : 0.2,
+
+    /* Positioning */
+    oiConfirm: oiChangeStrength > 0.5 ? 0.7 : 0.4,
+    volumeConfirm: volumeSpike > 0.5 ? 0.7 : 0.4,
+    fundingHealthy: Math.abs(fundingBias) < 0.3 ? 0.8 : 0.4,
+    crowdingLow: 1 - crowdingRisk,
+    liqBiasFit: 0.5,
+    oiDivergence: oiChangeStrength < 0.2 ? 0.6 : 0.3,
+    crowdingHigh: crowdingRisk,
+    spotDerivDivergence: spotVsDeriv === "DIVERGENT" ? 0.7 : 0.2,
+    weakParticipation: oiChangeStrength < 0.2 ? 0.6 : 0.2,
+
+    /* Volatility */
+    compressionActive: compression > 0.6,
+    expansionProbability: compression > 0.6 ? 0.65 : 0.35,
+    atrFit: atrRegime === "NORMAL" ? 0.7 : atrRegime === "LOW" ? 0.5 : 0.4,
+    speedHealthy: marketSpeed === "NORMAL" || marketSpeed === "SLOW" ? 0.7 : 0.3,
+    suddenMoveRisk,
+    fakeBreakRisk: fakeBreakoutProb,
+    deadVolatility: volatilityState === "LOW" ? 0.6 : 0.2,
+
+    /* Execution */
+    entryWindowState: entryWindow,
+    fillProbability,
+    slippage,
+    spreadScore: spreadRegime === "TIGHT" ? 0.85 : spreadRegime === "WIDE" ? 0.3 : 0.55,
+    depthScore: depthQuality > 0.6 ? 0.75 : 0.4,
+    capacityScore: capacity,
+    spoofDetected: spoofRisk > 0.5,
+
+    /* Risk & Data */
+    riskScore: stressLevel,
+    dataHealthScore,
+    tradeValidity: str(apiResponse, "trade_validity", "VALID"),
+
+    /* Edge */
+    pWin,
+    avgWinR: expectedRR,
+    costR,
+
+    /* Regime helpers */
+    atrPct,
+    timeInRange: regime === "RANGE" ? 0.6 : 0.2,
+    vwapBehavior: vwapBias,
+
+    /* Bias helpers */
+    trendDirBias: trendBias,
+    vwapBias,
+    emaBias,
+    levelReactionBias: 0,
+    orderflowBias: orderflowBias * 0.5,
+    positioningBias: positioningBias * 0.3,
+
+    /* Levels (for TP/SL) */
+    swingLow: slLevels.length > 0 ? Math.min(...slLevels) : price * 0.98,
+    swingHigh: slLevels.length > 0 ? Math.max(...slLevels) : price * 1.02,
+    nearestSupport: entryLow * 0.995,
+    nearestResistance: entryHigh * 1.005,
+    entryZone: [entryLow, entryHigh],
+    nearestLiquidity: tpLevels.length > 0 ? tpLevels[0] : price * 1.01,
+    htfLevel: tpLevels.length > 1 ? tpLevels[tpLevels.length - 1] : price * 1.02,
+
+    /* Sub-scores (for display) */
+    structureScore,
+    liquidityScore,
+    positioningScore,
+    executionScore,
+  };
+}

@@ -48,6 +48,9 @@ export class FeatureWeightTuner {
 
   /** Tune weights from attribution data */
   async tune(): Promise<void> {
+    // DISABLED: tracking only — no weight changes until manual review
+    console.log("[FeatureWeightTuner] DISABLED — tracking only, skipping tune");
+    return;
     try {
       // Analyze which features correlate with winning trades
       const { rows } = await pool.query(`

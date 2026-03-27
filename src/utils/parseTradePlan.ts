@@ -34,7 +34,7 @@ const parseStopsOrTargets = (block: string, kind: "SL" | "TP") => {
   const lines = block.split("\n").map((l) => l.trim()).filter(Boolean);
   return lines
     .map((line) => {
-      const re = new RegExp(`(${kind}[123])\\s*:\\s*([\\d,\\.]+)(?:\\s*Share\\s*%?\\s*(\\d+))?`, "i");
+      const re = new RegExp(`(${kind}[123]?)\\s*:\\s*([\\d,\\.]+)(?:\\s*Share\\s*%?\\s*(\\d+))?`, "i");
       const m = line.match(re);
       if (!m) return null;
       return {
@@ -219,8 +219,8 @@ export const parseTradePlan = (text: string): TradePlan | null => {
 };
 
 export const formatTradePlan = (plan: TradePlan): string => {
-  const stops = plan.stops.map((s) => `${s.label}: ${s.price.toLocaleString()}`).join("\n");
-  const targets = plan.targets.map((t) => `${t.label}: ${t.price.toLocaleString()}`).join("\n");
+  const stops = plan.stops.map((s) => `${s.label}: ${(s.price ?? 0).toLocaleString()}`).join("\n");
+  const targets = plan.targets.map((t) => `${t.label}: ${(t.price ?? 0).toLocaleString()}`).join("\n");
   const flow = plan.flowAnalysis.map((f) => `• ${f}`).join("\n");
   const intent = plan.tradeIntent.join("\n");
   const triggers = plan.triggersToActivate.slice(0, 2).join("; ");
@@ -241,7 +241,7 @@ Invalidation: ${plan.invalidation}
 Time: ${plan.timestampUtc} | Valid ~${plan.validUntilBars} bars (until ${plan.validUntilUtc})
 
 ENTRY ZONE
-${plan.entry.low.toLocaleString()} – ${plan.entry.high.toLocaleString()}
+${(plan.entry.low ?? 0).toLocaleString()} – ${(plan.entry.high ?? 0).toLocaleString()}
 
 STOP LEVELS
 ${stops}

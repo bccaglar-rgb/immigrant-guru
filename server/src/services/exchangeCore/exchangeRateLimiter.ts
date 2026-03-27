@@ -10,7 +10,7 @@
  * OKX Futures:      60 req/2s        → we use 30/2s  (900/min)
  * Gate.io Futures:  900 req/min      → we use 450
  */
-import { redis } from "../../db/redis.ts";
+import { redisControl } from "../../db/redis.ts";
 
 export type ExchangeVenue = "BINANCE" | "BYBIT" | "OKX" | "GATEIO";
 
@@ -36,9 +36,9 @@ export class ExchangeRateLimiter {
     if (!cfg) return true;
     const key = `rl:exchange:${venue}`;
     try {
-      const current = await redis.incrby(key, weight);
+      const current = await redisControl.incrby(key, weight);
       if (current <= weight) {
-        await redis.expire(key, cfg.windowSec);
+        await redisControl.expire(key, cfg.windowSec);
       }
       return current <= cfg.maxWeight;
     } catch {
@@ -50,7 +50,7 @@ export class ExchangeRateLimiter {
   /** Get current usage for a venue (0–maxWeight). */
   async getUsage(venue: ExchangeVenue): Promise<number> {
     try {
-      const val = await redis.get(`rl:exchange:${venue}`);
+      const val = await redisControl.get(`rl:exchange:${venue}`);
       return val ? Number(val) : 0;
     } catch {
       return 0;
@@ -86,8 +86,8 @@ export class ExchangeRateLimiter {
     const maxPerUser = 60;
     const key = `rl:user:${userId}:${venue}`;
     try {
-      const current = await redis.incrby(key, weight);
-      if (current <= weight) await redis.expire(key, 60);
+      const current = await redisControl.incrby(key, weight);
+      if (current <= weight) await redisControl.expire(key, 60);
       return current <= maxPerUser;
     } catch {
       return true;
@@ -99,8 +99,8 @@ export class ExchangeRateLimiter {
     const maxPerSymbol = 120;
     const key = `rl:symbol:${symbol}:${venue}`;
     try {
-      const current = await redis.incrby(key, weight);
-      if (current <= weight) await redis.expire(key, 60);
+      const current = await redisControl.incrby(key, weight);
+      if (current <= weight) await redisControl.expire(key, 60);
       return current <= maxPerSymbol;
     } catch {
       return true;
@@ -112,8 +112,8 @@ export class ExchangeRateLimiter {
     const maxGlobal = 3000;
     const key = "rl:global";
     try {
-      const current = await redis.incrby(key, weight);
-      if (current <= weight) await redis.expire(key, 60);
+      const current = await redisControl.incrby(key, weight);
+      if (current <= weight) await redisControl.expire(key, 60);
       return current <= maxGlobal;
     } catch {
       return true;

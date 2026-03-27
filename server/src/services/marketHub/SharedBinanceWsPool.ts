@@ -167,10 +167,15 @@ export class SharedBinanceWsPool {
     if (this.heartbeatTimer) { clearInterval(this.heartbeatTimer); this.heartbeatTimer = null; }
     if (this.reconnectTimer) { clearTimeout(this.reconnectTimer); this.reconnectTimer = null; }
     if (this.ws) {
-      try { this.ws.removeAllListeners(); } catch {}
-      try { if (this.ws.readyState !== WebSocket.CLOSED) this.ws.close(); } catch {}
+      const ws = this.ws;
       this.ws = null;
       this.ready = false;
+      try { ws.removeAllListeners(); } catch {}
+      // Add noop error handler AFTER removeAllListeners — terminate() on CONNECTING state
+      // emits an error event asynchronously via process.nextTick. Without a handler,
+      // Node.js treats it as uncaught exception and crashes the process.
+      ws.on("error", () => {});
+      try { ws.terminate(); } catch {}
     }
   }
 
@@ -187,8 +192,10 @@ export class SharedBinanceWsPool {
   private connect(): void {
     // Clean up old connection
     if (this.ws) {
-      try { this.ws.removeAllListeners(); } catch {}
-      try { if (this.ws.readyState !== WebSocket.CLOSED) this.ws.close(); } catch {}
+      const oldWs = this.ws;
+      try { oldWs.removeAllListeners(); } catch {}
+      oldWs.on("error", () => {}); // Catch async errors from terminate()
+      try { oldWs.terminate(); } catch {}
     }
     this.ws = null;
     this.ready = false;
@@ -258,7 +265,8 @@ export class SharedBinanceWsPool {
     ws.on("error", (err) => {
       console.error("[SharedWsPool] WS error:", err instanceof Error ? err.message : err);
       this.ready = false;
-      try { ws.close(); } catch {}
+      // Don't call ws.close() — it can throw on CONNECTING state.
+      // The 'close' event will fire automatically after error.
     });
   }
 

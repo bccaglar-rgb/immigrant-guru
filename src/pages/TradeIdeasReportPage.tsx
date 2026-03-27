@@ -38,14 +38,8 @@ type ApiTradeIdea = {
 
 type AiModelFilter = "ALL" | AiProviderId;
 
-// Per-mode min score thresholds — must match server's REPORT_MIN_SCORE
-const REPORT_MIN_SCORE_QUANT: Record<string, number> = {
-  FLOW: 55,
-  AGGRESSIVE: 60,
-  BALANCED: 65,
-  CAPITAL_GUARD: 68,
-};
-const REPORT_MIN_CONSENSUS_AI = 60;
+// No frontend confidence filter — backend already applies IDEA_MIN_SCORE per mode at creation time.
+// All ideas returned by the API are valid and should be displayed.
 
 // windowMs removed — stats now fetched via API with range param
 
@@ -154,10 +148,11 @@ export default function TradeIdeasReportPage() {
   const [totalScanByMode, setTotalScanByMode] = useState<Record<string, {
     totalScan: number; totalIdeas: number; resolved: number;
     success: number; failed: number; successRate: number;
+    active?: number; entryMissed?: number;
   }>>({});
   const [aiModelFilter, setAiModelFilter] = useState<AiModelFilter>("ALL");
   const [expandedHour, setExpandedHour] = useState<string | null>(null);
-  const reportMinConsensus = isAiReport ? REPORT_MIN_CONSENSUS_AI : (REPORT_MIN_SCORE_QUANT[scoringMode] ?? 70);
+  // No confidence filter — all ideas from API are already qualified
   const now = Date.now();
 
   // AI report: per-module stats from DB
@@ -204,12 +199,11 @@ export default function TradeIdeasReportPage() {
             setAiStatsByModule(statsData.statsByModule ?? {});
           }
 
-          // Use real DB ideas for the idea table
-          const qualified = allAiIdeas.filter((i) => i.confidence_pct >= reportMinConsensus);
-          const filtered = qualified
+          // Use real DB ideas for the idea table — no confidence filter, all ideas are valid
+          const filtered = allAiIdeas
             .filter((i) => !isEntryMissed(i))
             .sort((a, b) => Date.parse(b.created_at) - Date.parse(a.created_at));
-          const missed = qualified
+          const missed = allAiIdeas
             .filter((i) => isEntryMissed(i))
             .sort((a, b) => Date.parse(b.created_at) - Date.parse(a.created_at));
           setApiIdeas(filtered);
@@ -237,6 +231,7 @@ export default function TradeIdeasReportPage() {
             statsByMode?: Record<string, {
               totalScan: number; totalIdeas: number; resolved: number;
               success: number; failed: number; successRate: number;
+              active?: number; entryMissed?: number;
             }>;
           };
           if (body?.ok && body.statsByMode) {
@@ -244,12 +239,11 @@ export default function TradeIdeasReportPage() {
           }
         }
 
-        // Split: real ideas vs entry-missed (70%+ confidence, sorted newest first)
-        const qualified = allRows.filter((i) => i.confidence_pct >= reportMinConsensus);
-        const filtered = qualified
+        // Split: real ideas vs entry-missed (all ideas shown, no confidence filter)
+        const filtered = allRows
           .filter((i) => !isEntryMissed(i))
           .sort((a, b) => Date.parse(b.created_at) - Date.parse(a.created_at));
-        const missed = qualified
+        const missed = allRows
           .filter((i) => isEntryMissed(i))
           .sort((a, b) => Date.parse(b.created_at) - Date.parse(a.created_at));
         setApiIdeas(filtered);
@@ -264,7 +258,7 @@ export default function TradeIdeasReportPage() {
       mounted = false;
       if (timer !== null) window.clearInterval(timer);
     };
-  }, [isAiReport, scoringMode, reportMinConsensus, windowKey]);
+  }, [isAiReport, scoringMode, windowKey]);
 
   // AI model filter applied to DB-backed ideas
   const aiFilteredDbIdeas = useMemo(() => {
@@ -278,7 +272,7 @@ export default function TradeIdeasReportPage() {
   const stats = useMemo(() => {
     if (isAiReport) {
       // Aggregate across all AI modules (or filter by selected model)
-      const moduleIds = aiModelFilter === "ALL" ? ["CHATGPT", "QWEN", "QWEN2"] : [aiModelFilter];
+      const moduleIds = aiModelFilter === "ALL" ? ["CHATGPT", "CLAUDE", "QWEN", "QWEN2"] : [aiModelFilter];
       let totalScan = 0, total = 0, active = 0, totalReal = 0, success = 0, failed = 0, entryMissed = 0;
       for (const mid of moduleIds) {
         const s = aiStatsByModule[mid];
@@ -292,10 +286,10 @@ export default function TradeIdeasReportPage() {
         entryMissed += s.entryMissed;
       }
       const successRate = totalReal > 0 ? (success / totalReal) * 100 : 0;
-      return { totalScan, total, totalReal, success, failed, successRate };
+      return { totalScan, total, totalReal, success, failed, successRate, active, entryMissed };
     }
     const modeStats = totalScanByMode[scoringMode];
-    if (!modeStats) return { totalScan: 0, total: 0, totalReal: 0, success: 0, failed: 0, successRate: 0 };
+    if (!modeStats) return { totalScan: 0, total: 0, totalReal: 0, success: 0, failed: 0, successRate: 0, active: 0, entryMissed: 0 };
     return {
       totalScan: modeStats.totalScan,
       total: modeStats.totalIdeas,
@@ -303,6 +297,8 @@ export default function TradeIdeasReportPage() {
       success: modeStats.success,
       failed: modeStats.failed,
       successRate: modeStats.successRate,
+      active: modeStats.active ?? 0,
+      entryMissed: modeStats.entryMissed ?? 0,
     };
   }, [isAiReport, aiModelFilter, aiStatsByModule, totalScanByMode, scoringMode]);
 
@@ -368,7 +364,7 @@ export default function TradeIdeasReportPage() {
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
               <h1 className="text-xl font-semibold text-white">{isAiReport ? "AI Trade Ideas Report" : "Quant Trade Ideas"}</h1>
-              <p className="text-xs text-[#6B6F76]">Ideas scoring {reportMinConsensus}%+</p>
+              <p className="text-xs text-[#6B6F76]">All qualifying trade ideas</p>
             </div>
             <div className="flex items-center gap-2">
               {(["1H", "4H", "24H"] as WindowKey[]).map((w) => (
@@ -384,9 +380,9 @@ export default function TradeIdeasReportPage() {
               {isAiReport ? (
                 <div className="inline-flex items-center gap-1 rounded-lg border border-white/10 bg-[#0F1012] px-2 py-1">
                   <span className="text-[11px] text-[#8A8F98]">AI</span>
-                  {(["ALL", "CHATGPT", "QWEN", "QWEN2"] as AiModelFilter[]).map((item) => {
+                  {(["ALL", "CHATGPT", "CLAUDE", "QWEN2", "QWEN"] as AiModelFilter[]).map((item) => {
                     const active = aiModelFilter === item;
-                    const label = item === "ALL" ? "All" : item === "CHATGPT" ? "ChatGPT" : item === "QWEN" ? "Qwen" : "Bitrium Axiom";
+                    const label = item === "ALL" ? "All" : item === "CHATGPT" ? "ChatGPT" : item === "CLAUDE" ? "Bitrium Prime" : item === "QWEN" ? "Cloud" : "Bitrium Alpha";
                     return (
                       <button
                         key={item}
@@ -447,24 +443,23 @@ export default function TradeIdeasReportPage() {
               <>
                 AI Model:{" "}
                 <span className="font-semibold text-[#F5C542]">
-                  {aiModelFilter === "CHATGPT" ? "ChatGPT" : aiModelFilter === "QWEN" ? "Qwen" : "Bitrium Axiom"}
+                  {aiModelFilter === "CHATGPT" ? "ChatGPT" : aiModelFilter === "CLAUDE" ? "Bitrium Prime" : aiModelFilter === "QWEN" ? "Cloud" : "Bitrium Alpha"}
                 </span>{" "}
                 ·{" "}
               </>
             ) : null}
             Window: <span className="font-semibold text-[#BFC2C7]">{windowKey}</span> · Total Scan:{" "}
             <span className="font-semibold text-[#8A8F98]">{stats.totalScan}</span> · Ideas:{" "}
-            <span className="font-semibold text-white">{stats.total}</span> · Resolved:{" "}
-            <span className="font-semibold text-white">{stats.totalReal}</span>
+            <span className="font-semibold text-white">{stats.total}</span>{" "}
+            <span className="text-[#6B6F76]">({stats.active ?? 0} active + {stats.totalReal} resolved + {stats.entryMissed ?? entryMissedIdeas.length} missed)</span>
           </p>
 
           <div className="mt-3 grid gap-2 sm:grid-cols-8">
             <div className="rounded-lg border border-white/10 bg-[#0F1012] px-3 py-2"><p className="text-[11px] text-[#6B6F76]">Total Scan</p><p className="text-lg font-semibold text-[#8A8F98]">{stats.totalScan}</p></div>
-            <div className="rounded-lg border border-white/10 bg-[#0F1012] px-3 py-2"><p className="text-[11px] text-[#6B6F76]">Total Trade Ideas</p><p className="text-lg font-semibold text-white">{stats.total}</p></div>
-            <div className="rounded-lg border border-white/10 bg-[#0F1012] px-3 py-2"><p className="text-[11px] text-[#6B6F76]">Entry Missed</p><p className="text-lg font-semibold text-[#8A8F98]">{entryMissedIdeas.length}</p></div>
-            <div className="rounded-lg border border-white/10 bg-[#0F1012] px-3 py-2"><p className="text-[11px] text-[#6B6F76]">Resolved Total Ideas</p><p className="text-lg font-semibold text-[#BFC2C7]">{stats.totalReal}</p></div>
-            <div className="rounded-lg border border-white/10 bg-[#0F1012] px-3 py-2"><p className="text-[11px] text-[#6B6F76]">Success</p><p className="text-lg font-semibold text-[#8fc9ab]">{stats.success}</p></div>
-            <div className="rounded-lg border border-white/10 bg-[#0F1012] px-3 py-2"><p className="text-[11px] text-[#6B6F76]">Failed</p><p className="text-lg font-semibold text-[#d49f9a]">{stats.failed}</p></div>
+            <div className="rounded-lg border border-white/10 bg-[#0F1012] px-3 py-2"><p className="text-[11px] text-[#6B6F76]">Total Ideas</p><p className="text-lg font-semibold text-white">{stats.total}</p></div>
+            <div className="rounded-lg border border-[#3b82f6]/30 bg-[#0c1222] px-3 py-2"><p className="text-[11px] text-[#6B6F76]">Active</p><p className="text-lg font-semibold text-[#60a5fa]">{stats.active ?? 0}</p></div>
+            <div className="rounded-lg border border-white/10 bg-[#0F1012] px-3 py-2"><p className="text-[11px] text-[#6B6F76]">Entry Missed</p><p className="text-lg font-semibold text-[#8A8F98]">{stats.entryMissed ?? entryMissedIdeas.length}</p></div>
+            <div className="rounded-lg border border-white/10 bg-[#0F1012] px-3 py-2"><p className="text-[11px] text-[#6B6F76]">Resolved</p><p className="text-lg font-semibold text-[#BFC2C7]">{stats.totalReal}</p></div>
             <div className="rounded-lg border border-white/10 bg-[#0F1012] px-3 py-2"><p className="text-[11px] text-[#6B6F76]">Success %</p><p className="text-lg font-semibold text-[#F5C542]">{stats.successRate.toFixed(1)}%</p></div>
             <div className={`rounded-lg border px-3 py-2 ${totalPnlUsd >= 0 ? "border-[#6f8f6d]/40 bg-[#111a10]" : "border-[#a85a52]/40 bg-[#1a100f]"}`}>
               <p className="text-[11px] text-[#6B6F76]">PnL Sim <span className="text-[9px] opacity-60">($10×10x)</span></p>
@@ -472,6 +467,7 @@ export default function TradeIdeasReportPage() {
                 {totalPnlUsd >= 0 ? "+" : ""}{totalPnlUsd.toFixed(2)}$
               </p>
             </div>
+            <div className="rounded-lg border border-white/5 bg-[#0F1012] px-3 py-2"><p className="text-[11px] text-[#6B6F76]">Breakdown</p><p className="text-[10px] font-medium text-[#6B6F76] mt-1">{stats.success}W / {stats.failed}L</p></div>
           </div>
 
           {/* ── Adaptive Optimizer Info (Quant only) ── */}
@@ -629,8 +625,8 @@ export default function TradeIdeasReportPage() {
                     {expandedItems.map((raw) => {
                       const p = raw as ApiTradeIdea;
                       const aiModule = isAiReport && (p as any).user_id?.startsWith("ai-") ? (p as any).user_id.replace("ai-", "").toUpperCase() : null;
-                      const moduleLabel = aiModule === "CHATGPT" ? "ChatGPT" : aiModule === "QWEN2" ? "Bitrium Axiom" : aiModule === "QWEN" ? "Qwen" : null;
-                      const moduleClass = aiModule === "CHATGPT" ? "border-[#3d5f8f]/70 bg-[#132033] text-[#b8d3ff]" : aiModule === "QWEN2" ? "border-[#c4893d]/70 bg-[#2a1f0f] text-[#ffd699]" : "border-[#6b4fa8]/70 bg-[#241a3c] text-[#dbcdfd]";
+                      const moduleLabel = aiModule === "CHATGPT" ? "ChatGPT" : aiModule === "CLAUDE" ? "Bitrium Prime" : aiModule === "QWEN2" ? "Bitrium Alpha" : aiModule === "QWEN" ? "Cloud" : null;
+                      const moduleClass = aiModule === "CHATGPT" ? "border-[#3d5f8f]/70 bg-[#132033] text-[#b8d3ff]" : aiModule === "CLAUDE" ? "border-[#7a6f3d]/70 bg-[#2a2418] text-[#f5e6a8]" : aiModule === "QWEN2" ? "border-[#c4893d]/70 bg-[#2a1f0f] text-[#ffd699]" : "border-[#6b4fa8]/70 bg-[#241a3c] text-[#dbcdfd]";
                       return (
                         <tr key={p.id} className="border-t border-white/10">
                           <td className="px-2 py-1 text-[#BFC2C7]">{fmtDate(p.created_at)}</td>
@@ -707,8 +703,8 @@ export default function TradeIdeasReportPage() {
                     return "-";
                   })();
                   const aiModule = isAiReport && p.user_id?.startsWith("ai-") ? p.user_id.replace("ai-", "").toUpperCase() : null;
-                  const aiModuleLabel = aiModule === "CHATGPT" ? "ChatGPT" : aiModule === "QWEN2" ? "Bitrium Axiom" : aiModule === "QWEN" ? "Qwen" : null;
-                  const aiModuleClass = aiModule === "CHATGPT" ? "border-[#3d5f8f]/70 bg-[#132033] text-[#b8d3ff]" : aiModule === "QWEN2" ? "border-[#c4893d]/70 bg-[#2a1f0f] text-[#ffd699]" : "border-[#6b4fa8]/70 bg-[#241a3c] text-[#dbcdfd]";
+                  const aiModuleLabel = aiModule === "CHATGPT" ? "ChatGPT" : aiModule === "CLAUDE" ? "Bitrium Prime" : aiModule === "QWEN2" ? "Bitrium Alpha" : aiModule === "QWEN" ? "Cloud" : null;
+                  const aiModuleClass = aiModule === "CHATGPT" ? "border-[#3d5f8f]/70 bg-[#132033] text-[#b8d3ff]" : aiModule === "CLAUDE" ? "border-[#7a6f3d]/70 bg-[#2a2418] text-[#f5e6a8]" : aiModule === "QWEN2" ? "border-[#c4893d]/70 bg-[#2a1f0f] text-[#ffd699]" : "border-[#6b4fa8]/70 bg-[#241a3c] text-[#dbcdfd]";
                   return (
                     <tr key={p.id} className="border-t border-white/10">
                       <td className="px-2 py-1.5 text-[#BFC2C7]">{fmtDate(p.created_at)}</td>

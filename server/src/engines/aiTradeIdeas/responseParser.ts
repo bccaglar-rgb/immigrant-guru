@@ -30,12 +30,24 @@ export function parseAiResponse(raw: string, isAxiom = false): AiEvaluationRespo
 // ── Standard parser (ChatGPT/Qwen) ──────────────────────────────
 
 function parseStandardResponse(parsed: Record<string, unknown> | unknown[]): AiEvaluationResponse[] {
-  // Extract evaluations array
-  const evaluations = Array.isArray(parsed)
-    ? parsed
-    : Array.isArray((parsed as Record<string, unknown>).evaluations)
-      ? (parsed as Record<string, unknown>).evaluations as unknown[]
-      : [];
+  // Extract evaluations array — supports multiple formats:
+  // 1. Direct array: [{ symbol, verdict, ... }]
+  // 2. Object with evaluations: { evaluations: [...] }
+  // 3. Single evaluation object: { symbol, decision, ... } (QWEN_FREE format)
+  let evaluations: unknown[];
+  if (Array.isArray(parsed)) {
+    evaluations = parsed;
+  } else {
+    const obj = parsed as Record<string, unknown>;
+    if (Array.isArray(obj.evaluations)) {
+      evaluations = obj.evaluations as unknown[];
+    } else if (obj.decision || obj.verdict || obj.symbol) {
+      // Single evaluation object (QWEN_FREE format returns single object)
+      evaluations = [obj];
+    } else {
+      evaluations = [];
+    }
+  }
 
   if (!evaluations.length) {
     console.error(`${PREFIX} No evaluations array found in AI response`);
@@ -48,27 +60,57 @@ function parseStandardResponse(parsed: Record<string, unknown> | unknown[]): AiE
     if (!entry || typeof entry !== "object") continue;
     const e = entry as Record<string, unknown>;
 
-    const symbol = String(e.symbol ?? "").toUpperCase().trim();
-    if (!symbol) continue;
+    // Symbol may be missing in QWEN_FREE format — use "UNKNOWN" placeholder
+    const symbol = String(e.symbol ?? "UNKNOWN").toUpperCase().trim();
 
-    const verdict = normalizeVerdict(e.verdict);
+    // Try verdict first, then decision (QWEN_FREE format)
+    const verdict = normalizeVerdict(e.verdict ?? e.decision);
     if (!verdict) continue;
 
     const direction = normalizeDirection(e.adjustedDirection ?? e.direction);
     if (!direction) continue;
 
+    // SL: support both formats
+    const slLevels = toNumberArray(e.adjustedSlLevels ?? e.sl_levels ?? []);
+    if (!slLevels.length) {
+      const sl1 = Number(e.stop_1 ?? e.sl1 ?? 0);
+      if (sl1 > 0) slLevels.push(sl1);
+    }
+    // TP: support both formats
+    const tpLevels = toNumberArray(e.adjustedTpLevels ?? e.tp_levels ?? []);
+    if (!tpLevels.length) {
+      const tp1 = Number(e.target_1 ?? e.tp1 ?? 0);
+      const tp2 = Number(e.target_2 ?? e.tp2 ?? 0);
+      if (tp1 > 0) tpLevels.push(tp1);
+      if (tp2 > 0) tpLevels.push(tp2);
+    }
+
     results.push({
       symbol,
       verdict,
-      confidence: clamp(Number(e.confidence ?? 50), 0, 100),
+      confidence: clamp(Number(e.confidence ?? e.score ?? 50), 0, 100),
       adjustedDirection: direction,
       adjustedEntryLow: Number(e.adjustedEntryLow ?? e.entry_zone_low ?? 0),
       adjustedEntryHigh: Number(e.adjustedEntryHigh ?? e.entry_zone_high ?? 0),
-      adjustedSlLevels: toNumberArray(e.adjustedSlLevels ?? e.sl_levels ?? []),
-      adjustedTpLevels: toNumberArray(e.adjustedTpLevels ?? e.tp_levels ?? []),
+      adjustedSlLevels: slLevels,
+      adjustedTpLevels: tpLevels,
       riskFlags: toStringArray(e.riskFlags ?? e.risk_flags ?? []),
       comment: String(e.comment ?? e.comment_30_words ?? "").slice(0, 300),
       reasoning: String(e.reasoning ?? "").slice(0, 500),
+      // Structured evaluation fields (v2 — optional, only present with structured prompt)
+      tradeQuality: optStr(e.trade_quality ?? e.tradeQuality),
+      directionConfidence: optStr(e.direction_confidence ?? e.directionConfidence),
+      entryQuality: optStr(e.entry_quality ?? e.entryQuality),
+      riskQuality: optStr(e.risk_quality ?? e.riskQuality),
+      scoreInflationRisk: optStr(e.score_inflation_risk ?? e.scoreInflationRisk),
+      strongestSupporting: toStringArray(e.strongest_supporting ?? e.strongestSupporting ?? []) || undefined,
+      strongestInvalidation: toStringArray(e.strongest_invalidation ?? e.strongestInvalidation ?? []) || undefined,
+      duplicatedSignals: toStringArray(e.duplicated_signals ?? e.duplicatedSignals ?? []) || undefined,
+      missingConfirmations: toStringArray(e.missing_confirmations ?? e.missingConfirmations ?? []) || undefined,
+      entryActionableNow: typeof (e.entry_actionable_now ?? e.entryActionableNow) === "boolean" ? (e.entry_actionable_now ?? e.entryActionableNow) as boolean : undefined,
+      pullbackBetterThanMarket: typeof (e.pullback_better_than_market ?? e.pullbackBetterThanMarket) === "boolean" ? (e.pullback_better_than_market ?? e.pullbackBetterThanMarket) as boolean : undefined,
+      aiIndependentScore: typeof (e.ai_independent_score ?? e.aiIndependentScore) === "number" ? clamp(Number(e.ai_independent_score ?? e.aiIndependentScore), 0, 100) : undefined,
+      scoreAdjustment: typeof (e.score_adjustment ?? e.scoreAdjustment) === "number" ? Number(e.score_adjustment ?? e.scoreAdjustment) : undefined,
     });
   }
 
@@ -141,8 +183,8 @@ function parseAxiomResponse(parsed: Record<string, unknown> | unknown[]): AiEval
     }
     confidence = clamp(confidence, 0, 100);
 
-    // Downgrade low-confidence APPROVE to DOWNGRADE
-    if (verdict === "APPROVE" && confidence < 55) {
+    // Downgrade very low-confidence APPROVE to DOWNGRADE
+    if (verdict === "APPROVE" && confidence < 50) {
       verdict = "DOWNGRADE";
     }
 
@@ -236,12 +278,20 @@ function tryParseJson(raw: string): Record<string, unknown> | unknown[] | null {
 
 function normalizeVerdict(v: unknown): AiEvaluationResponse["verdict"] | null {
   const s = String(v ?? "").toUpperCase().trim();
-  return VALID_VERDICTS.has(s) ? s as AiEvaluationResponse["verdict"] : null;
+  if (VALID_VERDICTS.has(s)) return s as AiEvaluationResponse["verdict"];
+  // Map QWEN_FREE format: TRADE→APPROVE, WATCH→DOWNGRADE, NO_TRADE→REJECT
+  if (s === "TRADE") return "APPROVE";
+  if (s === "WATCH") return "DOWNGRADE";
+  if (s === "NO_TRADE" || s === "NO TRADE") return "REJECT";
+  return null;
 }
 
 function normalizeDirection(d: unknown): "LONG" | "SHORT" | null {
   const s = String(d ?? "").toUpperCase().trim();
-  return VALID_DIRECTIONS.has(s) ? s as "LONG" | "SHORT" : null;
+  if (VALID_DIRECTIONS.has(s)) return s as "LONG" | "SHORT";
+  // QWEN_FREE format may return "NONE" or "NEUTRAL" for NO_TRADE
+  if (s === "NONE" || s === "NEUTRAL" || s === "") return "LONG"; // placeholder, won't be used for rejected
+  return null;
 }
 
 function clamp(v: number, lo: number, hi: number): number {
@@ -261,4 +311,10 @@ function toNumberArray(val: unknown): number[] {
 function toStringArray(val: unknown): string[] {
   if (!Array.isArray(val)) return [];
   return val.map((v) => String(v).trim()).filter(Boolean).slice(0, 10);
+}
+
+function optStr(val: unknown): string | undefined {
+  if (val === null || val === undefined) return undefined;
+  const s = String(val).trim();
+  return s || undefined;
 }

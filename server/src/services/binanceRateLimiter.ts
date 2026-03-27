@@ -41,8 +41,8 @@ interface ExchangePolicy {
 
 const POLICIES: Record<string, ExchangePolicy> = {
   binance: {
-    name: "Binance", weightPerMinute: 1200, softPct: 0.55, hardPct: 0.75,
-    cooldown429Ms: 90_000, cooldown418Ms: 600_000, weightHeaderName: "X-MBX-USED-WEIGHT-1M",
+    name: "Binance", weightPerMinute: 1200, softPct: 0.55, hardPct: 0.85,
+    cooldown429Ms: 60_000, cooldown418Ms: 300_000, weightHeaderName: "X-MBX-USED-WEIGHT-1M",
   },
   bybit: {
     name: "Bybit", weightPerMinute: 600, softPct: 0.60, hardPct: 0.80,
@@ -110,9 +110,9 @@ interface CircuitBreaker {
   halfOpenAllowed: number;  // allow 1 request to test
 }
 
-const CIRCUIT_FAILURE_THRESHOLD = 5;   // 5 failures → OPEN
-const CIRCUIT_OPEN_DURATION_MS = 30_000;  // 30s open before half-open
-const CIRCUIT_WINDOW_MS = 60_000;      // failure window
+const CIRCUIT_FAILURE_THRESHOLD = 3;   // 3 failures → OPEN (was 5)
+const CIRCUIT_OPEN_DURATION_MS = 300_000;  // 5 min open before half-open (was 30s)
+const CIRCUIT_WINDOW_MS = 120_000;      // failure window (was 60s)
 
 const circuits = new Map<string, CircuitBreaker>();
 
@@ -125,7 +125,7 @@ const getCircuit = (exchange: string): CircuitBreaker => {
   return cb;
 };
 
-const circuitCanPass = (exchange: string, priority: Priority): boolean => {
+const circuitCanPass = (exchange: string, _priority: Priority): boolean => {
   const cb = getCircuit(exchange);
   const now = Date.now();
 
@@ -137,15 +137,16 @@ const circuitCanPass = (exchange: string, priority: Priority): boolean => {
       cb.halfOpenAllowed = 1;
       return true;
     }
-    return priority === "critical"; // only critical bypasses OPEN
+    // NEVER bypass OPEN state — even critical priority waits
+    return false;
   }
 
-  // HALF_OPEN: allow limited requests
+  // HALF_OPEN: allow 1 request to probe
   if (cb.halfOpenAllowed > 0) {
     cb.halfOpenAllowed--;
     return true;
   }
-  return priority === "critical";
+  return false;
 };
 
 const circuitRecordSuccess = (exchange: string): void => {
@@ -386,12 +387,13 @@ const metrics = {
   byExchange: new Map<string, {
     requests: number; errors: number; avgLatencyMs: number;
     dedupHits: number; circuitState: CircuitState;
+    total429: number; total418: number;
   }>(),
 };
 
 const getExMetrics = (ex: string) => {
   let m = metrics.byExchange.get(ex);
-  if (!m) { m = { requests: 0, errors: 0, avgLatencyMs: 0, dedupHits: 0, circuitState: "CLOSED" }; metrics.byExchange.set(ex, m); }
+  if (!m) { m = { requests: 0, errors: 0, avgLatencyMs: 0, dedupHits: 0, circuitState: "CLOSED", total429: 0, total418: 0 }; metrics.byExchange.set(ex, m); }
   return m;
 };
 
@@ -431,9 +433,9 @@ export const exchangeFetch = async (opts: ExchangeFetchOptions): Promise<Respons
     throw new Error(`${exchange}_circuit_open: REST temporarily disabled for ${exchange}`);
   }
 
-  // ── 2. Cooldown check (Redis-shared) ──
+  // ── 2. Cooldown check (Redis-shared) ── ABSOLUTE: no bypass even for critical
   const cd = await checkCooldown(exchange);
-  if (cd.active && priority !== "critical") {
+  if (cd.active) {
     throw new Error(`${exchange}_cooldown: ${cd.reason}, ${Math.ceil((cd.until - Date.now()) / 1000)}s remaining`);
   }
 
@@ -580,6 +582,7 @@ export const exchangeFetch = async (opts: ExchangeFetchOptions): Promise<Respons
       // CRITICAL: Rate limits trigger backoff, NOT egress switching
       if (upstreamStatus === 429) {
         metrics.total429++;
+        exm.total429++;
         const retryAfter = Number(res.headers.get("Retry-After") ?? 90);
         const cooldownMs = Math.max(policy.cooldown429Ms, retryAfter * 1000);
         void setCooldown(exchange, Date.now() + cooldownMs, "429");
@@ -589,11 +592,16 @@ export const exchangeFetch = async (opts: ExchangeFetchOptions): Promise<Respons
         console.error(`[ExchangeRL:${policy.name}] 429! Cooldown ${cooldownMs / 1000}s. weight=${current}+${weight} path=${egress.pathId}`);
       } else if (upstreamStatus === 418) {
         metrics.total418++;
+        exm.total418++;
         void setCooldown(exchange, Date.now() + policy.cooldown418Ms, "418");
-        circuitRecordFailure(exchange, "418");
+        // Force circuit breaker to OPEN for the FULL cooldown duration
+        const cb418 = getCircuit(exchange);
+        cb418.state = "OPEN";
+        cb418.openUntil = Date.now() + policy.cooldown418Ms;
+        cb418.failureCount = CIRCUIT_FAILURE_THRESHOLD;
         // Inform egress controller — quarantines path but does NOT switch to continue
         egressCtrl?.reportRateLimit(exchange, egress.pathId, 418);
-        console.error(`[ExchangeRL:${policy.name}] 418 IP BAN! Cooldown ${policy.cooldown418Ms / 1000}s path=${egress.pathId}`);
+        console.error(`[ExchangeRL:${policy.name}] 418 IP BAN! Circuit LOCKED for ${policy.cooldown418Ms / 1000}s path=${egress.pathId}`);
       } else if (upstreamStatus === 403) {
         metrics.total403++;
         void setCooldown(exchange, Date.now() + policy.cooldown418Ms, "403");
@@ -713,6 +721,8 @@ export const getFullMetrics = () => {
       errors: exm.errors,
       avgLatencyMs: Math.round(exm.avgLatencyMs),
       dedupHits: exm.dedupHits,
+      total429: exm.total429,
+      total418: exm.total418,
     };
   }
   const topEndpoints = [...endpointProfiles.entries()]
@@ -762,3 +772,52 @@ export const logRateLimiterStatus = () => {
     );
   }
 };
+
+// ═══════════════════════════════════════════════════════════════════
+// GLOBAL BAN CHECK — callable by ANY service before direct fetch()
+// ═══════════════════════════════════════════════════════════════════
+
+/**
+ * Synchronous check: is this exchange currently banned / in cooldown?
+ * Services that can't easily switch to exchangeFetch() should call this
+ * BEFORE making any direct fetch() to the exchange.
+ * Returns true if the exchange is safe to call, false if banned.
+ */
+export const isExchangeAvailable = (exchange: string = "binance"): boolean => {
+  const ex = exchange.toLowerCase().replace(/[.\-_\s]/g, "");
+  const local = getLocal(ex);
+  const now = Date.now();
+  // Check local cooldown (always in sync with Redis via setCooldown)
+  if (local.cooldownUntil > now) return false;
+  // Check circuit breaker
+  const cb = getCircuit(ex);
+  if (cb.state === "OPEN" && now < cb.openUntil) return false;
+  return true;
+};
+
+/**
+ * Async check with Redis — more accurate for cross-worker state.
+ */
+export const isExchangeAvailableAsync = async (exchange: string = "binance"): Promise<boolean> => {
+  const ex = exchange.toLowerCase().replace(/[.\-_\s]/g, "");
+  // Check circuit breaker first (instant)
+  const cb = getCircuit(ex);
+  const now = Date.now();
+  if (cb.state === "OPEN" && now < cb.openUntil) return false;
+  // Check Redis cooldown
+  const cd = await checkCooldown(ex);
+  return !cd.active;
+};
+
+/**
+ * Get the PM2 worker ID. Used by services that should only run on worker 0.
+ */
+export const getWorkerId = (): number =>
+  Number(process.env.NODE_APP_INSTANCE ?? process.env.pm_id ?? 0);
+
+/**
+ * Returns true if this is the primary worker (worker 0).
+ * Background tasks (klines fetch, universe engine, scanners) should
+ * ONLY run on the primary worker to prevent duplicate REST calls.
+ */
+export const isPrimaryWorker = (): boolean => getWorkerId() === 0;

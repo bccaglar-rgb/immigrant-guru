@@ -25,7 +25,7 @@
  *   }
  */
 
-import { redis } from "../../db/redis.ts";
+import { redisControl } from "../../db/redis.ts";
 import type { ExchangeVenue } from "./exchangeRateLimiter.ts";
 
 type CircuitState = "CLOSED" | "OPEN" | "HALF_OPEN";
@@ -58,10 +58,10 @@ export class CircuitBreaker {
 
     if (state === "OPEN") {
       // Check if cooldown elapsed → transition to HALF_OPEN
-      const openAt = await redis.get(this.keyOpenAt);
+      const openAt = await redisControl.get(this.keyOpenAt);
       if (openAt && Date.now() - Number(openAt) >= COOLDOWN_SEC * 1000) {
-        await redis.set(this.keyState, "HALF_OPEN");
-        await redis.del(this.keySuccess);
+        await redisControl.set(this.keyState, "HALF_OPEN");
+        await redisControl.del(this.keySuccess);
         console.log(`[CircuitBreaker] ${this.venue}: OPEN → HALF_OPEN (cooldown elapsed)`);
         return true; // allow one test request
       }
@@ -77,7 +77,7 @@ export class CircuitBreaker {
     const state = await this.getState();
 
     if (state === "HALF_OPEN") {
-      const successes = await redis.incr(this.keySuccess);
+      const successes = await redisControl.incr(this.keySuccess);
       if (successes >= SUCCESS_THRESHOLD) {
         await this.reset();
         console.log(`[CircuitBreaker] ${this.venue}: HALF_OPEN → CLOSED (${successes} successes)`);
@@ -100,9 +100,9 @@ export class CircuitBreaker {
     }
 
     // CLOSED: count failures in window
-    const fails = await redis.incr(this.keyFails);
+    const fails = await redisControl.incr(this.keyFails);
     if (fails <= 1) {
-      await redis.expire(this.keyFails, FAILURE_WINDOW_SEC);
+      await redisControl.expire(this.keyFails, FAILURE_WINDOW_SEC);
     }
 
     if (fails >= FAILURE_THRESHOLD) {
@@ -114,7 +114,7 @@ export class CircuitBreaker {
   /** Get current state. */
   async getState(): Promise<CircuitState> {
     try {
-      const raw = await redis.get(this.keyState);
+      const raw = await redisControl.get(this.keyState);
       if (raw === "OPEN" || raw === "HALF_OPEN") return raw;
       return "CLOSED";
     } catch {
@@ -131,8 +131,8 @@ export class CircuitBreaker {
   }> {
     const [state, fails, openAt] = await Promise.all([
       this.getState(),
-      redis.get(this.keyFails).then((v) => Number(v ?? 0)).catch(() => 0),
-      redis.get(this.keyOpenAt).then((v) => (v ? Number(v) : null)).catch(() => null),
+      redisControl.get(this.keyFails).then((v) => Number(v ?? 0)).catch(() => 0),
+      redisControl.get(this.keyOpenAt).then((v) => (v ? Number(v) : null)).catch(() => null),
     ]);
     return {
       venue: this.venue,
@@ -146,19 +146,19 @@ export class CircuitBreaker {
 
   private async open(): Promise<void> {
     await Promise.all([
-      redis.set(this.keyState, "OPEN"),
-      redis.set(this.keyOpenAt, String(Date.now())),
-      redis.del(this.keyFails),
-      redis.del(this.keySuccess),
+      redisControl.set(this.keyState, "OPEN"),
+      redisControl.set(this.keyOpenAt, String(Date.now())),
+      redisControl.del(this.keyFails),
+      redisControl.del(this.keySuccess),
     ]);
   }
 
   private async reset(): Promise<void> {
     await Promise.all([
-      redis.set(this.keyState, "CLOSED"),
-      redis.del(this.keyFails),
-      redis.del(this.keySuccess),
-      redis.del(this.keyOpenAt),
+      redisControl.set(this.keyState, "CLOSED"),
+      redisControl.del(this.keyFails),
+      redisControl.del(this.keySuccess),
+      redisControl.del(this.keyOpenAt),
     ]);
   }
 }

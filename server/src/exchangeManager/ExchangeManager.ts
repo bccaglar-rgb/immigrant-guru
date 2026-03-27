@@ -68,6 +68,13 @@ export class ExchangeManager {
   async connect(userId: string, input: ConnectInput): Promise<ConnectionStatusReport> {
     const exchangeId = normalizeExchangeId(input.exchangeId);
     if (!exchangeId) throw issue("INVALID_INPUT", `Unsupported exchangeId: ${input.exchangeId}`, false);
+
+    // Validate credential format before anything else
+    const { apiKey, apiSecret } = input.credentials;
+    const isValidCred = (s: string) => s.length > 0 && s.length < 500 && /^[\x20-\x7E]+$/.test(s);
+    if (!isValidCred(apiKey)) throw issue("INVALID_INPUT", "API Key contains invalid characters or is too long. Please paste only the API key from your exchange.", false);
+    if (!isValidCred(apiSecret)) throw issue("INVALID_INPUT", "API Secret contains invalid characters or is too long. Please paste only the API secret from your exchange.", false);
+
     const adapter = this.adapters[exchangeId];
     const options: OnboardingOptions = {
       marketType: input.options?.marketType ?? "both",
@@ -223,14 +230,42 @@ export class ExchangeManager {
   async getAccountSnapshot(userId: string, exchangeIdRaw: string, symbolRaw?: string, accountName?: string) {
     const exchangeId = normalizeExchangeId(exchangeIdRaw);
     if (!exchangeId) throw issue("INVALID_INPUT", `Unsupported exchangeId: ${exchangeIdRaw}`, false);
-    const creds = await this.getCredentials(userId, exchangeId, accountName);
-    if (!creds) {
+
+    // Fetch connection row for environment info + credentials
+    const row = await this.connections.getExchangeConnection(userId, exchangeId, accountName);
+    if (!row) {
+      console.warn(`[ExchangeManager] No connection found for ${userId}/${exchangeId}/${accountName ?? "Main"}`);
       return this.emptyAccountSnapshot(exchangeId);
     }
 
+    let creds: ExchangeCredentials;
+    try {
+      creds = {
+        apiKey: decryptSecret(row.credentialsEncrypted.apiKey, this.encryptionKey),
+        apiSecret: decryptSecret(row.credentialsEncrypted.apiSecret, this.encryptionKey),
+        passphrase: row.credentialsEncrypted.passphrase
+          ? decryptSecret(row.credentialsEncrypted.passphrase, this.encryptionKey)
+          : undefined,
+      };
+    } catch (e) {
+      console.error(`[ExchangeManager] Credential decryption failed for ${exchangeId}/${accountName ?? "Main"}:`, e instanceof Error ? e.message : e);
+      return this.emptyAccountSnapshot(exchangeId);
+    }
+
+    // Validate credential format — API keys should be ASCII-only, reasonable length
+    const isValidCred = (s: string) => s.length > 0 && s.length < 500 && /^[\x20-\x7E]+$/.test(s);
+    if (!isValidCred(creds.apiKey) || !isValidCred(creds.apiSecret)) {
+      console.error(`[ExchangeManager] Invalid credential format for ${exchangeId}/${accountName ?? "Main"}: apiKey len=${creds.apiKey.length}, apiSecret len=${creds.apiSecret.length}, likely corrupted or non-API-key data stored`);
+      throw issue("INVALID_CREDENTIALS", `Stored credentials for ${exchangeId} are invalid (non-API-key data). Please re-connect with valid API keys.`, false);
+    }
+
+    const env = row.environment ?? "mainnet";
     const symbol = String(symbolRaw ?? "").toUpperCase().replace("/", "");
+
+    console.log(`[ExchangeManager] Fetching snapshot for ${exchangeId}/${accountName ?? "Main"} env=${env} keyLen=${creds.apiKey.length}`);
+
     if (exchangeId === "binance") return this.fetchBinanceAccountSnapshot(creds, symbol || "BTCUSDT");
-    if (exchangeId === "gate") return this.fetchGateAccountSnapshot(creds, symbol || "BTC_USDT");
+    if (exchangeId === "gate") return this.fetchGateAccountSnapshot(creds, symbol || "BTC_USDT", env);
 
     return this.emptyAccountSnapshot(exchangeId);
   }
@@ -243,7 +278,8 @@ export class ExchangeManager {
   }
 
   private async fetchBinanceAccountSnapshot(creds: ExchangeCredentials, symbol: string) {
-    const base = "https://fapi.binance.com";
+    const futuresBase = "https://fapi.binance.com";
+    const spotBase = "https://api.binance.com";
     const makeSignedQuery = (params: Record<string, string | number | boolean>) => {
       const query = new URLSearchParams(
         Object.entries(params).reduce<Record<string, string>>((acc, [k, v]) => {
@@ -254,20 +290,30 @@ export class ExchangeManager {
       const signature = createHmac("sha256", creds.apiSecret).update(query).digest("hex");
       return `${query}&signature=${signature}`;
     };
-    const fetchSigned = async <T>(path: string, params: Record<string, string | number | boolean>) => {
+    const fetchSigned = async <T>(baseUrl: string, path: string, params: Record<string, string | number | boolean>) => {
       const qs = makeSignedQuery(params);
-      const res = await fetch(`${base}${path}?${qs}`, {
+      const res = await fetch(`${baseUrl}${path}?${qs}`, {
         headers: { "X-MBX-APIKEY": creds.apiKey, accept: "application/json" },
       });
-      if (!res.ok) throw issue("EXCHANGE_DOWN", `Binance account API HTTP ${res.status}`, true, { path, status: res.status });
+      if (!res.ok) {
+        const body = await res.text().catch(() => "");
+        console.error(`[ExchangeManager] Binance ${path} HTTP ${res.status}: ${body}`);
+        throw issue("EXCHANGE_DOWN", `Binance API HTTP ${res.status}: ${body}`, true, { path, status: res.status });
+      }
       return (await res.json()) as T;
     };
     const ts = Date.now();
     const common = { timestamp: ts, recvWindow: 10000 };
 
-    const [balancesRaw, positionsRaw, openOrdersRaw, orderHistoryRaw, tradeHistoryRaw, incomeRaw] =
+    const logCatch = (label: string) => (err: unknown) => {
+      console.error(`[ExchangeManager] Binance ${label} failed:`, err instanceof Error ? err.message : err);
+      return [];
+    };
+
+    // Fetch futures + spot in parallel
+    const [balancesRaw, positionsRaw, openOrdersRaw, orderHistoryRaw, tradeHistoryRaw, incomeRaw, spotBalancesRaw] =
       await Promise.all([
-        fetchSigned<Array<{ asset: string; availableBalance: string; balance: string }>>("/fapi/v2/balance", common).catch(() => []),
+        fetchSigned<Array<{ asset: string; availableBalance: string; balance: string }>>(futuresBase, "/fapi/v2/balance", common).catch(logCatch("futures/balance")),
         fetchSigned<
           Array<{
             symbol: string;
@@ -278,7 +324,7 @@ export class ExchangeManager {
             liquidationPrice: string;
             leverage: string;
           }>
-        >("/fapi/v2/positionRisk", common).catch(() => []),
+        >(futuresBase, "/fapi/v2/positionRisk", common).catch(logCatch("futures/positionRisk")),
         fetchSigned<
           Array<{
             orderId: number;
@@ -291,19 +337,38 @@ export class ExchangeManager {
             time: number;
             status: string;
           }>
-        >("/fapi/v1/openOrders", { ...common, symbol }).catch(() => []),
-        fetchSigned<Array<Record<string, unknown>>>("/fapi/v1/allOrders", { ...common, symbol, limit: 50 }).catch(() => []),
-        fetchSigned<Array<Record<string, unknown>>>("/fapi/v1/userTrades", { ...common, symbol, limit: 50 }).catch(() => []),
-        fetchSigned<Array<Record<string, unknown>>>("/fapi/v1/income", { ...common, symbol, limit: 50 }).catch(() => []),
+        >(futuresBase, "/fapi/v1/openOrders", { ...common, symbol }).catch(logCatch("futures/openOrders")),
+        fetchSigned<Array<Record<string, unknown>>>(futuresBase, "/fapi/v1/allOrders", { ...common, symbol, limit: 50 }).catch(logCatch("futures/allOrders")),
+        fetchSigned<Array<Record<string, unknown>>>(futuresBase, "/fapi/v1/userTrades", { ...common, symbol, limit: 50 }).catch(logCatch("futures/userTrades")),
+        fetchSigned<Array<Record<string, unknown>>>(futuresBase, "/fapi/v1/income", { ...common, symbol, limit: 50 }).catch(logCatch("futures/income")),
+        // Spot balances from api.binance.com
+        fetchSigned<{ balances?: Array<{ asset: string; free: string; locked: string }> }>(spotBase, "/api/v3/account", common)
+          .then((acc) => (acc.balances ?? []).filter((b) => Number(b.free) > 0 || Number(b.locked) > 0))
+          .catch(logCatch("spot/account")),
       ]);
 
-    const balances = balancesRaw
-      .map((b) => ({
+    // Futures balances (non-zero)
+    const futuresBalances = (Array.isArray(balancesRaw) ? balancesRaw : [])
+      .map((b: any) => ({
         asset: b.asset,
         available: Number(b.availableBalance ?? 0),
         total: Number(b.balance ?? 0),
+        wallet: "futures" as const,
       }))
       .filter((b) => Number.isFinite(b.total) && b.total > 0);
+
+    // Spot balances (non-zero)
+    const spotBalances = (Array.isArray(spotBalancesRaw) ? spotBalancesRaw : [])
+      .map((b: any) => ({
+        asset: String(b.asset ?? ""),
+        available: Number(b.free ?? 0),
+        total: Number(b.free ?? 0) + Number(b.locked ?? 0),
+        wallet: "spot" as const,
+      }))
+      .filter((b) => Number.isFinite(b.total) && b.total > 0);
+
+    // Merge: futures first, then spot (tag which wallet)
+    const balances = [...futuresBalances, ...spotBalances];
 
     const positions = positionsRaw
       .map((p) => {
@@ -390,8 +455,9 @@ export class ExchangeManager {
     };
   }
 
-  private async fetchGateAccountSnapshot(creds: ExchangeCredentials, symbolInput: string) {
-    const base = "https://api.gateio.ws";
+  private async fetchGateAccountSnapshot(creds: ExchangeCredentials, symbolInput: string, environment = "mainnet") {
+    // Use correct base URL based on environment
+    const base = environment === "testnet" ? "https://fx-api-testnet.gateio.ws" : "https://api.gateio.ws";
     const apiPrefix = "/api/v4";
     const symbol = symbolInput.includes("_") ? symbolInput : symbolInput.replace("USDT", "_USDT");
 
@@ -424,16 +490,25 @@ export class ExchangeManager {
         },
         body: method === "POST" ? body : undefined,
       });
-      if (!res.ok) throw issue("EXCHANGE_DOWN", `Gate.io account API HTTP ${res.status}`, true, { path, status: res.status });
+      if (!res.ok) {
+        const errBody = await res.text().catch(() => "");
+        console.error(`[ExchangeManager] Gate.io ${path} HTTP ${res.status}: ${errBody}`);
+        throw issue("EXCHANGE_DOWN", `Gate.io API HTTP ${res.status}: ${errBody}`, true, { path, status: res.status });
+      }
       return (await res.json()) as T;
     };
 
+    const logCatch = (label: string) => (err: unknown) => {
+      console.error(`[ExchangeManager] Gate.io ${label} failed:`, err instanceof Error ? err.message : err);
+      return label === "accounts" ? {} : [];
+    };
+
     const [accountRaw, positionsRaw, openOrdersRaw, orderHistoryRaw, tradeHistoryRaw] = await Promise.all([
-      signedFetch<Record<string, unknown>>("GET", "/futures/usdt/accounts").catch(() => ({})),
-      signedFetch<Array<Record<string, unknown>>>("GET", "/futures/usdt/positions").catch(() => []),
-      signedFetch<Array<Record<string, unknown>>>("GET", "/futures/usdt/orders", { contract: symbol, status: "open", limit: 50 }).catch(() => []),
-      signedFetch<Array<Record<string, unknown>>>("GET", "/futures/usdt/orders", { contract: symbol, status: "finished", limit: 50 }).catch(() => []),
-      signedFetch<Array<Record<string, unknown>>>("GET", "/futures/usdt/my_trades", { contract: symbol, limit: 50 }).catch(() => []),
+      signedFetch<Record<string, unknown>>("GET", "/futures/usdt/accounts").catch(logCatch("accounts")),
+      signedFetch<Array<Record<string, unknown>>>("GET", "/futures/usdt/positions").catch(logCatch("positions")),
+      signedFetch<Array<Record<string, unknown>>>("GET", "/futures/usdt/orders", { contract: symbol, status: "open", limit: 50 }).catch(logCatch("openOrders")),
+      signedFetch<Array<Record<string, unknown>>>("GET", "/futures/usdt/orders", { contract: symbol, status: "finished", limit: 50 }).catch(logCatch("orderHistory")),
+      signedFetch<Array<Record<string, unknown>>>("GET", "/futures/usdt/my_trades", { contract: symbol, limit: 50 }).catch(logCatch("myTrades")),
     ]);
 
     const usdtBalance = Number(accountRaw.available ?? accountRaw.total ?? 0);

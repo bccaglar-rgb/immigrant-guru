@@ -490,6 +490,8 @@ const toTradePlanFromApi = (idea: ApiTradeIdea): TradePlan => ({
     low: Number(idea.entry_low ?? 0),
     high: Number(idea.entry_high ?? 0),
     raw: `${idea.entry_low} - ${idea.entry_high}`,
+    sl: Array.isArray(idea.sl_levels) ? idea.sl_levels.filter((p: unknown) => p != null && Number.isFinite(Number(p))).map(Number) : [],
+    tp: Array.isArray(idea.tp_levels) ? idea.tp_levels.filter((p: unknown) => p != null && Number.isFinite(Number(p))).map(Number) : [],
   },
   stops: Array.isArray(idea.sl_levels)
     ? idea.sl_levels.map((price, idx) => ({ label: `SL${idx + 1}`, price, sharePct: 0 }))

@@ -26,7 +26,8 @@ export const registerPortfolioRoutes = (app: Express, manager: ExchangeManager, 
         status: string;
         enabled: boolean;
         environment?: string;
-        balances: Array<{ asset: string; available: number; total: number }>;
+        balances: Array<{ asset: string; available: number; total: number; wallet?: string }>;
+        spotBalances: Array<{ asset: string; available: number; total: number }>;
         positions: Array<{
           id: string;
           symbol: string;
@@ -48,6 +49,11 @@ export const registerPortfolioRoutes = (app: Express, manager: ExchangeManager, 
         const exchange = exchanges[i];
         if (result.status === "fulfilled") {
           const { snapshot } = result.value;
+          const allBalances = (snapshot.balances ?? []) as Array<{ asset: string; available: number; total: number; wallet?: string }>;
+          // Split into futures and spot based on wallet tag
+          const spotBalances = allBalances.filter((b: any) => b.wallet === "spot").map(({ asset, available, total }) => ({ asset, available, total }));
+          const futuresBalances = allBalances.filter((b: any) => b.wallet !== "spot").map(({ asset, available, total }) => ({ asset, available, total }));
+
           accounts.push({
             connectionId: exchange.id,
             exchangeId: exchange.exchangeId,
@@ -56,12 +62,14 @@ export const registerPortfolioRoutes = (app: Express, manager: ExchangeManager, 
             status: exchange.status,
             enabled: exchange.enabled,
             environment: exchange.environment,
-            balances: snapshot.balances ?? [],
+            balances: futuresBalances.length > 0 ? futuresBalances : allBalances.map(({ asset, available, total }) => ({ asset, available, total })),
+            spotBalances,
             positions: snapshot.positions ?? [],
             openOrders: snapshot.openOrders ?? [],
             fetchedAt: snapshot.fetchedAt ?? new Date().toISOString(),
           });
         } else {
+          console.error(`[Portfolio] Snapshot failed for ${exchange.exchangeId}/${exchange.accountName}:`, result.reason?.message ?? result.reason);
           accounts.push({
             connectionId: exchange.id,
             exchangeId: exchange.exchangeId,
@@ -71,6 +79,7 @@ export const registerPortfolioRoutes = (app: Express, manager: ExchangeManager, 
             enabled: exchange.enabled,
             environment: exchange.environment,
             balances: [],
+            spotBalances: [],
             positions: [],
             openOrders: [],
             fetchedAt: new Date().toISOString(),
@@ -81,6 +90,7 @@ export const registerPortfolioRoutes = (app: Express, manager: ExchangeManager, 
 
       return res.json({ ok: true, accounts });
     } catch (err: any) {
+      console.error("[Portfolio] Route error:", err?.message ?? err);
       return res.status(500).json({ ok: false, error: err?.message ?? "portfolio_failed" });
     }
   });

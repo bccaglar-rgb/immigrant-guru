@@ -11,7 +11,7 @@ interface Props {
 }
 
 const tabs: Array<{ key: TabKey; label: string; accent?: boolean }> = [
-  { key: "sniper", label: "Sniper", accent: true },
+  { key: "sniper", label: "Signals", accent: true },
   { key: "bots", label: "Bots", accent: true },
   { key: "positions", label: "Positions" },
   { key: "openOrders", label: "Open Orders" },

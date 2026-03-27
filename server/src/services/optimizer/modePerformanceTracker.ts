@@ -153,6 +153,11 @@ export class ModePerformanceTracker {
   }
 
   private evaluateThrottle(s: ModeStats): void {
+    // DISABLED: tracking only — no throttling until manual review
+    s.throttled = false;
+    s.weight = 1.0;
+    s.throttleReason = null;
+    return;
     if (s.tradeCount < MIN_TRADES_FOR_EVAL) {
       s.throttled = false;
       s.weight = 1.0;

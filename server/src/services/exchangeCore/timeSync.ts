@@ -6,8 +6,9 @@
  *
  * Syncs every 60s per venue. Stores offset in Redis for cross-worker access.
  */
-import { redis } from "../../db/redis.ts";
+import { redisControl } from "../../db/redis.ts";
 import type { CoreVenue } from "./types.ts";
+import { exchangeFetch, isExchangeAvailable } from "../binanceRateLimiter.ts";
 
 const SYNC_INTERVAL_MS = 60_000;
 const DRIFT_WARNING_MS = 500; // warn if drift exceeds 500ms
@@ -100,7 +101,7 @@ export class ExchangeTimeSync {
       this.lastSynced.set(venue, new Date().toISOString());
 
       // Store in Redis for other workers
-      await redis.set(offsetKey(venue), String(offset), "EX", 120);
+      await redisControl.set(offsetKey(venue), String(offset), "EX", 120);
 
       const drift = Math.abs(offset);
       if (drift > DRIFT_WARNING_MS) {
@@ -113,7 +114,7 @@ export class ExchangeTimeSync {
 
       // Try loading from Redis (another worker may have synced)
       try {
-        const cached = await redis.get(offsetKey(venue));
+        const cached = await redisControl.get(offsetKey(venue));
         if (cached != null) {
           this.offsets.set(venue, Number(cached));
         }
@@ -126,34 +127,48 @@ export class ExchangeTimeSync {
   // ── Exchange Server Time Fetch ────────────────────────────────
 
   private async fetchBinanceServerTime(): Promise<number> {
-    const res = await fetch("https://fapi.binance.com/fapi/v1/time");
+    if (!isExchangeAvailable("binance")) throw new Error("Binance REST unavailable (cooldown)");
+    const res = await exchangeFetch({
+      url: "https://fapi.binance.com/fapi/v1/time",
+      exchange: "binance",
+      priority: "low",
+      weight: 1,
+      dedupKey: "timesync-binance",
+    });
     if (!res.ok) throw new Error(`Binance time API ${res.status}`);
     const data = (await res.json()) as { serverTime: number };
     return data.serverTime;
   }
 
   private async fetchGateServerTime(): Promise<number> {
-    // Gate.io doesn't have a dedicated time endpoint; use headers from a lightweight call
-    const res = await fetch("https://fx-api.gateio.ws/api/v4/futures/usdt/contracts/BTC_USDT");
+    if (!isExchangeAvailable("gateio")) throw new Error("Gate.io REST unavailable (cooldown)");
+    const res = await exchangeFetch({
+      url: "https://fx-api.gateio.ws/api/v4/futures/usdt/contracts/BTC_USDT",
+      exchange: "gateio", priority: "low", weight: 1, dedupKey: "timesync-gateio",
+    });
     if (!res.ok) throw new Error(`Gate.io API ${res.status}`);
-    // Use Date header as server time approximation
     const dateHeader = res.headers.get("date");
-    if (dateHeader) {
-      return new Date(dateHeader).getTime();
-    }
-    // Fallback: use local time (no offset)
+    if (dateHeader) return new Date(dateHeader).getTime();
     return Date.now();
   }
 
   private async fetchBybitServerTime(): Promise<number> {
-    const res = await fetch("https://api.bybit.com/v5/market/time");
+    if (!isExchangeAvailable("bybit")) throw new Error("Bybit REST unavailable (cooldown)");
+    const res = await exchangeFetch({
+      url: "https://api.bybit.com/v5/market/time",
+      exchange: "bybit", priority: "low", weight: 1, dedupKey: "timesync-bybit",
+    });
     if (!res.ok) throw new Error(`Bybit time API ${res.status}`);
     const data = (await res.json()) as { result: { timeSecond: string; timeNano: string } };
     return Number(data.result.timeSecond) * 1000;
   }
 
   private async fetchOkxServerTime(): Promise<number> {
-    const res = await fetch("https://www.okx.com/api/v5/public/time");
+    if (!isExchangeAvailable("okx")) throw new Error("OKX REST unavailable (cooldown)");
+    const res = await exchangeFetch({
+      url: "https://www.okx.com/api/v5/public/time",
+      exchange: "okx", priority: "low", weight: 1, dedupKey: "timesync-okx",
+    });
     if (!res.ok) throw new Error(`OKX time API ${res.status}`);
     const data = (await res.json()) as { data: Array<{ ts: string }> };
     return Number(data.data?.[0]?.ts ?? Date.now());

@@ -63,8 +63,13 @@ export const useMarketListStore = create<MarketListState>((set, get) => ({
     }
 
     if (changed) {
-      // New Map reference triggers re-render
-      set({ rows: new Map(current), lastPatchAt: ts });
+      // Throttle new Map reference: max once per 3s to avoid excessive table re-renders.
+      // In-place mutations are already applied above — data is fresh even without new ref.
+      const lastPatch = get().lastPatchAt;
+      if (ts - lastPatch >= 3000) {
+        set({ rows: new Map(current), lastPatchAt: ts });
+      }
+      // Between flushes, don't update store at all — avoids re-render cascade
     }
   },
 

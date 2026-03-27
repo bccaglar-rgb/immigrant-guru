@@ -2,7 +2,7 @@ import { createHash, createHmac, pbkdf2Sync, randomBytes, timingSafeEqual } from
 import { decryptSecret, encryptSecret } from "../security/crypto.ts";
 import type { ReferralCodeRecord, Role, SessionRecord, UserRecord } from "./types.ts";
 import { PaymentStore } from "./storage.ts";
-import { redis } from "../db/redis.ts";
+import { redisControl } from "../db/redis.ts";
 
 const SESSION_CACHE_TTL = 60 * 60; // 1 hour in Redis (session itself has 30-day DB expiry)
 
@@ -133,7 +133,7 @@ export class AuthService {
     // Cache session + user in Redis for fast auth lookups
     try {
       const cachePayload = JSON.stringify({ session, user: { id: user.id, email: user.email, role: user.role, twoFactorEnabled: user.twoFactorEnabled } });
-      await redis.set(`session:${session.token}`, cachePayload, "EX", SESSION_CACHE_TTL);
+      await redisControl.set(`session:${session.token}`, cachePayload, "EX", SESSION_CACHE_TTL);
     } catch { /* Redis miss is ok — fallback to DB */ }
     return { session, user };
   }
@@ -172,7 +172,7 @@ export class AuthService {
     await this.store.setSession(session);
     try {
       const cachePayload = JSON.stringify({ session, user: { id: user.id, email: user.email, role: user.role, twoFactorEnabled: user.twoFactorEnabled } });
-      await redis.set(`session:${session.token}`, cachePayload, "EX", SESSION_CACHE_TTL);
+      await redisControl.set(`session:${session.token}`, cachePayload, "EX", SESSION_CACHE_TTL);
     } catch { /* Redis miss ok */ }
     return { session, user, provider };
   }
@@ -182,14 +182,14 @@ export class AuthService {
 
     // 1. Try Redis cache first
     try {
-      const cached = await redis.get(`session:${token}`);
+      const cached = await redisControl.get(`session:${token}`);
       if (cached) {
         const parsed = JSON.parse(cached) as { session: SessionRecord; user: UserRecord };
         if (Date.parse(parsed.session.expiresAt) > Date.now()) {
           return parsed;
         }
         // Expired — clean up
-        await redis.del(`session:${token}`);
+        await redisControl.del(`session:${token}`);
       }
     } catch { /* Redis miss — fall through to DB */ }
 
@@ -206,7 +206,7 @@ export class AuthService {
     // 3. Populate Redis cache for next time
     try {
       const cachePayload = JSON.stringify({ session, user: { id: user.id, email: user.email, role: user.role, twoFactorEnabled: user.twoFactorEnabled } });
-      await redis.set(`session:${token}`, cachePayload, "EX", SESSION_CACHE_TTL);
+      await redisControl.set(`session:${token}`, cachePayload, "EX", SESSION_CACHE_TTL);
     } catch { /* ignore */ }
 
     return { session, user };

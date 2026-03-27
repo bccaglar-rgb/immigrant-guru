@@ -11,7 +11,7 @@
  * Uses Redis for counters and cooldown tracking.
  */
 import { pool } from "../../db/pool.ts";
-import { redis } from "../../db/redis.ts";
+import { redisControl } from "../../db/redis.ts";
 import type { CoreIntentRecord } from "./types.ts";
 
 export interface RiskLimits {
@@ -82,7 +82,7 @@ export class RiskGate {
 
     // 3. Daily order count (Redis counter with 24h TTL)
     const dailyKey = dailyCountKey(intent.userId);
-    const dailyCount = Number(await redis.get(dailyKey) ?? "0");
+    const dailyCount = Number(await redisControl.get(dailyKey) ?? "0");
     if (dailyCount >= limits.maxDailyOrders) {
       return {
         allowed: false,
@@ -94,7 +94,7 @@ export class RiskGate {
 
     // 4. Per-symbol cooldown
     const cdKey = cooldownKey(intent.userId, intent.symbolInternal);
-    const lastOrderAt = await redis.get(cdKey);
+    const lastOrderAt = await redisControl.get(cdKey);
     if (lastOrderAt) {
       const elapsed = Date.now() - Number(lastOrderAt);
       if (elapsed < limits.cooldownMs) {
@@ -142,7 +142,7 @@ export class RiskGate {
   }
 
   private async recordOrder(userId: string, symbol: string, cooldownMs: number): Promise<void> {
-    const pipeline = redis.pipeline();
+    const pipeline = redisControl.pipeline();
 
     // Increment daily counter
     const dailyKey = dailyCountKey(userId);

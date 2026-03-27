@@ -114,6 +114,24 @@ export class SequenceSafeOrderbookStore {
     return this.ensure(symbol).ready;
   }
 
+  /**
+   * Return sorted depth levels (up to `limit` per side) from the in-memory orderbook.
+   * Bids sorted descending, asks sorted ascending — ready for API/cache use.
+   * Returns null if the book isn't ready or both sides are empty.
+   */
+  getDepthLevels(symbol: string, limit = 20): { bids: Array<[number, number]>; asks: Array<[number, number]> } | null {
+    const state = this.ensure(symbol);
+    if (!state.ready || (!state.bids.size && !state.asks.size)) return null;
+    const bids = [...state.bids.entries()]
+      .sort((a, b) => b[0] - a[0])
+      .slice(0, limit);
+    const asks = [...state.asks.entries()]
+      .sort((a, b) => a[0] - b[0])
+      .slice(0, limit);
+    if (bids.length === 0 && asks.length === 0) return null;
+    return { bids, asks };
+  }
+
   getTopOfBook(symbol: string): TopOfBookSnapshot {
     const state = this.ensure(symbol);
     if (!state.ready || (!state.bids.size && !state.asks.size)) {

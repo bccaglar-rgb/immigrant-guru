@@ -227,6 +227,14 @@ export interface EngineHealth {
   klinesFailCount: number;
   dataQuality: "full" | "degraded" | "minimal";
   binanceStatus: "ok" | "rate_limited" | "error" | "unknown";
+  /** Exchange priority chain used: first = primary, rest = fallback order */
+  exchangeChain?: string[];
+  /** Which exchange is currently active as primary data source */
+  activeExchange?: string;
+  /** Per-exchange connection status */
+  exchangeStatus?: Record<string, { status: "ok" | "degraded" | "down"; latencyMs?: number }>;
+  /** Last refresh cycle duration in ms */
+  cycleMs?: number;
 }
 
 /* ------------------------------------------------------------------ */

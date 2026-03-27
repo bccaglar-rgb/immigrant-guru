@@ -1,6 +1,6 @@
 import type { Express, Request } from "express";
 import { TraderHubEngine } from "../services/traderHub/traderHubEngine.ts";
-import type { TraderAiModule, TraderExchange, TraderRunStatus } from "../services/traderHub/types.ts";
+import type { CoinPoolConfig, CoinPoolSourceType, TraderAiModule, TraderExchange, TraderRunStatus } from "../services/traderHub/types.ts";
 import { botCreate } from "../middleware/rateLimit.ts";
 
 const readUserId = (req: Request): string => {
@@ -38,7 +38,32 @@ const normalizeStatus = (value: unknown): TraderRunStatus => {
 const normalizeSymbol = (value: unknown): string => {
   const raw = String(value ?? "").toUpperCase().replace(/[-_/]/g, "").trim();
   if (!raw) return "BTCUSDT";
+  if (raw === "MULTI") return "MULTI"; // multi-coin pool traders
   return raw.endsWith("USDT") ? raw : `${raw}USDT`;
+};
+
+const VALID_SOURCES: CoinPoolSourceType[] = ["STATIC_LIST", "SNIPER", "OI_INCREASE", "OI_DECREASE", "COIN_UNIVERSE"];
+
+const normalizeCoinPool = (value: unknown): CoinPoolConfig | null => {
+  if (!value || typeof value !== "object") return null;
+  const raw = value as Record<string, unknown>;
+  const sourceTypes = Array.isArray(raw.sourceTypes)
+    ? (raw.sourceTypes as unknown[]).filter((s): s is CoinPoolSourceType =>
+        typeof s === "string" && VALID_SOURCES.includes(s as CoinPoolSourceType),
+      )
+    : [];
+  if (sourceTypes.length === 0) return null;
+  return {
+    sourceTypes,
+    maxCoins: Math.max(1, Math.min(100, Number(raw.maxCoins) || 10)),
+    sniperLimit: Math.max(1, Math.min(100, Number(raw.sniperLimit) || 10)),
+    oiIncreaseLimit: Math.max(1, Math.min(100, Number(raw.oiIncreaseLimit) || 10)),
+    oiDecreaseLimit: Math.max(1, Math.min(100, Number(raw.oiDecreaseLimit) || 10)),
+    coinUniverseLimit: Math.max(1, Math.min(100, Number(raw.coinUniverseLimit) || 10)),
+    staticCoins: Array.isArray(raw.staticCoins)
+      ? (raw.staticCoins as unknown[]).map((s) => normalizeSymbol(s)).slice(0, 100)
+      : [],
+  };
 };
 
 export const registerTraderHubRoutes = (app: Express, traderHub: TraderHubEngine) => {
@@ -79,6 +104,7 @@ export const registerTraderHubRoutes = (app: Express, traderHub: TraderHubEngine
         symbol: normalizeSymbol(req.body?.symbol),
         timeframe: normalizeTimeframe(req.body?.timeframe),
         scanIntervalSec: Math.max(30, Math.min(600, Number(req.body?.scanIntervalSec ?? 180) || 180)),
+        coinPool: normalizeCoinPool(req.body?.coinPool),
       });
       return res.json({ ok: true, item: created });
     } catch (err: any) {
@@ -87,6 +113,18 @@ export const registerTraderHubRoutes = (app: Express, traderHub: TraderHubEngine
         return res.status(429).json({ ok: false, error: "bot_limit_reached", message });
       }
       return res.status(500).json({ ok: false, error: "create_failed", message });
+    }
+  });
+
+  app.get("/api/trader-hub/traders/:id/scans", async (req, res) => {
+    const id = String(req.params.id ?? "").trim();
+    if (!id) return res.status(400).json({ ok: false, error: "id_required" });
+    const limit = Math.min(200, Math.max(1, Number(req.query.limit ?? 100) || 100));
+    try {
+      const scans = await traderHub.listBotScans(id, limit);
+      return res.json({ ok: true, scans, ts: new Date().toISOString() });
+    } catch (err: any) {
+      return res.status(500).json({ ok: false, error: "scan_fetch_failed", message: err?.message ?? "Unknown" });
     }
   });
 
@@ -105,5 +143,31 @@ export const registerTraderHubRoutes = (app: Express, traderHub: TraderHubEngine
     const deleted = await traderHub.deleteTrader(id);
     if (!deleted) return res.status(404).json({ ok: false, error: "not_found" });
     return res.json({ ok: true, deleted: true });
+  });
+
+  /* ── Take Profit — manually close a virtual position ───── */
+  app.post("/api/trader-hub/traders/:id/take-profit", async (req, res) => {
+    const id = String(req.params.id ?? "").trim();
+    if (!id) return res.status(400).json({ ok: false, error: "id_required" });
+    const symbol = String(req.body?.symbol ?? "").toUpperCase().trim();
+    if (!symbol) return res.status(400).json({ ok: false, error: "symbol_required" });
+    try {
+      const result = await traderHub.takeProfit(id, symbol);
+      return res.json({ ok: true, ...result });
+    } catch (err: any) {
+      return res.status(400).json({ ok: false, error: "take_profit_failed", message: err?.message ?? "Unknown" });
+    }
+  });
+
+  /* ── Get open virtual positions for a trader ───── */
+  app.get("/api/trader-hub/traders/:id/positions", async (req, res) => {
+    const id = String(req.params.id ?? "").trim();
+    if (!id) return res.status(400).json({ ok: false, error: "id_required" });
+    try {
+      const positions = await traderHub.getOpenPositions(id);
+      return res.json({ ok: true, positions, ts: new Date().toISOString() });
+    } catch (err: any) {
+      return res.status(500).json({ ok: false, error: "positions_fetch_failed", message: err?.message ?? "Unknown" });
+    }
   });
 };

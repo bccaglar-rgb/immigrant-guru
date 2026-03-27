@@ -32,7 +32,7 @@ const REGIME_DEFAULTS: Record<string, RegimeParams> = {
     slMultiplier: 1.0,
     tpMultiplier: 1.3,  // bigger targets in trend
     useTrailing: true,
-    modeWeights: { FLOW: 1.0, AGGRESSIVE: 0.8, BALANCED: 1.0, CAPITAL_GUARD: 0.7 },
+    modeWeights: { FLOW: 1.0, AGGRESSIVE: 0.8, BALANCED: 1.0, CAPITAL_GUARD: 0.5 },  // CG penalized in trend (chasing risk)
   },
   RANGE: {
     scoreThreshold: 70,  // higher bar in range
@@ -40,7 +40,7 @@ const REGIME_DEFAULTS: Record<string, RegimeParams> = {
     slMultiplier: 0.8,   // tighter stops
     tpMultiplier: 0.7,   // lower targets
     useTrailing: false,
-    modeWeights: { FLOW: 0.6, AGGRESSIVE: 0.3, BALANCED: 1.0, CAPITAL_GUARD: 1.2 },
+    modeWeights: { FLOW: 0.6, AGGRESSIVE: 0.3, BALANCED: 1.0, CAPITAL_GUARD: 1.4 },  // CG strongest in range (mean-reversion)
   },
   BREAKOUT: {
     scoreThreshold: 60,
@@ -48,7 +48,7 @@ const REGIME_DEFAULTS: Record<string, RegimeParams> = {
     slMultiplier: 1.3,   // wider stops for breakout
     tpMultiplier: 1.5,   // aggressive targets
     useTrailing: true,
-    modeWeights: { FLOW: 1.2, AGGRESSIVE: 1.0, BALANCED: 0.8, CAPITAL_GUARD: 0.5 },
+    modeWeights: { FLOW: 1.2, AGGRESSIVE: 1.0, BALANCED: 0.8, CAPITAL_GUARD: 0.3 },  // CG worst in breakout (high risk)
   },
   UNKNOWN: {
     scoreThreshold: 65,
@@ -157,6 +157,9 @@ export class RegimeParameterEngine {
 
   /** Auto-adjust regime params based on accumulated outcomes */
   async autoAdjust(): Promise<void> {
+    // DISABLED: tracking only — no regime param changes until manual review
+    console.log("[RegimeParams] DISABLED — tracking only, skipping auto-adjust");
+    return;
     try {
       const { rows } = await pool.query(`
         SELECT

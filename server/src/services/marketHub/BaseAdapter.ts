@@ -482,14 +482,14 @@ export abstract class BaseAdapter implements IExchangeAdapter {
   getOrderbook(symbol: string): OrderbookSnapshot | null {
     const key = this.toBitriumSymbol(symbol) || symbol;
     if (!key || !this.orderbooks.isReady(key)) return null;
-    const top = this.orderbooks.getTopOfBook(key);
-    if (top.topBid === null && top.topAsk === null) return null;
+    const depth = this.orderbooks.getDepthLevels(key, 20);
+    if (!depth || (depth.bids.length === 0 && depth.asks.length === 0)) return null;
     return {
       exchange: this.exchange,
       symbol: key,
       seq: this.orderbooks.getLastSeq(key),
-      bids: top.topBid !== null ? [{ price: top.topBid, qty: top.bidQty ?? 0 }] : [],
-      asks: top.topAsk !== null ? [{ price: top.topAsk, qty: top.askQty ?? 0 }] : [],
+      bids: depth.bids.map(([price, qty]) => ({ price, qty })),
+      asks: depth.asks.map(([price, qty]) => ({ price, qty })),
       ts: Date.now(),
     };
   }

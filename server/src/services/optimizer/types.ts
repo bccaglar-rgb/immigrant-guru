@@ -37,9 +37,9 @@ export interface ModuleConfig {
 }
 
 export const DEFAULT_MODULE_CONFIG: ModuleConfig = {
-  rr: 2.0,
+  rr: 2.5,
   slBufferFactor: 0.25,
-  entryZoneFactor: 0.15,
+  entryZoneFactor: 0.25,  // Widened from 0.15 — narrow zones cause ENTRY_MISSED
   minRRFilter: 1.5,
   trendFilterEnabled: false,
 };
@@ -48,8 +48,8 @@ export const DEFAULT_MODULE_CONFIG: ModuleConfig = {
 export const PARAM_CANDIDATES = {
   rr: [1.5, 1.75, 2.0, 2.25, 2.5, 3.0],
   slBufferFactor: [0.10, 0.15, 0.20, 0.25, 0.30],
-  entryZoneFactor: [0.10, 0.12, 0.15, 0.18, 0.20],
-  minRRFilter: [1.5, 1.8, 2.0],
+  entryZoneFactor: [0.15, 0.20, 0.25, 0.30, 0.35],  // Widened range — was 0.10-0.20
+  minRRFilter: [1.5, 1.8, 2.0, 2.5],
 } as const;
 
 // ── Performance Metrics ───────────────────────────────────────

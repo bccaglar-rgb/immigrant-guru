@@ -49,14 +49,19 @@ const AI_MODULE_THEME: Record<AiProviderId, { label: string; labelClass: string;
     chipClass: "border-[#3d5f8f]/70 bg-[#132033] text-[#b8d3ff]",
   },
   QWEN: {
-    label: "Qwen",
+    label: "Cloud",
     labelClass: "border-[#6b4fa8]/80 bg-[#241a3c] text-[#dbcdfd]",
     chipClass: "border-[#6b4fa8]/70 bg-[#241a3c] text-[#dbcdfd]",
   },
   QWEN2: {
-    label: "Bitrium Axiom",
+    label: "Bitrium Alpha",
     labelClass: "border-[#c4893d]/80 bg-[#2a1f0f] text-[#ffd699]",
     chipClass: "border-[#c4893d]/70 bg-[#2a1f0f] text-[#ffd699]",
+  },
+  CLAUDE: {
+    label: "Bitrium Prime",
+    labelClass: "border-[#7a6f3d]/80 bg-[#2a2418] text-[#f5e6a8]",
+    chipClass: "border-[#7a6f3d]/70 bg-[#2a2418] text-[#f5e6a8]",
   },
 };
 
@@ -217,11 +222,11 @@ const consensusGuidance = (pct: number): { text: string; className: string } => 
 
 const cardDecisionTone = (validity: string) => {
   if (validity === "VALID") return {
-    boxClass: "border-[#2e7a5e]/80 bg-[#103326] shadow-[0_0_0_1px_rgba(46,122,94,0.2)]",
-    textClass: "text-[#b9f5dc]",
-    titleClass: "text-[#8fd4b8]",
+    boxClass: "border-[#22c55e]/60 bg-[#052e16] shadow-[0_0_0_1px_rgba(34,197,94,0.25)]",
+    textClass: "text-[#4ade80]",
+    titleClass: "text-[#86efac]",
     label: "TRADE",
-    badgeClass: "border-[#2e7a5e]/80 bg-[#103326] text-[#b9f5dc]",
+    badgeClass: "border-[#22c55e]/80 bg-[#052e16] text-[#4ade80]",
   };
   if (validity === "WEAK") return {
     boxClass: "border-[#9a7b2e]/80 bg-[#3a2c13] shadow-[0_0_0_1px_rgba(154,123,46,0.2)]",
@@ -358,20 +363,24 @@ export default function TradeIdeasPage() {
     CHATGPT: true,
     QWEN: true,
     QWEN2: true,
+    CLAUDE: true,
   });
   const [aiModuleStatus, setAiModuleStatus] = useState<Record<AiProviderId, AiModuleStatus>>({
     CHATGPT: { running: false, lastRunAt: "", error: "" },
     QWEN: { running: false, lastRunAt: "", error: "" },
     QWEN2: { running: false, lastRunAt: "", error: "" },
+    CLAUDE: { running: false, lastRunAt: "", error: "" },
   });
   const [aiScansByModule, setAiScansByModule] = useState<Record<AiProviderId, AiScanRow[]>>({
     CHATGPT: [],
     QWEN: [],
     QWEN2: [],
+    CLAUDE: [],
   });
   const [aiUniverseCount, setAiUniverseCount] = useState(0);
   const [aiLastUpdatedAt, setAiLastUpdatedAt] = useState("");
   const [aiStateError, setAiStateError] = useState("");
+  const aiStateFailCountRef = useRef(0);
   const sentinelRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -788,17 +797,23 @@ export default function TradeIdeasPage() {
             CHATGPT: enabledModules.CHATGPT === false ? false : prev.CHATGPT,
             QWEN: enabledModules.QWEN === false ? false : prev.QWEN,
             QWEN2: enabledModules.QWEN2 === false ? false : prev.QWEN2,
+            CLAUDE: enabledModules.CLAUDE === false ? false : prev.CLAUDE,
           }));
         }
-        const byModule = state.scansByModule ?? { CHATGPT: [], QWEN: [], QWEN2: [] };
+        const byModule = state.scansByModule ?? { CHATGPT: [], QWEN: [], QWEN2: [], CLAUDE: [] };
         setAiScansByModule({
           CHATGPT: (byModule.CHATGPT ?? []) as AiScanRow[],
           QWEN: (byModule.QWEN ?? []) as AiScanRow[],
           QWEN2: (byModule.QWEN2 ?? []) as AiScanRow[],
+          CLAUDE: (byModule.CLAUDE ?? []) as AiScanRow[],
         });
         setAiStateError("");
+        aiStateFailCountRef.current = 0;
       } catch {
-        setAiStateError("AI state endpoint unavailable");
+        aiStateFailCountRef.current += 1;
+        if (aiStateFailCountRef.current >= 3) {
+          setAiStateError("AI state endpoint unavailable");
+        }
       }
     };
 
@@ -920,7 +935,7 @@ export default function TradeIdeasPage() {
                     >
                       Open detailed report
                     </button>
-                    {(!isAiTradeIdeasPage || isAdmin) && (
+                    {isAdmin && (
                       <button
                         type="button"
                         onClick={() => void handleReportReset()}
@@ -946,18 +961,21 @@ export default function TradeIdeasPage() {
                         <th className="pb-1 text-center font-medium">Success</th>
                         <th className="pb-1 text-center font-medium">Failed</th>
                         <th className="pb-1 text-center font-medium">S/R</th>
-                        <th className="pb-1 pr-2 text-right font-medium">PnL (sim)</th>
+                        <th className="pb-1 text-center font-medium">PnL (sim)</th>
+                        {isAdmin && <th className="pb-1 pr-2 text-right font-medium"></th>}
                       </tr>
                     </thead>
                     <tbody>
-                      {(["CHATGPT", "QWEN", "QWEN2"] as const).map((mod) => {
+                      {(["CHATGPT", "CLAUDE", "QWEN2", "QWEN"] as const).map((mod) => {
                         const s = aiReportStatsByModule[mod] ?? { totalScan: 0, totalIdeas: 0, active: 0, resolved: 0, success: 0, failed: 0, entryMissed: 0, successRate: 0, totalPnlUsd: 0 };
                         const moduleColors: Record<string, string> = {
                           CHATGPT: "border-[#3d5f8f]/50 text-[#b8d3ff]",
+                          CLAUDE: "border-[#7a6f3d]/50 text-[#f5e6a8]",
                           QWEN: "border-[#6b4fa8]/50 text-[#dbcdfd]",
                           QWEN2: "border-[#c4893d]/50 text-[#ffd699]",
                         };
-                        const moduleLabels: Record<string, string> = { CHATGPT: "ChatGPT", QWEN: "Qwen", QWEN2: "Bitrium Axiom" };
+                        const moduleLabels: Record<string, string> = { CHATGPT: "ChatGPT", CLAUDE: "Bitrium Prime", QWEN: "Cloud", QWEN2: "Bitrium Alpha" };
+                        const moduleResetKeys: Record<string, string> = { CHATGPT: "chatgpt", CLAUDE: "claude", QWEN: "qwen", QWEN2: "axiom" };
                         const pnl = s.totalPnlUsd ?? 0;
                         const pnlSign = pnl >= 0 ? "+" : "";
                         const pnlColor = pnl >= 0 ? "text-[#8fc9ab]" : "text-[#d49f9a]";
@@ -976,9 +994,33 @@ export default function TradeIdeasPage() {
                             <td className="py-1 text-center font-semibold text-[#8fc9ab]">{s.success}</td>
                             <td className="py-1 text-center font-semibold text-[#d49f9a]">{s.failed}</td>
                             <td className="py-1 text-center font-semibold text-[#F5C542]">{s.successRate.toFixed(1)}%</td>
-                            <td className={`py-1 pr-2 text-right font-semibold ${s.resolved > 0 ? pnlColor : "text-[#555]"}`}>
+                            <td className={`py-1 text-center font-semibold ${s.resolved > 0 ? pnlColor : "text-[#555]"}`}>
                               {s.resolved > 0 ? `${pnlSign}$${pnl.toFixed(2)}` : "-"}
                             </td>
+                            {isAdmin && (
+                              <td className="py-1 pr-2 text-right">
+                                <button
+                                  type="button"
+                                  onClick={async () => {
+                                    if (!window.confirm(`Reset ${moduleLabels[mod]} ideas? This cannot be undone.`)) return;
+                                    try {
+                                      const res = await fetch(`/api/trade-ideas/reset/${moduleResetKeys[mod]}`, { method: "POST" });
+                                      if (res.ok) {
+                                        setAiReportStatsByModule((prev) => {
+                                          const next = { ...prev };
+                                          delete next[mod];
+                                          return next;
+                                        });
+                                      }
+                                    } catch { /* ignore */ }
+                                  }}
+                                  className="rounded border border-red-500/20 bg-transparent px-1.5 py-0.5 text-[9px] text-red-400/60 transition hover:border-red-500/40 hover:text-red-400"
+                                  title={`Reset ${moduleLabels[mod]} only`}
+                                >
+                                  Reset
+                                </button>
+                              </td>
+                            )}
                           </tr>
                         );
                       })}
@@ -997,7 +1039,8 @@ export default function TradeIdeasPage() {
                         <th className="pb-1 text-center font-medium">Success</th>
                         <th className="pb-1 text-center font-medium">Failed</th>
                         <th className="pb-1 text-center font-medium">S/R</th>
-                        <th className="pb-1 pr-2 text-right font-medium">PnL (sim)</th>
+                        <th className="pb-1 text-center font-medium">PnL (sim)</th>
+                        {isAdmin && <th className="pb-1 pr-2 text-right font-medium"></th>}
                       </tr>
                     </thead>
                     <tbody>
@@ -1008,6 +1051,12 @@ export default function TradeIdeasPage() {
                           AGGRESSIVE: "border-[#8b5cf6]/50 text-[#c4b5fd]",
                           BALANCED: "border-[#d4a74a]/50 text-[#F5C542]",
                           CAPITAL_GUARD: "border-[#2f8a5e]/50 text-[#8fc9ab]",
+                        };
+                        const modeResetKeys: Record<string, string> = {
+                          FLOW: "flow",
+                          AGGRESSIVE: "aggressive",
+                          BALANCED: "balanced",
+                          CAPITAL_GUARD: "capital_guard",
                         };
                         const pnl = s.totalPnlUsd ?? 0;
                         const pnlSign = pnl >= 0 ? "+" : "";
@@ -1027,9 +1076,34 @@ export default function TradeIdeasPage() {
                             <td className="py-1 text-center font-semibold text-[#8fc9ab]">{s.successful}</td>
                             <td className="py-1 text-center font-semibold text-[#d49f9a]">{s.failed}</td>
                             <td className="py-1 text-center font-semibold text-[#F5C542]">{s.successRate.toFixed(1)}%</td>
-                            <td className={`py-1 pr-2 text-right font-semibold ${s.resolved > 0 ? pnlColor : "text-[#555]"}`}>
+                            <td className={`py-1 text-center font-semibold ${s.resolved > 0 ? pnlColor : "text-[#555]"}`}>
                               {s.resolved > 0 ? `${pnlSign}$${pnl.toFixed(2)}` : "-"}
                             </td>
+                            {isAdmin && (
+                              <td className="py-1 pr-2 text-right">
+                                <button
+                                  type="button"
+                                  onClick={async () => {
+                                    if (!window.confirm(`Reset ${scoringModeLabel(mode)} ideas? This cannot be undone.`)) return;
+                                    try {
+                                      const res = await fetch(`/api/trade-ideas/reset/${modeResetKeys[mode]}`, { method: "POST" });
+                                      if (res.ok) {
+                                        setReportStatsByMode((prev) => {
+                                          const next = { ...prev };
+                                          delete next[mode];
+                                          return next;
+                                        });
+                                        setReportResetEpoch((e) => e + 1);
+                                      }
+                                    } catch { /* ignore */ }
+                                  }}
+                                  className="rounded border border-red-500/20 bg-transparent px-1.5 py-0.5 text-[9px] text-red-400/60 transition hover:border-red-500/40 hover:text-red-400"
+                                  title={`Reset ${scoringModeLabel(mode)} only`}
+                                >
+                                  Reset
+                                </button>
+                              </td>
+                            )}
                           </tr>
                         );
                       })}
@@ -1172,10 +1246,10 @@ export default function TradeIdeasPage() {
                                 {rows.length ? (
                                   rows.map((row, idx) => {
                                     const passTone = row.scorePct >= 60
-                                      ? "border-[#2e7a5e]/80 bg-[#103326] text-[#b9f5dc]"
+                                      ? "border-[#22c55e]/80 bg-[#052e16] text-[#4ade80] font-medium"
                                       : row.scorePct >= 40
-                                        ? "border-[#9a7b2e]/80 bg-[#3a2c13] text-[#f7e2a4]"
-                                        : "border-[#31415b]/70 bg-[#121a27] text-[#cdd8ec]";
+                                        ? "border-[#eab308]/70 bg-[#422006] text-[#facc15]"
+                                        : "border-[#475569]/50 bg-[#0f172a] text-[#94a3b8]";
                                     return (
                                       <span
                                         key={`${moduleId}-${row.symbol}-${idx}`}
@@ -1223,10 +1297,10 @@ export default function TradeIdeasPage() {
                                     const isWatch = dec === "WATCH";
                                     const decLabel = isTrade ? "TRADE" : isWatch ? "WATCH" : "NO TRADE";
                                     const passTone = isTrade
-                                      ? "border-[#2e7a5e]/80 bg-[#103326] text-[#b9f5dc]"
+                                      ? "border-[#22c55e]/80 bg-[#052e16] text-[#4ade80] font-medium"
                                       : isWatch
-                                        ? "border-[#9a7b2e]/80 bg-[#3a2c13] text-[#f7e2a4]"
-                                        : "border-[#31415b]/70 bg-[#121a27] text-[#cdd8ec]";
+                                        ? "border-[#eab308]/70 bg-[#422006] text-[#facc15]"
+                                        : "border-[#475569]/50 bg-[#0f172a] text-[#94a3b8]";
                                     const createdTone = row.created ? "shadow-[0_0_0_1px_rgba(93,207,154,0.28)]" : "";
                                     return (
                                       <button
@@ -1261,7 +1335,7 @@ export default function TradeIdeasPage() {
                     </p>
                     <p className="text-[11px] text-[#6B6F76]">
                       {isAiTradeIdeasPage
-                        ? `AI Trade Ideas scans shared backend batches every 3 minutes. Universe ${aiUniverseCount} coins.`
+                        ? `AI Trade Ideas scans shared backend batches every 30 seconds. Universe ${aiUniverseCount} coins.`
                         : "All modes are user adjustable from 40%-100%."}
                     </p>
                   </div>
@@ -1280,26 +1354,45 @@ export default function TradeIdeasPage() {
                         }`}
                       >
                         <div className="flex items-center justify-between gap-2">
-                          <button
-                            type="button"
-                            onClick={() => setAiModules((prev) => ({ ...prev, [moduleId]: !prev[moduleId] }))}
+                          <span
                             className={`rounded-md border px-2 py-1.5 text-left text-xs font-semibold ${
                               AI_MODULE_THEME[moduleId]?.labelClass ?? "border-white/20 bg-[#151a22] text-white/80"
                             } ${active ? "" : "opacity-45 grayscale"}`}
                           >
                             {AI_MODULE_THEME[moduleId]?.label ?? moduleId}
-                          </button>
-                          <span
-                            className={`rounded-full border px-2 py-0.5 text-[10px] font-semibold ${
-                              active
-                                ? "border-[#6f765f]/70 bg-[#1f251b] text-[#d8decf]"
-                                : "border-white/10 bg-[#0F1012] text-[#8f95a3]"
-                            }`}
-                          >
-                            {active ? "ON" : "OFF"}
                           </span>
+                          {isAdmin ? (
+                            <button
+                              type="button"
+                              onClick={() => setAiModules((prev) => ({ ...prev, [moduleId]: !prev[moduleId] }))}
+                              className={`relative h-5 w-9 shrink-0 rounded-full border transition-colors duration-200 ${
+                                active
+                                  ? "border-[#6f765f]/70 bg-[#2a3a1e]"
+                                  : "border-white/10 bg-[#1a1c20]"
+                              }`}
+                              title={active ? "Turn off" : "Turn on"}
+                            >
+                              <span
+                                className={`absolute top-0.5 h-3.5 w-3.5 rounded-full transition-all duration-200 ${
+                                  active
+                                    ? "left-[18px] bg-[#8fc9ab]"
+                                    : "left-[2px] bg-[#555]"
+                                }`}
+                              />
+                            </button>
+                          ) : (
+                            <span
+                              className={`rounded-full border px-2 py-0.5 text-[10px] font-semibold ${
+                                active
+                                  ? "border-[#6f765f]/70 bg-[#1f251b] text-[#d8decf]"
+                                  : "border-white/10 bg-[#0F1012] text-[#8f95a3]"
+                              }`}
+                            >
+                              {active ? "ON" : "OFF"}
+                            </span>
+                          )}
                         </div>
-                        <p className="mt-2 text-[10px] text-[#8f95a3]">Compact vector · Interval 3m</p>
+                        <p className="mt-2 text-[10px] text-[#8f95a3]">Compact vector · Interval 30s</p>
                         <p className="mt-1 text-[10px] text-[#8f95a3]">
                           Last scan: {status.lastRunAt ? elapsedText(status.lastRunAt, nowMs) : "Not yet"}
                         </p>
@@ -1411,7 +1504,7 @@ export default function TradeIdeasPage() {
           {isAiTradeIdeasPage
             ? visibleAiRows.map((row, idx) => {
               const scoreTone = row.scorePct >= 60
-                ? "border-[#2e7a5e]/80 bg-[#103326] text-[#b9f5dc]"
+                ? "border-[#22c55e]/80 bg-[#052e16] text-[#4ade80] font-medium"
                 : row.scorePct >= 40
                   ? "border-[#9a7b2e]/80 bg-[#3a2c13] text-[#f7e2a4]"
                   : "border-[#31415b]/70 bg-[#121a27] text-[#cdd8ec]";
@@ -2011,7 +2104,7 @@ export default function TradeIdeasPage() {
         const precision = row.pricePrecision ?? 4;
         const fmt = (n: number) => n.toFixed(precision);
         const decColor = isTrade
-          ? "border-[#2e7a5e]/80 bg-[#103326] text-[#b9f5dc]"
+          ? "border-[#22c55e]/80 bg-[#052e16] text-[#4ade80] font-medium"
           : isWatch
             ? "border-[#9a7b2e]/80 bg-[#3a2c13] text-[#f7e2a4]"
             : "border-[#31415b]/70 bg-[#121a27] text-[#cdd8ec]";

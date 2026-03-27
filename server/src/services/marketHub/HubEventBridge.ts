@@ -16,6 +16,33 @@
 import Redis from "ioredis";
 import type { NormalizedEvent } from "./types.ts";
 import type { ExchangeMarketHub } from "./ExchangeMarketHub.ts";
+import { marketHealth } from "../marketHealth.ts";
+
+// FAZ 2: Lazy cache write functions — loaded once on first use
+// FAZ 4.3: Only Worker 0 writes to mdc:ticker/klines/stats (defense-in-depth).
+// Architecture already ensures this (startPublisher is Worker 0-only), but
+// this guard prevents accidental writes if future code calls getCacheWriters from Workers 1-2.
+const _isWorker0 = Number(process.env.NODE_APP_INSTANCE ?? "0") === 0;
+
+let _cacheWriters: {
+  writeTicker: (symbol: string, data: { price: number | null; change24hPct: number | null; volume24hUsd: number | null; markPrice: number | null; fundingRate: number | null; topBid: number | null; topAsk: number | null; source: string; fetchedAt: number }) => Promise<void>;
+  writeKlines: (symbol: string, tf: string, data: { candles: Array<{ time: number; open: number; high: number; low: number; close: number; volume: number }>; source: string; fetchedAt: number }) => Promise<void>;
+  writeStats: (symbol: string, data: Record<string, unknown>) => Promise<void>;
+} | null = null;
+let _cacheWritersLoading = false;
+
+async function getCacheWriters() {
+  // FAZ 4.3: Only Worker 0 should write cache — Workers 1-2 return null (no-op)
+  if (!_isWorker0) return null;
+  if (_cacheWriters) return _cacheWriters;
+  if (_cacheWritersLoading) return null; // avoid parallel imports
+  _cacheWritersLoading = true;
+  try {
+    const mod = await import("../marketDataCache.ts");
+    _cacheWriters = { writeTicker: mod.writeTicker, writeKlines: mod.writeKlines, writeStats: mod.writeStats };
+    return _cacheWriters;
+  } catch { _cacheWritersLoading = false; return null; }
+}
 
 const CHANNEL = "hub:events";
 const MARKET_LIST_CHANNEL = "hub:market_list";
@@ -95,6 +122,7 @@ export class HubEventBridge {
    *   mark_price → markPrice, fundingRate, nextFundingTime
    *   book_ticker → topBid, topAsk, bidQty, askQty (throttled to 200ms)
    *   ticker     → price, change24hPct, volume24hUsd
+   *   book_snapshot → mdc:depth:{symbol} cache (FAZ 2.1 — real-time WS depth)
    */
   private writeLiveFields(event: NormalizedEvent): void {
     if (!this.pub) return;
@@ -106,12 +134,67 @@ export class HubEventBridge {
     const eventExchange = String((event as Record<string, unknown>).exchange ?? "").toUpperCase();
     if (eventExchange && !eventExchange.includes("BINANCE")) return;
 
+    // ── FAZ 2.1: Write WS book_snapshot to depth cache (real-time, zero REST) ──
+    if (event.type === "book_snapshot") {
+      const bidsArr = (event as { bids?: Array<[number, number]> }).bids;
+      const asksArr = (event as { asks?: Array<[number, number]> }).asks;
+      if (bidsArr && bidsArr.length > 2) {
+        // Throttle depth cache writes to 500ms per symbol
+        const now = Date.now();
+        const lastWrite = this.bookTickerLastWrite.get(`depth:${event.symbol}`) ?? 0;
+        if (now - lastWrite >= 500) {
+          this.bookTickerLastWrite.set(`depth:${event.symbol}`, now);
+          const depthPayload = JSON.stringify({
+            bids: bidsArr.slice(0, 20).map(([p, q]) => [String(p), String(q)]),
+            asks: (asksArr ?? []).slice(0, 20).map(([p, q]) => [String(p), String(q)]),
+            source: "BINANCE_WS",
+            fetchedAt: now,
+            cachedAt: now,
+          });
+          // Write to mdc:depth:{symbol} cache — same key the API route reads from
+          this.pub.set(`mdc:depth:${event.symbol}`, depthPayload, "EX", 60);
+          // FAZ 1: Update health store
+          try {
+            marketHealth.updateDepth(event.symbol, {
+              source: "BINANCE_WS",
+              levels: Math.min(bidsArr.length, 20),
+              seqSynced: true,
+              wsConnected: true,
+            });
+          } catch { /* health update best-effort */ }
+        }
+      }
+    }
+
+    // FAZ 2.2: Write closed kline bars to mdc:klines:{symbol}:{interval} cache
+    if (event.type === "kline" && (event as { closed?: boolean }).closed === true) {
+      const klineEvent = event as { symbol: string; interval?: string; openTime?: number; open?: number; high?: number; low?: number; close?: number; volume?: number };
+      const interval = String(klineEvent.interval ?? "15m");
+      if (typeof klineEvent.close === "number" && klineEvent.close > 0) {
+        getCacheWriters().then(w => w?.writeKlines(event.symbol, interval, {
+          candles: [{
+            time: Number(klineEvent.openTime ?? 0),
+            open: Number(klineEvent.open ?? 0),
+            high: Number(klineEvent.high ?? 0),
+            low: Number(klineEvent.low ?? 0),
+            close: Number(klineEvent.close ?? 0),
+            volume: Number(klineEvent.volume ?? 0),
+          }],
+          source: "BINANCE_WS",
+          fetchedAt: Date.now(),
+        })).catch(() => {});
+      }
+    }
+
     if (event.type === "trade") {
       // Throttle trade snapshot writes to 50ms per symbol (20/sec vs 180/sec raw)
       const now = Date.now();
       const lastWrite = this.tradeLastWrite.get(event.symbol) ?? 0;
       if (now - lastWrite < 50) return;
       this.tradeLastWrite.set(event.symbol, now);
+
+      // FAZ 1: Update ticker health (trade = price update)
+      try { marketHealth.updateTicker(event.symbol, "BINANCE"); } catch { /* best-effort */ }
 
       this.pub.hmset(key, {
         lastTradePrice: String(event.price),
@@ -130,6 +213,19 @@ export class HubEventBridge {
       if (event.nextFundingTime != null) fields.nextFundingTime = String(event.nextFundingTime);
       this.pub.hmset(key, fields);
       this.pub.expire(key, SNAPSHOT_TTL_SEC);
+
+      // FAZ 2.3: Write derivatives/stats to mdc:stats:{symbol} cache (2s throttle)
+      const markNow = Date.now();
+      const lastStatsWrite = this.bookTickerLastWrite.get(`stats:${event.symbol}`) ?? 0;
+      if (markNow - lastStatsWrite >= 2_000) {
+        this.bookTickerLastWrite.set(`stats:${event.symbol}`, markNow);
+        getCacheWriters().then(w => w?.writeStats(event.symbol, {
+          markPrice: event.markPrice ?? null,
+          fundingRate: event.fundingRate ?? null,
+          nextFundingTime: event.nextFundingTime ?? null,
+          source: "BINANCE_WS",
+        })).catch(() => {});
+      }
     } else if (event.type === "book_ticker") {
       // Throttle book_ticker to avoid Redis overload (200ms per symbol)
       const now = Date.now();
@@ -153,6 +249,24 @@ export class HubEventBridge {
         tickerUpdatedAt: String(Date.now()),
       });
       this.pub.expire(key, SNAPSHOT_TTL_SEC);
+
+      // FAZ 2.1: Write ticker to mdc:ticker:{symbol} cache (2s throttle per symbol)
+      const tickerNow = Date.now();
+      const lastTickerWrite = this.bookTickerLastWrite.get(`ticker:${event.symbol}`) ?? 0;
+      if (tickerNow - lastTickerWrite >= 2_000) {
+        this.bookTickerLastWrite.set(`ticker:${event.symbol}`, tickerNow);
+        getCacheWriters().then(w => w?.writeTicker(event.symbol, {
+          price: event.price as number | null,
+          change24hPct: event.change24hPct as number | null,
+          volume24hUsd: event.volume24hUsd as number | null,
+          markPrice: null,
+          fundingRate: null,
+          topBid: null,
+          topAsk: null,
+          source: "BINANCE_WS",
+          fetchedAt: tickerNow,
+        })).catch(() => {});
+      }
     }
   }
 
@@ -393,6 +507,25 @@ export class HubEventBridge {
         pipeline.exec().catch((err) => {
           console.error("[HubEventBridge] Bulk snapshot flush error:", err?.message ?? err);
         });
+
+        // FAZ 2.1: Bulk ticker cache write — all 500+ symbols to mdc:ticker:{symbol}
+        getCacheWriters().then(w => {
+          if (!w) return;
+          for (const row of rows) {
+            if (!row.symbol || !row.price || row.price <= 0) continue;
+            w.writeTicker(row.symbol, {
+              price: row.price,
+              change24hPct: row.change24hPct ?? null,
+              volume24hUsd: row.volume24hUsd ?? null,
+              markPrice: row.markPrice ?? null,
+              fundingRate: row.fundingRate ?? null,
+              topBid: row.topBid ?? null,
+              topAsk: row.topAsk ?? null,
+              source: "BINANCE_BULK",
+              fetchedAt: now,
+            }).catch(() => {});
+          }
+        }).catch(() => {});
       }
     };
 

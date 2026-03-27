@@ -24,3 +24,10 @@ export const decryptSecret = (payload: { iv: string; tag: string; payload: strin
   return decrypted.toString("utf8");
 };
 
+/**
+ * Zero-fill a buffer to clear sensitive data from memory.
+ * Call after you're done using a decrypted plaintext value.
+ */
+export function zeroize(buf: Buffer): void {
+  buf.fill(0);
+}

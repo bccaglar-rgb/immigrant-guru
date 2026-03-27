@@ -8,6 +8,7 @@
 import { redis } from "../../db/redis.ts";
 import { pool } from "../../db/pool.ts";
 import type { CoreVenue } from "./types.ts";
+import { exchangeFetch, isExchangeAvailable } from "../binanceRateLimiter.ts";
 
 const CACHE_TTL_S = 300; // 5 minutes
 
@@ -148,7 +149,14 @@ export class SymbolRegistry {
   }
 
   private async fetchBinanceSymbols(): Promise<SymbolInfo[]> {
-    const res = await fetch("https://fapi.binance.com/fapi/v1/exchangeInfo");
+    if (!isExchangeAvailable("binance")) return [];
+    const res = await exchangeFetch({
+      url: "https://fapi.binance.com/fapi/v1/exchangeInfo",
+      exchange: "binance",
+      priority: "normal",
+      weight: 10,
+      dedupKey: "symreg-exchangeInfo",
+    });
     if (!res.ok) return [];
     const data = (await res.json()) as { symbols: Array<Record<string, any>> };
     const results: SymbolInfo[] = [];
@@ -181,7 +189,11 @@ export class SymbolRegistry {
   }
 
   private async fetchGateSymbols(): Promise<SymbolInfo[]> {
-    const res = await fetch("https://fx-api.gateio.ws/api/v4/futures/usdt/contracts");
+    if (!isExchangeAvailable("gateio")) return [];
+    const res = await exchangeFetch({
+      url: "https://fx-api.gateio.ws/api/v4/futures/usdt/contracts",
+      exchange: "gateio", priority: "low", weight: 5, dedupKey: "symreg-gate-contracts",
+    });
     if (!res.ok) return [];
     const data = (await res.json()) as Array<Record<string, any>>;
     const results: SymbolInfo[] = [];
@@ -217,7 +229,11 @@ export class SymbolRegistry {
   // ── Bybit V5 Linear ──────────────────────────────────────────
 
   private async fetchBybitSymbols(): Promise<SymbolInfo[]> {
-    const res = await fetch("https://api.bybit.com/v5/market/instruments-info?category=linear&limit=1000");
+    if (!isExchangeAvailable("bybit")) return [];
+    const res = await exchangeFetch({
+      url: "https://api.bybit.com/v5/market/instruments-info?category=linear&limit=1000",
+      exchange: "bybit", priority: "low", weight: 10, dedupKey: "symreg-bybit-instruments",
+    });
     if (!res.ok) return [];
     const data = (await res.json()) as { result: { list: Array<Record<string, any>> } };
     const results: SymbolInfo[] = [];
@@ -249,7 +265,11 @@ export class SymbolRegistry {
   // ── OKX V5 SWAP ──────────────────────────────────────────────
 
   private async fetchOkxSymbols(): Promise<SymbolInfo[]> {
-    const res = await fetch("https://www.okx.com/api/v5/public/instruments?instType=SWAP");
+    if (!isExchangeAvailable("okx")) return [];
+    const res = await exchangeFetch({
+      url: "https://www.okx.com/api/v5/public/instruments?instType=SWAP",
+      exchange: "okx", priority: "low", weight: 10, dedupKey: "symreg-okx-instruments",
+    });
     if (!res.ok) return [];
     const data = (await res.json()) as { data: Array<Record<string, any>> };
     const results: SymbolInfo[] = [];

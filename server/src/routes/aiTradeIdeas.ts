@@ -7,6 +7,7 @@ import type { TradeIdeaStore } from "../services/tradeIdeaStore.ts";
 import type { TradeIdeaRecord } from "../services/tradeIdeaTypes.ts";
 import { redis } from "../db/redis.ts";
 import { AXIOM_SYSTEM_PROMPT, buildAxiomUserPrompt } from "../engines/aiTradeIdeas/axiomPrompt.ts";
+import { QWEN_FREE_SYSTEM_PROMPT } from "../engines/aiTradeIdeas/qwenFreeSystemPrompt.ts";
 import { buildAxiomEdgeLayerInput } from "../services/axiomEdgeLayerBuilder.ts";
 
 const AI_STATE_REDIS_KEY = "bitrium:ai-trade-ideas:state";
@@ -25,57 +26,85 @@ const toSafeProvider = (row: AiProviderRecord) => ({
 });
 
 const buildSystemPrompt = (moduleId?: AiModuleId) => {
-  const base = [
-    "You are an institutional crypto trade evaluator working on top of a quantitative trading engine.",
-    "You will receive ultra-compact structured engine data with short field names.",
-    "",
-    "Field definitions:",
-    "[meta] s=symbol, tf=timeframe, cp=current_price, h=horizon, rm=risk_mode",
-    "[lvl] su=supports, re=resistances, ns=nearest_support, nr=nearest_resistance, nl=nearest_liquidity, ezl=entry_zone_low, ezh=entry_zone_high, iv=invalidation",
-    "[core/trend] r=regime, td=trend_direction, ts=trend_strength, tp=trend_phase, ea=ema_alignment, vw=vwap_position, dk=distance_key_level, hr=htf_reaction",
-    "[core/liquidity] obi=orderbook_imbalance, scp=stop_cluster_prob, ld=liquidity_distance, af=aggressor_flow",
-    "[core/positioning] oi=oi_change, fb=funding_bias, mps=move_participation, rms=real_momentum",
-    "[core/volatility] cmp=compression, fbp=fake_breakout_prob, ep=expansion_prob, news=news_risk",
-    "[core/risk] sc=signal_conflict, cr=cascade_risk, trap=trap_probability",
-    "[core/execution] spr=spread, dq=depth_quality, eq=entry_quality, rrp=rr_potential, id=invalidation_distance, rd=reward_distance",
-    "[core/signals] tv=trade_validity, b=bias, it=intent, et=entry_timing, ma=model_agreement, fin=final_score, pw=pwin, rr=expected_rr",
-    "[logic] lq=level_quality, la=liquidity_alignment, pa=positioning_alignment, xa=execution_alignment, rp=risk_penalty, fbp2=fake_break_penalty, tp2=trap_penalty, loc=location_score, cpb=continuation_prob, rpb=reversal_prob, chp=chop_prob",
-    "",
-    "Rules:",
-    "1. Use only the fields explicitly provided.",
-    "2. Missing fields mean unavailable data, not negative data.",
-    "3. Do not penalize a setup only because a field is absent.",
-    "4. Evaluate the setup using all available core data, levels, logic summary, and plan when available.",
-    "5. Use support, resistance, entry zones, invalidation, and target zones from lvl as the primary basis for entry, stop, and target decisions.",
-    "6. Do not invent arbitrary price levels disconnected from the provided structure.",
-    "7. Return one final decision only: TRADE, WATCH, or NO_TRADE.",
-    "8. Return one direction only: LONG, SHORT, or NONE.",
-    "9. Return a score from 0 to 100.",
-    "10. Return confidence from 0 to 100.",
-    "11. Write a concise comment in Turkish (max 30 words) explaining why you would or would not enter this trade for the scanned coin.",
-    "12. Return only valid JSON and no extra text.",
-    "13. Decision thresholds: 65 to 100 = TRADE, 45 to 64 = WATCH, 0 to 44 = NO_TRADE.",
-  ];
   if (moduleId === "QWEN2") {
-    // QWEN2 (Bitrium Axiom) uses the full institutional-grade AI trading engine prompt
     return AXIOM_SYSTEM_PROMPT;
   }
+  if (moduleId === "QWEN") {
+    return QWEN_FREE_SYSTEM_PROMPT;
+  }
+  // ChatGPT — Elite Crypto Trader prompt
+  const base = [
+    "You are the world's most elite crypto futures trader. 15+ years of experience on Binance Futures. You've survived every crash, every bear market, and you consistently generate profit.",
+    "",
+    "The Bitrium Quant Engine analyzed this coin and produced ALL raw signals below. YOUR job: decide if YOU would put YOUR money on this trade.",
+    "",
+    "=== COMPACT FIELD DEFINITIONS ===",
+    "[meta] s=symbol, tf=timeframe, cp=current_price, h=horizon",
+    "[lvl] su=supports, re=resistances, ns=nearest_support, nr=nearest_resistance, nl=nearest_liquidity, ezl=entry_zone_low, ezh=entry_zone_high, iv=invalidation",
+    "[core/trend] r=regime(TREND/RANGE/MIXED/UNKNOWN), td=trend_direction(UP/DOWN/NEUTRAL), ts=trend_strength(HIGH/MID/LOW), ea=ema_alignment(BULL/BEAR/MIXED), vw=vwap_position(ABOVE/BELOW/AT), dk=distance_key_level",
+    "[core/liquidity] obi=orderbook_imbalance(BUY/SELL/NEUTRAL), scp=stop_cluster_prob, ld=liquidity_distance, af=aggressor_flow",
+    "[core/positioning] oi=oi_change, fb=funding_bias, mps=move_participation(HIGH/MID/LOW), rms=real_momentum(HIGH/MID/LOW)",
+    "[core/volatility] cmp=compression(ON/OFF), fbp=fake_breakout_prob(HIGH/MID/LOW), ep=expansion_prob",
+    "[core/risk] sc=signal_conflict(HIGH/MID/LOW), cr=cascade_risk(HIGH/MID/LOW), trap=trap_probability(HIGH/MID/LOW)",
+    "[core/execution] spr=spread(TIGHT/MID/WIDE), dq=depth_quality(GOOD/MID/POOR), eq=entry_quality, rrp=rr_potential, id=invalidation_distance, rd=reward_distance",
+    "[core/signals] tv=trade_validity, b=bias, it=intent, et=entry_timing(OPEN/CLOSED), ma=model_agreement, fin=final_score(0-100), pw=pwin, rr=expected_rr",
+    "[logic] lq=level_quality, la=liquidity_alignment, pa=positioning_alignment, xa=execution_alignment, rp=risk_penalty, loc=location_score, cpb=continuation_prob, rpb=reversal_prob, chp=chop_prob",
+    "[plan] dir=direction, ezl=entry_low, ezh=entry_high, sl1=stop_1, sl2=stop_2, tp1=target_1, tp2=target_2",
+    "",
+    "=== YOUR TRADING RULES ===",
+    "",
+    "RULE 1 — STOP LOSS IS SACRED (Most important!)",
+    "- SL MUST be at a STRUCTURAL level (swing low/high, support/resistance)",
+    "- Use lvl.su (supports) and lvl.re (resistances) to validate SL",
+    "- No structural SL → NO_TRADE. Too tight SL → NO_TRADE. Too wide SL → NO_TRADE.",
+    "",
+    "RULE 2 — TAKE PROFIT MUST BE REALISTIC",
+    "- TP must be at a real structural level price can actually reach",
+    "- Use lvl.re (LONG TP targets) and lvl.su (SHORT TP targets)",
+    "- Unrealistic TP → NO_TRADE",
+    "",
+    "RULE 3 — RR MINIMUM 1.5:1 (prefer 2.0+)",
+    "- Calculate from your SL and TP1. Below 1.5 → NO_TRADE",
+    "- RR 1.5-2.0 is acceptable if r=TREND + strong momentum + ea aligned",
+    "",
+    "RULE 4 — TREND MUST BE CLEAR for TRADE decision",
+    "- core.r should be TREND, core.ea aligned with direction",
+    "- RANGE/MIXED/UNKNOWN = lower conviction, usually WATCH or NO_TRADE",
+    "",
+    "RULE 5 — BE SELECTIVE BUT NOT PARANOID: TRADE ~35-40% of candidates (already pre-filtered by quant gate)",
+    "",
+    "=== INSTANT NO_TRADE ===",
+    "- sc=HIGH AND model agreement very low (market confused with no consensus)",
+    "- spr=WIDE AND dq=POOR (can't execute)",
+    "- trap=HIGH AND fbp=HIGH (multiple trap signals together)",
+    "- rr < 1.2",
+    "- More than 40% core fields missing",
+    "",
+    "=== OUTPUT FORMAT ===",
+    "Return ONLY valid JSON. No markdown.",
+    '{"score":0,"confidence":0,"decision":"TRADE","direction":"LONG","entry_zone_low":0.0,"entry_zone_high":0.0,"stop_1":0.0,"stop_2":0.0,"target_1":0.0,"target_2":0.0,"comment_30_words":"Turkish max 30 words","risk_flags":[]}',
+    "",
+    "score = realistic win probability (55 = expect 55% win). decision: TRADE(45-100), WATCH(30-44), NO_TRADE(0-29).",
+    "stop_1 = YOUR structural SL. target_1/target_2 = YOUR realistic TPs.",
+    "Comment in TURKISH like talking to a fellow trader.",
+    "These candidates already passed a strict quant gate. Focus on trade thesis quality.",
+  ];
   return base.join("\n");
 };
 
 const buildUserPrompt = (engineJson: string) =>
   [
-    "Evaluate this crypto setup using the provided quant engine data.",
-    "Your tasks:",
-    "- score the setup from 0 to 100",
-    "- give confidence from 0 to 100",
-    "- choose one decision: TRADE, WATCH, or NO_TRADE",
-    "- choose one direction: LONG, SHORT, or NONE",
-    "- determine entry zone, stop levels, and target levels using the provided market levels and engine logic",
-    "- write a concise comment in Turkish (max 30 words) about why entering or not entering this trade",
-    "- return only valid JSON",
+    "Here is the full quant engine data for this coin. Study ALL signals carefully.",
     "",
-    "Use this exact JSON output schema:",
+    "Your tasks as the elite trader:",
+    "1. Check SL placement — is it at a structural level? If not → NO_TRADE",
+    "2. Check TP targets — are they realistic and reachable? If not → NO_TRADE",
+    "3. Calculate RR from your SL and TP1 — must be >= 2.5",
+    "4. Evaluate trend, execution quality, risk signals, and overall conviction",
+    "5. Provide YOUR stop_1 and target_1/target_2 at structural levels",
+    "6. Write Turkish comment explaining your decision like a trader",
+    "",
+    "Return ONLY valid JSON:",
     '{"score":0,"confidence":0,"decision":"TRADE","direction":"LONG","entry_zone_low":0.0,"entry_zone_high":0.0,"stop_1":0.0,"stop_2":0.0,"target_1":0.0,"target_2":0.0,"comment_30_words":"","risk_flags":[]}',
     "",
     "Data:",
@@ -117,19 +146,19 @@ const resolveProviderEndpoint = (provider: AiProviderRecord): string => {
   return "";
 };
 
-const AI_SCAN_INTERVAL_MS = 60_000;
+const AI_SCAN_INTERVAL_MS = 15_000;  // 15s — check frequently so next cycle starts fast after previous ends
 const AI_SCAN_COINS_PER_MODULE = 3;
-const AI_MODULE_STAGGER_MS = 20_000; // 20s delay between modules
+const AI_MODULE_STAGGER_MS = 3_000;  // 3s gap between modules (was 20s)
 const aiCoinCooldown = new Set<string>(); // coins scanned this cycle — cleared after all coins used
 const AI_SCAN_ROW_LIMIT = 80;
-const AI_MIN_CONSENSUS = 48;
+const AI_MIN_CONSENSUS = 42;       // Lowered 48→42: allow more ideas through
 const AI_MODE_BUFFER: Record<string, number> = {
   AGGRESSIVE: 0,
-  BALANCED: 2,
-  CAPITAL_GUARD: 5,
+  BALANCED: 0,                      // Lowered 2→0: no extra buffer for BAL
+  CAPITAL_GUARD: 2,                 // Lowered 5→2: CG still slightly conservative
   FLOW: 0,
 };
-const AI_TRADE_FILL_MIN = 0.30;
+const AI_TRADE_FILL_MIN = 0.20;     // Lowered 0.30→0.20: less restrictive fill gate
 const AI_TRADE_EDGE_MIN = 0.0;
 
 type AiScanSide = "LONG" | "SHORT" | "NO_TRADE" | "WAIT" | "UNKNOWN";
@@ -142,7 +171,7 @@ type AiModuleStatus = {
   scanned: number;
 };
 
-type AiModuleId = "CHATGPT" | "QWEN" | "QWEN2";
+type AiModuleId = "CHATGPT" | "QWEN" | "QWEN2" | "CLAUDE";
 
 type AiProviderDebug = {
   provider: AiModuleId;
@@ -250,7 +279,7 @@ type SharedAiState = {
   lastProviderDebug: Record<AiModuleId, AiProviderDebug | null>;
 };
 
-const ALL_MODULE_IDS: AiModuleId[] = ["CHATGPT", "QWEN", "QWEN2"];
+const ALL_MODULE_IDS: AiModuleId[] = ["CHATGPT", "QWEN", "QWEN2", "CLAUDE"];
 
 const sharedAiState: SharedAiState = {
   started: false,
@@ -262,21 +291,25 @@ const sharedAiState: SharedAiState = {
     CHATGPT: 0,
     QWEN: 0,
     QWEN2: 0,
+    CLAUDE: 0,
   },
   moduleStatus: {
     CHATGPT: { running: false, lastRunAt: "", error: "", updatedAt: "", scanned: 0 },
     QWEN: { running: false, lastRunAt: "", error: "", updatedAt: "", scanned: 0 },
     QWEN2: { running: false, lastRunAt: "", error: "", updatedAt: "", scanned: 0 },
+    CLAUDE: { running: false, lastRunAt: "", error: "", updatedAt: "", scanned: 0 },
   },
   scansByModule: {
     CHATGPT: [],
     QWEN: [],
     QWEN2: [],
+    CLAUDE: [],
   },
   lastProviderDebug: {
     CHATGPT: null,
     QWEN: null,
     QWEN2: null,
+    CLAUDE: null,
   },
 };
 
@@ -1008,10 +1041,10 @@ const toScanRow = (
 
     // Map Axiom decision to standard format
     if (axiomDecision === "LONG") {
-      parsed.decision = axiomConfidence >= 65 ? "TRADE" : axiomConfidence >= 45 ? "WATCH" : "NO_TRADE";
+      parsed.decision = axiomConfidence >= 50 ? "TRADE" : axiomConfidence >= 35 ? "WATCH" : "NO_TRADE";
       parsed.direction = "LONG";
     } else if (axiomDecision === "SHORT") {
-      parsed.decision = axiomConfidence >= 65 ? "TRADE" : axiomConfidence >= 45 ? "WATCH" : "NO_TRADE";
+      parsed.decision = axiomConfidence >= 50 ? "TRADE" : axiomConfidence >= 35 ? "WATCH" : "NO_TRADE";
       parsed.direction = "SHORT";
     } else {
       parsed.decision = "NO_TRADE";
@@ -1316,7 +1349,7 @@ const toScanRow = (
     }) || gateStateUpper === "BLOCK";
   const hasHardRisk =
     hasParsedHardGate ||
-    compactFill < 0.15 ||
+    compactFill < 0.10 ||
     riskAdjEdgeR < -0.05 ||
     String(reason).includes("DATA_FAIL");
   const criticalPass =
@@ -1711,7 +1744,7 @@ const readAiStateFromRedis = async (): Promise<SharedAiState | null> => {
 /** Map AI module ID to user_id for trade_ideas DB table */
 const aiModuleUserId = (moduleId: AiModuleId): string => `ai-${moduleId.toLowerCase()}`;
 const AI_USER_ID_PREFIX = "ai-";
-const AI_MODULE_LABELS: Record<AiModuleId, string> = { CHATGPT: "ChatGPT", QWEN: "Qwen", QWEN2: "Bitrium Axiom" };
+const AI_MODULE_LABELS: Record<AiModuleId, string> = { CHATGPT: "ChatGPT", QWEN: "Cloud", QWEN2: "Bitrium Alpha", CLAUDE: "Bitrium Prime" };
 
 /** Convert an AI scan row with TRADE decision into a TradeIdeaRecord for DB tracking */
 const aiScanToTradeIdea = (row: AiScanRow, moduleId: AiModuleId, nowIso: string): TradeIdeaRecord | null => {
@@ -1857,7 +1890,7 @@ export const registerAiTradeIdeasRoutes = (
       // ── Distribute UNIQUE coins to each module (no overlap) ──
       // QWEN2 (Axiom) → top 3, ChatGPT → next 3, Qwen → next 3
       const moduleOrder: AiModuleId[] = ["QWEN2", "CHATGPT", "QWEN"];
-      const symbolsByModule: Record<AiModuleId, string[]> = { CHATGPT: [], QWEN: [], QWEN2: [] };
+      const symbolsByModule: Record<AiModuleId, string[]> = { CHATGPT: [], QWEN: [], QWEN2: [], CLAUDE: [] };
       let symbolIdx = 0;
       for (const moduleId of moduleOrder) {
         if (!enabledModuleIds.includes(moduleId)) continue;
@@ -1962,18 +1995,27 @@ export const registerAiTradeIdeasRoutes = (
           rows.push(toScanRow(moduleId, symbol, response, compactFallback));
         }
 
-        // ── Persist TRADE and WATCH decisions to trade_ideas DB for outcome tracking ──
+        // ── Persist only TRADE decisions to trade_ideas DB for outcome tracking ──
+        // WATCH is too low conviction — was creating 100+ low-quality ideas per module
         if (deps.tradeIdeaStore) {
+          const userId = aiModuleUserId(moduleId);
+          // Global cap: max 10 open ideas per AI module (reduced from 15)
+          let openCount = 0;
+          try { openCount = await deps.tradeIdeaStore.countOpenIdeas(userId); } catch { /* ignore */ }
+          const MAX_OPEN_PER_MODULE = 15;   // Raised 10→15: allow more concurrent AI ideas
+          let persisted = 0;
+
           for (const row of rows) {
-            if ((row.decision !== "TRADE" && row.decision !== "WATCH") || row.scorePct < 45) continue;
+            if (row.decision !== "TRADE" || row.scorePct < 38) continue;  // Lowered to 38: AI providers return 42-50% for TRADE decisions
+            if (openCount + persisted >= MAX_OPEN_PER_MODULE) break;
             try {
-              const userId = aiModuleUserId(moduleId);
               const existing = await deps.tradeIdeaStore.findOpenIdea(userId, row.symbol);
               if (existing) continue; // already tracking this symbol for this module
               const idea = aiScanToTradeIdea(row, moduleId, nowIso);
               if (!idea) continue;
               const initialPrice = (idea.entry_low + idea.entry_high) / 2;
               await deps.tradeIdeaStore.createIdea(idea, initialPrice);
+              persisted++;
               // For TRADE ideas that start ACTIVE, also log ENTRY_TOUCHED event
               if (idea.status === "ACTIVE") {
                 await deps.tradeIdeaStore.appendEvent({
@@ -2179,18 +2221,28 @@ export const registerAiTradeIdeasRoutes = (
       const rangeMs = RANGE_MS[rangeParam] ?? 0;
       const cutoffMs = rangeMs > 0 ? Date.now() - rangeMs : 0;
 
-      // Read scan state (primary has it in-memory, non-primary reads from Redis)
-      const scanState = (deps.isPrimary === false && !sharedAiState.updatedAt)
-        ? (await readAiStateFromRedis()) ?? sharedAiState
-        : sharedAiState;
+      // Read cumulative scan counts from AiModuleScheduler (Redis hash)
+      let schedulerScanCounts: Record<string, number> = {};
+      try {
+        const raw = await redis.hgetall("bitrium:ai-scheduler:scan-counts");
+        if (raw) {
+          for (const [k, v] of Object.entries(raw)) {
+            schedulerScanCounts[k] = parseInt(v as string, 10) || 0;
+          }
+        }
+      } catch { /* best-effort */ }
 
-      const MARGIN = 10;
+      // PnL simulation: $100 margin × 10x leverage = $1,000 notional
+      // Matches frontend calculateReportPnLSimulation() in TradeIdeasReportPage.tsx
+      const MARGIN = 100;
       const LEVERAGE = 10;
       const POSITION_SIZE = MARGIN * LEVERAGE;
+      const FEE_RATE = 0.0004; // 0.04% per side (Binance maker/taker)
 
       const statsByModule: Record<string, {
         totalScan: number; totalIdeas: number; active: number; resolved: number;
-        success: number; failed: number; entryMissed: number; successRate: number; totalPnlUsd: number;
+        success: number; failed: number; entryMissed: number;
+        successRate: number; totalPnlUsd: number;
       }> = {};
 
       for (const moduleId of ALL_MODULE_IDS) {
@@ -2204,6 +2256,8 @@ export const registerAiTradeIdeasRoutes = (
           i.result === "FAIL" && !i.activated_at && !i.hit_level_type;
         const entryMissedCount = ideas.filter((i) => isEntryMissed(i)).length;
         const activeCount = ideas.filter((i) => i.status === "PENDING" || i.status === "ACTIVE").length;
+        // Expired: resolved with result='EXPIRED' (legacy — no longer generated, excluded from totalIdeas)
+        const expiredCount = ideas.filter((i) => i.result === "EXPIRED").length;
         const activatedIdeas = ideas.filter((i) => !isEntryMissed(i));
         const success = activatedIdeas.filter((i) => i.result === "SUCCESS").length;
         const failed = activatedIdeas.filter((i) => i.result === "FAIL").length;
@@ -2214,17 +2268,23 @@ export const registerAiTradeIdeasRoutes = (
           if (!idea.hit_level_price || !idea.entry_low || !idea.entry_high) continue;
           const entryPrice = (idea.entry_low + idea.entry_high) / 2;
           if (!entryPrice) continue;
-          const priceChange = idea.direction === "LONG"
-            ? (idea.hit_level_price - entryPrice) / entryPrice
-            : (entryPrice - idea.hit_level_price) / entryPrice;
-          totalPnlUsd += POSITION_SIZE * priceChange;
+          const quantity = POSITION_SIZE / entryPrice;
+          const exitPrice = idea.hit_level_price;
+          // Gross PnL
+          const grossPnl = idea.direction === "LONG"
+            ? (exitPrice - entryPrice) * quantity
+            : (entryPrice - exitPrice) * quantity;
+          // Fees: entry + exit (both sides)
+          const fees = (entryPrice * quantity + exitPrice * quantity) * FEE_RATE;
+          totalPnlUsd += grossPnl - fees;
         }
 
-        const scanCount = (scanState.scansByModule[moduleId] ?? []).filter((r) => r.ok).length;
+        // Use AiModuleScheduler cumulative scan counter (from Redis), fallback to legacy scan count
+        const scanCount = schedulerScanCounts[moduleId] ?? 0;
 
         statsByModule[moduleId] = {
           totalScan: scanCount,
-          totalIdeas: ideas.length,
+          totalIdeas: ideas.length - expiredCount,
           active: activeCount,
           resolved,
           success,
@@ -2256,7 +2316,9 @@ export const registerAiTradeIdeasRoutes = (
         sharedAiState.scansByModule[moduleId] = [];
         sharedAiState.moduleStatus[moduleId] = { scanned: 0, running: false, lastRunAt: "", error: "" };
       }
-      console.log(`[AI Reset] Cleared ${result.deletedIdeas} AI ideas — scan state zeroed`);
+      // Clear Redis cumulative scan counter so Total Scan resets to 0
+      await redis.del("bitrium:ai-scheduler:scan-counts");
+      console.log(`[AI Reset] Cleared ${result.deletedIdeas} AI ideas — scan state + Redis counters zeroed`);
       return res.json({ ok: true, ...result });
     } catch (error) {
       return res.status(500).json({ ok: false, error: "ai_reset_failed", detail: error instanceof Error ? error.message : "unknown_error" });

@@ -1,4 +1,5 @@
 import WebSocket from "ws";
+import { exchangeFetch, isExchangeAvailable } from "./binanceRateLimiter.ts";
 
 const BINANCE_FUTURES_STREAM_URLS = [
   "wss://fstream.binance.com/stream?streams=!ticker@arr/!markPrice@arr@1s/!bookTicker",
@@ -293,10 +294,15 @@ export class BinanceFuturesHub {
     if (this.precisionLoading) return;
     this.precisionLoading = true;
     try {
-      const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 8_000);
-      const res = await fetch("https://fapi.binance.com/fapi/v1/exchangeInfo", { signal: controller.signal });
-      clearTimeout(timeout);
+      if (!isExchangeAvailable("binance")) throw new Error("Binance REST unavailable (cooldown)");
+      const res = await exchangeFetch({
+        url: "https://fapi.binance.com/fapi/v1/exchangeInfo",
+        exchange: "binance",
+        priority: "low",
+        weight: 10,
+        dedupKey: "hub-exchangeInfo",
+        init: { signal: AbortSignal.timeout(8_000) },
+      });
       if (!res.ok) throw new Error(`precision_http_${res.status}`);
       const raw = (await res.json()) as Record<string, unknown>;
       const symbols = Array.isArray(raw.symbols) ? raw.symbols : [];

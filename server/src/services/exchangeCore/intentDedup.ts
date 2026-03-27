@@ -6,7 +6,7 @@
  * Value: intentId
  * TTL: 300s (5 minutes)
  */
-import { redis } from "../../db/redis.ts";
+import { redisControl } from "../../db/redis.ts";
 
 const DEDUP_TTL_S = 300;
 
@@ -26,13 +26,13 @@ export class IntentDeduplicator {
     const key = dedupKey(userId, clientOrderId);
 
     // SET NX returns "OK" if set, null if key already exists
-    const result = await redis.set(key, intentId, "EX", DEDUP_TTL_S, "NX");
+    const result = await redisControl.set(key, intentId, "EX", DEDUP_TTL_S, "NX");
     if (result === "OK") {
       return { isDuplicate: false };
     }
 
     // Key exists — retrieve the existing intentId
-    const existing = await redis.get(key);
+    const existing = await redisControl.get(key);
     return { isDuplicate: true, existingIntentId: existing ?? undefined };
   }
 
@@ -41,6 +41,6 @@ export class IntentDeduplicator {
    */
   async release(userId: string, clientOrderId: string): Promise<void> {
     const key = dedupKey(userId, clientOrderId);
-    await redis.del(key);
+    await redisControl.del(key);
   }
 }

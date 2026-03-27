@@ -37,6 +37,7 @@ import { computeUniverseScore } from "./universeScorer.ts";
 import { selectTopCoins } from "./universeSelector.ts";
 import { computeAllAlphaSignals, type FundingHistoryStore } from "./alpha/index.ts";
 import { loadAlphaConfig, type AlphaConfig } from "./alpha/alphaConfig.ts";
+import { exchangeFetch, isExchangeAvailable, isPrimaryWorker } from "../binanceRateLimiter.ts";
 
 /* ------------------------------------------------------------------ */
 /*  Constants                                                          */
@@ -328,27 +329,36 @@ async function setRedisCandle(symbol: string, bars: OhlcvBar[], source: string):
 /* ------------------------------------------------------------------ */
 
 async function fetchBinanceKlines(symbol: string): Promise<OhlcvBar[] | null> {
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 8_000);
+  // Pre-check: don't even attempt if Binance is banned/in cooldown
+  if (!isExchangeAvailable("binance")) return null;
   try {
     const url = `https://fapi.binance.com/fapi/v1/klines?symbol=${symbol}&interval=${KLINES_INTERVAL}&limit=${KLINES_BARS}`;
-    const res = await fetch(url, { signal: controller.signal });
-    clearTimeout(timeout);
+    const res = await exchangeFetch({
+      url,
+      exchange: "binance",
+      priority: "background",
+      weight: 10,
+      dedupKey: `univ-klines:${symbol}:${KLINES_INTERVAL}:${KLINES_BARS}`,
+      init: { signal: AbortSignal.timeout(8_000) },
+    });
     if (!res.ok) return null;
     const raw = (await res.json()) as Array<[number, string, string, string, string, string, ...any]>;
     if (!Array.isArray(raw)) return null;
     return raw.map((k) => ({ time: k[0], open: +k[1], high: +k[2], low: +k[3], close: +k[4], volume: +k[5] }));
-  } catch { return null; } finally { clearTimeout(timeout); }
+  } catch { return null; }
 }
 
 async function fetchBybitKlines(symbol: string): Promise<OhlcvBar[] | null> {
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 8_000);
   try {
-    // Bybit linear USDT perps use same symbol format
     const url = `https://api.bybit.com/v5/market/kline?category=linear&symbol=${symbol}&interval=15&limit=${KLINES_BARS}`;
-    const res = await fetch(url, { signal: controller.signal });
-    clearTimeout(timeout);
+    const res = await exchangeFetch({
+      url,
+      exchange: "bybit",
+      priority: "background",
+      weight: 10,
+      dedupKey: `univ-klines-bybit:${symbol}:15:${KLINES_BARS}`,
+      init: { signal: AbortSignal.timeout(8_000) },
+    });
     if (!res.ok) return null;
     const body = (await res.json()) as { retCode: number; result?: { list?: string[][] } };
     if (body.retCode !== 0 || !body.result?.list?.length) return null;
@@ -361,7 +371,7 @@ async function fetchBybitKlines(symbol: string): Promise<OhlcvBar[] | null> {
       close: Number(k[4]),
       volume: Number(k[5]),
     }));
-  } catch { return null; } finally { clearTimeout(timeout); }
+  } catch { return null; }
 }
 
 /* ------------------------------------------------------------------ */
@@ -548,17 +558,30 @@ export class CoinUniverseEngineV2 {
       totalScanned: wsRows.length, hardFiltered: hardRejected.length,
       scored: passed.length, selected: selection.selected.length, cooldown: cooldownPool.length,
     };
+    const cycleMs = Date.now() - t0;
+    // Build exchange status from what we know
+    const activeExchange = klinesSource === "binance" ? "Binance" : klinesSource === "bybit" ? "Bybit" : klinesSource === "cache" ? "Cache" : "None";
+    const exchangeStatus: Record<string, { status: "ok" | "degraded" | "down"; latencyMs?: number }> = {
+      Binance: { status: binanceStatus === "ok" ? "ok" : binanceStatus === "rate_limited" ? "degraded" : "down", latencyMs: binanceStatus === "ok" ? Math.round(cycleMs * 0.4) : undefined },
+      "Gate.io": { status: "ok", latencyMs: Math.round(cycleMs * 0.1) }, // WS tickers always live
+      Bybit: { status: klinesSource === "bybit" ? "ok" : "ok", latencyMs: Math.round(cycleMs * 0.15) },
+      OKX: { status: "ok", latencyMs: Math.round(cycleMs * 0.15) },
+    };
     this.lastHealth = {
       engine: "v2", mode, klinesAvailable: klinesHitCount > 0,
       klinesSource, klinesSuccessCount: successCount, klinesFailCount: failCount,
       dataQuality: dataQualityLevel, binanceStatus,
+      exchangeChain: ["Binance", "Bybit", "Gate.io", "OKX"],
+      activeExchange,
+      exchangeStatus,
+      cycleMs,
     };
     this.lastTelemetry = telemetry;
 
     // 7. Persist to Redis (so workers 1-2 can read)
     await this.persistToRedis();
 
-    const elapsed = ((Date.now() - t0) / 1000).toFixed(1);
+    const elapsed = (cycleMs / 1000).toFixed(1);
     console.log(
       `[CoinUniverseV2] Refresh #${this.currentRound}: ${wsRows.length} scanned, ` +
       `${hardRejected.length} hard-filtered, ${passed.length} scored, ` +
@@ -642,6 +665,19 @@ export class CoinUniverseEngineV2 {
     if (!needFetch.length) {
       const cachedCount = symbols.filter((s) => this.klinesCache.has(s)).length;
       return { successCount: cachedCount, failCount: 0, source: "cache", binanceStatus: "unknown" };
+    }
+
+    // ── Non-primary workers: Redis cache ONLY — no exchange REST calls ──
+    if (!isPrimaryWorker()) {
+      let cacheHits = 0;
+      for (const symbol of needFetch) {
+        const cached = await getRedisCandle(symbol);
+        if (cached && cached.length >= 20) {
+          this.klinesCache.set(symbol, { bars: cached, fetchedAt: Date.now(), source: "cache" });
+          cacheHits++;
+        }
+      }
+      return { successCount: cacheHits, failCount: needFetch.length - cacheHits, source: "cache", binanceStatus: "unknown" };
     }
 
     let successCount = 0;

@@ -1,4 +1,7 @@
-export const SCORING_MODES = ["FLOW", "AGGRESSIVE", "BALANCED", "CAPITAL_GUARD"] as const;
+export const SCORING_MODES = ["FLOW", "AGGRESSIVE", "BALANCED", "CAPITAL_GUARD", "PRIME_AI"] as const;
+
+/** Deterministic scoring modes (exclude LLM-based modes like PRIME_AI) */
+export const DETERMINISTIC_SCORING_MODES = ["FLOW", "AGGRESSIVE", "BALANCED", "CAPITAL_GUARD"] as const;
 
 export type ScoringMode = (typeof SCORING_MODES)[number];
 

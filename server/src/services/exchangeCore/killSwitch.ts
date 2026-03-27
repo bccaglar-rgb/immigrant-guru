@@ -11,7 +11,7 @@
  * State stored in Redis for instant cross-instance propagation.
  * Key pattern: killswitch:{level}:{target}
  */
-import { redis } from "../../db/redis.ts";
+import { redisControl } from "../../db/redis.ts";
 import type { CoreVenue } from "./types.ts";
 
 export type KillSwitchLevel = "GLOBAL" | "EXCHANGE" | "USER" | "SYMBOL" | "AI_ONLY";
@@ -100,7 +100,7 @@ export class KillSwitch {
     };
     const key = ksKey(level, target);
     // No TTL — stays active until manually deactivated
-    await redis.set(key, JSON.stringify(state));
+    await redisControl.set(key, JSON.stringify(state));
     console.warn(`[KillSwitch] ACTIVATED: ${level}:${target} by ${activatedBy} — ${reason}`);
   }
 
@@ -111,16 +111,16 @@ export class KillSwitch {
     deactivatedBy: string,
   ): Promise<void> {
     const key = ksKey(level, target);
-    await redis.del(key);
+    await redisControl.del(key);
     console.log(`[KillSwitch] DEACTIVATED: ${level}:${target} by ${deactivatedBy}`);
   }
 
   /** Get all active kill switches. */
   async getActiveStates(): Promise<KillSwitchState[]> {
-    const keys = await redis.keys("killswitch:*");
+    const keys = await redisControl.keys("killswitch:*");
     if (!keys.length) return [];
 
-    const pipeline = redis.pipeline();
+    const pipeline = redisControl.pipeline();
     for (const key of keys) pipeline.get(key);
     const results = await pipeline.exec();
 
@@ -138,7 +138,7 @@ export class KillSwitch {
   /** Get state for a specific level + target. */
   private async getState(level: KillSwitchLevel, target: string): Promise<KillSwitchState | null> {
     const key = ksKey(level, target);
-    const data = await redis.get(key);
+    const data = await redisControl.get(key);
     if (!data) return null;
     try {
       return JSON.parse(data) as KillSwitchState;

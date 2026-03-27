@@ -10,7 +10,7 @@
  * Per-user configurable. Per-symbol overrides supported.
  */
 import { pool } from "../../db/pool.ts";
-import { redis } from "../../db/redis.ts";
+import { redisControl } from "../../db/redis.ts";
 import type { CoreIntentRecord } from "./types.ts";
 import { PositionTracker, type TrackedPosition } from "./positionTracker.ts";
 
@@ -55,13 +55,13 @@ export class PolicyEngine {
     // Manual trades always record their timestamp for cooldown tracking
     if (intent.source === "MANUAL") {
       const key = manualTradeKey(intent.userId, intent.symbolInternal);
-      await redis.set(key, String(Date.now()), "PX", config.aiCooldownAfterManualMs);
+      await redisControl.set(key, String(Date.now()), "PX", config.aiCooldownAfterManualMs);
     }
 
     // AI cooldown after manual trade
     if (intent.source === "AI") {
       const key = manualTradeKey(intent.userId, intent.symbolInternal);
-      const lastManualAt = await redis.get(key);
+      const lastManualAt = await redisControl.get(key);
       if (lastManualAt) {
         const elapsed = Date.now() - Number(lastManualAt);
         if (elapsed < config.aiCooldownAfterManualMs) {

@@ -10,6 +10,7 @@
  */
 import type { CoreIntentRecord, CoreVenue } from "./types.ts";
 import { SymbolRegistry, type SymbolInfo } from "./symbolRegistry.ts";
+import { exchangeFetch, isExchangeAvailable } from "../binanceRateLimiter.ts";
 
 export interface NormalizationResult {
   symbolVenue: string;
@@ -176,26 +177,42 @@ export class OrderNormalizer {
 
   private async fetchCurrentPrice(venue: CoreVenue, symbolVenue: string): Promise<number | null> {
     try {
+      const venueKey = venue.toLowerCase().replace(/[.\-_\s]/g, "");
+      if (!isExchangeAvailable(venueKey)) return null;
+
       if (venue === "BINANCE") {
-        const res = await fetch(`https://fapi.binance.com/fapi/v1/ticker/price?symbol=${symbolVenue}`);
+        const res = await exchangeFetch({
+          url: `https://fapi.binance.com/fapi/v1/ticker/price?symbol=${symbolVenue}`,
+          exchange: "binance", priority: "normal", weight: 1,
+          dedupKey: `price:${symbolVenue}`,
+        });
         if (!res.ok) return null;
         const data = (await res.json()) as { price: string };
         return Number(data.price) || null;
       }
       if (venue === "GATEIO") {
-        const res = await fetch(`https://fx-api.gateio.ws/api/v4/futures/usdt/contracts/${symbolVenue}`);
+        const res = await exchangeFetch({
+          url: `https://fx-api.gateio.ws/api/v4/futures/usdt/contracts/${symbolVenue}`,
+          exchange: "gateio", priority: "normal", weight: 1,
+        });
         if (!res.ok) return null;
         const data = (await res.json()) as { mark_price: string; last_price: string };
         return Number(data.last_price || data.mark_price) || null;
       }
       if (venue === "BYBIT") {
-        const res = await fetch(`https://api.bybit.com/v5/market/tickers?category=linear&symbol=${symbolVenue}`);
+        const res = await exchangeFetch({
+          url: `https://api.bybit.com/v5/market/tickers?category=linear&symbol=${symbolVenue}`,
+          exchange: "bybit", priority: "normal", weight: 10,
+        });
         if (!res.ok) return null;
         const data = (await res.json()) as { result: { list: Array<{ lastPrice: string }> } };
         return Number(data.result?.list?.[0]?.lastPrice) || null;
       }
       if (venue === "OKX") {
-        const res = await fetch(`https://www.okx.com/api/v5/market/ticker?instId=${symbolVenue}`);
+        const res = await exchangeFetch({
+          url: `https://www.okx.com/api/v5/market/ticker?instId=${symbolVenue}`,
+          exchange: "okx", priority: "normal", weight: 10,
+        });
         if (!res.ok) return null;
         const data = (await res.json()) as { data: Array<{ last: string }> };
         return Number(data.data?.[0]?.last) || null;

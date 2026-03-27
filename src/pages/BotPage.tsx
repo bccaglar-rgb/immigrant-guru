@@ -628,11 +628,11 @@ const botAccent = (id: string): string => {
   return "#ef4444";
 };
 
-const BotDetailPanel = ({ bot }: { bot: BotEntry }) => {
+const BotDetailPanel = ({ bot, userPlan }: { bot: BotEntry; userPlan: PlanLevel }) => {
   const config = B[bot.id];
   if (!config) return <div className="flex flex-1 items-center justify-center text-[#6B6F76]">Bot configuration not found.</div>;
 
-  const locked = isBotLocked(bot.id, USER_PLAN);
+  const locked = isBotLocked(bot.id, userPlan);
   const reqPlan = getRequiredPlan(bot.id);
   const planInfo = PLAN_LABELS[reqPlan];
 
@@ -805,7 +805,7 @@ export default function BotPage() {
 
       {/* Right — Detail */}
       <div className="flex flex-1 flex-col bg-[#0F1012]">
-        <BotDetailPanel bot={selectedBot} />
+        <BotDetailPanel bot={selectedBot} userPlan={USER_PLAN} />
       </div>
     </div>
   );

@@ -2,13 +2,28 @@ import { isEntryMissed, isEntryTouched, minutesBetween, resolveFirstHit, resolve
 import { TradeIdeaStore } from "./tradeIdeaStore.ts";
 import type { TradeIdeaRecord } from "./tradeIdeaTypes.ts";
 import { redis } from "../db/redis.ts";
+import { exchangeFetch, isExchangeAvailable } from "./binanceRateLimiter.ts";
+
+// FAZ 3.3: Lazy-loaded mdc:ticker cache reader for fallback price resolution
+let _readTicker: ((symbol: string) => Promise<{ data: { price: number | null } } | null>) | null = null;
+let _readTickerLoading = false;
+async function getReadTicker() {
+  if (_readTicker) return _readTicker;
+  if (_readTickerLoading) return null;
+  _readTickerLoading = true;
+  try {
+    const mod = await import("./marketDataCache.ts");
+    _readTicker = mod.readTicker as typeof _readTicker;
+    return _readTicker;
+  } catch { _readTickerLoading = false; return null; }
+}
 
 type Horizon = TradeIdeaRecord["horizon"];
 
 const DEFAULT_PENDING_TTL_MINUTES: Record<Horizon, number> = {
-  SCALP: 60,
-  INTRADAY: 60,
-  SWING: 240,
+  SCALP: 120,      // 2h (was 1h — too aggressive for scalps that need a pullback)
+  INTRADAY: 360,   // 6h (was 1h — intraday ideas need the full session)
+  SWING: 1440,     // 24h (was 4h — swing trades need at LEAST a full day)
 };
 
 interface PriceCandle {
@@ -45,14 +60,20 @@ const fetchJson = async <T>(url: string): Promise<T | null> => {
 };
 
 const fetchBinanceFuturesJson = async <T>(path: string): Promise<T | null> => {
-  // Fire all bases in parallel and return first successful result
-  const results = await Promise.allSettled(
-    BINANCE_FUTURES_BASES.map((base) => fetchJson<T>(`${base}${path}`)),
-  );
-  for (const result of results) {
-    if (result.status === "fulfilled" && result.value !== null) return result.value;
-  }
-  return null;
+  // Single request through rate limiter instead of 5 parallel bases
+  if (!isExchangeAvailable("binance")) return null;
+  try {
+    const res = await exchangeFetch({
+      url: `https://fapi.binance.com${path}`,
+      exchange: "binance",
+      priority: "low",
+      weight: 1,
+      dedupKey: `tracker:${path.split("?")[0]}`,
+      init: { signal: AbortSignal.timeout(FETCH_TIMEOUT_MS) },
+    });
+    if (!res.ok) return null;
+    return (await res.json()) as T;
+  } catch { return null; }
 };
 
 const parseBaseQuote = (symbol: string): { base: string; quote: string } | null => {
@@ -69,9 +90,19 @@ const parseBaseQuote = (symbol: string): { base: string; quote: string } | null 
 };
 
 const fetchFromBinanceSpot = async (symbol: string): Promise<number | null> => {
-  const body = await fetchJson<{ price?: string }>(`https://api.binance.com/api/v3/ticker/price?symbol=${encodeURIComponent(symbol)}`);
-  const price = Number(body?.price);
-  return Number.isFinite(price) ? price : null;
+  if (!isExchangeAvailable("binance")) return null;
+  try {
+    const res = await exchangeFetch({
+      url: `https://api.binance.com/api/v3/ticker/price?symbol=${encodeURIComponent(symbol)}`,
+      exchange: "binance", priority: "low", weight: 1,
+      dedupKey: `tracker-spot-price:${symbol}`,
+      init: { signal: AbortSignal.timeout(FETCH_TIMEOUT_MS) },
+    });
+    if (!res.ok) return null;
+    const body = (await res.json()) as { price?: string };
+    const price = Number(body?.price);
+    return Number.isFinite(price) ? price : null;
+  } catch { return null; }
 };
 
 const fetchFromBinanceFutures = async (symbol: string): Promise<number | null> => {
@@ -118,9 +149,16 @@ const fetchFromGate = async (symbol: string): Promise<number | null> => {
 };
 
 const fetchHistoryFromBinanceSpot = async (symbol: string, startMs: number, endMs: number): Promise<PriceCandle[]> => {
-  const body = await fetchJson<Array<[number, string, string, string, string]>>(
-    `https://api.binance.com/api/v3/klines?symbol=${encodeURIComponent(symbol)}&interval=1m&startTime=${Math.floor(startMs)}&endTime=${Math.floor(endMs)}&limit=1000`,
-  );
+  if (!isExchangeAvailable("binance")) return [];
+  let body: Array<[number, string, string, string, string]> | null = null;
+  try {
+    const res = await exchangeFetch({
+      url: `https://api.binance.com/api/v3/klines?symbol=${encodeURIComponent(symbol)}&interval=1m&startTime=${Math.floor(startMs)}&endTime=${Math.floor(endMs)}&limit=1000`,
+      exchange: "binance", priority: "low", weight: 2,
+      init: { signal: AbortSignal.timeout(8_000) },
+    });
+    if (res.ok) body = (await res.json()) as any;
+  } catch { /* fallthrough */ }
   if (!Array.isArray(body)) return [];
   return body
     .map((row) => ({
@@ -261,6 +299,9 @@ export class TradeIdeaTracker {
 
   private lastPriceByIdeaId = new Map<string, number>();
 
+  // FAZ 3.3: REST cooldown — avoid hammering exchange APIs for the same symbol
+  private _restCooldown = new Map<string, number>();
+
   private readonly store: TradeIdeaStore;
 
   private readonly options?: {
@@ -326,9 +367,21 @@ export class TradeIdeaTracker {
       const candleIso = new Date(candle.ts).toISOString();
 
       if (idea.status === "PENDING") {
-        const ttl = this.ttlMinutes(idea.horizon);
+        // Use valid_until_utc from DB when available, fall back to horizon TTL
+        let expired = false;
+        let ttlUsed = 0;
         const ageMin = minutesBetween(idea.created_at, candleIso);
-        if (typeof ageMin === "number" && ageMin > ttl) {
+
+        if (idea.valid_until_utc) {
+          const expiryMs = new Date(idea.valid_until_utc).getTime();
+          expired = candle.ts > expiryMs;
+          ttlUsed = typeof ageMin === "number" ? Math.round((expiryMs - new Date(idea.created_at).getTime()) / 60_000) : 0;
+        } else {
+          ttlUsed = this.ttlMinutes(idea.horizon);
+          expired = typeof ageMin === "number" && ageMin > ttlUsed;
+        }
+
+        if (expired) {
           await this.store.updateIdea(idea.id, {
             status: "RESOLVED",
             resolved_at: candleIso,
@@ -340,7 +393,7 @@ export class TradeIdeaTracker {
             event_type: "RESOLVED",
             ts: candleIso,
             price: currentPrice,
-            meta: { reason: "ENTRY_TTL_EXPIRED", ttl_minutes: ttl, backfill: true },
+            meta: { reason: "ENTRY_TTL_EXPIRED", ttl_minutes: ttlUsed, backfill: true },
           });
           this.lastPriceByIdeaId.delete(idea.id);
           return;
@@ -572,17 +625,52 @@ export class TradeIdeaTracker {
       const { prices: symbolPrices, missing } = await bulkFetchPricesFromRedis(symbols);
       const redisMs = Date.now() - t0;
 
-      // 2. REST fallback only for symbols NOT in Redis (typically spot-only coins)
-      if (missing.length > 0) {
-        const CHUNK_SIZE = 20;
-        for (let i = 0; i < missing.length; i += CHUNK_SIZE) {
-          const chunk = missing.slice(i, i + CHUNK_SIZE);
-          await Promise.all(
-            chunk.map(async (symbol) => {
-              const price = await fetchSymbolPrice(symbol);
-              if (typeof price === "number") symbolPrices.set(symbol, price);
-            }),
-          );
+      // 2. FAZ 3.3: mdc:ticker cache fallback — try cached ticker before expensive REST
+      let stillMissing = missing;
+      let cacheHits = 0;
+      if (stillMissing.length > 0) {
+        const rt = await getReadTicker();
+        if (rt) {
+          const remaining: string[] = [];
+          for (const symbol of stillMissing) {
+            try {
+              const cached = await rt(symbol);
+              const price = cached?.data?.price;
+              if (typeof price === "number" && Number.isFinite(price) && price > 0) {
+                symbolPrices.set(symbol, price);
+                cacheHits++;
+                continue;
+              }
+            } catch { /* cache read best-effort */ }
+            remaining.push(symbol);
+          }
+          stillMissing = remaining;
+        }
+      }
+
+      // 3. REST fallback only for symbols NOT in Redis AND NOT in mdc:ticker cache
+      //    With 30s cooldown per symbol to avoid hammering exchanges
+      if (stillMissing.length > 0) {
+        const now = Date.now();
+        const REST_COOLDOWN_MS = 30_000; // 30s cooldown per symbol
+        const cooledMissing = stillMissing.filter((s) => {
+          const last = this._restCooldown.get(s) ?? 0;
+          return now - last >= REST_COOLDOWN_MS;
+        });
+        if (cooledMissing.length > 0) {
+          const CHUNK_SIZE = 20;
+          for (let i = 0; i < cooledMissing.length; i += CHUNK_SIZE) {
+            const chunk = cooledMissing.slice(i, i + CHUNK_SIZE);
+            await Promise.all(
+              chunk.map(async (symbol) => {
+                const price = await fetchSymbolPrice(symbol);
+                if (typeof price === "number") {
+                  symbolPrices.set(symbol, price);
+                  this._restCooldown.set(symbol, Date.now());
+                }
+              }),
+            );
+          }
         }
       }
 
@@ -590,7 +678,7 @@ export class TradeIdeaTracker {
       const active = openIdeas.filter((i) => i.status === "ACTIVE").length;
       const priced = symbolPrices.size;
       const elapsed = Date.now() - t0;
-      console.log(`[TradeIdeaTracker] tick: ${openIdeas.length} ideas (${pending}P/${active}A), ${priced}/${symbols.length} prices (redis=${symbols.length - missing.length} in ${redisMs}ms, rest=${missing.length}) total ${elapsed}ms`);
+      console.log(`[TradeIdeaTracker] tick: ${openIdeas.length} ideas (${pending}P/${active}A), ${priced}/${symbols.length} prices (hub=${symbols.length - missing.length} cache=${cacheHits} rest=${stillMissing.length - cacheHits}) redis=${redisMs}ms total ${elapsed}ms`);
 
       for (const idea of openIdeas) {
         const currentPrice = symbolPrices.get(idea.symbol.toUpperCase());
@@ -605,10 +693,23 @@ export class TradeIdeaTracker {
         }
 
         if (idea.status === "PENDING") {
-          const ttl = this.ttlMinutes(idea.horizon);
+          // PENDING ideas expire based on valid_until_utc (from persistence) or horizon-based TTL
+          // BUG FIX: was hardcoded 30min — killed INTRADAY(6h) and SWING(24h) ideas prematurely
           const ageMin = minutesBetween(idea.created_at, nowIso);
-          if (typeof ageMin === "number" && ageMin > ttl) {
-            console.log(`[TradeIdeaTracker] TTL_EXPIRED ${idea.symbol} ${idea.direction} (age=${ageMin}min > ttl=${ttl}min)`);
+          let expired = false;
+          let ttlUsed = 0;
+
+          if (idea.valid_until_utc) {
+            const expiryMs = new Date(idea.valid_until_utc).getTime();
+            expired = Date.now() > expiryMs;
+            ttlUsed = typeof ageMin === "number" ? Math.round((expiryMs - new Date(idea.created_at).getTime()) / 60_000) : 0;
+          } else {
+            ttlUsed = this.ttlMinutes(idea.horizon);
+            expired = typeof ageMin === "number" && ageMin > ttlUsed;
+          }
+
+          if (expired) {
+            console.log(`[TradeIdeaTracker] TTL_EXPIRED ${idea.symbol} ${idea.direction} (age=${ageMin}min, ttl=${ttlUsed}min, valid_until=${idea.valid_until_utc ?? "default"})`);
             await this.store.updateIdea(idea.id, {
               status: "RESOLVED",
               resolved_at: nowIso,
@@ -620,7 +721,7 @@ export class TradeIdeaTracker {
               event_type: "RESOLVED",
               ts: nowIso,
               price: currentPrice ?? prevPrice,
-              meta: { reason: "ENTRY_TTL_EXPIRED", ttl_minutes: ttl },
+              meta: { reason: "ENTRY_TTL_EXPIRED", ttl_minutes: ttlUsed },
             });
             this.lastPriceByIdeaId.delete(idea.id);
             continue;
@@ -710,6 +811,32 @@ export class TradeIdeaTracker {
         }
 
         if (idea.status === "ACTIVE") {
+          // ACTIVE ideas: check valid_until expiry FIRST, then TP/SL
+          // Without this, ideas stay ACTIVE forever and saturate per-mode caps
+          if (idea.valid_until_utc) {
+            const expiryMs = new Date(idea.valid_until_utc).getTime();
+            const nowMs = Date.now();
+            if (nowMs > expiryMs) {
+              const ageMin = minutesBetween(idea.created_at, nowIso);
+              console.log(`[TradeIdeaTracker] ACTIVE_EXPIRED ${idea.symbol} ${idea.direction} mode=${idea.scoring_mode} (age=${ageMin}min, valid_until=${idea.valid_until_utc})`);
+              await this.store.appendEvent({
+                idea_id: idea.id,
+                event_type: "EXPIRED" as any,
+                ts: nowIso,
+                price: currentPrice ?? null,
+                meta: { reason: "ACTIVE_TTL_EXPIRED", valid_until: idea.valid_until_utc },
+              });
+              await this.store.updateIdea(idea.id, {
+                status: "RESOLVED",
+                resolved_at: nowIso,
+                result: "EXPIRED" as any,
+                minutes_total: ageMin,
+              });
+              this.lastPriceByIdeaId.delete(idea.id);
+              continue;
+            }
+          }
+
           if (typeof currentPrice !== "number") continue;
           const hit = resolveFirstHit(idea.direction, idea.tp_levels, idea.sl_levels, prevPrice, currentPrice);
           if (hit) {

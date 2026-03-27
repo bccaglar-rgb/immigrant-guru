@@ -39,9 +39,25 @@ export interface BotRunResult {
   dataStale?: boolean;
 }
 
+export interface AnalyticsRow {
+  time: string;
+  botId: string;
+  userId: string;
+  symbol: string;
+  strategyId: string;
+  decision: string;
+  scorePct: number;
+  bias: string;
+  execState: string;
+  dataStale: boolean;
+  pnlPct?: number;
+}
+
 export class BatchResultWriter {
   // Map ensures latest result per bot (dedup by ID)
   private pending: Map<string, BotRunResult> = new Map();
+  // Analytics rows: NOT deduped — one row per coin per scan cycle
+  private pendingAnalytics: AnalyticsRow[] = [];
   private timer: ReturnType<typeof setInterval> | null = null;
   private flushing = false;
 
@@ -69,16 +85,26 @@ export class BatchResultWriter {
     this.pending.set(result.id, result);
   }
 
+  /** Enqueue per-coin analytics row (multi-coin scan). NOT deduped — accumulates as list. */
+  enqueueAnalytics(row: AnalyticsRow): void {
+    this.pendingAnalytics.push(row);
+  }
+
   /** Flush all pending results to PostgreSQL in one bulk statement. */
   async flush(): Promise<void> {
-    if (this.flushing || !this.pending.size) return;
+    if (this.flushing || (!this.pending.size && !this.pendingAnalytics.length)) return;
     this.flushing = true;
 
     const batch = [...this.pending.values()];
     this.pending.clear();
+    const analyticsBatch = this.pendingAnalytics.splice(0);
 
     try {
-      await this.writeBatch(batch);
+      if (batch.length) await this.writeBatch(batch);
+      // Flush multi-coin analytics rows (from coinPool scans)
+      if (analyticsBatch.length) {
+        void this.writeMultiCoinAnalytics(analyticsBatch).catch(() => { /* best-effort */ });
+      }
     } finally {
       this.flushing = false;
     }
@@ -180,6 +206,51 @@ export class BatchResultWriter {
       // Table might not exist (migration not run yet) — silently skip
       if (err?.code !== "42P01") {
         console.error("[BatchResultWriter] Analytics write error:", err?.message ?? err);
+      }
+    }
+  }
+  /** Write multi-coin analytics rows to bot_decisions hypertable. */
+  private async writeMultiCoinAnalytics(batch: AnalyticsRow[]): Promise<void> {
+    if (!batch.length) return;
+    const times: string[] = [];
+    const botIds: string[] = [];
+    const userIds: string[] = [];
+    const symbols: string[] = [];
+    const strategies: string[] = [];
+    const decisions: string[] = [];
+    const scores: (number | null)[] = [];
+    const biases: string[] = [];
+    const execStates: string[] = [];
+    const staleFlags: boolean[] = [];
+    const pnls: (number | null)[] = [];
+
+    for (const r of batch) {
+      times.push(r.time);
+      botIds.push(r.botId);
+      userIds.push(r.userId);
+      symbols.push(r.symbol);
+      strategies.push(r.strategyId);
+      decisions.push(r.decision);
+      scores.push(r.scorePct);
+      biases.push(r.bias);
+      execStates.push(r.execState);
+      staleFlags.push(r.dataStale);
+      pnls.push(r.pnlPct ?? null);
+    }
+
+    try {
+      await pool.query(
+        `INSERT INTO bot_decisions
+           (time, bot_id, user_id, symbol, strategy_id, decision, score_pct, bias, exec_state, data_stale, pnl_pct)
+         SELECT * FROM unnest(
+           $1::timestamptz[], $2::text[], $3::text[], $4::text[], $5::text[],
+           $6::text[], $7::numeric[], $8::text[], $9::text[], $10::boolean[], $11::numeric[]
+         ) ON CONFLICT DO NOTHING`,
+        [times, botIds, userIds, symbols, strategies, decisions, scores, biases, execStates, staleFlags, pnls],
+      );
+    } catch (err: any) {
+      if (err?.code !== "42P01") {
+        console.error("[BatchResultWriter] Multi-coin analytics write error:", err?.message ?? err);
       }
     }
   }

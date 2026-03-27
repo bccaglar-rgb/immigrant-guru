@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuthStore } from "../hooks/useAuthStore";
 import { requestPasswordReset, confirmPasswordReset } from "../services/authClient";
@@ -16,6 +16,14 @@ export default function LoginPage() {
   const [err, setErr] = useState("");
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [brandLogo, setBrandLogo] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetch("/api/admin/providers/config")
+      .then((r) => r.ok ? r.json() : null)
+      .then((d) => { if (d?.branding?.emblemDataUrl) setBrandLogo(d?.branding?.logoDataUrl); })
+      .catch(() => {});
+  }, []);
 
   // Password reset state
   const [view, setView] = useState<View>("login");
@@ -40,7 +48,15 @@ export default function LoginPage() {
         setShow2FA(true);
         setErr("");
       } else {
-        setErr(msg);
+        const friendly: Record<string, string> = {
+          invalid_credentials: "Incorrect email or password. Please try again.",
+          user_not_found: "No account found with this email.",
+          account_locked: "Account temporarily locked. Please try again later.",
+          email_not_verified: "Please verify your email before signing in.",
+          login_failed: "Something went wrong. Please try again.",
+          invalid_2fa_code: "Invalid verification code. Please try again.",
+        };
+        setErr(friendly[msg] ?? msg);
       }
     } finally {
       setLoading(false);
@@ -108,7 +124,14 @@ export default function LoginPage() {
         {/* Logo */}
         <div className="mb-8 text-center">
           <Link to="/" className="inline-block">
-            <h1 className="text-2xl font-bold tracking-[0.15em] text-[var(--text)]">BITRIUM</h1>
+            {brandLogo ? (
+              <img src={brandLogo} alt="Bitrium" className="mx-auto mb-2 h-28 object-contain" />
+            ) : (
+              <>
+                <img src="/favicon.svg" alt="Bitrium" className="mx-auto mb-3 h-16 w-16" />
+                <h1 className="text-2xl font-bold tracking-[0.15em] text-[var(--text)]">BITRIUM</h1>
+              </>
+            )}
           </Link>
           <p className="mt-2 text-sm text-[var(--textSubtle)]">
             {view === "login"

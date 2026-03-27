@@ -1,7 +1,16 @@
 import type { Express, Request, Response, NextFunction } from "express";
 import { AuthService } from "../payments/authService.ts";
 import type { Role } from "../payments/types.ts";
-import { redis } from "../db/redis.ts";
+import { redisControl } from "../db/redis.ts";
+import {
+  issueTokenPair,
+  issueWsToken,
+  refreshTokens,
+  revokeRefreshToken,
+  revokeAllRefreshTokens,
+  verifyAccessToken,
+  getJwtStats,
+} from "../security/jwtService.ts";
 
 const RATE_WINDOW_SEC = 60;
 const RATE_MAX = 20;
@@ -14,10 +23,10 @@ const ratelimitAuth = async (req: Request, res: Response, next: NextFunction) =>
   const ip = req.ip || "unknown";
   const key = `rl:auth:${ip}`;
   try {
-    const current = await redis.incr(key);
+    const current = await redisControl.incr(key);
     if (current === 1) {
       // First request in window — set TTL
-      await redis.expire(key, RATE_WINDOW_SEC);
+      await redisControl.expire(key, RATE_WINDOW_SEC);
     }
     if (current > RATE_MAX) {
       return res.status(429).json({ ok: false, error: "rate_limited" });
@@ -95,9 +104,21 @@ export const registerAuthRoutes = (app: Express, auth: AuthService) => {
           }
         } catch { /* fail-open */ }
       }
+      // Issue JWT token pair alongside session token
+      let jwt: { accessToken: string; refreshToken: string; accessExpiresAt: number; refreshExpiresAt: number } | null = null;
+      try {
+        jwt = await issueTokenPair(result.user.id, result.user.role, result.user.email);
+      } catch { /* JWT service not ready — still return session token */ }
+
       return res.json({
         ok: true,
         token: result.session.token,
+        ...(jwt ? {
+          accessToken: jwt.accessToken,
+          refreshToken: jwt.refreshToken,
+          accessExpiresAt: jwt.accessExpiresAt,
+          refreshExpiresAt: jwt.refreshExpiresAt,
+        } : {}),
         user: {
           id: result.user.id,
           email: result.user.email,
@@ -117,7 +138,18 @@ export const registerAuthRoutes = (app: Express, auth: AuthService) => {
 
   app.get("/api/auth/me", async (req, res) => {
     const token = bearer(req.headers.authorization);
-    const ctx = await auth.getUserFromToken(token);
+    if (!token) return res.status(401).json({ ok: false, error: "unauthorized" });
+
+    // Try JWT first, then session token
+    let ctx: { user: { id: string; email: string; role: string; twoFactorEnabled: boolean } } | null = null;
+    if (token.split(".").length === 3 && token.length > 60) {
+      const jwtCtx = verifyAccessToken(token);
+      if (jwtCtx) ctx = { user: { id: jwtCtx.userId, email: jwtCtx.email, role: jwtCtx.role, twoFactorEnabled: false } };
+    }
+    if (!ctx) {
+      const sessionCtx = await auth.getUserFromToken(token);
+      if (sessionCtx) ctx = sessionCtx;
+    }
     if (!ctx) return res.status(401).json({ ok: false, error: "unauthorized" });
     // Check active subscription or referral redemption (ADMIN always has full access)
     let hasActivePlan = ctx.user.role === "ADMIN";
@@ -433,5 +465,93 @@ export const registerAuthRoutes = (app: Express, auth: AuthService) => {
     } catch (err: any) {
       return res.status(400).json({ ok: false, error: err?.message ?? "telegram_auth_failed" });
     }
+  });
+
+  // ── JWT Token Endpoints ──────────────────────────────────
+
+  /** Refresh: exchange refresh token for new access + refresh tokens (token rotation) */
+  app.post("/api/auth/refresh", ratelimitAuth, async (req, res) => {
+    try {
+      const { refreshToken: rt } = req.body ?? {};
+      if (!rt) return res.status(400).json({ ok: false, error: "refresh_token_required" });
+      const tokens = await refreshTokens(String(rt));
+      if (!tokens) return res.status(401).json({ ok: false, error: "invalid_refresh_token" });
+      return res.json({
+        ok: true,
+        accessToken: tokens.accessToken,
+        refreshToken: tokens.refreshToken,
+        accessExpiresAt: tokens.accessExpiresAt,
+        refreshExpiresAt: tokens.refreshExpiresAt,
+      });
+    } catch (err: any) {
+      return res.status(400).json({ ok: false, error: err?.message ?? "refresh_failed" });
+    }
+  });
+
+  /** Issue a short-lived WS token for WebSocket handshake */
+  app.post("/api/auth/ws-token", async (req, res) => {
+    const token = bearer(req.headers.authorization);
+    if (!token) return res.status(401).json({ ok: false, error: "unauthorized" });
+
+    // Accept both JWT and session tokens
+    let userId = "";
+    let role = "";
+    let email = "";
+
+    if (token.split(".").length === 3 && token.length > 60) {
+      const jwtCtx = verifyAccessToken(token);
+      if (jwtCtx) { userId = jwtCtx.userId; role = jwtCtx.role; email = jwtCtx.email; }
+    }
+    if (!userId) {
+      const sessionCtx = await auth.getUserFromToken(token);
+      if (!sessionCtx) return res.status(401).json({ ok: false, error: "invalid_token" });
+      userId = sessionCtx.user.id;
+      role = sessionCtx.user.role;
+      email = sessionCtx.user.email;
+    }
+
+    try {
+      const result = await issueWsToken(userId, role, email);
+      return res.json({ ok: true, wsToken: result.wsToken, expiresAt: result.expiresAt });
+    } catch (err: any) {
+      return res.status(500).json({ ok: false, error: err?.message ?? "ws_token_failed" });
+    }
+  });
+
+  /** Logout: revoke current refresh token */
+  app.post("/api/auth/logout", async (req, res) => {
+    const { refreshToken: rt } = req.body ?? {};
+    if (rt) {
+      await revokeRefreshToken(String(rt));
+    }
+    return res.json({ ok: true });
+  });
+
+  /** Logout from all devices: revoke all refresh tokens for user */
+  app.post("/api/auth/logout-all", async (req, res) => {
+    const token = bearer(req.headers.authorization);
+    if (!token) return res.status(401).json({ ok: false, error: "unauthorized" });
+
+    let userId = "";
+    if (token.split(".").length === 3 && token.length > 60) {
+      const jwtCtx = verifyAccessToken(token);
+      if (jwtCtx) userId = jwtCtx.userId;
+    }
+    if (!userId) {
+      const sessionCtx = await auth.getUserFromToken(token);
+      if (!sessionCtx) return res.status(401).json({ ok: false, error: "invalid_token" });
+      userId = sessionCtx.user.id;
+    }
+
+    const revoked = await revokeAllRefreshTokens(userId);
+    return res.json({ ok: true, revokedCount: revoked });
+  });
+
+  /** Admin: JWT stats */
+  app.get("/api/admin/jwt-stats", async (req, res) => {
+    const ctx = await requireAdmin(auth, req, res);
+    if (!ctx) return;
+    const stats = await getJwtStats();
+    return res.json({ ok: true, ...stats });
   });
 };

@@ -36,6 +36,13 @@ export class SelfThrottleEngine {
 
   /** Evaluate system health and apply throttle if needed */
   evaluate(): ThrottleState {
+    // DISABLED: tracking only — no throttling until manual review
+    this.state.globalThrottle = false;
+    this.state.globalReason = null;
+    this.state.scoreBoost = 0;
+    this.state.maxTradesPerCycle = 999;
+    this.state.disabledModes = [];
+    return this.state;
     const modes = this.modeTracker.getAllStats();
     const throttledCount = modes.filter((m) => m.throttled).length;
     const totalTrades = modes.reduce((s, m) => s + m.tradeCount, 0);

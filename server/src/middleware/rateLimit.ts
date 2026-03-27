@@ -4,7 +4,7 @@
  * Uses Redis INCR + EXPIRE for sliding window rate limiting.
  * Fails open if Redis is down (so the API stays available).
  */
-import { redis } from "../db/redis.ts";
+import { redisControl } from "../db/redis.ts";
 import type { Request, Response, NextFunction } from "express";
 
 interface RateLimitConfig {
@@ -24,8 +24,8 @@ export function createRateLimit(config: RateLimitConfig) {
     const userId = config.byUser !== false ? (req.userId ?? req.headers["x-user-id"] as string) : undefined;
     const key = `rl:${config.keyPrefix}:${userId || req.ip || "unknown"}`;
     try {
-      const current = await redis.incr(key);
-      if (current === 1) await redis.expire(key, config.windowSec);
+      const current = await redisControl.incr(key);
+      if (current === 1) await redisControl.expire(key, config.windowSec);
       if (current > config.max) {
         return res.status(429).json({
           ok: false,

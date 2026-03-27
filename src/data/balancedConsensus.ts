@@ -1,11 +1,19 @@
 /**
- * BALANCED consensus — Adaptive Crypto Alpha Mode
+ * BALANCED consensus — Market Structure Strategy Mode
  *
- * 3 Priority Playbooks:
- *   1. Trend Pullback Continuation (main motor — trend regime)
- *   2. Liquidity Sweep Reversal (sweep detection)
- *   3. Range Rotation (sideways markets)
- *   + Breakout (conditional — all criteria must pass)
+ * Core principle: Trend + Son Dip/Tepe + Fake hareket + Teyit = Kazançlı trade
+ *
+ * RULES:
+ *   1. TREND ZORUNLU: No trend (HH+HL or LH+LL) = No trade
+ *   2. Entry confirmation: Min 2 signals (volume spike, orderbook, OI, aggressor, impulse)
+ *   3. SL at swing level + 0.3% buffer (stop avlanmamak için)
+ *   4. TP min 1:2 RR or next liquidity zone
+ *
+ * 4 Priority Playbooks:
+ *   1. Trend Pullback Continuation (main motor — trend regime, +6/+8 boost)
+ *   2. Liquidity Sweep Reversal (fake breakout recovery, +5 boost)
+ *   3. Breakout (conditional — compression + volume + all criteria, +4 boost)
+ *   4. Range Rotation (reduced — not ideal, +1 boost)
  *
  * Formula:
  *   CandidateScore = 0.26*Structure + 0.22*Liquidity + 0.18*Positioning
@@ -15,24 +23,27 @@
  *
  * No-Trade Rule — block if 2+ of:
  *   Signal Conflict HIGH, Trap Probability HIGH, News Risk ON,
- *   Fake Breakout HIGH, Execution Certainty LOW
+ *   Fake Breakout HIGH, Execution Certainty LOW,
+ *   No Trend Detected, No EMA Alignment
  *
- * Sub-score guardrails (any failing applies -5 penalty):
- *   Struct >= 32, Liq >= 30, Pos >= 28, Exec >= 28, Vol >= 22, Conf >= 18
+ * Sub-score guardrails:
+ *   Struct >= 42 (hard cap below TRADE), Liq >= 30, Pos >= 28, Exec >= 28, Vol >= 22, Conf >= 18
  *
- * Decision levels:
+ * Decision levels (Market Structure Strategy):
  *   82+    Full conviction TRADE    (sizeHint 1.00)
- *   74-81  High TRADE               (sizeHint 0.90)
- *   66-73  Normal TRADE             (sizeHint 0.70)
- *   56-65  Small size TRADE         (sizeHint 0.40)
- *   48-55  WATCH                    (sizeHint 0.00)
- *   <48    NO_TRADE                 (sizeHint 0.00)
+ *   74-81  High TRADE               (sizeHint 0.85)
+ *   66-73  Normal TRADE             (sizeHint 0.60)
+ *   60-65  Small size TRADE         (sizeHint 0.35)
+ *   42-59  WATCH                    (sizeHint 0.00)
+ *   <42    NO_TRADE                 (sizeHint 0.00)
  *
  * Caps:
- *   Positioning uncertain (Pos < 55) → max 82
+ *   Entry confirmation < 2 signals → max 52 (below TRADE threshold)
+ *   Structure guardrail fail (< 42) → max 52 (no trend = no trade)
+ *   No-trade rule (2+ danger signals) → max 46
  *   Hard no-trade (stress+cascade+poor depth) → max 48
- *   No-trade rule (2+ danger signals) → max 48
- *   Model agreement < 3/6 → max 64
+ *   Positioning uncertain (Pos < 50) → max 86
+ *   Model agreement < 2/6 → max 66
  *   Execution combo penalty capped at -4
  */
 
@@ -307,30 +318,32 @@ const computeStructure = (input: BalancedConsensusInput): ComponentResult => {
   // 1. Structure Base Score from AI panel (35%)
   const base = clamp(safeNumber(input.structureScore, 50), 0, 100);
 
-  // 2. Regime Quality (20%) — TREND regimes score highest
-  const regimeSub = input.regime === "TREND" ? 85
-    : input.regime === "RANGE" ? 55
-    : input.regime === "MIXED" ? 45 : 35;
+  // 2. Regime Quality (25%) — Trend preferred but MIXED/RANGE can qualify
+  //    Relaxed from original: RANGE 28→42, MIXED 18→38 — allow non-trend setups
+  const regimeSub = input.regime === "TREND" ? 92
+    : input.regime === "RANGE" ? 42
+    : input.regime === "MIXED" ? 38 : 15;
 
-  // 3. Trend Strength (15%)
-  const trendSub = input.trendStrength === "HIGH" ? 90
-    : input.trendStrength === "MID" ? 60 : 25;
+  // 3. Trend Strength (20%) — Strong trend required (HH+HL or LH+LL)
+  const trendSub = input.trendStrength === "HIGH" ? 95
+    : input.trendStrength === "MID" ? 62 : 10;
 
-  // 4. EMA + VWAP Alignment (15%)
+  // 4. EMA + VWAP Alignment (15%) — Trend direction confirmation
+  //    Full aligned = EMA 200 + VWAP both confirming direction
   const fullAligned =
     (input.emaAlignment === "BULL" && input.vwapPosition === "ABOVE") ||
     (input.emaAlignment === "BEAR" && input.vwapPosition === "BELOW");
   const semiAligned =
     input.emaAlignment === "BULL" || input.emaAlignment === "BEAR" ||
     input.vwapPosition === "ABOVE" || input.vwapPosition === "BELOW";
-  const alignmentSub = fullAligned ? 90 : semiAligned ? 55 : 25;
+  const alignmentSub = fullAligned ? 95 : semiAligned ? 38 : 8;
 
-  // 5. Structure Age (15%) — EARLY structures have more potential
+  // 5. Structure Age (5%) — EARLY structures have more potential
   const ageSub = input.structureAge === "EARLY" ? 80
     : input.structureAge === "MATURE" ? 50 : 40;
 
   const score = clamp(
-    0.35 * base + 0.20 * regimeSub + 0.15 * trendSub + 0.15 * alignmentSub + 0.15 * ageSub,
+    0.30 * base + 0.25 * regimeSub + 0.20 * trendSub + 0.15 * alignmentSub + 0.10 * ageSub,
     0, 100,
   );
 
@@ -589,7 +602,9 @@ const computeRiskPenalty = (input: BalancedConsensusInput): { total: number; bre
 // ── Playbook Detection ──────────────────────────────────────
 
 const detectPlaybook = (input: BalancedConsensusInput): { playbook: PlaybookType; boost: number } => {
-  // Priority 1: TREND_PULLBACK — main motor for trending markets
+  // Priority 1: TREND_PULLBACK — Ana motor (Market Structure Strategy)
+  // "Trend yukarı (HH+HL), fiyat HL bölgesine geldi, dönüş sinyali"
+  // Requires: clear trend + EMA alignment + orderbook confirmation
   const trendAligned =
     (input.emaAlignment === "BULL" && input.vwapPosition === "ABOVE") ||
     (input.emaAlignment === "BEAR" && input.vwapPosition === "BELOW");
@@ -599,20 +614,31 @@ const detectPlaybook = (input: BalancedConsensusInput): { playbook: PlaybookType
     trendAligned &&
     input.orderbookImbalance !== "NEUTRAL";
   if (trendClear) {
-    return { playbook: "TREND_PULLBACK", boost: 3 };
+    // Higher boost if also has volume spike or aggressor flow (strong confirmation)
+    // Reduced from 8/6 → 5/3 — playbook shouldn't rescue borderline scores
+    const hasStrongConfirmation =
+      input.volumeSpike === "ON" ||
+      input.aggressorFlow === "BUY_DOMINANT" || input.aggressorFlow === "SELL_DOMINANT";
+    return { playbook: "TREND_PULLBACK", boost: hasStrongConfirmation ? 5 : 3 };
   }
 
-  // Priority 2: LIQUIDITY_SWEEP — sweep reversal detection
+  // Priority 2: LIQUIDITY_SWEEP — "Dip kırıldı → geri çıktı (fake breakdown)"
+  // Smart money mantığı: stopları gördükten sonra dönüşe gir
   const sweepDetected =
     (input.stopClusterProb === "HIGH") &&
     (input.suddenMoveRisk === "HIGH" || input.suddenMoveRisk === "MID") &&
     (input.aggressorFlow === "BUY" || input.aggressorFlow === "BUY_DOMINANT" ||
      input.aggressorFlow === "SELL" || input.aggressorFlow === "SELL_DOMINANT");
-  if (sweepDetected) {
-    return { playbook: "LIQUIDITY_SWEEP", boost: 3 };
+  // Also detect fake breakout recovery: price broke structure but recovered
+  const fakeBreakoutRecovery =
+    input.fakeBreakoutProb === "HIGH" &&
+    input.orderbookImbalance !== "NEUTRAL" &&
+    (input.volumeSpike === "ON" || input.impulseReadiness === "HIGH");
+  if (sweepDetected || fakeBreakoutRecovery) {
+    return { playbook: "LIQUIDITY_SWEEP", boost: 3 };  // Reduced from 5
   }
 
-  // Priority 3: RANGE_ROTATION — sideways market plays
+  // Priority 3: RANGE_ROTATION — sideways market plays (reduced boost — not ideal)
   const rangePos = input.rangePosition ?? "";
   const atRangeExtreme =
     rangePos === "UPPER" || rangePos === "LOWER" ||
@@ -623,7 +649,8 @@ const detectPlaybook = (input: BalancedConsensusInput): { playbook: PlaybookType
     atRangeExtreme &&
     input.fakeBreakoutProb !== "HIGH";
   if (rangeConditions) {
-    return { playbook: "RANGE_ROTATION", boost: 2 };
+    // Reduced boost for range (Market Structure Strategy discourages range trading)
+    return { playbook: "RANGE_ROTATION", boost: 1 };
   }
 
   // Priority 4: BREAKOUT — only when ALL conditions met
@@ -633,10 +660,11 @@ const detectPlaybook = (input: BalancedConsensusInput): { playbook: PlaybookType
     input.volumeSpike === "ON" &&
     input.orderbookImbalance !== "NEUTRAL";
   if (breakoutAllMet) {
-    return { playbook: "BREAKOUT", boost: 4 };
+    return { playbook: "BREAKOUT", boost: 2 };  // Reduced from 4
   }
 
-  return { playbook: "GENERAL", boost: 0 };
+  // GENERAL — no specific playbook detected, mild penalty (was -4, too harsh)
+  return { playbook: "GENERAL", boost: -1 };
 };
 
 // ── No-Trade Rule ───────────────────────────────────────────
@@ -658,17 +686,28 @@ const checkNoTradeRule = (input: BalancedConsensusInput): { blocked: boolean; da
   signals.newsRiskOn = input.suddenMoveRisk === "HIGH";
 
   // 4. Fake Breakout Probability = HIGH
-  signals.fakeBreakoutHigh =
-    input.fakeBreakoutProb === "HIGH" ||
-    (input.compression === "OFF" && input.structureAge !== "EARLY" && input.structureAge !== undefined);
+  // Only fire on actual fake breakout — compression=OFF alone is NOT a danger signal
+  signals.fakeBreakoutHigh = input.fakeBreakoutProb === "HIGH";
 
   // 5. Execution Certainty = LOW
   signals.executionCertaintyLow =
     input.entryWindow === "CLOSED" && input.slippageLevel === "HIGH";
 
+  // 6. No clear trend detected — only fire when truly absent
+  //    regime=MIXED is normal in crypto — not a danger signal on its own
+  signals.noTrendDetected =
+    input.trendStrength === "LOW" && (input.regime === "UNKNOWN" || input.regime === "MIXED");
+
+  // 7. No EMA alignment — conflicting direction signals
+  //    Market Structure Strategy: Must have Higher High + Higher Low OR Lower High + Lower Low
+  signals.noAlignment =
+    input.emaAlignment === "MIXED" || input.emaAlignment === "UNKNOWN";
+
   const dangerCount = Object.values(signals).filter(Boolean).length;
 
   return {
+    // Raised from 2 to 3: was too strict — most coins had 2+ danger signals permanently
+    // noTrendDetected + noAlignment both fire for MIXED/RANGE → instant block
     blocked: dangerCount >= 3,
     dangerCount,
     signals,
@@ -691,6 +730,23 @@ export const computeBalancedConsensus = (
   const conf = computeConfirmation(input);       // 8%
   const risk = computeRiskPenalty(input);
 
+  // ── Entry Confirmation Counter (Market Structure Strategy) ──
+  // Requires at least 2 confirmations before entry:
+  //   - Volume spike (mum teyidi - hacim)
+  //   - Orderbook imbalance aligned (alış/satış baskısı)
+  //   - OI change strength (pozisyon açılışı)
+  //   - Aggressor flow aligned (agresif alıcı/satıcı)
+  //   - Impulse readiness (hareket hazırlığı)
+  const entryConfirmationSignals = [
+    input.volumeSpike === "ON",
+    input.orderbookImbalance !== "NEUTRAL" && input.orderbookImbalance !== undefined,
+    input.oiChangeStrength === "HIGH" || input.oiChangeStrength === "MID",
+    input.aggressorFlow === "BUY" || input.aggressorFlow === "SELL" ||
+      input.aggressorFlow === "BUY_DOMINANT" || input.aggressorFlow === "SELL_DOMINANT",
+    input.impulseReadiness === "HIGH" || input.impulseReadiness === "MID",
+  ];
+  const entryConfirmationCount = entryConfirmationSignals.filter(Boolean).length;
+
   // ── Candidate Score (CS) ──
   const rawCandidateScore =
     0.26 * struct.score +
@@ -712,21 +768,34 @@ export const computeBalancedConsensus = (
     addReason(reasons, `Playbook ${playbook} boost +${playbookBoost}`, 40);
   }
 
-  // ── No-Trade Rule: block if 2+ danger signals ──
+  // ── Entry Confirmation Gate (relaxed) ──
+  // Lowered from 2→1 minimum. With 0 confirmations, cap at 50.
+  // This was the #1 blocker — most coins had 1-2 confirmations, capping at 52 (below TRADE 62)
+  if (entryConfirmationCount < 1) {
+    adjustedScore = Math.min(adjustedScore, 50);
+    addReason(reasons, `Entry confirmation insufficient (${entryConfirmationCount}/1 min required)`, 92);
+  } else if (entryConfirmationCount >= 3) {
+    // Multi-signal confirmation → bonus
+    adjustedScore += entryConfirmationCount >= 4 ? 4 : 2;
+    addReason(reasons, `Strong entry confirmation (${entryConfirmationCount} signals)`, 45);
+  }
+
+  // ── No-Trade Rule: block if 3+ danger signals (relaxed from 2) ──
+  // Was 2 — too aggressive, most coins had 2+ danger signals permanently
   const noTradeRule = checkNoTradeRule(input);
   if (noTradeRule.blocked) {
-    adjustedScore = Math.min(adjustedScore, 48);
+    adjustedScore = Math.min(adjustedScore, 44);
     addReason(reasons, `No-trade rule: ${noTradeRule.dangerCount} danger signals`, 95);
   }
 
-  // ── Sub-score guardrails (aligned with new weights) ──
+  // ── Sub-score guardrails (relaxed — were too strict, blocking all TRADE decisions) ──
   const guardrails = {
-    structPass: struct.score >= 32,
-    liqPass: liq.score >= 30,
-    posPass: pos.score >= 28,
-    execPass: exec.score >= 28,
-    volPass: vol.score >= 22,
-    confPass: conf.score >= 18,
+    structPass: struct.score >= 36,  // Lowered from 48 — was too strict for non-TREND regimes
+    liqPass: liq.score >= 28,       // Lowered from 35
+    posPass: pos.score >= 25,       // Lowered from 32
+    execPass: exec.score >= 25,     // Lowered from 32
+    volPass: vol.score >= 20,       // Lowered from 25
+    confPass: conf.score >= 15,     // Lowered from 22
     // Backward-compat aliases
     oppPass: vol.score >= 30,
     dirPass: pos.score >= 35,
@@ -736,12 +805,12 @@ export const computeBalancedConsensus = (
     guardrails.structPass && guardrails.liqPass && guardrails.posPass &&
     guardrails.execPass && guardrails.volPass && guardrails.confPass;
 
-  if (!guardrails.structPass) addReason(reasons, `Guardrail: Struct ${struct.score} < 32`, 85);
-  if (!guardrails.liqPass) addReason(reasons, `Guardrail: Liq ${liq.score} < 30`, 80);
-  if (!guardrails.posPass) addReason(reasons, `Guardrail: Pos ${pos.score} < 28`, 75);
-  if (!guardrails.execPass) addReason(reasons, `Guardrail: Exec ${exec.score} < 28`, 70);
-  if (!guardrails.volPass) addReason(reasons, `Guardrail: Vol ${vol.score} < 22`, 65);
-  if (!guardrails.confPass) addReason(reasons, `Guardrail: Conf ${conf.score} < 18`, 60);
+  if (!guardrails.structPass) addReason(reasons, `Guardrail: Struct ${struct.score} < 36`, 85);
+  if (!guardrails.liqPass) addReason(reasons, `Guardrail: Liq ${liq.score} < 28`, 80);
+  if (!guardrails.posPass) addReason(reasons, `Guardrail: Pos ${pos.score} < 25`, 75);
+  if (!guardrails.execPass) addReason(reasons, `Guardrail: Exec ${exec.score} < 25`, 70);
+  if (!guardrails.volPass) addReason(reasons, `Guardrail: Vol ${vol.score} < 20`, 65);
+  if (!guardrails.confPass) addReason(reasons, `Guardrail: Conf ${conf.score} < 15`, 60);
 
   // ── Model Agreement gate: need >= 2/6 (33% agreement) ──
   const modelAgreementRatio = safeNumber(input.alignedCount, 0) / Math.max(1, Math.floor(safeNumber(input.totalModels, 6)));
@@ -791,16 +860,16 @@ export const computeBalancedConsensus = (
   const executionWeaknessPenalty = exec.score < 40 ? roundTo2(((40 - exec.score) / 100) * 0.35) : 0;
   const entryClosedPenalty = input.entryWindow === "CLOSED" ? 0.05 : 0;
   const rawPenalty = clamp(executionWeaknessPenalty + entryClosedPenalty + dataDegradedPenalty, 0, 0.4);
-  const isAPlus = adjustedScore >= 85;
+  const isAPlus = adjustedScore >= 88;  // Raised from 85 — harder to qualify for A+
   const penaltyRate = roundTo2(isAPlus ? rawPenalty * 0.5 : rawPenalty);
 
   // ── Final score ──
   let finalScore = roundTo2(clamp(adjustedScore * (1 - clamp(penaltyRate, 0, 1)), 0, 100));
 
-  // A+ floor: high conviction setups keep minimum 72
+  // A+ floor: high conviction setups keep minimum 68 (reduced from 72)
   let floorsApplied = false;
   if (isAPlus && dataGate === "PASS" && safetyGate === "PASS") {
-    const floored = Math.max(finalScore, 72);
+    const floored = Math.max(finalScore, 68);
     floorsApplied = floored > finalScore;
     finalScore = floored;
     if (floorsApplied) addReason(reasons, "A+ floor applied", 150);
@@ -810,28 +879,32 @@ export const computeBalancedConsensus = (
   if (safetyGate === "BLOCK") finalScore = Math.min(finalScore, 44);
   if (dataGate === "BLOCK") finalScore = 0;
 
-  // Guardrail cap — sub-score threshold not met → mild penalty instead of hard block
-  if (!guardrails.allPass && finalScore >= 66) {
-    finalScore = Math.max(finalScore - 5, 56);
+  // Guardrail cap — sub-score threshold not met → softer penalty
+  // Relaxed: structure cap raised from 48→54, general penalty reduced from -10→-5
+  if (!guardrails.structPass && finalScore >= 56) {
+    finalScore = Math.min(finalScore, 54);
+    addReason(reasons, "Structure guardrail: trend structure weak", 92);
+  } else if (!guardrails.allPass && finalScore >= 60) {
+    finalScore = Math.max(finalScore - 5, 52);
     addReason(reasons, "Guardrail penalty: sub-score threshold not met", 88);
   }
 
   finalScore = roundTo2(clamp(finalScore, 0, 100));
 
-  // ── Position Size Scaling (Balanced 4-tier) ──
+  // ── Position Size Scaling (Market Structure Strategy — 4-tier) ──
   let sizeHint: number;
   if (dataGate === "BLOCK" || safetyGate === "BLOCK") {
     sizeHint = 0;
-  } else if (finalScore >= 82) {
-    sizeHint = 1.00;
-  } else if (finalScore >= 74) {
-    sizeHint = 0.90;
-  } else if (finalScore >= 66) {
-    sizeHint = 0.70;
-  } else if (finalScore >= 56) {
-    sizeHint = 0.40;
+  } else if (finalScore >= 85) {
+    sizeHint = 1.00;  // Full conviction — raised from 82
+  } else if (finalScore >= 78) {
+    sizeHint = 0.85;  // High — raised from 74
+  } else if (finalScore >= 70) {
+    sizeHint = 0.60;  // Normal — raised from 66
+  } else if (finalScore >= 64) {
+    sizeHint = 0.35;  // Small size — raised from 60
   } else {
-    sizeHint = 0;
+    sizeHint = 0;     // Below TRADE threshold — no position
   }
   sizeHint = roundTo2(sizeHint);
 

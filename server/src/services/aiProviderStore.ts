@@ -1,6 +1,6 @@
 import { pool } from "../db/pool.ts";
 
-export type AiProviderId = "CHATGPT" | "QWEN" | "QWEN2";
+export type AiProviderId = "CHATGPT" | "QWEN" | "QWEN2" | "CLAUDE";
 
 export interface AiProviderRecord {
   id: AiProviderId;
@@ -34,7 +34,7 @@ const defaultProviders = (): AiProviderRecord[] => [
     model: "qwen/qwen-2.5-72b-instruct",
     intervalSec: 180,
     timeoutMs: 15000,
-    temperature: 0.2,
+    temperature: 0.1,
     maxTokens: 1200,
   },
   {
@@ -45,8 +45,19 @@ const defaultProviders = (): AiProviderRecord[] => [
     model: "qwen/qwen-2.5-72b-instruct",
     intervalSec: 180,
     timeoutMs: 15000,
-    temperature: 0.2,
+    temperature: 0.1,
     maxTokens: 1200,
+  },
+  {
+    id: "CLAUDE",
+    enabled: true,
+    baseUrl: "https://api.anthropic.com/v1/messages",
+    apiKey: process.env.CLAUDE_API_KEY ?? "",
+    model: "claude-sonnet-4-6",
+    intervalSec: 180,
+    timeoutMs: 30000,
+    temperature: 0.1,
+    maxTokens: 2000,
   },
 ];
 
@@ -56,7 +67,7 @@ const normalizeProvider = (raw: unknown): AiProviderRecord | null => {
   if (!raw || typeof raw !== "object") return null;
   const row = raw as Record<string, unknown>;
   const idRaw = String(row.id ?? "").toUpperCase();
-  if (idRaw !== "CHATGPT" && idRaw !== "QWEN" && idRaw !== "QWEN2") return null;
+  if (idRaw !== "CHATGPT" && idRaw !== "QWEN" && idRaw !== "QWEN2" && idRaw !== "CLAUDE") return null;
   const id = idRaw as AiProviderId;
   const intervalSec = clamp(Number(row.intervalSec ?? 180) || 180, 60, 900);
   const timeoutMs = clamp(Number(row.timeoutMs ?? 15000) || 15000, 5000, 60000);
@@ -113,6 +124,7 @@ export class AiProviderStore {
         CHATGPT: (process.env.OPENAI_API_KEY ?? "").trim(),
         QWEN: (process.env.QWEN_API_KEY ?? "").trim(),
         QWEN2: (process.env.QWEN_API_KEY_2 ?? "").trim(),
+        CLAUDE: (process.env.CLAUDE_API_KEY ?? "").trim(),
       };
       for (const [providerId, envKey] of Object.entries(envKeys)) {
         if (envKey) {

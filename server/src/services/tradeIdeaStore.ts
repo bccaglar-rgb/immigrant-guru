@@ -135,6 +135,7 @@ export class TradeIdeaStore {
 
     const colMap: Record<string, string> = {
       status: "status", result: "result",
+      confidence_pct: "confidence_pct",
       activated_at: "activated_at", resolved_at: "resolved_at",
       hit_level_type: "hit_level_type", hit_level_index: "hit_level_index", hit_level_price: "hit_level_price",
       minutes_to_entry: "minutes_to_entry", minutes_to_exit: "minutes_to_exit", minutes_total: "minutes_total",
@@ -191,7 +192,11 @@ export class TradeIdeaStore {
     let idx = 1;
 
     if (params?.userId) {
-      conditions.push(`user_id = $${idx++}`);
+      if (params.userId.includes("%")) {
+        conditions.push(`user_id LIKE $${idx++}`);
+      } else {
+        conditions.push(`user_id = $${idx++}`);
+      }
       values.push(params.userId);
     }
     if (params?.statuses?.length) {
@@ -227,6 +232,14 @@ export class TradeIdeaStore {
 
   async listOpenIdeas() {
     return this.listIdeas({ statuses: ["PENDING", "ACTIVE"], limit: 5000 });
+  }
+
+  async countOpenIdeas(userId: string): Promise<number> {
+    const { rows } = await pool.query(
+      `SELECT COUNT(*)::int AS cnt FROM trade_ideas WHERE user_id = $1 AND status IN ('PENDING','ACTIVE')`,
+      [userId],
+    );
+    return rows[0]?.cnt ?? 0;
   }
 
   async findOpenIdea(userId: string, symbol: string, scoringMode?: ScoringMode) {
@@ -270,15 +283,15 @@ export class TradeIdeaStore {
   }
 
   async clearAll() {
-    // Only clears system-scanner (Quant) ideas — AI ideas (ai-* user_ids) are preserved
+    // Clears system-scanner AND hub-* ideas — AI ideas (ai-* user_ids) are preserved
     const client = await pool.connect();
     try {
       await client.query("BEGIN");
       await client.query(
-        "DELETE FROM trade_idea_events WHERE idea_id IN (SELECT id FROM trade_ideas WHERE user_id = 'system-scanner')",
+        "DELETE FROM trade_idea_events WHERE idea_id IN (SELECT id FROM trade_ideas WHERE user_id = 'system-scanner' OR user_id LIKE 'hub-%')",
       );
       const { rowCount: deletedIdeas } = await client.query(
-        "DELETE FROM trade_ideas WHERE user_id = 'system-scanner'",
+        "DELETE FROM trade_ideas WHERE user_id = 'system-scanner' OR user_id LIKE 'hub-%'",
       );
       await client.query("COMMIT");
       return { deletedIdeas: deletedIdeas ?? 0, deletedEvents: 0 };
@@ -302,6 +315,52 @@ export class TradeIdeaStore {
       );
       await client.query("COMMIT");
       return { deletedIdeas: deletedIdeas ?? 0, deletedEvents: 0 };
+    } catch (e) {
+      await client.query("ROLLBACK");
+      throw e;
+    } finally {
+      client.release();
+    }
+  }
+
+  /** Clear trade ideas for a specific AI module (e.g. ai-qwen2 for Axiom) */
+  async clearByUserId(userId: string) {
+    const client = await pool.connect();
+    try {
+      await client.query("BEGIN");
+      const { rowCount: deletedEvents } = await client.query(
+        "DELETE FROM trade_idea_events WHERE idea_id IN (SELECT id FROM trade_ideas WHERE user_id = $1)",
+        [userId],
+      );
+      const { rowCount: deletedIdeas } = await client.query(
+        "DELETE FROM trade_ideas WHERE user_id = $1",
+        [userId],
+      );
+      await client.query("COMMIT");
+      return { deletedIdeas: deletedIdeas ?? 0, deletedEvents: deletedEvents ?? 0 };
+    } catch (e) {
+      await client.query("ROLLBACK");
+      throw e;
+    } finally {
+      client.release();
+    }
+  }
+
+  /** Clear trade ideas for a specific scoring mode (FLOW, AGGRESSIVE, BALANCED, CAPITAL_GUARD) */
+  async clearByScoringMode(mode: string) {
+    const client = await pool.connect();
+    try {
+      await client.query("BEGIN");
+      const { rowCount: deletedEvents } = await client.query(
+        "DELETE FROM trade_idea_events WHERE idea_id IN (SELECT id FROM trade_ideas WHERE (user_id = 'system-scanner' OR user_id LIKE 'hub-%') AND scoring_mode = $1)",
+        [mode],
+      );
+      const { rowCount: deletedIdeas } = await client.query(
+        "DELETE FROM trade_ideas WHERE (user_id = 'system-scanner' OR user_id LIKE 'hub-%') AND scoring_mode = $1",
+        [mode],
+      );
+      await client.query("COMMIT");
+      return { deletedIdeas: deletedIdeas ?? 0, deletedEvents: deletedEvents ?? 0 };
     } catch (e) {
       await client.query("ROLLBACK");
       throw e;

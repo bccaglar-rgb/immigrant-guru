@@ -1,8 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import type { CandlestickData, HistogramData, UTCTimestamp } from "lightweight-charts";
-import { SourceChip } from "../components/SourceChip";
-import { useMarketData, usePageSourceChip } from "../hooks/useMarketData";
+import { useMarketData } from "../hooks/useMarketData";
 import { useTradeIdeasStream } from "../hooks/useTradeIdeasStream";
 import { useAdminConfig } from "../hooks/useAdminConfig";
 import { useExchangeTerminalStore } from "../hooks/useExchangeTerminalStore";
@@ -409,7 +408,6 @@ const CoinChartRow = ({
 
 export default function SuperChartsPage() {
   const navigate = useNavigate();
-  const source = usePageSourceChip();
   const { config } = useAdminConfig();
   const { messages } = useTradeIdeasStream(config.tradeIdeas.minConfidence, "Bitrium Labs");
   const setSelectedSymbol = useExchangeTerminalStore((state) => state.setSelectedSymbol);
@@ -521,12 +519,9 @@ export default function SuperChartsPage() {
     <main className="min-h-screen bg-[#0B0B0C] p-3 text-[#BFC2C7] md:p-4">
       <div className="mx-auto max-w-[1680px] space-y-3">
         <header className="rounded-xl border border-white/[0.06] bg-[#11131a] p-3">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <div>
-              <h1 className="text-lg font-semibold text-white">Super Charts</h1>
-              <p className="text-xs text-[#555]">10-chart stack with coin-level trade context and fast trade routing.</p>
-            </div>
-            <SourceChip sourceName={source.sourceName} />
+          <div>
+            <h1 className="text-lg font-semibold text-white">Super Charts</h1>
+            <p className="text-xs text-[#555]">10-chart stack with coin-level trade context and fast trade routing.</p>
           </div>
           <div className="mt-2 flex flex-wrap items-center gap-2">
             {(Object.keys(GROUP_LABELS) as GroupKey[]).map((k) => (

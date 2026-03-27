@@ -22,8 +22,15 @@ export function buildCandidates(results: SystemScanResult[]): AiEngineCandidate[
     const rewardR = Math.abs(tp1 - entryMid);
     const rrRatio = riskR > 0 ? rewardR / riskR : 0;
 
-    // quantSnapshot may be present on cache items (EnrichedScanResult extends SystemScanResult)
+    // Hard RR filter: skip candidates below 2.0 RR before they even reach the gate
+    if (rrRatio < 2.0) continue;
+
+    // Hard quant score filter: skip very low scores early
+    if (r.scorePct < 50) continue;
+
+    // quantSnapshot + flowSignals may be present on cache items (EnrichedScanResult extends SystemScanResult)
     const quantSnapshot = (r as Record<string, unknown>).quantSnapshot as Record<string, unknown> | undefined;
+    const flowSignals = (r as Record<string, unknown>).flowSignals as Record<string, unknown> | undefined;
 
     candidates.push({
       symbol: r.symbol,
@@ -45,6 +52,7 @@ export function buildCandidates(results: SystemScanResult[]): AiEngineCandidate[
       pricePrecision: r.pricePrecision ?? 8,
       scannedAt: r.scannedAt,
       quantSnapshot,
+      flowSignals,
       entryMid,
       riskR,
       rewardR,

@@ -449,12 +449,11 @@ const connectWebSocket = () => {
       wsConnected = true;
       reconnectAttempts = 0;
       // Clear stale pipeline data on reconnect — fresh snapshots will repopulate on subscribe
-      // NOTE: DOM store is NOT cleared — keep showing last known orderbook until new snapshot arrives.
-      // applySnapshot() will replace the data atomically when the server sends a fresh dom_snapshot.
+      // NOTE: DOM store and MarketList store are NOT cleared — keep showing last known data
+      // until new snapshot arrives. ingestSnapshot() will replace atomically.
       useTickStore.getState().clear();
       useOrderflowStore.getState().clear();
       useLivePriceStore.getState().clear();
-      useMarketListStore.getState().clear();
       sendWsSubscriptions();
       // Re-subscribe to market list if active
       if (marketListSubscribed) {

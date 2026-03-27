@@ -1,5 +1,6 @@
 import type { Express } from "express";
 import type { AITradeIdeaEngine } from "../engines/aiTradeIdeas/AITradeIdeaEngine.ts";
+import type { AiModuleScheduler } from "../engines/aiTradeIdeas/AiModuleScheduler.ts";
 import type { SystemScannerService } from "../services/systemScannerService.ts";
 import { readEngineState } from "../engines/aiTradeIdeas/publisher.ts";
 import type { AuthService } from "../payments/authService.ts";
@@ -10,6 +11,7 @@ export function registerAiEngineV2Routes(
   engine: AITradeIdeaEngine,
   systemScanner?: SystemScannerService,
   auth?: AuthService,
+  scheduler?: AiModuleScheduler,
 ) {
   const adminMw = auth ? requireAdmin(auth) : (_req: any, _res: any, next: any) => { next(); };
 
@@ -21,6 +23,7 @@ export function registerAiEngineV2Routes(
         ok: true,
         aiEngine: { enabled: engine.isEnabled(), lastCycle: metrics, state: redisState },
         scanner: { running: (systemScanner as any)?.running ?? false },
+        scheduler: scheduler?.getLastRun() ?? null,
       });
     } catch (err) {
       res.status(500).json({ ok: false, error: (err as Error).message });

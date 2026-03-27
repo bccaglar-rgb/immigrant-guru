@@ -2,7 +2,7 @@ import { readFileSync, writeFileSync, mkdirSync, existsSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { TradeIdeaStore } from "./tradeIdeaStore.ts";
-import { SCORING_MODES } from "./scoringMode.ts";
+import { SCORING_MODES, DETERMINISTIC_SCORING_MODES, type ScoringMode } from "./scoringMode.ts";
 import type { ScoringMode } from "./scoringMode.ts";
 import { optimizeRR } from "./rrOptimizer.ts";
 import { subscribeToTick } from "./tickOrchestrator.ts";
@@ -35,7 +35,7 @@ const DEFAULT_RR = 2.0;
 
 function defaultConfig(): RRConfig {
   const cfg = {} as RRConfig;
-  for (const mode of SCORING_MODES) {
+  for (const mode of DETERMINISTIC_SCORING_MODES) {
     cfg[mode] = {
       currentRR: DEFAULT_RR,
       recommendedRR: DEFAULT_RR,
@@ -113,6 +113,9 @@ export class AdaptiveRRService {
   // ── Optimizer ─────────────────────────────────────────────────────────────
 
   async runOptimizer(): Promise<void> {
+    // DISABLED: tracking only — no RR changes until manual review
+    console.log("[AdaptiveRR] DISABLED — tracking only, skipping RR optimization");
+    return;
     try {
       console.log("[AdaptiveRR] Running RR optimizer...");
 
@@ -123,14 +126,14 @@ export class AdaptiveRRService {
 
       // Group by scoring mode
       const byMode = new Map<ScoringMode, typeof allResolved>();
-      for (const mode of SCORING_MODES) byMode.set(mode, []);
+      for (const mode of DETERMINISTIC_SCORING_MODES) byMode.set(mode, []);
       for (const idea of allResolved) {
         byMode.get(idea.scoring_mode)?.push(idea);
       }
 
       const updated = { ...this.config };
 
-      for (const mode of SCORING_MODES) {
+      for (const mode of DETERMINISTIC_SCORING_MODES) {
         const trades = byMode.get(mode) ?? [];
         const currentRR = this.config[mode]?.currentRR ?? DEFAULT_RR;
         const result = optimizeRR(trades, currentRR);
@@ -169,7 +172,7 @@ export class AdaptiveRRService {
       const raw = readFileSync(CONFIG_PATH, "utf-8");
       const parsed = JSON.parse(raw) as Partial<RRConfig>;
       const config = defaultConfig();
-      for (const mode of SCORING_MODES) {
+      for (const mode of DETERMINISTIC_SCORING_MODES) {
         if (parsed[mode]) {
           config[mode] = { ...config[mode], ...parsed[mode] };
         }

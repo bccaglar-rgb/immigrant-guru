@@ -1,7 +1,18 @@
 import { pool } from "../../db/pool.ts";
-import type { TraderRecord, TraderRunStatus } from "./types.ts";
+import type { CoinPoolConfig, TraderRecord, TraderRunStatus } from "./types.ts";
 
 const nowIso = () => new Date().toISOString();
+
+/** Safely convert DB timestamp (may be Date object or string) to ISO string. */
+const toIso = (val: unknown): string => {
+  if (!val) return nowIso();
+  if (val instanceof Date) return val.toISOString();
+  const s = String(val);
+  // If already ISO-like, return as-is
+  if (s.match(/^\d{4}-\d{2}-\d{2}/)) return s;
+  // Otherwise parse and convert (handles "Thu Mar 26 2026..." format)
+  try { return new Date(s).toISOString(); } catch { return nowIso(); }
+};
 
 /* ── Row mapper ───────────────────────────────────────────── */
 
@@ -36,10 +47,10 @@ const rowToTrader = (r: Record<string, unknown>): TraderRecord => {
       String(r.timeframe ?? "15m") === "1h" ? "1h" : "15m",
     scanIntervalSec: Math.max(30, Math.min(600, Number(r.scan_interval_sec ?? 180) || 180)),
     status: toStatus(r.status),
-    createdAt: String(r.created_at),
-    updatedAt: String(r.updated_at),
-    nextRunAt: String(r.next_run_at ?? nowIso()),
-    lastRunAt: r.last_run_at ? String(r.last_run_at) : "",
+    createdAt: toIso(r.created_at),
+    updatedAt: toIso(r.updated_at),
+    nextRunAt: toIso(r.next_run_at),
+    lastRunAt: r.last_run_at ? toIso(r.last_run_at) : "",
     lastError: String(r.last_error ?? ""),
     failStreak: Math.max(0, Math.floor(Number(r.fail_streak ?? 0) || 0)),
     stats: {
@@ -50,6 +61,26 @@ const rowToTrader = (r: Record<string, unknown>): TraderRecord => {
       pnlPct: Number(stats.pnlPct ?? 0) || 0,
     },
     lastResult,
+    coinPool: parseCoinPool(r.coin_pool),
+  };
+};
+
+const parseCoinPool = (raw: unknown): CoinPoolConfig | null => {
+  if (!raw || typeof raw !== "object") return null;
+  const obj = raw as Record<string, unknown>;
+  const sourceTypes = Array.isArray(obj.sourceTypes) ? obj.sourceTypes : [];
+  if (!sourceTypes.length) return null;
+  return {
+    sourceTypes: sourceTypes.filter((s: unknown) =>
+      typeof s === "string" && ["STATIC_LIST", "SNIPER", "OI_INCREASE", "OI_DECREASE", "COIN_UNIVERSE"].includes(s),
+    ) as CoinPoolConfig["sourceTypes"],
+    maxCoins: Math.max(1, Math.min(100, Number(obj.maxCoins) || 10)),
+    sniperLimit: Math.max(1, Math.min(100, Number(obj.sniperLimit) || 10)),
+    oiIncreaseLimit: Math.max(1, Math.min(100, Number(obj.oiIncreaseLimit) || 10)),
+    oiDecreaseLimit: Math.max(1, Math.min(100, Number(obj.oiDecreaseLimit) || 10)),
+    coinUniverseLimit: Math.max(1, Math.min(100, Number(obj.coinUniverseLimit) || 10)),
+    staticCoins: Array.isArray(obj.staticCoins) ? obj.staticCoins.map(String) : [],
+    minConfidence: Math.max(0, Math.min(100, Number(obj.minConfidence) || 75)),
   };
 };
 
@@ -82,8 +113,8 @@ export class TraderHubStore {
          (id, user_id, name, ai_module, exchange, exchange_account_id, exchange_account_name,
           strategy_id, strategy_name, symbol, timeframe, scan_interval_sec, status,
           next_run_at, last_run_at, last_error, fail_streak, stats, last_result,
-          created_at, updated_at)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21)
+          created_at, updated_at, coin_pool)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22)
        ON CONFLICT (id) DO UPDATE SET
          user_id = EXCLUDED.user_id,
          name = EXCLUDED.name,
@@ -103,7 +134,8 @@ export class TraderHubStore {
          fail_streak = EXCLUDED.fail_streak,
          stats = EXCLUDED.stats,
          last_result = EXCLUDED.last_result,
-         updated_at = EXCLUDED.updated_at`,
+         updated_at = EXCLUDED.updated_at,
+         coin_pool = EXCLUDED.coin_pool`,
       [
         row.id,
         row.userId,
@@ -126,6 +158,7 @@ export class TraderHubStore {
         row.lastResult ? JSON.stringify(row.lastResult) : null,
         row.createdAt,
         row.updatedAt,
+        row.coinPool ? JSON.stringify(row.coinPool) : null,
       ],
     );
     return row;
@@ -186,6 +219,39 @@ export class TraderHubStore {
       `UPDATE traders SET next_run_at = $1, updated_at = NOW() WHERE id = $2`,
       [nextRunAt, id],
     );
+  }
+
+  /** Fetch last N scan decisions for a specific bot from bot_decisions hypertable. */
+  async listScansByBot(botId: string, limit = 100): Promise<Array<{
+    time: string;
+    symbol: string;
+    decision: string;
+    scorePct: number;
+    bias: string;
+    execState: string;
+    dataStale: boolean;
+    strategyId: string;
+    pnlPct: number | null;
+  }>> {
+    const { rows } = await pool.query(
+      `SELECT time, symbol, decision, score_pct, bias, exec_state, data_stale, strategy_id, pnl_pct
+       FROM bot_decisions
+       WHERE bot_id = $1
+       ORDER BY time DESC
+       LIMIT $2`,
+      [botId, limit],
+    );
+    return rows.map((r: Record<string, unknown>) => ({
+      time: String(r.time),
+      symbol: String(r.symbol ?? ""),
+      decision: String(r.decision ?? "N/A"),
+      scorePct: Number(r.score_pct ?? 0) || 0,
+      bias: String(r.bias ?? "NEUTRAL"),
+      execState: String(r.exec_state ?? "N/A"),
+      dataStale: !!r.data_stale,
+      strategyId: String(r.strategy_id ?? ""),
+      pnlPct: r.pnl_pct != null ? Number(r.pnl_pct) : null,
+    }));
   }
 
   /** Atomic result update after a bot run — avoids read-modify-write race. */

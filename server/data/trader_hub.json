@@ -15,43 +15,43 @@
       "scanIntervalSec": 30,
       "status": "RUNNING",
       "createdAt": "2026-03-02T04:04:49.746Z",
-      "updatedAt": "2026-03-20T02:58:27.764Z",
-      "nextRunAt": "2026-03-20T02:58:57.761Z",
-      "lastRunAt": "2026-03-20T02:58:27.764Z",
+      "updatedAt": "2026-03-21T07:32:17.871Z",
+      "nextRunAt": "2026-03-21T07:32:47.869Z",
+      "lastRunAt": "2026-03-21T07:32:17.871Z",
       "lastError": "",
       "failStreak": 0,
       "stats": {
-        "runs": 30916,
-        "tradeCount": 716,
-        "watchCount": 4992,
-        "noTradeCount": 25208,
-        "pnlPct": 33.911
+        "runs": 34335,
+        "tradeCount": 767,
+        "watchCount": 5752,
+        "noTradeCount": 27816,
+        "pnlPct": 35.44
       },
       "lastResult": {
-        "ts": "2026-03-20T02:58:27.764Z",
+        "ts": "2026-03-21T07:32:17.871Z",
         "sourceExchange": "Binance",
-        "scorePct": 73.53,
+        "scorePct": 78.54,
         "decision": "NO_TRADE",
         "bias": "SHORT",
         "reason": "CHATGPT rejected setup due to weak edge/quality.",
-        "price": 70406.4,
+        "price": 70769.3,
         "plan": {
-          "entryLow": 70354.0018,
-          "entryHigh": 70556.1091,
-          "sl1": 70599.3899,
-          "sl2": 70676.5859,
-          "tp1": 69849.3473,
-          "tp2": 69598.6736
+          "entryLow": 70720.9706,
+          "entryHigh": 70907.3839,
+          "sl1": 70953.3672,
+          "sl2": 71026.9941,
+          "tp1": 70188.1244,
+          "tp2": 69926.5953
         },
         "dataStale": false,
         "execution": {
           "state": "REJECTED",
           "venue": "N/A",
-          "intentId": "22d21a50-7a71-499d-8089-44b9c00756ca",
+          "intentId": "ad3faf1f-7112-4e6a-87b2-026b08d6b819",
           "message": "No connected exchange account found. Connect Binance or Gate.io in Settings."
         }
       }
     }
   ],
-  "updatedAt": "2026-03-20T02:58:27.764Z"
+  "updatedAt": "2026-03-21T07:32:17.871Z"
 }

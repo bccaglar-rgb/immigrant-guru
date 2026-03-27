@@ -58,6 +58,9 @@ export class DynamicSlTpOptimizer {
 
   /** Run optimization based on historical attribution data */
   async optimize(): Promise<void> {
+    // DISABLED: tracking only — no SL/TP changes until manual review
+    console.log("[DynamicSlTp] DISABLED — tracking only, skipping SL/TP optimization");
+    return;
     try {
       // Get MFE/MAE stats grouped by regime+mode
       const { rows } = await pool.query(`

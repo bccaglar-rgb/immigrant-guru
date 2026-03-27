@@ -161,7 +161,11 @@ export const generateAiPanel = (
   flowScoringTuning?: FlowScoringTuningConfig,
   dataFilters?: FlowDataFiltersConfig,
 ): AiPanelData => {
-  const modeConfig = SCORING_CONFIG[scoringMode];
+  const modeConfig = SCORING_CONFIG[scoringMode as keyof typeof SCORING_CONFIG];
+  if (!modeConfig) {
+    // PRIME_AI and other non-deterministic modes don't have scoring configs — use BALANCED fallback
+    return generateAiPanel(tiles, scenario, feeds, consensusInputs, dataHealth, "BALANCED", flowSignalInputs, flowSignalWeights, riskChecksInputs, flowScoringTuning, dataFilters);
+  }
   const trendDirection = tileState(tiles, "trend-direction", "N/A");
   const trendStrength = tileState(tiles, "trend-strength", "N/A");
   const regime = tileState(tiles, "market-regime", "N/A");

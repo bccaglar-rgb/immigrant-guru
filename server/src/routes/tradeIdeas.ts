@@ -7,6 +7,7 @@ import { SystemScannerService } from "../services/systemScannerService.ts";
 import { adaptiveRR } from "../services/adaptiveRRService.ts";
 import { ccManager } from "../services/optimizer/championChallengerManager.ts";
 import { optimizationScheduler } from "../services/optimizer/optimizationScheduler.ts";
+import { reconcileAllExpired } from "../services/tradeIdeaReconciler.ts";
 
 const readUserId = (req: Request): string => {
   const raw = req.headers["x-user-id"];
@@ -172,13 +173,10 @@ export const registerTradeIdeasRoutes = (app: Express, store: TradeIdeaStore, sy
       }
     }
 
-    // Report includes ideas above each mode's TRADE threshold
-    const REPORT_MIN_SCORE: Record<string, number> = {
-      FLOW: 55,
-      AGGRESSIVE: 58,
-      BALANCED: 55,
-      CAPITAL_GUARD: 48,
-    };
+    // All TRADE decisions are included in the report — no score filtering.
+    // The scoring engine's modeTradeThreshold (in market.ts) is the ONLY gate.
+    // If it says TRADE → idea is created → idea appears in report. Period.
+    // Score thresholds are configurable in settings; the report reflects reality.
 
     // Only count system-scanner ideas in the report — demo-user ideas are excluded
     // so that totalIdeas never exceeds totalScans (both are scanner-scoped).
@@ -188,19 +186,23 @@ export const registerTradeIdeasRoutes = (app: Express, store: TradeIdeaStore, sy
       ? allIdeas.filter((i) => Date.parse(i.created_at) >= cutoffMs)
       : allIdeas;
 
-    const MARGIN = 10;
+    // PnL simulation: $100 margin × 10x leverage = $1,000 notional
+    // Matches frontend calculateReportPnLSimulation() in TradeIdeasReportPage.tsx
+    const MARGIN = 100;
     const LEVERAGE = 10;
     const POSITION_SIZE = MARGIN * LEVERAGE;
+    const FEE_RATE = 0.0004; // 0.04% per side (Binance maker/taker)
 
     const statsByMode: Record<string, {
       totalScan: number; highScoreScan: number; totalIdeas: number; active: number; resolved: number;
-      success: number; failed: number; entryMissed: number; successRate: number; totalPnlUsd: number;
+      success: number; failed: number; entryMissed: number;
+      successRate: number; totalPnlUsd: number;
     }> = {};
 
     for (const mode of ALL_MODES) {
-      const minScore = REPORT_MIN_SCORE[mode] ?? 70;
+      // No score filter — ALL ideas with matching mode are included
       const modeIdeas = sessionIdeas.filter(
-        (i) => normalizeScoringMode(i.scoring_mode) === mode && i.confidence_pct >= minScore,
+        (i) => normalizeScoringMode(i.scoring_mode) === mode,
       );
       // Entry-missed: created but price never reached entry zone
       const isEntryMissed = (i: typeof modeIdeas[number]) =>
@@ -208,6 +210,8 @@ export const registerTradeIdeasRoutes = (app: Express, store: TradeIdeaStore, sy
       const entryMissedCount = modeIdeas.filter((i) => isEntryMissed(i)).length;
       // Active: still open (PENDING or ACTIVE status)
       const activeCount = modeIdeas.filter((i) => i.status === "PENDING" || i.status === "ACTIVE").length;
+      // Expired: resolved with result='EXPIRED' (legacy — no longer generated, excluded from totalIdeas)
+      const expiredCount = modeIdeas.filter((i) => i.result === "EXPIRED").length;
       // Real trades: ideas that were activated (entry was reached) and resolved
       const activatedIdeas = modeIdeas.filter((i) => !isEntryMissed(i));
       const success = activatedIdeas.filter((i) => i.result === "SUCCESS").length;
@@ -219,16 +223,21 @@ export const registerTradeIdeasRoutes = (app: Express, store: TradeIdeaStore, sy
         if (!idea.hit_level_price || !idea.entry_low || !idea.entry_high) continue;
         const entryPrice = (idea.entry_low + idea.entry_high) / 2;
         if (!entryPrice) continue;
-        const priceChange = idea.direction === "LONG"
-          ? (idea.hit_level_price - entryPrice) / entryPrice
-          : (entryPrice - idea.hit_level_price) / entryPrice;
-        totalPnlUsd += POSITION_SIZE * priceChange;
+        const quantity = POSITION_SIZE / entryPrice;
+        const exitPrice = idea.hit_level_price;
+        // Gross PnL
+        const grossPnl = idea.direction === "LONG"
+          ? (exitPrice - entryPrice) * quantity
+          : (entryPrice - exitPrice) * quantity;
+        // Fees: entry + exit (both sides)
+        const fees = (entryPrice * quantity + exitPrice * quantity) * FEE_RATE;
+        totalPnlUsd += grossPnl - fees;
       }
 
       statsByMode[mode] = {
         totalScan: totalScansByMode[mode] ?? 0,
         highScoreScan: 0, // TODO: persist high-score counts if needed
-        totalIdeas: modeIdeas.length,
+        totalIdeas: modeIdeas.length - expiredCount,
         active: activeCount,
         resolved,
         success,
@@ -260,6 +269,47 @@ export const registerTradeIdeasRoutes = (app: Express, store: TradeIdeaStore, sy
         locked_idea_id: locked.id,
       });
     }
+
+    // ── Score quality gate: reject low-score ideas regardless of decision ──
+    const MODE_MIN_SCORE: Record<string, number> = {
+      FLOW: 72, AGGRESSIVE: 68, BALANCED: 62, CAPITAL_GUARD: 65,
+    };
+    const minScoreForMode = MODE_MIN_SCORE[scoringMode] ?? 60;
+    const bodyScore = Math.round(
+      (() => {
+        const ms = parseModeScores(req.body?.mode_scores ?? req.body?.modeScores);
+        const modeScoreRaw = ms[scoringMode as keyof typeof ms];
+        if (typeof modeScoreRaw === "number" && Number.isFinite(modeScoreRaw) && modeScoreRaw > 0) {
+          return modeScoreRaw > 1 ? modeScoreRaw : modeScoreRaw * 100;
+        }
+        const raw = req.body?.confidence_pct ?? req.body?.confidence ?? 0;
+        const n = Number(raw);
+        return Number.isFinite(n) ? (n <= 1 ? n * 100 : n) : 0;
+      })(),
+    );
+    if (bodyScore < minScoreForMode) {
+      return res.status(422).json({
+        ok: false,
+        reason: "SCORE_TOO_LOW",
+        score: bodyScore,
+        minRequired: minScoreForMode,
+        mode: scoringMode,
+      });
+    }
+
+    // Global cap: max 30 open ideas per user to prevent scan loop flooding
+    const MAX_OPEN_PER_USER = 30;  // Reduced from 40
+    try {
+      const openCount = await store.countOpenIdeas(userId);
+      if (openCount >= MAX_OPEN_PER_USER) {
+        return res.status(429).json({
+          ok: false,
+          reason: "MAX_OPEN_IDEAS",
+          openCount,
+          max: MAX_OPEN_PER_USER,
+        });
+      }
+    } catch { /* best-effort, proceed */ }
 
     const nowIso = new Date().toISOString();
     const timeframe = toTimeframe(req.body?.timeframe);
@@ -428,6 +478,66 @@ export const registerTradeIdeasRoutes = (app: Express, store: TradeIdeaStore, sy
     if (systemScanner) systemScanner.resetStats();
     console.log(`[Reset] Cleared ${result.deletedIdeas} ideas, ${result.deletedEvents} events — scanner stats zeroed`);
     return res.json({ ok: true, ...result });
+  });
+
+  /** Reset a specific AI module: /api/trade-ideas/reset/:module (chatgpt, qwen, qwen2) */
+  app.post("/api/trade-ideas/reset/:module", async (req, res) => {
+    const mod = (req.params.module ?? "").toLowerCase();
+    // AI modules
+    const aiModules: Record<string, string> = {
+      chatgpt: "ai-chatgpt",
+      qwen: "ai-qwen",
+      qwen2: "ai-qwen2",
+      axiom: "ai-qwen2",
+    };
+    // Quant scoring modes
+    const quantModes: Record<string, string> = {
+      flow: "FLOW",
+      aggressive: "AGGRESSIVE",
+      balanced: "BALANCED",
+      capital_guard: "CAPITAL_GUARD",
+    };
+    if (aiModules[mod]) {
+      const userId = aiModules[mod];
+      const result = await store.clearByUserId(userId);
+      console.log(`[Reset:${mod}] Cleared ${result.deletedIdeas} ideas, ${result.deletedEvents} events for ${userId}`);
+      return res.json({ ok: true, module: mod, userId, ...result });
+    }
+    if (quantModes[mod]) {
+      const mode = quantModes[mod];
+      const result = await store.clearByScoringMode(mode);
+      // Reset scan counts for this specific mode (ideas + scan counter)
+      if (systemScanner) systemScanner.resetModeStats(mode);
+      console.log(`[Reset:${mod}] Cleared ${result.deletedIdeas} ideas, ${result.deletedEvents} events + scan counts for mode ${mode}`);
+      return res.json({ ok: true, module: mod, mode, ...result });
+    }
+    return res.status(400).json({ ok: false, error: `Invalid module: ${mod}. Valid: chatgpt, qwen, qwen2, axiom, flow, aggressive, balanced, capital_guard` });
+  });
+
+  /** Reconcile EXPIRED ideas — retroactively check candle data for real TP/SL hits */
+  app.post("/api/trade-ideas/reconcile", async (req, res) => {
+    try {
+      const userId = String(req.body?.userId ?? "system-scanner");
+      const batchSize = Number(req.body?.batchSize) || 5;
+      const delayMs = Number(req.body?.delayMs) || 1000;
+      console.log(`[Reconcile] Starting for userId=${userId}, batch=${batchSize}, delay=${delayMs}ms`);
+      const result = await reconcileAllExpired(store, { batchSize, delayMs, userId });
+      const changed = result.results.filter((r) => r.oldResult !== r.newResult);
+      return res.json({
+        ok: true,
+        total: result.total,
+        updated: result.updated,
+        summary: {
+          success: changed.filter((r) => r.newResult === "SUCCESS").length,
+          fail: changed.filter((r) => r.newResult === "FAIL").length,
+          unchanged: result.total - result.updated,
+        },
+        details: changed.slice(0, 50), // Limit response size
+      });
+    } catch (err) {
+      console.error("[Reconcile] Error:", err instanceof Error ? err.message : err);
+      return res.status(500).json({ ok: false, error: "reconcile_failed", detail: (err as Error)?.message });
+    }
   });
 
   app.get("/api/trade-ideas/:id/events", async (req, res) => {

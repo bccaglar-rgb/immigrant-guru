@@ -67,6 +67,10 @@ export class PrivateStreamManager {
   start(): void {
     // Health check every 60s: detect stale connections
     this.healthTimer = setInterval(() => this.healthCheck(), 60_000);
+
+    // Expose stats on globalThis for Mission Control dashboard
+    (globalThis as Record<string, unknown>).__privateStreamStats = () => this.getStats();
+
     console.log("[PrivateStreamManager] Started");
   }
 
@@ -125,6 +129,36 @@ export class PrivateStreamManager {
       byVenue[entry.venue] = (byVenue[entry.venue] ?? 0) + 1;
     }
     return { activeStreams: this.streams.size, byVenue };
+  }
+
+  /** Detailed stats for Mission Control dashboard. */
+  getStats(): {
+    activeStreams: number;
+    totalUsers: number;
+    byVenue: Record<string, number>;
+    staleCount: number;
+    reconnectingCount: number;
+  } {
+    const byVenue: Record<string, number> = {};
+    const userIds = new Set<string>();
+    let staleCount = 0;
+    let reconnectingCount = 0;
+    const now = Date.now();
+
+    for (const entry of this.streams.values()) {
+      byVenue[entry.venue] = (byVenue[entry.venue] ?? 0) + 1;
+      userIds.add(entry.userId);
+      if (entry.active && now - entry.lastPongAt > STALE_THRESHOLD_MS) staleCount++;
+      if (entry.reconnectAttempt > 0 && entry.active) reconnectingCount++;
+    }
+
+    return {
+      activeStreams: this.streams.size,
+      totalUsers: userIds.size,
+      byVenue,
+      staleCount,
+      reconnectingCount,
+    };
   }
 
   // ── Connection Logic ──────────────────────────────────────────

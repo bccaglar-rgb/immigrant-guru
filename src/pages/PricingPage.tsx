@@ -247,7 +247,11 @@ export default function PricingPage() {
   // ── Current plan (auth store → server → localStorage) ──
   const serverPlanId = activeSub?.planId ?? null;
   const localPlanId = typeof window !== "undefined" ? window.localStorage.getItem(MEMBERSHIP_PLAN_KEY) : null;
-  const resolvedPlanId = serverPlanId ?? localPlanId ?? (hasMembership ? "explorer-6m" : null);
+  // Derive period from auth store days remaining when no server/local plan
+  const authPeriodGuess: BillingPeriod | null = authEndAt
+    ? (() => { const d = Math.ceil((authEndAt.getTime() - Date.now()) / (24*60*60*1000)); return d > 270 ? "12m" : d > 135 ? "6m" : d > 45 ? "3m" : "1m"; })()
+    : null;
+  const resolvedPlanId = serverPlanId ?? localPlanId ?? (authTier && authPeriodGuess ? `${authTier}-${authPeriodGuess}` : hasMembership ? "explorer-6m" : null);
   if (hasMembership && resolvedPlanId && !localPlanId) {
     try { window.localStorage.setItem(MEMBERSHIP_PLAN_KEY, resolvedPlanId); } catch { /* ignore */ }
   }
@@ -256,6 +260,24 @@ export default function PricingPage() {
   const currentTierPrefix = authTier ?? currentPlan?.prefix ?? null;
   const currentPeriod = currentPlan?.period ?? null;
   const TIER_RANK: Record<string, number> = { explorer: 0, trader: 1, strategist: 2, titan: 3 };
+
+  // ── Pro-rata upgrade credit calculation ──
+  const calcUpgradeCredit = (newTotalPrice: number): { credit: number; youPay: number } | null => {
+    if (!activeSub || !hasMembership) return null;
+    const currentRank = TIER_RANK[currentTierPrefix ?? ""] ?? -1;
+    // Only show credit for upgrades (not same tier or downgrade)
+    if (currentRank < 0) return null;
+
+    const startMs = Date.parse(activeSub.startAt);
+    const endMs = Date.parse(activeSub.endAt);
+    const totalDays = Math.max(1, (endMs - startMs) / (24 * 60 * 60 * 1000));
+    const usedDays = Math.max(0, (Date.now() - startMs) / (24 * 60 * 60 * 1000));
+    const remainingRatio = Math.max(0, 1 - usedDays / totalDays);
+    const oldPrice = activeSub.planSnapshot?.priceUsdt ?? 0;
+    const credit = Math.round(oldPrice * remainingRatio * 100) / 100;
+    const youPay = Math.max(0, Math.round((newTotalPrice - credit) * 100) / 100);
+    return { credit, youPay };
+  };
 
   // ── Single selection state: only one tier+period at a time ──
   const [selection, setSelection] = useState<{ tierName: string; period: BillingPeriod } | null>(null);
@@ -371,45 +393,70 @@ export default function PricingPage() {
                     const isSelected = activePeriod === key;
                     const isCurrentPlan = isCurrentTier && currentPeriod === key;
                     const isMonthly = key === "1m";
+                    const isUpgrade = currentTierPrefix ? (TIER_RANK[tier.planIdPrefix] ?? 0) > (TIER_RANK[currentTierPrefix] ?? 0) : false;
+                    const upgradeInfo = isUpgrade ? calcUpgradeCredit(p.total) : null;
                     return (
-                      <button
-                        key={key}
-                        type="button"
-                        onClick={() => selectPlan(tier.name, key)}
-                        className={`flex w-full items-center justify-between rounded-lg border px-3 py-2.5 text-left text-sm transition ${
-                          isCurrentPlan
-                            ? "border-[#4caf50]/50 bg-[#162016] text-white"
-                            : isSelected
-                              ? "border-[#F5C542]/70 bg-[#2b2417] text-white"
-                              : "border-white/10 bg-[#0F1012] text-[#BFC2C7] hover:border-white/20 hover:bg-[#17191d]"
-                        }`}
-                      >
-                        <div className="flex items-center gap-2">
-                          <span className={`flex h-4 w-4 items-center justify-center rounded-full border ${
+                      <div key={key}>
+                        <button
+                          type="button"
+                          onClick={() => selectPlan(tier.name, key)}
+                          className={`flex w-full items-center justify-between rounded-lg border px-3 py-2.5 text-left text-sm transition ${
                             isCurrentPlan
-                              ? "border-[#4caf50] bg-[#4caf50]"
+                              ? "border-[#4caf50]/50 bg-[#162016] text-white"
                               : isSelected
-                                ? "border-[#F5C542] bg-[#F5C542]"
-                                : "border-white/30"
-                          }`}>
-                            {isCurrentPlan || isSelected ? <span className={`h-1.5 w-1.5 rounded-full ${isCurrentPlan ? "bg-white" : "bg-black"}`} /> : null}
-                          </span>
-                          <span className="font-medium">{label}</span>
-                          {isCurrentPlan ? (
-                            <span className="rounded bg-[#4caf50]/20 px-1.5 py-0.5 text-[10px] font-semibold text-[#4caf50]">Active</span>
-                          ) : null}
-                        </div>
-                        <div className="text-right">
-                          {isMonthly ? (
-                            <span className={`font-bold ${isCurrentPlan ? "text-[#4caf50]" : isSelected ? "text-[#F5C542]" : "text-white"}`}>{p.total} USDT</span>
-                          ) : (
-                            <div className="flex items-baseline gap-1.5">
+                                ? "border-[#F5C542]/70 bg-[#2b2417] text-white"
+                                : "border-white/10 bg-[#0F1012] text-[#BFC2C7] hover:border-white/20 hover:bg-[#17191d]"
+                          }`}
+                        >
+                          <div className="flex items-center gap-2">
+                            <span className={`flex h-4 w-4 items-center justify-center rounded-full border ${
+                              isCurrentPlan
+                                ? "border-[#4caf50] bg-[#4caf50]"
+                                : isSelected
+                                  ? "border-[#F5C542] bg-[#F5C542]"
+                                  : "border-white/30"
+                            }`}>
+                              {isCurrentPlan || isSelected ? <span className={`h-1.5 w-1.5 rounded-full ${isCurrentPlan ? "bg-white" : "bg-black"}`} /> : null}
+                            </span>
+                            <span className="font-medium">{label}</span>
+                            {isCurrentPlan ? (
+                              <span className="rounded bg-[#4caf50]/20 px-1.5 py-0.5 text-[10px] font-semibold text-[#4caf50]">Active</span>
+                            ) : null}
+                          </div>
+                          <div className="text-right">
+                            {upgradeInfo && upgradeInfo.credit > 0 ? (
+                              <div className="flex flex-col items-end">
+                                <span className="text-[10px] text-[#6B6F76] line-through">{p.total} USDT</span>
+                                <span className="font-bold text-[#F5C542]">{upgradeInfo.youPay.toFixed(2)} USDT</span>
+                              </div>
+                            ) : isMonthly ? (
                               <span className={`font-bold ${isCurrentPlan ? "text-[#4caf50]" : isSelected ? "text-[#F5C542]" : "text-white"}`}>{p.total} USDT</span>
-                              <span className="text-[11px] text-[#6B6F76]">({p.monthly} USDT/mo)</span>
+                            ) : (
+                              <div className="flex items-baseline gap-1.5">
+                                <span className={`font-bold ${isCurrentPlan ? "text-[#4caf50]" : isSelected ? "text-[#F5C542]" : "text-white"}`}>{p.total} USDT</span>
+                                <span className="text-[11px] text-[#6B6F76]">({p.monthly} USDT/mo)</span>
+                              </div>
+                            )}
+                          </div>
+                        </button>
+                        {/* Upgrade credit breakdown */}
+                        {upgradeInfo && upgradeInfo.credit > 0 && (
+                          <div className="mt-1 rounded-md border border-[#F5C542]/20 bg-[#1f1c14] px-3 py-2">
+                            <div className="flex items-center justify-between text-[11px]">
+                              <span className="text-[#9ba3b4]">{tier.name} Plan</span>
+                              <span className="text-white">{p.total} USDT</span>
                             </div>
-                          )}
-                        </div>
-                      </button>
+                            <div className="flex items-center justify-between text-[11px]">
+                              <span className="text-[#4caf50]">Credit from {currentTierPrefix ? currentTierPrefix.charAt(0).toUpperCase() + currentTierPrefix.slice(1) : "current"} plan</span>
+                              <span className="text-[#4caf50]">-{upgradeInfo.credit.toFixed(2)} USDT</span>
+                            </div>
+                            <div className="mt-1 border-t border-white/10 pt-1 flex items-center justify-between text-xs font-semibold">
+                              <span className="text-white">You pay</span>
+                              <span className="text-[#F5C542]">{upgradeInfo.youPay.toFixed(2)} USDT</span>
+                            </div>
+                          </div>
+                        )}
+                      </div>
                     );
                   })}
                 </div>
@@ -418,36 +465,48 @@ export default function PricingPage() {
                 {(() => {
                   const isHigherTier = currentTierPrefix ? (TIER_RANK[tier.planIdPrefix] ?? 0) > (TIER_RANK[currentTierPrefix] ?? 0) : false;
                   const isLowerTier = currentTierPrefix ? (TIER_RANK[tier.planIdPrefix] ?? 0) < (TIER_RANK[currentTierPrefix] ?? 0) : false;
+                  const selectedUpgrade = tierSelected && isHigherTier ? calcUpgradeCredit(tier.pricing[selection!.period].total) : null;
                   const btnLabel = busyTier === tier.name
                     ? "Creating invoice..."
                     : isCurrentTier && !tierSelected
                       ? "Current Plan"
-                      : isHigherTier && !tierSelected
-                        ? "Upgrade"
-                        : !tierSelected
-                          ? "Select a plan"
-                          : isHigherTier
-                            ? "Upgrade Now"
-                            : "Subscribe Now";
+                      : isCurrentTier && tierSelected
+                        ? "Extend Subscription"
+                        : isHigherTier && !tierSelected
+                          ? "Upgrade Subscription"
+                          : isHigherTier && tierSelected && selectedUpgrade && selectedUpgrade.credit > 0
+                            ? `Upgrade Subscription \u2014 ${selectedUpgrade.youPay.toFixed(2)} USDT`
+                            : isHigherTier && tierSelected
+                              ? "Upgrade Subscription"
+                              : !tierSelected
+                                ? "Select a plan"
+                                : "Subscribe Now";
                   return (
-                    <button
-                      type="button"
-                      onClick={() => void handleSubscribe(tier)}
-                      disabled={(isCurrentTier && !tierSelected) || isLowerTier || (!tierSelected && !isHigherTier) || busyTier === tier.name}
-                      className={`group mt-4 w-full rounded-lg px-4 py-2.5 text-sm font-semibold transition-all duration-300 ${
-                        isCurrentTier && !tierSelected
-                          ? "cursor-default border border-[#4caf50]/40 bg-[#162016] text-[#4caf50]"
-                          : isHigherTier && !tierSelected
-                            ? "border border-[#F5C542]/60 bg-[#2b2417] text-[#F5C542] hover:bg-[#3a3020] hover:scale-[1.02]"
-                            : !tierSelected
-                              ? "cursor-not-allowed border border-white/10 bg-[#17191d] text-[#6B6F76]"
-                              : tier.highlight
-                                ? "bg-[#F5C542] text-black hover:bg-[#e5b632] hover:shadow-[0_0_24px_rgba(245,197,66,0.4)] hover:scale-[1.02] active:scale-[0.97]"
-                                : "border border-[#7a6840] bg-[#2b2417] text-[#F5C542] hover:bg-[#3a3020] hover:scale-[1.02] active:scale-[0.97]"
-                      } disabled:opacity-50 disabled:hover:scale-100 disabled:hover:shadow-none`}
-                    >
-                      {btnLabel}
-                    </button>
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => void handleSubscribe(tier)}
+                        disabled={(isCurrentTier && !tierSelected) || isLowerTier || (!tierSelected && !isHigherTier && !isCurrentTier) || busyTier === tier.name}
+                        className={`group mt-4 w-full rounded-lg px-4 py-2.5 text-sm font-semibold transition-all duration-300 ${
+                          isCurrentTier && !tierSelected
+                            ? "cursor-default border border-[#4caf50]/40 bg-[#162016] text-[#4caf50]"
+                            : isCurrentTier && tierSelected
+                              ? "border border-[#4caf50] bg-[#1a2f1a] text-[#4caf50] hover:bg-[#243d24] hover:scale-[1.02] active:scale-[0.97]"
+                              : isHigherTier && !tierSelected
+                                ? "border border-[#F5C542]/60 bg-[#2b2417] text-[#F5C542] hover:bg-[#3a3020] hover:scale-[1.02]"
+                                : !tierSelected
+                                  ? "cursor-not-allowed border border-white/10 bg-[#17191d] text-[#6B6F76]"
+                                  : tier.highlight
+                                    ? "bg-[#F5C542] text-black hover:bg-[#e5b632] hover:shadow-[0_0_24px_rgba(245,197,66,0.4)] hover:scale-[1.02] active:scale-[0.97]"
+                                    : "border border-[#7a6840] bg-[#2b2417] text-[#F5C542] hover:bg-[#3a3020] hover:scale-[1.02] active:scale-[0.97]"
+                        } disabled:opacity-50 disabled:hover:scale-100 disabled:hover:shadow-none`}
+                      >
+                        {btnLabel}
+                      </button>
+                      {isHigherTier && !tierSelected && hasMembership && (
+                        <p className="mt-1 text-center text-[10px] text-[#6B6F76]">Only pay the difference. Unused balance credited.</p>
+                      )}
+                    </>
                   );
                 })()}
               </article>
@@ -460,6 +519,16 @@ export default function PricingPage() {
             {err}
           </section>
         ) : null}
+
+        {/* Upgrade Policy */}
+        {hasMembership && (
+          <section className="mx-auto max-w-2xl rounded-xl border border-[#F5C542]/10 bg-[#121316] p-4 text-center">
+            <p className="text-xs font-semibold text-[#F5C542]">Instant Upgrade Guarantee</p>
+            <p className="mt-1 text-[11px] text-[#9ba3b4]">
+              Upgrade anytime. The unused portion of your current plan is automatically credited toward your new plan. You only pay the difference. Your new plan starts fresh with a full billing cycle.
+            </p>
+          </section>
+        )}
 
         {/* Referral */}
         <section className="mx-auto max-w-2xl rounded-xl border border-white/10 bg-[#121316] p-4">

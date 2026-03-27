@@ -12,6 +12,7 @@ import type {
   NormalizedTradeEvent,
 } from "./types.ts";
 import { SequenceSafeOrderbookStore } from "./sequenceSafeOrderbook.ts";
+import { getSharedBinanceWsPool, type SharedBinanceWsPool } from "./SharedBinanceWsPool.ts";
 
 // !bookTicker REMOVED: it fires for ALL 300+ symbols on every trade = 2000-5000 msgs/sec,
 // saturating the event loop. Bid/ask data is available from depth WS for subscribed symbols
@@ -38,7 +39,7 @@ const SNAPSHOT_SANITY_INTERVAL_MS = 20_000;
 const SNAPSHOT_REFRESH_MIN_MS = 90_000;
 const SNAPSHOT_SANITY_BATCH = 3;
 const SNAPSHOT_REQUEST_GAP_MS = 350;
-const SNAPSHOT_BLOCK_COOLDOWN_MS = 600_000; // 10 min — Binance IP bans are long, no point retrying often
+const SNAPSHOT_BLOCK_COOLDOWN_MS = 120_000; // 2 min — IP ban lifted, fast recovery preferred
 const CONTRACT_REFRESH_INTERVAL_MS = 45 * 60_000;
 const RECONNECT_BASE_MS = 500;
 const RECONNECT_MAX_MS = 12_000;
@@ -103,17 +104,16 @@ export class BinanceFuturesMarketAdapter implements IExchangeMarketAdapter {
   readonly exchange = "BINANCE" as const;
 
   private aggregateWs: WebSocket | null = null;
-  private depthWs: WebSocket | null = null;
+  private depthPool: SharedBinanceWsPool | null = null;  // Shared WS pool — replaces depthWs
+  private readonly DEPTH_POOL_CONSUMER_ID = "binance-hub-depth";
+  private depthPoolStreams = new Set<string>();  // Tracks streams registered with pool
   private tradeWs: WebSocket | null = null;  // Fast lane: dedicated trade-only WS
   private aggregateUrlIndex = 0;
-  private depthUrlIndex = 0;
   private tradeUrlIndex = 0;
   private started = false;
   private aggregateReconnectAttempts = 0;
-  private depthReconnectAttempts = 0;
   private tradeReconnectAttempts = 0;
   private aggregateReconnectTimer: ReturnType<typeof setTimeout> | null = null;
-  private depthReconnectTimer: ReturnType<typeof setTimeout> | null = null;
   private tradeReconnectTimer: ReturnType<typeof setTimeout> | null = null;
   private heartbeatTimer: ReturnType<typeof setInterval> | null = null;
   private watchdogTimer: ReturnType<typeof setInterval> | null = null;
@@ -150,6 +150,17 @@ export class BinanceFuturesMarketAdapter implements IExchangeMarketAdapter {
   private snapshotDrainInFlight = false;
   private latencyEmaMs: number | null = null;
   private _depthLimitLogged = false;
+
+  // ── Binance REST probe mode (shared via Redis — see ProbeStateManager.ts) ──
+  // When REST is consistently failing (rate limited / banned), stop hammering and probe periodically.
+  // WS data (SharedBinanceWsPool) continues unaffected — only REST calls are paused.
+  // State is stored in Redis so ALL PM2 workers share the same probe/active/recovering state.
+  private binanceRestMode: "ACTIVE" | "PROBING" | "RECOVERING" = "ACTIVE";
+  private probeTimer: ReturnType<typeof setInterval> | null = null;
+  private lastProbeAt = 0;
+  private lastProbeWeight: number | null = null;
+  /** Recovery batch index — tracks which batch of symbols we're re-enqueuing */
+  private recoveryBatchIdx = 0;
   /** 500ms batch flush timer for ticker/markPrice events */
   private _tickerFlushTimer: ReturnType<typeof setInterval> | null = null;
   /** Event loop lag detection — identifies what blocks the event loop */
@@ -179,7 +190,10 @@ export class BinanceFuturesMarketAdapter implements IExchangeMarketAdapter {
     this.startContractRefresh();
     this.startTickerFlush();  // 500ms batch emit for ticker/markPrice
     this.startDiagnostics();  // Event loop lag + message rate monitor
-    void this.refreshContracts();
+    // Stagger initial REST calls across PM2 workers to avoid startup burst → 429/418
+    const workerId = Number(process.env.NODE_APP_INSTANCE ?? process.env.pm_id ?? 0);
+    const staggerMs = workerId * 5_000 + Math.floor(Math.random() * 3_000);
+    setTimeout(() => { if (this.started) void this.refreshContracts(); }, staggerMs);
   }
 
   stop(): void {
@@ -188,9 +202,11 @@ export class BinanceFuturesMarketAdapter implements IExchangeMarketAdapter {
       clearTimeout(this.aggregateReconnectTimer);
       this.aggregateReconnectTimer = null;
     }
-    if (this.depthReconnectTimer) {
-      clearTimeout(this.depthReconnectTimer);
-      this.depthReconnectTimer = null;
+    // Unregister from SharedBinanceWsPool
+    if (this.depthPool) {
+      this.depthPool.removeConsumer(this.DEPTH_POOL_CONSUMER_ID);
+      this.depthPoolStreams.clear();
+      this.depthPool = null;
     }
     if (this.tradeReconnectTimer) {
       clearTimeout(this.tradeReconnectTimer);
@@ -220,6 +236,10 @@ export class BinanceFuturesMarketAdapter implements IExchangeMarketAdapter {
       clearInterval(this._elLagTimer);
       this._elLagTimer = null;
     }
+    if (this.probeTimer) {
+      clearInterval(this.probeTimer);
+      this.probeTimer = null;
+    }
     if (this._diagTimer) {
       clearInterval(this._diagTimer);
       this._diagTimer = null;
@@ -229,11 +249,7 @@ export class BinanceFuturesMarketAdapter implements IExchangeMarketAdapter {
       this.aggregateWs.terminate();
       this.aggregateWs = null;
     }
-    if (this.depthWs) {
-      this.depthWs.removeAllListeners();
-      this.depthWs.terminate();
-      this.depthWs = null;
-    }
+    // depthWs replaced by SharedBinanceWsPool — cleanup handled above
     if (this.tradeWs) {
       this.tradeWs.removeAllListeners();
       this.tradeWs.terminate();
@@ -278,7 +294,7 @@ export class BinanceFuturesMarketAdapter implements IExchangeMarketAdapter {
   getHealth(): AdapterHealthSnapshot {
     const now = Date.now();
     const connectedAggregate = Boolean(this.aggregateWs && this.aggregateWs.readyState === WebSocket.OPEN);
-    const connectedDepth = Boolean(this.depthWs && this.depthWs.readyState === WebSocket.OPEN);
+    const connectedDepth = Boolean(this.depthPool && this.depthPool.isReady());
     const connectedTrade = Boolean(this.tradeWs && this.tradeWs.readyState === WebSocket.OPEN);
     const connected = connectedAggregate && connectedDepth && connectedTrade;
     const lastMessageAgeMs = this.lastMessageAt > 0 ? Math.max(0, now - this.lastMessageAt) : Number.POSITIVE_INFINITY;
@@ -321,6 +337,8 @@ export class BinanceFuturesMarketAdapter implements IExchangeMarketAdapter {
     if (this.snapshotFailures > 0) reasons.push(`snapshot_failures_${this.snapshotFailures}`);
     if (this.pendingSnapshotSymbols.size > 0) reasons.push(`snapshot_pending_${this.pendingSnapshotSymbols.size}`);
     if (this.snapshotBlockedUntil > now) reasons.push(`snapshot_blocked_${Math.max(1, Math.round((this.snapshotBlockedUntil - now) / 1000))}s`);
+    if (this.binanceRestMode === "PROBING") reasons.push(`rest_probe_mode(w=${this.lastProbeWeight ?? "?"})`);
+    if (this.binanceRestMode === "RECOVERING") reasons.push(`rest_recovering(w=${this.lastProbeWeight ?? "?"})`);
     if (this.lastError) reasons.push(this.lastError);
     for (const reason of this.recentReasons.slice(-3)) reasons.push(reason);
     return {
@@ -337,6 +355,192 @@ export class BinanceFuturesMarketAdapter implements IExchangeMarketAdapter {
       reasons: [...new Set(reasons)].slice(0, 8),
     };
   }
+
+  // ═══════════════════════════════════════════════════════════════
+  // BINANCE REST PROBE MODE — Shared via Redis (ProbeStateManager.ts)
+  // All workers share the same probe state. One worker detects failure → all workers pause.
+  // Recovery is staged: /time probe → light snapshot → full active (storm-protected).
+  // ═══════════════════════════════════════════════════════════════
+
+  private async enterProbeMode(reason: string): Promise<void> {
+    if (this.binanceRestMode === "PROBING") return;
+    this.binanceRestMode = "PROBING";
+
+    // Clear snapshot queue to stop hammering
+    this.snapshotQueue.length = 0;
+    this.snapshotQueueSet.clear();
+    this.pendingSnapshotSymbols.clear();
+
+    // Write shared state to Redis — all workers will see this
+    const { enterProbeMode: redisEnterProbe, getProbeConfig } = await import("./ProbeStateManager.ts");
+    await redisEnterProbe("binance", reason);
+
+    // Start periodic probe
+    const config = getProbeConfig("binance");
+    if (this.probeTimer) clearInterval(this.probeTimer);
+    this.probeTimer = setInterval(() => void this.probeBinanceRest(), config.probeIntervalMs);
+  }
+
+  private async exitProbeMode(weight: number): Promise<void> {
+    if (this.binanceRestMode !== "PROBING" && this.binanceRestMode !== "RECOVERING") return;
+    this.binanceRestMode = "ACTIVE";
+    this.snapshotFailures = 0;
+    this.snapshotFailuresBySymbol.clear();
+    this.recoveryBatchIdx = 0;
+
+    if (this.probeTimer) { clearInterval(this.probeTimer); this.probeTimer = null; }
+
+    // Write shared state to Redis
+    const { exitProbeMode: redisExitProbe } = await import("./ProbeStateManager.ts");
+    await redisExitProbe("binance", weight);
+
+    // Recovery storm protection: re-enqueue snapshots in batches with jitter
+    const { buildRecoveryBatches, recoveryJitter, getProbeConfig } = await import("./ProbeStateManager.ts");
+    const config = getProbeConfig("binance");
+    const batches = buildRecoveryBatches(
+      [...this.depthSymbols],
+      PRIORITY_DEPTH_SYMBOLS,
+      config.recoveryBatchSize,
+    );
+    for (const batch of batches) {
+      for (const symbol of batch) {
+        this.enqueueSnapshot(symbol);
+      }
+      if (batches.indexOf(batch) < batches.length - 1) {
+        await recoveryJitter(config.recoveryJitterMs);
+      }
+    }
+  }
+
+  private async startRecoveryStage(weight: number): Promise<void> {
+    if (this.binanceRestMode !== "PROBING") return;
+    this.binanceRestMode = "RECOVERING";
+
+    const { enterRecoveryMode } = await import("./ProbeStateManager.ts");
+    await enterRecoveryMode("binance", weight);
+
+    // Stage 2: try ONE lightweight snapshot to confirm REST is truly healthy
+    const testSymbol = PRIORITY_DEPTH_SYMBOLS[0] ?? "BTCUSDT";
+    try {
+      const { binanceFetch } = await import("../binanceRateLimiter.ts");
+      const res = await binanceFetch({
+        url: `${BINANCE_DEPTH_SNAPSHOT_BASE}/fapi/v1/depth?symbol=${testSymbol}&limit=5`,
+        init: { signal: AbortSignal.timeout(5_000) },
+        priority: "normal",
+        weight: 5,
+        dedupKey: `probe-confirm-${testSymbol}`,
+      });
+      if (res.ok) {
+        const weightStr = res.headers.get("X-MBX-USED-WEIGHT-1M");
+        const confirmWeight = weightStr ? parseInt(weightStr) : weight;
+        const { getProbeConfig } = await import("./ProbeStateManager.ts");
+        const config = getProbeConfig("binance");
+        if (confirmWeight < config.recoveryConfirmThreshold) {
+          // Stage 3: confirmed — full active restore
+          console.log(`[BinanceFuturesAdapter] Recovery confirmed — snapshot OK, weight=${confirmWeight}`);
+          await this.exitProbeMode(confirmWeight);
+        } else {
+          // Weight spiked during confirm — back to PROBING
+          console.log(`[BinanceFuturesAdapter] Recovery aborted — weight ${confirmWeight} > ${config.recoveryConfirmThreshold}`);
+          this.binanceRestMode = "PROBING";
+          const { recordRestoreFailure } = await import("./ProbeStateManager.ts");
+          await recordRestoreFailure("binance");
+        }
+      } else {
+        console.log(`[BinanceFuturesAdapter] Recovery snapshot HTTP ${res.status} — back to PROBING`);
+        this.binanceRestMode = "PROBING";
+        const { recordRestoreFailure, enterProbeMode: reEnterProbe } = await import("./ProbeStateManager.ts");
+        await recordRestoreFailure("binance");
+        await reEnterProbe("binance", `recovery_snapshot_${res.status}`);
+      }
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "unknown";
+      console.log(`[BinanceFuturesAdapter] Recovery snapshot failed: ${msg} — back to PROBING`);
+      this.binanceRestMode = "PROBING";
+      const { recordRestoreFailure } = await import("./ProbeStateManager.ts");
+      await recordRestoreFailure("binance");
+    }
+  }
+
+  private async probeBinanceRest(): Promise<void> {
+    this.lastProbeAt = Date.now();
+
+    // First check shared Redis state — another worker may have already recovered
+    try {
+      const { getProbeState } = await import("./ProbeStateManager.ts");
+      const shared = await getProbeState("binance");
+      if (shared.mode === "ACTIVE" && this.binanceRestMode !== "ACTIVE") {
+        console.log(`[BinanceFuturesAdapter] Peer recovered — syncing to ACTIVE (weight=${shared.lastWeight ?? "?"})`);
+        await this.exitProbeMode(shared.lastWeight ?? 0);
+        return;
+      }
+    } catch { /* Redis unavailable — continue with local probe */ }
+
+    try {
+      const { binanceFetch } = await import("../binanceRateLimiter.ts");
+      const { recordProbeAttempt, getProbeConfig } = await import("./ProbeStateManager.ts");
+      const config = getProbeConfig("binance");
+
+      const res = await binanceFetch({
+        url: `${BINANCE_DEPTH_SNAPSHOT_BASE}/fapi/v1/time`,
+        init: { signal: AbortSignal.timeout(5_000) },
+        priority: "normal",
+        weight: 1,
+        dedupKey: "binance-rest-probe",
+      });
+      if (res.ok) {
+        const weightStr = res.headers.get("X-MBX-USED-WEIGHT-1M");
+        this.lastProbeWeight = weightStr ? parseInt(weightStr) : null;
+        await recordProbeAttempt("binance", this.lastProbeWeight);
+        console.log(`[BinanceFuturesAdapter] Probe OK — weight: ${this.lastProbeWeight ?? "?"}/${1200}`);
+
+        // Stage 1 passed — check weight threshold
+        if (this.lastProbeWeight === null || this.lastProbeWeight < config.recoveryWeightThreshold) {
+          // Stage 2: try a light snapshot to confirm
+          await this.startRecoveryStage(this.lastProbeWeight ?? 0);
+        }
+      } else {
+        console.log(`[BinanceFuturesAdapter] Probe HTTP ${res.status}`);
+        await recordProbeAttempt("binance", res.status === 429 || res.status === 418 ? 9999 : null);
+        if (res.status === 429 || res.status === 418 || res.status === 403) {
+          this.lastProbeWeight = 9999;
+        }
+      }
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "unknown";
+      if (msg.includes("soft_limit") || msg.includes("hard_limit")) {
+        const weightMatch = msg.match(/weight (\d+)/);
+        this.lastProbeWeight = weightMatch ? parseInt(weightMatch[1]) : null;
+        const { recordProbeAttempt } = await import("./ProbeStateManager.ts");
+        await recordProbeAttempt("binance", this.lastProbeWeight);
+        console.log(`[BinanceFuturesAdapter] Probe blocked by RL — weight: ${this.lastProbeWeight ?? "?"}/${1200}`);
+      } else {
+        console.log(`[BinanceFuturesAdapter] Probe failed: ${msg}`);
+      }
+    }
+  }
+
+  /** Sync local probe state from Redis (called periodically by non-primary workers) */
+  async syncProbeStateFromRedis(): Promise<void> {
+    try {
+      const { getProbeState } = await import("./ProbeStateManager.ts");
+      const shared = await getProbeState("binance");
+      if (shared.mode !== this.binanceRestMode) {
+        console.log(`[BinanceFuturesAdapter] Syncing probe state: ${this.binanceRestMode} → ${shared.mode}`);
+        this.binanceRestMode = shared.mode;
+        this.lastProbeWeight = shared.lastWeight;
+        if (shared.mode === "PROBING" || shared.mode === "RECOVERING") {
+          // Another worker entered probe mode — clear our local queues too
+          this.snapshotQueue.length = 0;
+          this.snapshotQueueSet.clear();
+          this.pendingSnapshotSymbols.clear();
+        }
+      }
+    } catch { /* Redis unavailable — keep local state */ }
+  }
+
+  /** Get current REST mode for external monitoring */
+  getRestMode(): string { return this.binanceRestMode; }
 
   getSnapshot(symbol: string): AdapterSymbolSnapshot | null {
     const normalized = ensureUsdtPair(symbol);
@@ -360,6 +564,21 @@ export class BinanceFuturesMarketAdapter implements IExchangeMarketAdapter {
     const rows = this.recentTradesBySymbol.get(normalized) ?? [];
     if (!rows.length) return [];
     return rows.slice(-Math.max(1, Math.min(900, limit)));
+  }
+
+  /** Return full orderbook depth (up to 20 levels per side) from in-memory WS data. */
+  getOrderbook(symbol: string): { exchange: string; symbol: string; bids: Array<{ price: number; qty: number }>; asks: Array<{ price: number; qty: number }>; ts: number } | null {
+    const normalized = ensureUsdtPair(symbol);
+    if (!normalized || !this.orderbooks.isReady(normalized)) return null;
+    const depth = this.orderbooks.getDepthLevels(normalized, 20);
+    if (!depth || (depth.bids.length === 0 && depth.asks.length === 0)) return null;
+    return {
+      exchange: this.exchange,
+      symbol: normalized,
+      bids: depth.bids.map(([price, qty]) => ({ price, qty })),
+      asks: depth.asks.map(([price, qty]) => ({ price, qty })),
+      ts: Date.now(),
+    };
   }
 
   private emit(event: NormalizedEvent): void {
@@ -423,53 +642,48 @@ export class BinanceFuturesMarketAdapter implements IExchangeMarketAdapter {
 
   private connectDepth(): void {
     if (!this.started) return;
-    if (this.depthWs) {
-      this.depthWs.removeAllListeners();
-      this.depthWs.terminate();
-      this.depthWs = null;
+    // Use SharedBinanceWsPool instead of opening a dedicated WS
+    const pool = getSharedBinanceWsPool();
+    this.depthPool = pool;
+
+    // Register as consumer (idempotent — won't double-register)
+    pool.registerConsumer(this.DEPTH_POOL_CONSUMER_ID, (stream: string, data: unknown) => {
+      // Route pool messages through parseDepthMessage (accepts pre-parsed data)
+      this.handlePoolDepthMessage(stream, data);
+    });
+    console.log(`[BinanceFuturesAdapter] Using SharedBinanceWsPool for depth+klines (consumers=${pool.getConsumerCount()})`);
+
+    this.pushReason("depth_pool_open");
+    this.touchMessage(Date.now());
+
+    // Subscribe all current depth symbols
+    this.subscribeDepthStreams([...this.depthSymbols]);
+
+    for (const symbol of this.depthSymbols) {
+      this.resetSymbolSyncState(symbol);
+      this.enqueueSnapshot(symbol);
     }
-    const url = BINANCE_DEPTH_URLS[this.depthUrlIndex] ?? BINANCE_DEPTH_URLS[0];
-    const ws = new WebSocket(url, { handshakeTimeout: 10_000, perMessageDeflate: false });
-    this.depthWs = ws;
+    // Backfill candles only if REST API is not blocked (403 = IP ban)
+    if (this.snapshotBlockedUntil <= Date.now()) {
+      void this.backfillCandles([...this.depthSymbols]);
+    } else {
+      this.pushReason("backfill_skipped:rest_blocked");
+    }
+  }
 
-    ws.on("open", () => {
-      this.depthReconnectAttempts = 0;
-      this.lastError = null;
-      this.touchMessage(Date.now());
-      this.pushReason("depth_open");
-      this.subscribeDepthStreams([...this.depthSymbols]);
-      for (const symbol of this.depthSymbols) {
-        this.resetSymbolSyncState(symbol);
-        this.enqueueSnapshot(symbol);
-      }
-      // Backfill candles only if REST API is not blocked (403 = IP ban)
-      if (this.snapshotBlockedUntil <= Date.now()) {
-        void this.backfillCandles([...this.depthSymbols]);
-      } else {
-        this.pushReason("backfill_skipped:rest_blocked");
-      }
-    });
-
-    ws.on("message", (raw) => {
-      this.parseDepthMessage(raw);
-    });
-
-    ws.on("pong", () => {
-      this.touchMessage(Date.now());
-    });
-
-    ws.on("close", () => {
-      if (!this.started) return;
-      this.pushReason("depth_close");
-      this.scheduleDepthReconnect();
-    });
-
-    ws.on("error", (error) => {
-      if (!this.started) return;
-      this.lastError = error instanceof Error ? error.message : "depth_ws_error";
-      this.pushReason(`depth_error:${this.lastError}`);
-      this.scheduleDepthReconnect();
-    });
+  /** Handle messages from SharedBinanceWsPool — pre-parsed data */
+  private handlePoolDepthMessage(_stream: string, data: unknown): void {
+    const rec = data as Record<string, unknown>;
+    if ("result" in rec && rec.result === null) return;
+    const eventType = String(rec.e ?? "");
+    if (eventType === "kline") {
+      this.onKline(rec);
+      return;
+    }
+    if (eventType === "depthUpdate") {
+      this.onDepthDelta(rec);
+    }
+    this.touchMessage(Date.now());
   }
 
   private scheduleAggregateReconnect(): void {
@@ -484,17 +698,7 @@ export class BinanceFuturesMarketAdapter implements IExchangeMarketAdapter {
     }, waitMs);
   }
 
-  private scheduleDepthReconnect(): void {
-    if (!this.started || this.depthReconnectTimer) return;
-    this.depthReconnectAttempts += 1;
-    this.reconnects += 1;
-    this.depthUrlIndex = (this.depthUrlIndex + 1) % BINANCE_DEPTH_URLS.length;
-    const waitMs = computeBackoff(this.depthReconnectAttempts);
-    this.depthReconnectTimer = setTimeout(() => {
-      this.depthReconnectTimer = null;
-      this.connectDepth();
-    }, waitMs);
-  }
+  // scheduleDepthReconnect removed — SharedBinanceWsPool handles reconnection internally
 
   // ═══════════════════════════════════════════════════════════════════
   // FAST LANE: Dedicated trade-only WS connection
@@ -582,13 +786,7 @@ export class BinanceFuturesMarketAdapter implements IExchangeMarketAdapter {
           // no-op
         }
       }
-      if (this.depthWs && this.depthWs.readyState === WebSocket.OPEN) {
-        try {
-          this.depthWs.ping();
-        } catch {
-          // no-op
-        }
-      }
+      // depthWs ping handled by SharedBinanceWsPool internally
       if (this.tradeWs && this.tradeWs.readyState === WebSocket.OPEN) {
         try {
           this.tradeWs.ping();
@@ -613,13 +811,7 @@ export class BinanceFuturesMarketAdapter implements IExchangeMarketAdapter {
           // no-op
         }
       }
-      if (this.depthWs) {
-        try {
-          this.depthWs.terminate();
-        } catch {
-          // no-op
-        }
-      }
+      // depthWs replaced by SharedBinanceWsPool — reconnect handled internally
       if (this.tradeWs) {
         try {
           this.tradeWs.terminate();
@@ -693,13 +885,15 @@ export class BinanceFuturesMarketAdapter implements IExchangeMarketAdapter {
       }
     }, 200);
 
-    // Message rate diagnostics: every 30s log message counts
+    // Message rate diagnostics + probe state sync: every 30s
     this._diagTimer = setInterval(() => {
-      console.log(`[MSG_RATE] 30s: kline=${this._diagKlineCount} trade=${this._diagTradeCount} depth=${this._diagDepthCount} tickerArr=${this._diagTickerCount} depthSymbols=${this.depthSymbols.size} snapshots=${this.snapshots.size}`);
+      console.log(`[MSG_RATE] 30s: kline=${this._diagKlineCount} trade=${this._diagTradeCount} depth=${this._diagDepthCount} tickerArr=${this._diagTickerCount} depthSymbols=${this.depthSymbols.size} snapshots=${this.snapshots.size} restMode=${this.binanceRestMode}`);
       this._diagKlineCount = 0;
       this._diagTradeCount = 0;
       this._diagDepthCount = 0;
       this._diagTickerCount = 0;
+      // Sync probe state from Redis — ensures all workers follow the same state
+      void this.syncProbeStateFromRedis();
     }, 30_000);
   }
 
@@ -748,8 +942,7 @@ export class BinanceFuturesMarketAdapter implements IExchangeMarketAdapter {
 
   /** Subscribe depth + kline streams on the depth WS (NO trade — trade is on fast lane) */
   private subscribeDepthStreams(symbols: string[]): void {
-    const ws = this.depthWs;
-    if (!ws || ws.readyState !== WebSocket.OPEN || !symbols.length) return;
+    if (!this.depthPool || !symbols.length) return;
     const params: string[] = [];
     for (const symbol of symbols) {
       if (!this.isDepthEligible(symbol)) continue;
@@ -760,19 +953,10 @@ export class BinanceFuturesMarketAdapter implements IExchangeMarketAdapter {
         params.push(`${lower}@kline_${frame}`);
       }
     }
-    const chunkSize = 120;
-    let messageId = Date.now();
-    for (let i = 0; i < params.length; i += chunkSize) {
-      const chunk = params.slice(i, i + chunkSize);
-      ws.send(
-        JSON.stringify({
-          method: "SUBSCRIBE",
-          params: chunk,
-          id: messageId,
-        }),
-      );
-      messageId += 1;
-    }
+    if (!params.length) return;
+    // Track all streams we registered with the pool
+    for (const p of params) this.depthPoolStreams.add(p);
+    this.depthPool.subscribe(this.DEPTH_POOL_CONSUMER_ID, params);
   }
 
   /** Subscribe ONLY trade streams on the dedicated fast-lane WS */
@@ -932,26 +1116,7 @@ export class BinanceFuturesMarketAdapter implements IExchangeMarketAdapter {
     }
   }
 
-  /** Parse depth WS messages — handles ONLY kline + depthUpdate (trade moved to fast lane) */
-  private parseDepthMessage(raw: WebSocket.RawData): void {
-    let parsed: unknown;
-    try {
-      parsed = JSON.parse(toText(raw));
-    } catch {
-      return;
-    }
-    const rec = parsed as Record<string, unknown>;
-    if ("result" in rec && rec.result === null) return;
-    const eventType = String(rec.e ?? "");
-    // NOTE: trade events are NO LONGER processed here — they arrive on the dedicated tradeWs
-    if (eventType === "kline") {
-      this.onKline(rec);
-      return;
-    }
-    if (eventType === "depthUpdate") {
-      this.onDepthDelta(rec);
-    }
-  }
+  // parseDepthMessage removed — replaced by handlePoolDepthMessage (SharedBinanceWsPool integration)
 
   /** Diagnostic counter for raw trade timestamp debugging */
   private _rawTradeDiag = 0;
@@ -1119,9 +1284,13 @@ export class BinanceFuturesMarketAdapter implements IExchangeMarketAdapter {
 
   private async drainSnapshotQueue(): Promise<void> {
     if (this.snapshotDrainInFlight) return;
+    // In PROBING/RECOVERING mode, don't process snapshots — wait for probe to recover
+    if (this.binanceRestMode === "PROBING" || this.binanceRestMode === "RECOVERING") return;
     this.snapshotDrainInFlight = true;
     try {
       while (this.started && this.snapshotQueue.length > 0) {
+        // Exit drain if we entered probe mode mid-drain
+        if (this.binanceRestMode === "PROBING" || this.binanceRestMode === "RECOVERING") break;
         const now = Date.now();
         if (this.snapshotBlockedUntil > now) {
           await new Promise((resolve) => setTimeout(resolve, Math.min(1_500, this.snapshotBlockedUntil - now)));
@@ -1129,7 +1298,25 @@ export class BinanceFuturesMarketAdapter implements IExchangeMarketAdapter {
         }
         const symbol = this.snapshotQueue.shift()!;
         this.snapshotQueueSet.delete(symbol);
-        await this.requestDepthSnapshot(symbol);
+
+        // FAZ 4.2: Distributed lock — prevent duplicate snapshot fetches across PM2 workers
+        try {
+          const { acquireFetchLock, releaseFetchLock } = await import("../marketDataCache.ts");
+          const gotLock = await acquireFetchLock("snapshot", symbol);
+          if (!gotLock) {
+            // Another worker is already fetching this snapshot — skip
+            continue;
+          }
+          try {
+            await this.requestDepthSnapshot(symbol);
+          } finally {
+            void releaseFetchLock("snapshot", symbol);
+          }
+        } catch {
+          // Lock module unavailable — fall back to unlocked fetch
+          await this.requestDepthSnapshot(symbol);
+        }
+
         if (this.snapshotQueue.length > 0) {
           await new Promise((resolve) => setTimeout(resolve, SNAPSHOT_REQUEST_GAP_MS));
         }
@@ -1145,14 +1332,22 @@ export class BinanceFuturesMarketAdapter implements IExchangeMarketAdapter {
     this.pendingSnapshotSymbols.add(symbol);
     let timeout: ReturnType<typeof setTimeout> | null = null;
     try {
-      const controller = new AbortController();
-      timeout = setTimeout(() => controller.abort(), 3_800);
-      const res = await fetch(
-        `${BINANCE_DEPTH_SNAPSHOT_BASE}/fapi/v1/depth?symbol=${encodeURIComponent(symbol)}&limit=100`,
-        { signal: controller.signal },
-      );
-      clearTimeout(timeout);
-      timeout = null;
+      let res: Response;
+      try {
+        const { binanceFetch } = await import("../binanceRateLimiter.ts");
+        res = await binanceFetch({
+          url: `${BINANCE_DEPTH_SNAPSHOT_BASE}/fapi/v1/depth?symbol=${encodeURIComponent(symbol)}&limit=100`,
+          init: { headers: { accept: "application/json" } },
+          priority: "high",
+          dedupKey: `hub-depth:${symbol}:100`,
+          weight: 10,
+        });
+      } catch (rlError) {
+        // rate limiter blocked (cooldown / circuit / weight limit) — don't treat as real 429
+        // Real 429 comes from Binance HTTP response, not from our rate limiter
+        const msg = rlError instanceof Error ? rlError.message : "rl_blocked";
+        throw new Error(`snapshot_rl_blocked:${msg}`);
+      }
       if (!res.ok) {
         throw new Error(`snapshot_http_${res.status}`);
       }
@@ -1177,6 +1372,8 @@ export class BinanceFuturesMarketAdapter implements IExchangeMarketAdapter {
       this.lastSnapshotAtBySymbol.set(symbol, Date.now());
       this.snapshotFailuresBySymbol.set(symbol, 0);
       this.snapshotFailures = Math.max(0, this.snapshotFailures - 1);
+      // REST is working — reset shared failure counter in Redis
+      import("./ProbeStateManager.ts").then(m => void m.resetRestFailures("binance")).catch(() => {});
 
       const buffered = this.deltaBufferBySymbol.get(symbol) ?? [];
       this.deltaBufferBySymbol.delete(symbol);
@@ -1212,25 +1409,40 @@ export class BinanceFuturesMarketAdapter implements IExchangeMarketAdapter {
       const currentFail = (this.snapshotFailuresBySymbol.get(symbol) ?? 0) + 1;
       this.snapshotFailuresBySymbol.set(symbol, currentFail);
       this.snapshotFailures += 1;
+      // Log first 3 failures per symbol for debugging
+      if (currentFail <= 3) {
+        console.log(`[BinanceFuturesAdapter] Snapshot #${currentFail} failed for ${symbol}: ${message}`);
+      }
       const statusMatch = message.match(/snapshot_http_(\d{3})/);
       const statusCode = statusMatch ? Number(statusMatch[1]) : null;
-      if (statusCode === 403 || statusCode === 418 || statusCode === 429) {
-        // IP blocked or rate limited — stop ALL snapshot requests for cooldown period
-        // 403 = IP ban (common with Binance), 418/429 = rate limit
-        this.snapshotBlockedUntil = Date.now() + SNAPSHOT_BLOCK_COOLDOWN_MS;
-        this.pushReason(`snapshot_blocked:${statusCode}`);
-        // Clear the entire snapshot queue to prevent cascade
-        this.snapshotQueue.length = 0;
-        this.snapshotQueueSet.clear();
-        console.log(`[BinanceFuturesAdapter] REST API ${statusCode} — blocking snapshots for ${SNAPSHOT_BLOCK_COOLDOWN_MS / 1000}s`);
-      } else if (statusCode === 400 && currentFail >= 3) {
-        this.excludedDepthSymbols.add(symbol);
-        this.pushReason(`exclude_depth_symbol:${symbol}`);
-      } else if (currentFail >= 6) {
-        // Don't terminate WS on repeated snapshot failures — WS data is still valuable
-        // even without snapshots. The depth deltas are emitted and can be used client-side.
-        this.pushReason(`snapshot_fail_threshold:${symbol}`);
-        console.log(`[BinanceFuturesAdapter] Snapshot failed 6+ times for ${symbol} — skipping (WS still running)`);
+
+      // Record failure in shared Redis state + check threshold
+      try {
+        const { recordRestFailure, getProbeConfig, getProbeState } = await import("./ProbeStateManager.ts");
+        const config = getProbeConfig("binance");
+
+        if (statusCode && config.immediateProbeStatuses.includes(statusCode)) {
+          // IP blocked or rate limited — enter probe mode immediately
+          console.log(`[BinanceFuturesAdapter] REST API ${statusCode} — entering probe mode`);
+          void this.enterProbeMode(`rest_api_${statusCode}`);
+        } else if (statusCode === 400 && currentFail >= 3) {
+          this.excludedDepthSymbols.add(symbol);
+          this.pushReason(`exclude_depth_symbol:${symbol}`);
+        } else {
+          const sharedFailures = await recordRestFailure("binance");
+          if (sharedFailures >= config.failureThreshold) {
+            // Too many consecutive REST failures across all workers — enter probe mode
+            void this.enterProbeMode(`${sharedFailures}_consecutive_failures`);
+          } else if (currentFail >= 6) {
+            this.pushReason(`snapshot_fail_threshold:${symbol}`);
+            console.log(`[BinanceFuturesAdapter] Snapshot failed 6+ times for ${symbol} — skipping (WS still running)`);
+          }
+        }
+      } catch {
+        // Redis unavailable — fallback to simple skip
+        if (currentFail >= 6) {
+          this.pushReason(`snapshot_fail_threshold:${symbol}`);
+        }
       }
     } finally {
       if (timeout) clearTimeout(timeout);
@@ -1260,11 +1472,19 @@ export class BinanceFuturesMarketAdapter implements IExchangeMarketAdapter {
     this.contractsLoading = true;
     let timeout: ReturnType<typeof setTimeout> | null = null;
     try {
-      const controller = new AbortController();
-      timeout = setTimeout(() => controller.abort(), 6_000);
-      const res = await fetch(`${BINANCE_DEPTH_SNAPSHOT_BASE}/fapi/v1/exchangeInfo`, { signal: controller.signal });
-      clearTimeout(timeout);
-      timeout = null;
+      let res: Response;
+      try {
+        const { binanceFetch } = await import("../binanceRateLimiter.ts");
+        res = await binanceFetch({
+          url: `${BINANCE_DEPTH_SNAPSHOT_BASE}/fapi/v1/exchangeInfo`,
+          init: { headers: { accept: "application/json" } },
+          priority: "normal",
+          dedupKey: "hub-exchangeInfo",
+          weight: 10,
+        });
+      } catch {
+        throw new Error("contracts_http_429");
+      }
       if (!res.ok) {
         throw new Error(`contracts_http_${res.status}`);
       }
@@ -1361,13 +1581,17 @@ export class BinanceFuturesMarketAdapter implements IExchangeMarketAdapter {
       if (!this.started) return;
       for (const interval of intervals) {
         try {
-          const controller = new AbortController();
-          const timeout = setTimeout(() => controller.abort(), 4_000);
-          const res = await fetch(
-            `${BINANCE_DEPTH_SNAPSHOT_BASE}/fapi/v1/klines?symbol=${encodeURIComponent(symbol)}&interval=${interval}&limit=2`,
-            { signal: controller.signal },
-          );
-          clearTimeout(timeout);
+          let res: Response;
+          try {
+            const { binanceFetch } = await import("../binanceRateLimiter.ts");
+            res = await binanceFetch({
+              url: `${BINANCE_DEPTH_SNAPSHOT_BASE}/fapi/v1/klines?symbol=${encodeURIComponent(symbol)}&interval=${interval}&limit=2`,
+              init: { headers: { accept: "application/json" } },
+              priority: "low",
+              dedupKey: `hub-klines:${symbol}:${interval}:2`,
+              weight: 1,
+            });
+          } catch { continue; }
           if (!res.ok) continue;
           const rows = (await res.json()) as unknown[];
           if (!Array.isArray(rows)) continue;

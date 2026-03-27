@@ -5,7 +5,7 @@ import express from "express";
 import http from "node:http";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { randomBytes, createHash } from "node:crypto";
+// node:crypto — no longer needed here (key management moved to keyManager.ts)
 import { ensureDbConnection } from "./db/pool.ts";
 import { ensureRedisConnection } from "./db/redis.ts";
 import { registerConnectionRoutes } from "./routes/connections.ts";
@@ -20,6 +20,7 @@ import { registerBugReportRoutes } from "./routes/bugReports.ts";
 import { registerTokenCreatorRoutes } from "./routes/tokenCreator.ts";
 import { registerUserSettingsRoutes } from "./routes/userSettings.ts";
 import { registerTradeIdeasRoutes } from "./routes/tradeIdeas.ts";
+import { registerHubSnapshotRoutes } from "./routes/hubSnapshots.ts";
 import { registerAdminProviderRoutes } from "./routes/adminProviders.ts";
 import { registerAiTradeIdeasRoutes } from "./routes/aiTradeIdeas.ts";
 import { registerTraderHubRoutes } from "./routes/traderHub.ts";
@@ -67,15 +68,20 @@ import { SelfThrottleEngine } from "./services/optimizer/selfThrottleEngine.ts";
 import { FeatureWeightTuner } from "./services/optimizer/featureWeightTuner.ts";
 import { registerOptimizerStatsRoutes } from "./routes/optimizerStats.ts";
 import { AITradeIdeaEngine } from "./engines/aiTradeIdeas/AITradeIdeaEngine.ts";
+import { AiModuleScheduler } from "./engines/aiTradeIdeas/AiModuleScheduler.ts";
 import { registerAiEngineV2Routes } from "./routes/aiEngineV2.ts";
 import egressProxyRouter from "./routes/egressProxy.ts";
 import egressAdminRouter from "./routes/egressAdmin.ts";
 import { initEgressController } from "./services/egress/index.ts";
+import { registerMissionControlRoute } from "./routes/missionControl.ts";
+import { requestIdMiddleware } from "./middleware/requestId.ts";
+import { getMasterKey } from "./security/keyManager.ts";
 
 // PM2 cluster mode: Worker 0 = primary (runs singleton services + HTTP)
 // Worker 1, 2 = HTTP-only
+// IS_PRIMARY env var: set to "false" on secondary API servers (load-balanced replicas)
 const WORKER_ID = Number(process.env.NODE_APP_INSTANCE ?? "0");
-const IS_PRIMARY = WORKER_ID === 0;
+const IS_PRIMARY = process.env.IS_PRIMARY === "false" ? false : WORKER_ID === 0;
 
 // HUB_EXTERNAL: When true, market data hub runs as a separate service (market-hub/).
 // All workers read from Redis only — no local WS connections to exchanges.
@@ -83,6 +89,7 @@ const IS_PRIMARY = WORKER_ID === 0;
 const HUB_EXTERNAL = process.env.HUB_EXTERNAL === "true";
 
 const app = express();
+app.use(requestIdMiddleware);  // Must be first — wraps all requests in trace context
 app.use(express.json());
 app.get("/api/health", (_req, res) => {
   res.json({ ok: true, service: "exchange-backend", worker: WORKER_ID, primary: IS_PRIMARY });
@@ -98,38 +105,114 @@ app.get("/api/admin/rate-limiter", async (_req, res) => {
   }
 });
 
+// ── Admin: Probe State & Metrics ──
+app.get("/api/admin/probe/:exchange", async (req, res) => {
+  try {
+    const exchange = req.params.exchange ?? "binance";
+    const { getProbeStatus } = await import("./services/marketHub/ProbeStateManager.ts");
+    const status = await getProbeStatus(exchange);
+    res.json({ ok: true, exchange, ...status });
+  } catch (err) {
+    res.status(500).json({ ok: false, error: err instanceof Error ? err.message : "unknown" });
+  }
+});
+
+// ── Admin: Market Data Cache Metrics (FAZ 2.1 + FAZ 4.4 lock stats) ──
+app.get("/api/admin/market-cache", async (_req, res) => {
+  try {
+    const { getCacheStats, getActiveDepthSymbols, getLockStats } = await import("./services/marketDataCache.ts");
+    const stats = await getCacheStats();
+    const symbols = [...(await getActiveDepthSymbols())];
+    const locks = getLockStats();
+    res.json({ ok: true, ...stats, locks, activeSymbols: symbols });
+  } catch (err) {
+    res.status(500).json({ ok: false, error: err instanceof Error ? err.message : "unknown" });
+  }
+});
+
+// ── Admin: WS Pipeline Stats (FAZ 5.4) ──
+app.get("/api/admin/ws-stats", (_req, res) => {
+  try {
+    const stats = (globalThis as Record<string, unknown>).__gwPipelineStats ?? {};
+    const getDrops = (globalThis as Record<string, unknown>).__gwBackpressureDrops as (() => number) | undefined;
+    const getClients = (globalThis as Record<string, unknown>).__gwClientCount as (() => number) | undefined;
+    const getSubs = (globalThis as Record<string, unknown>).__gwSubscriptionCount as (() => number) | undefined;
+    res.json({
+      ok: true,
+      worker: WORKER_ID,
+      clients: getClients?.() ?? 0,
+      subscriptions: getSubs?.() ?? 0,
+      backpressureDrops: getDrops?.() ?? 0,
+      pipelines: stats,
+    });
+  } catch (err) {
+    res.status(500).json({ ok: false, error: err instanceof Error ? err.message : "unknown" });
+  }
+});
+
+// ── Admin: Market Health Monitor (FAZ 1.4) ──
+app.get("/api/admin/market-health", async (req, res) => {
+  try {
+    const { marketHealth } = await import("./services/marketHealth.ts");
+    const symbol = req.query.symbol ? String(req.query.symbol).toUpperCase() : null;
+
+    if (symbol) {
+      // Single symbol health
+      const h = marketHealth.getHealth(symbol);
+      if (!h) return res.status(404).json({ ok: false, error: `No health data for ${symbol}` });
+      return res.json({ ok: true, symbol, health: h });
+    }
+
+    // All symbols + aggregate
+    const aggregate = marketHealth.getAggregateStats();
+    const symbols = marketHealth.getAllHealth().map(h => ({
+      symbol: h.symbol,
+      status: h.status,
+      confidence: h.confidence,
+      source: h.source,
+      depthAgeMs: h.depthAgeMs,
+      tickerAgeMs: h.tickerAgeMs,
+      depthLevels: h.depthLevels,
+      wsConnected: h.wsConnected,
+      seqSynced: h.seqSynced,
+      lastStateChangeTs: h.lastStateChangeTs,
+    }));
+    res.json({ ok: true, aggregate, symbols });
+  } catch (err) {
+    res.status(500).json({ ok: false, error: err instanceof Error ? err.message : "unknown" });
+  }
+});
+
 const audit = new AuditLogService();
 const connections = new ConnectionService();
 
 // ── Persistent Encryption Key ──────────────────────────────────
-// CRITICAL: Must survive restarts. Without a stable key, encrypted
-// exchange credentials become unrecoverable after PM2 restart.
-const encryptionKey = (() => {
-  const envKey = process.env.ENCRYPTION_KEY;
-  if (envKey) {
-    const buf = Buffer.from(envKey, "hex");
-    if (buf.length !== 32) {
-      throw new Error("ENCRYPTION_KEY must be 64 hex chars (32 bytes)");
-    }
-    console.log(`[Worker ${WORKER_ID}] Using persistent ENCRYPTION_KEY from env`);
-    return buf;
-  }
-  // Dev fallback: deterministic key from DB password so it survives restarts
-  if (process.env.NODE_ENV !== "production") {
-    const seed = process.env.DB_PASSWORD ?? process.env.ADMIN_PASSWORD ?? "dev-key-not-for-prod";
-    const buf = createHash("sha256").update(seed).digest();
-    console.warn(`[Worker ${WORKER_ID}] WARNING: Using dev-fallback encryption key (set ENCRYPTION_KEY for production)`);
-    return buf;
-  }
-  throw new Error("ENCRYPTION_KEY env var required in production");
-})();
+// Resolved via keyManager: file → env var → dev fallback
+// See: server/src/security/keyManager.ts for resolution order
+const encryptionKey = getMasterKey();
 const exchangeManager = new ExchangeManager(connections, encryptionKey);
 const paymentStore = new PaymentStore();
 const authService = new AuthService(paymentStore, encryptionKey);
 const paymentService = new PaymentService(paymentStore);
 
-// Wire WS auth: gateway validates tokens via authService
+// Initialize JWT service — uses ENCRYPTION_KEY as HMAC secret (32 bytes = 256 bits)
+import { initJwt, verifyWsToken as jwtVerifyWsToken } from "./security/jwtService.ts";
+try {
+  initJwt(encryptionKey);
+} catch (err) {
+  console.error(`[Worker ${WORKER_ID}] JWT init failed:`, err);
+}
+
+// Wire WS auth: gateway validates tokens via JWT WS token → JWT access token → session token
 setWsAuthFunction(async (token) => {
+  // 1. Try JWT (ws-token or access token)
+  if (token.split(".").length === 3 && token.length > 60) {
+    try {
+      const jwtCtx = await jwtVerifyWsToken(token);
+      if (jwtCtx) return { userId: jwtCtx.userId, role: jwtCtx.role };
+    } catch { /* JWT not ready or invalid — fall through */ }
+  }
+  // 2. Fallback to session token
   const ctx = await authService.getUserFromToken(token);
   if (!ctx) return null;
   return { userId: ctx.user.id, role: ctx.user.role };
@@ -238,6 +321,10 @@ const systemScanner = new SystemScannerService({
 const aiTradeIdeaEngine = new AITradeIdeaEngine({
   systemScanner, tradeIdeaStore, aiProviderStore,
 });
+const aiModuleScheduler = new AiModuleScheduler({
+  systemScanner, tradeIdeaStore, aiProviderStore,
+  coinUniverseV2: coinUniverseEngineV2,
+});
 
 // bootstrap: DB connection + payment store + admin user
 async function bootstrap() {
@@ -260,6 +347,7 @@ registerMarketRoutes(app, { providerStore: adminProviderStore, binanceFuturesHub
 registerAuthRoutes(app, authService);
 registerUserSettingsRoutes(app);
 registerTradeIdeasRoutes(app, tradeIdeaStore, systemScanner);
+registerHubSnapshotRoutes(app, systemScanner);
 registerAdminProviderRoutes(app, adminProviderStore, authService);
 registerAiTradeIdeasRoutes(app, aiProviderStore, { binanceFuturesHub, coinUniverseEngine: coinUniverseEngineV2 as any, serverPort, isPrimary: IS_PRIMARY, tradeIdeaStore });
 registerExchangeCoreRoutes(app, exchangeCore, authService);
@@ -274,7 +362,22 @@ registerAdminLogsRoutes(app, authService);
 registerBugReportRoutes(app, authService);
 registerMLRoutes(app);
 registerMetricsRoute(app, {});
-registerAiEngineV2Routes(app, aiTradeIdeaEngine, systemScanner, authService);
+registerAiEngineV2Routes(app, aiTradeIdeaEngine, systemScanner, authService, aiModuleScheduler);
+registerMissionControlRoute(app, {
+  authService,
+  exchangeCore,
+  aiTradeIdeaEngine,
+  aiModuleScheduler,
+  traderHubEngine,
+  systemScanner: systemScanner as any,
+  modePerformanceTracker: modePerformanceTracker as any,
+  tradeOutcomeAttributor: tradeOutcomeAttributor as any,
+  dynamicSlTpOptimizer: dynamicSlTpOptimizer as any,
+  regimeParameterEngine: regimeParameterEngine as any,
+  confidenceCalibrator: confidenceCalibrator as any,
+  selfThrottleEngine: selfThrottleEngine as any,
+  featureWeightTuner: featureWeightTuner as any,
+});
 
 // ── Egress Proxy + Admin Routes ──
 app.use(egressProxyRouter);
@@ -335,6 +438,13 @@ bootstrap()
           exchangeMarketHub.start();
           hubEventBridge.startPublisher(exchangeMarketHub);
           hubEventBridge.startBulkSnapshotFlush(() => binanceFuturesHub.getUniverseRows(), 10_000);
+          // Pre-subscribe top 10 symbols for depth WS — ensures cache always has depth data
+          const TOP_DEPTH_SYMBOLS = ["BTCUSDT", "ETHUSDT", "SOLUSDT", "BNBUSDT", "XRPUSDT",
+            "DOGEUSDT", "ADAUSDT", "AVAXUSDT", "LINKUSDT", "TRXUSDT"];
+          setTimeout(() => {
+            for (const sym of TOP_DEPTH_SYMBOLS) exchangeMarketHub.ensureSymbol(sym);
+            console.log(`[Worker ${WORKER_ID}] Pre-subscribed ${TOP_DEPTH_SYMBOLS.length} symbols for depth WS`);
+          }, 5_000);
           console.log(`[Worker ${WORKER_ID}] LOCAL hub mode — running WS connections`);
         } else {
           // EXTERNAL MODE: Hub runs as separate service (market-hub/)
@@ -359,6 +469,29 @@ bootstrap()
         exchangeCore.start();
         privateStreamManager.start();
         void traderHubEngine.start();
+
+        // ── FAZ 1.3/1.4/2.1: Background depth ingestion (Worker 0 only) ──
+        // Fetches depth for all active symbols every 5s, writes to Redis cache.
+        // API routes read from cache ONLY — user count doesn't increase exchange requests.
+        import("./services/marketDataCache.ts").then(({ startDepthIngestion }) => {
+          startDepthIngestion({
+            intervalMs: 5_000,
+            getHubAdapters: () => {
+              try {
+                return (exchangeMarketHub as any).adapters ?? new Map();
+              } catch { return new Map(); }
+            },
+          });
+          console.log(`[Worker ${WORKER_ID}] MarketDataCache depth ingestion started (5s interval)`);
+        }).catch((err) => {
+          console.error(`[Worker ${WORKER_ID}] MarketDataCache init failed:`, err);
+        });
+
+        // ── FAZ 1: MarketHealth sweep timer (Worker 0 — primary health tracker) ──
+        import("./services/marketHealth.ts").then(({ marketHealth }) => {
+          marketHealth.start();
+          console.log(`[Worker ${WORKER_ID}] MarketHealth sweep timer started`);
+        }).catch(() => {});
 
         // Binance rate limiter monitoring (60s interval)
         import("./services/binanceRateLimiter.ts").then(({ logRateLimiterStatus }) => {
@@ -444,6 +577,8 @@ bootstrap()
           }, 45_000);
           aiTradeIdeaEngine.start();
           console.log(`[Worker ${WORKER_ID}] AITradeIdeaEngine V2 initialized`);
+          aiModuleScheduler.start();
+          console.log(`[Worker ${WORKER_ID}] AiModuleScheduler initialized (30s cycle, 4 modules)`);
         }
 
         // CoinUniverseEngine: refresh every 60s on Worker 0

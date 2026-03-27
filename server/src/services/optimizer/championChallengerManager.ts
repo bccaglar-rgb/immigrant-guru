@@ -9,7 +9,7 @@ import type {
   SegmentKey,
 } from "./types.ts";
 import { DEFAULT_MODULE_CONFIG } from "./types.ts";
-import { SCORING_MODES } from "../scoringMode.ts";
+import { SCORING_MODES, DETERMINISTIC_SCORING_MODES, normalizeScoringMode, type ScoringMode } from "../scoringMode.ts";
 import { buildDefaultModeState } from "./moduleOptimizer.ts";
 
 // ── Config path ───────────────────────────────────────────────
@@ -66,7 +66,7 @@ export class ChampionChallengerManager {
   evaluatePromotions(): { mode: string; promoted: boolean; reason: string }[] {
     const results: { mode: string; promoted: boolean; reason: string }[] = [];
 
-    for (const mode of SCORING_MODES) {
+    for (const mode of DETERMINISTIC_SCORING_MODES) {
       this.ensureMode(mode);
       const state = this.config[mode];
 
@@ -190,7 +190,7 @@ export class ChampionChallengerManager {
       const raw = readFileSync(CONFIG_PATH, "utf-8");
       const parsed = JSON.parse(raw) as Partial<OptimizerConfig>;
       const result = this.buildDefault();
-      for (const mode of SCORING_MODES) {
+      for (const mode of DETERMINISTIC_SCORING_MODES) {
         if (parsed[mode]) result[mode] = { ...result[mode], ...parsed[mode] };
       }
       return result;
@@ -210,7 +210,7 @@ export class ChampionChallengerManager {
 
   private buildDefault(): OptimizerConfig {
     const cfg = {} as OptimizerConfig;
-    for (const mode of SCORING_MODES) {
+    for (const mode of DETERMINISTIC_SCORING_MODES) {
       cfg[mode] = buildDefaultModeState(DEFAULT_MODULE_CONFIG);
     }
     return cfg;

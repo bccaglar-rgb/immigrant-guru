@@ -5,7 +5,7 @@ export interface AiEngineConfig {
   enabled: boolean;
   intervalMs: number;
   maxCandidatesForAi: number;
-  aiProvider: "CHATGPT" | "QWEN" | "QWEN2";
+  aiProvider: "CHATGPT" | "QWEN" | "QWEN2" | "CLAUDE";
   aiModel: string;
   aiTimeoutMs: number;
   aiTemperature: number;
@@ -16,6 +16,15 @@ export interface AiEngineConfig {
   staleCacheMaxAgeMs: number;
   userId: string;
   dryRun: boolean;
+  /** Override prompt style independently of aiProvider.
+   *  "STRUCTURED" forces ChatGPT-style structured evaluation prompt.
+   *  "AXIOM" forces Axiom master trader prompt.
+   *  "QWEN_FREE" forces free evaluation prompt.
+   *  "PRIME" forces strategic evaluator prompt (regime-first, conviction-based).
+   *  "ALPHA" forces quantitative edge prompt (numbers-first, EV-based).
+   *  "CLOUD_FLOW" forces flow/microstructure specialist prompt.
+   *  When omitted, prompt style is derived from aiProvider. */
+  promptStyle?: "STRUCTURED" | "AXIOM" | "QWEN_FREE" | "PRIME" | "ALPHA" | "CLOUD_FLOW";
 }
 
 // ── Normalized candidate from quant scan ───────────────────────
@@ -40,6 +49,8 @@ export interface AiEngineCandidate {
   scannedAt: number;
   // Quant snapshot (for market_state enrichment & Optimizer P4 compat)
   quantSnapshot?: Record<string, unknown>;
+  // FLOW GOLD SETUP signals (all 5 signal groups + consensus metrics)
+  flowSignals?: Record<string, unknown>;
   // Computed
   entryMid: number;
   riskR: number;             // |entryMid - SL1|
@@ -98,10 +109,24 @@ export interface AiEvaluationResponse {
   adjustedSlLevels: number[];
   adjustedTpLevels: number[];
   riskFlags: string[];
-  comment: string;           // Turkish, max 50 words
-  reasoning: string;         // English, max 80 words
+  comment: string;           // Turkish, max 60 words
+  reasoning: string;         // English, max 100 words
   // Axiom-specific analysis (populated when provider=QWEN2)
   axiomAnalysis?: AxiomAnalysis;
+  // Structured evaluation fields (populated when using structured prompt v2)
+  tradeQuality?: string;              // HIGH | MEDIUM | LOW
+  directionConfidence?: string;       // STRONG | MODERATE | WEAK
+  entryQuality?: string;              // GOOD | FAIR | POOR
+  riskQuality?: string;               // GOOD | FAIR | POOR
+  scoreInflationRisk?: string;        // NONE | LOW | MEDIUM | HIGH
+  strongestSupporting?: string[];     // top 3 supporting factors
+  strongestInvalidation?: string[];   // top 2 invalidation factors
+  duplicatedSignals?: string[];       // duplicated signal groups
+  missingConfirmations?: string[];    // missing confirmation signals
+  entryActionableNow?: boolean;       // is entry actionable right now
+  pullbackBetterThanMarket?: boolean; // pullback entry preferred
+  aiIndependentScore?: number;        // 0-100 independent AI score
+  scoreAdjustment?: number;           // recommended score adjustment
 }
 
 // ── Axiom Analysis (QWEN2 provider enrichment) ───────────────
