@@ -10,6 +10,7 @@ import { FallbackApiAdapter, type FallbackLivePayload } from "../data/FallbackAp
 import { ChartMetricsPanel } from "../components/ChartMetricsPanel";
 import { MiniChartEnhanced } from "../components/supercharts/MiniChartEnhanced";
 import { CoinSelectorMini } from "../components/supercharts/CoinSelectorMini";
+import { QuickTradePanel } from "../components/supercharts/QuickTradePanel";
 import { IndicatorsDropdown } from "../components/exchange/IndicatorsDropdown";
 import { TILE_DEFINITIONS } from "../data/tileDefinitions";
 import type { TileState, TradePlan } from "../types";
@@ -207,7 +208,7 @@ const CoinChartRow = ({
 
   return (
     <article className="rounded-xl border border-white/[0.06] bg-[#11131a] p-2.5">
-      <div className="grid gap-2 xl:grid-cols-[minmax(0,1fr)_220px]">
+      <div className="grid gap-2 xl:grid-cols-[minmax(0,1fr)_260px]">
         {/* ── Left: Chart area ── */}
         <div className="min-w-0">
           {/* Chart header: fav, coin selector, TF buttons, indicators, price */}
@@ -288,106 +289,27 @@ const CoinChartRow = ({
           </div>
         </div>
 
-        {/* ── Right: Idea + Trade Controls ── */}
-        <div className="rounded-lg border border-white/[0.04] bg-[#0F1012] p-2 flex flex-col gap-2">
-          {idea ? (
-            <div className="space-y-1.5 rounded border border-[#7a6840]/40 bg-[#15140f] p-2 text-[11px]">
-              <p className="line-clamp-1 font-semibold text-[#F5C542]">{idea.setup}</p>
-              <div className="grid grid-cols-2 gap-1">
-                <span className="rounded border border-[#7a6840]/50 bg-[#2a2418] px-1.5 py-0.5 text-[10px] text-[#e7d9b3]">
-                  Entry {fmt(idea.entry.low)} - {fmt(idea.entry.high)}
-                </span>
-                <span className="rounded border border-[#6f765f]/50 bg-[#1f251b] px-1.5 py-0.5 text-[10px] text-[#d8decf]">
-                  TP {fmt(idea.targets[0]?.price)} / {fmt(idea.targets[1]?.price)}
-                </span>
-                <span className="rounded border border-[#704844]/50 bg-[#271a19] px-1.5 py-0.5 text-[10px] text-[#d6b3af]">
-                  SL {fmt(idea.stops[0]?.price)} / {fmt(idea.stops[1]?.price)}
-                </span>
-                <span className="rounded border border-white/[0.06] bg-[#11141a] px-1.5 py-0.5 text-[10px] text-[#BFC2C7]">
-                  {idea.direction} · {idea.tradeValidity}
-                </span>
-              </div>
-            </div>
-          ) : (
-            <div className="rounded border border-white/[0.04] bg-[#11141a] p-2 text-[10px] text-[#555]">
-              No active trade idea for this coin.
-            </div>
-          )}
-
-          {/* ── Quick Trade Controls ── */}
-          <div className="space-y-1.5">
-            <div className="grid grid-cols-2 gap-1.5">
-              <div>
-                <label className="block text-[9px] uppercase tracking-wider text-[#555] mb-0.5">Margin</label>
-                <input
-                  type="number"
-                  defaultValue={10}
-                  min={1}
-                  className="w-full rounded border border-white/10 bg-[#11141a] px-2 py-1 text-[11px] text-white outline-none focus:border-[#F5C542]/40"
-                  placeholder="10"
-                />
-              </div>
-              <div>
-                <label className="block text-[9px] uppercase tracking-wider text-[#555] mb-0.5">Leverage</label>
-                <input
-                  type="number"
-                  defaultValue={5}
-                  min={1}
-                  max={125}
-                  className="w-full rounded border border-white/10 bg-[#11141a] px-2 py-1 text-[11px] text-white outline-none focus:border-[#F5C542]/40"
-                  placeholder="5x"
-                />
-              </div>
-            </div>
-            <div>
-              <label className="block text-[9px] uppercase tracking-wider text-[#555] mb-0.5">Entry Price</label>
-              <input
-                type="number"
-                defaultValue={idea ? Number(((idea.entry.low + idea.entry.high) / 2).toFixed(5)) : undefined}
-                step="any"
-                className="w-full rounded border border-white/10 bg-[#11141a] px-2 py-1 text-[11px] text-white outline-none focus:border-[#F5C542]/40"
-                placeholder={price ? fmt(price, price > 100 ? 2 : 5) : "Market"}
-              />
-            </div>
-            <div className="grid grid-cols-2 gap-1.5">
-              <button
-                type="button"
-                onClick={() => onTrade(symbol, idea)}
-                className="rounded bg-[#1c3028] border border-[#2bc48a]/30 px-2 py-1.5 text-[11px] font-semibold text-[#2bc48a] hover:bg-[#1c3028]/80 transition"
-              >
-                Open Long
-              </button>
-              <button
-                type="button"
-                onClick={() => onTrade(symbol, idea)}
-                className="rounded bg-[#2d1a1a] border border-[#f6465d]/30 px-2 py-1.5 text-[11px] font-semibold text-[#f6465d] hover:bg-[#2d1a1a]/80 transition"
-              >
-                Open Short
-              </button>
-            </div>
-          </div>
-
-          <div className="flex gap-1.5">
-            <button
-              type="button"
-              onClick={() => onTrade(symbol, idea)}
-              className="flex-1 rounded border border-[#7a6840] bg-[#2a2418] px-2 py-1.5 text-xs font-semibold text-[#F5C542] hover:bg-[#332b1e]"
-            >
-              Trade
-            </button>
-            <button
-              type="button"
-              onClick={() => setPanelOpen((prev) => !prev)}
-              className={`rounded border px-2 py-1.5 text-[10px] font-semibold transition ${
-                panelOpen
-                  ? "border-[#5e7d9a] bg-[#18222d] text-[#c8d8e9]"
-                  : "border-white/10 bg-[#0F1012] text-[#6B6F76] hover:border-white/20"
-              }`}
-              title={panelOpen ? "Hide Metrics" : "Show Metrics"}
-            >
-              {panelOpen ? "\u25B2" : "\u25BC"}
-            </button>
-          </div>
+        {/* ── Right: Binance-style Trade Panel ── */}
+        <div className="rounded-lg border border-white/[0.04] bg-[#0F1012] p-2 flex flex-col gap-1.5 overflow-y-auto max-h-[520px]">
+          <QuickTradePanel
+            symbol={symbol}
+            price={price}
+            idea={idea}
+            onTradeComplete={() => onTrade(symbol, idea)}
+          />
+          {/* Metrics toggle */}
+          <button
+            type="button"
+            onClick={() => setPanelOpen((prev) => !prev)}
+            className={`w-full rounded border px-2 py-1.5 text-[10px] font-semibold transition ${
+              panelOpen
+                ? "border-[#5e7d9a] bg-[#18222d] text-[#c8d8e9]"
+                : "border-white/10 bg-[#0F1012] text-[#6B6F76] hover:border-white/20"
+            }`}
+            title={panelOpen ? "Hide Metrics" : "Show Metrics"}
+          >
+            {panelOpen ? "\u25B2 Hide Metrics" : "\u25BC Metrics"}
+          </button>
         </div>
       </div>
 
