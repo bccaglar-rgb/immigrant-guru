@@ -55,6 +55,7 @@ const SettingsPage = lazyRetry(() => import("./pages/SettingsPage"));
 const AdminPage = lazyRetry(() => import("./pages/AdminPage"));
 const OptimizerDashboardPage = lazyRetry(() => import("./pages/OptimizerDashboardPage"));
 const SystemMonitorPage = lazyRetry(() => import("./pages/SystemMonitorPage"));
+const MissionControlPage = lazyRetry(() => import("./pages/MissionControlPage"));
 const MLExplorerPage = lazyRetry(() => import("./pages/MLExplorerPage"));
 const BotPage = lazyRetry(() => import("./pages/BotPage"));
 const PortfolioPage = lazyRetry(() => import("./pages/PortfolioPage"));
@@ -169,6 +170,7 @@ function App() {
         <Route path="/ai-exchange-manager" element={<Navigate to="/admin/exchanges" replace />} />
         <Route path="/optimizer" element={<RequireAdmin><Suspense fallback={<PageLoader />}><OptimizerDashboardPage /></Suspense></RequireAdmin>} />
         <Route path="/system-monitor" element={<RequireAdmin><Suspense fallback={<PageLoader />}><SystemMonitorPage /></Suspense></RequireAdmin>} />
+        <Route path="/mission-control" element={<RequireAdmin><Suspense fallback={<PageLoader />}><MissionControlPage /></Suspense></RequireAdmin>} />
         <Route path="/ml-explorer" element={<RequireAdmin><Suspense fallback={<PageLoader />}><MLExplorerPage /></Suspense></RequireAdmin>} />
 
         <Route path="*" element={<Navigate to="/" replace />} />

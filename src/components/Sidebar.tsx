@@ -295,6 +295,7 @@ const adminSubItems = [
   { label: "Quant Trade Ideas", to: "/quant-trade-ideas", accent: "var(--menu-accent-2)", icon: () => <TradeIcon /> },
   { label: "AI Trade Ideas", to: "/ai-trade-ideas", accent: "var(--menu-accent-9)", icon: () => <AiTradeIdeasIcon /> },
   { label: "Optimizer", to: "/optimizer", accent: "#66b3ff", icon: () => <Icon><path d="M4 14l4-8 4 4 4-6 4 10" /><path d="M4 18h16" /></Icon> },
+  { label: "Mission Control", to: "/mission-control", accent: "#F5C542", icon: () => <Icon><rect x="3" y="3" width="18" height="18" rx="2" /><path d="M3 9h18" /><path d="M9 21V9" /></Icon> },
   { label: "System Monitor", to: "/system-monitor", accent: "#4ade80", icon: () => <Icon><circle cx="12" cy="12" r="9" /><path d="M12 8v4l3 3" /></Icon> },
   { label: "ML Explorer", to: "/ml-explorer", accent: "#a78bfa", icon: () => <Icon><rect x="4" y="4" width="16" height="16" rx="2" /><path d="M8 12h8" /><path d="M12 8v8" /></Icon> },
 ];
@@ -403,7 +404,7 @@ export const Sidebar = ({
   const adminCloseTimerRef = useRef<number | null>(null);
   const openAdminMenu = () => { if (adminCloseTimerRef.current) { window.clearTimeout(adminCloseTimerRef.current); adminCloseTimerRef.current = null; } setAdminMenuOpen(true); };
   const closeAdminMenuWithDelay = () => { adminCloseTimerRef.current = window.setTimeout(() => setAdminMenuOpen(false), 200); };
-  const adminActive = location.pathname.startsWith("/admin") || location.pathname.startsWith("/optimizer") || location.pathname.startsWith("/system-monitor") || location.pathname.startsWith("/ml-explorer");
+  const adminActive = location.pathname.startsWith("/admin") || location.pathname.startsWith("/optimizer") || location.pathname.startsWith("/system-monitor") || location.pathname.startsWith("/mission-control") || location.pathname.startsWith("/ml-explorer");
   const allAdminSubItems = [adminItem, ...adminSubItems];
 
   // Close admin menu on outside click
