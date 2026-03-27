@@ -188,5 +188,5 @@ export const MiniChartEnhanced = ({ candles, volumeData, ohlcvRows, indicatorsSt
     }
   }, [indicatorsState, candles, ohlcvRows]);
 
-  return <div ref={rootRef} className="h-[280px] w-full" />;
+  return <div ref={rootRef} className="h-full min-h-[280px] w-full" />;
 };

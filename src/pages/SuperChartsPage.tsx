@@ -226,9 +226,9 @@ const CoinChartRow = ({
 
   return (
     <article className="rounded-xl border border-white/[0.06] bg-[#11131a] p-2.5">
-      <div className="grid gap-2 xl:grid-cols-[minmax(0,1fr)_260px]">
+      <div className="grid gap-2 xl:grid-cols-[minmax(0,1fr)_260px] xl:grid-rows-1">
         {/* ── Left: Chart area ── */}
-        <div className="min-w-0">
+        <div className="min-w-0 flex flex-col">
           {/* Chart header: fav, coin selector, TF buttons, indicators, price */}
           <div className="mb-1.5 flex items-center justify-between gap-2">
             <div className="flex items-center gap-1.5">
@@ -270,7 +270,7 @@ const CoinChartRow = ({
           </div>
 
           {/* Chart with floating badges */}
-          <div className="relative">
+          <div className="relative flex-1">
             {candles.length ? (
               <MiniChartEnhanced
                 candles={candles}
@@ -279,7 +279,7 @@ const CoinChartRow = ({
                 indicatorsState={indicatorsState}
               />
             ) : (
-              <div className="grid h-[280px] place-items-center rounded-lg border border-white/[0.04] bg-[#0F1012] text-xs text-[#555]">
+              <div className="grid h-full min-h-[280px] place-items-center rounded-lg border border-white/[0.04] bg-[#0F1012] text-xs text-[#555]">
                 No chart data
               </div>
             )}
@@ -308,7 +308,7 @@ const CoinChartRow = ({
         </div>
 
         {/* ── Right: Binance-style Trade Panel ── */}
-        <div className="rounded-lg border border-white/[0.04] bg-[#0F1012] p-2 flex flex-col gap-1.5 overflow-y-auto max-h-[520px]">
+        <div className="rounded-lg border border-white/[0.04] bg-[#0F1012] p-2 flex flex-col gap-1.5 overflow-y-auto">
           <QuickTradePanel
             symbol={symbol}
             price={price}
