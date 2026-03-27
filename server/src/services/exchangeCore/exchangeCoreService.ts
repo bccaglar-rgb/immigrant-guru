@@ -27,6 +27,7 @@ import { ApiVault } from "./apiVault.ts";
 import { KillSwitch } from "./killSwitch.ts";
 import { PolicyEngine } from "./policyEngine.ts";
 import { PositionTracker } from "./positionTracker.ts";
+import { ExecutionStatsTracker } from "./executionStatsTracker.ts";
 
 const nowIso = () => new Date().toISOString();
 
@@ -149,6 +150,7 @@ export class ExchangeCoreService {
   private readonly killSwitch: KillSwitch;
   private readonly policyEngine: PolicyEngine;
   private readonly positionTracker: PositionTracker;
+  private readonly statsTracker: ExecutionStatsTracker;
   private readonly tickMs: number;
   private readonly maxConcurrent: number;
   private started = false;
@@ -178,6 +180,7 @@ export class ExchangeCoreService {
     this.positionTracker = new PositionTracker();
     this.killSwitch = new KillSwitch();
     this.policyEngine = new PolicyEngine(this.positionTracker);
+    this.statsTracker = new ExecutionStatsTracker();
     this.tickMs = Math.max(150, Math.min(2000, Math.floor(options.tickMs ?? 250)));
     this.maxConcurrent = Math.max(4, Math.min(2048, Math.floor(options.maxConcurrent ?? 128)));
   }
@@ -211,6 +214,7 @@ export class ExchangeCoreService {
       intentsTotal: this.intentCache.size,
       eventsTotal: this.events.length,
       lastTickAt: this.lastTickAt,
+      executionStats: this.statsTracker.getStats(),
     };
   }
 
@@ -246,6 +250,7 @@ export class ExchangeCoreService {
       row.rejectCode = "DUPLICATE_INTENT";
       row.rejectReason = `Duplicate order: clientOrderId=${row.clientOrderId} already in-flight (intent: ${dedup.existingIntentId ?? "?"})`;
       this.emitEvent(row, "risk.rejected", { code: "DUPLICATE_INTENT", message: row.rejectReason });
+      this.statsTracker.recordDedupPrevented();
       return row;
     }
 
@@ -261,6 +266,7 @@ export class ExchangeCoreService {
       await this.persistIntent(row);
       await this.deduplicator.release(row.userId, row.clientOrderId);
       this.emitEvent(row, "risk.rejected", { code: row.rejectCode, message: row.rejectReason });
+      this.statsTracker.recordRejection();
       return row;
     }
 
@@ -275,6 +281,7 @@ export class ExchangeCoreService {
       accountName: account.accountName ?? "Main",
     });
     this.enqueue(row.id, toQueue(row.source, row.priority));
+    this.statsTracker.recordSubmission("MANUAL", row.venue);
     return row;
   }
 
@@ -324,6 +331,7 @@ export class ExchangeCoreService {
         code: resolved.code,
         message: resolved.reason,
       });
+      this.statsTracker.recordRejection();
       return rejected;
     }
 
@@ -365,6 +373,7 @@ export class ExchangeCoreService {
       accountName: resolved.account.accountName ?? "Main",
     });
     this.enqueue(row.id, toQueue(row.source, row.priority));
+    this.statsTracker.recordSubmission("AI", row.venue);
     return row;
   }
 
@@ -494,6 +503,7 @@ export class ExchangeCoreService {
             stage: "exchange_core.process",
             message,
           });
+          this.statsTracker.recordFailure(row.venue, "PROCESS_ERROR", message);
         })
         .finally(() => {
           this.inFlight = Math.max(0, this.inFlight - 1);
@@ -521,6 +531,7 @@ export class ExchangeCoreService {
         rejectReason: row.rejectReason,
       });
       this.emitEvent(row, "risk.rejected", { stage: "kill_switch", level: ksResult.level, message: row.rejectReason });
+      this.statsTracker.recordRejection();
       return;
     }
 
@@ -536,6 +547,7 @@ export class ExchangeCoreService {
         rejectReason: row.rejectReason,
       });
       this.emitEvent(row, "error", { stage: "circuit_breaker", message: row.rejectReason });
+      this.statsTracker.recordFailure(row.venue, "CIRCUIT_OPEN", row.rejectReason);
       return;
     }
 
@@ -551,6 +563,7 @@ export class ExchangeCoreService {
         rejectReason: row.rejectReason,
       });
       this.emitEvent(row, "risk.rejected", { stage: "risk_gate", code: row.rejectCode, message: row.rejectReason });
+      this.statsTracker.recordRejection();
       return;
     }
     if (riskResult.warnings.length > 0) {
@@ -573,6 +586,7 @@ export class ExchangeCoreService {
         message: policyResult.reason,
         blockedBy: policyResult.blockedBy,
       });
+      this.statsTracker.recordRejection();
       return;
     }
 
@@ -588,6 +602,7 @@ export class ExchangeCoreService {
         rejectReason: row.rejectReason,
       });
       this.emitEvent(row, "risk.rejected", { stage: "order_normalizer", code: row.rejectCode, message: row.rejectReason });
+      this.statsTracker.recordRejection();
       return;
     }
     // Apply normalized values back to intent
@@ -616,6 +631,7 @@ export class ExchangeCoreService {
         level: rlResult.blockedBy,
         message: row.rejectReason,
       });
+      this.statsTracker.recordFailure(row.venue, "RATE_LIMITED", row.rejectReason);
       return;
     }
 
@@ -634,6 +650,7 @@ export class ExchangeCoreService {
         stage: "credential_decrypt",
         message: row.rejectReason,
       });
+      this.statsTracker.recordFailure(row.venue, "CREDS_UNAVAILABLE", row.rejectReason);
       return;
     }
 
@@ -649,8 +666,9 @@ export class ExchangeCoreService {
       side: row.side,
     });
 
-    // 4. Execute on exchange
+    // 4. Execute on exchange (with latency tracking)
     let result: ExchangeOrderResult;
+    const execStart = performance.now();
     try {
       if (row.venue === "BINANCE") {
         result = await this.executeBinanceOrder(creds, row);
@@ -663,12 +681,15 @@ export class ExchangeCoreService {
       } else {
         throw new Error(`Unsupported venue: ${row.venue}`);
       }
-      // Record success to circuit breaker
+      const execMs = Math.round(performance.now() - execStart);
+      // Record success to circuit breaker + stats tracker
       if (cb) await cb.recordSuccess().catch(() => {});
+      this.statsTracker.recordSuccess(execMs);
     } catch (err: any) {
       const msg = err?.message ?? "exchange_api_failed";
-      // Record failure to circuit breaker
+      // Record failure to circuit breaker + stats tracker
       if (cb) await cb.recordFailure().catch(() => {});
+      this.statsTracker.recordFailure(row.venue, "EXCHANGE_ERROR", msg);
       row.state = "ERROR";
       row.rejectCode = "EXCHANGE_ERROR";
       row.rejectReason = msg;
