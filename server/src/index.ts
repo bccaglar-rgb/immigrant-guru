@@ -575,10 +575,11 @@ bootstrap()
             systemScanner.start();
             console.log(`[Worker ${WORKER_ID}] SystemScanner started`);
           }, 45_000);
-          aiTradeIdeaEngine.start();
-          console.log(`[Worker ${WORKER_ID}] AITradeIdeaEngine V2 initialized`);
-          aiModuleScheduler.start();
-          console.log(`[Worker ${WORKER_ID}] AiModuleScheduler initialized (30s cycle, 4 modules)`);
+          // AI engines disabled — only SystemScanner runs for Coin Insight
+          // aiTradeIdeaEngine.start();
+          // console.log(`[Worker ${WORKER_ID}] AITradeIdeaEngine V2 initialized`);
+          // aiModuleScheduler.start();
+          // console.log(`[Worker ${WORKER_ID}] AiModuleScheduler initialized (30s cycle, 4 modules)`);
         }
 
         // CoinUniverseEngine: refresh every 60s on Worker 0
