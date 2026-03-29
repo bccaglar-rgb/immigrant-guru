@@ -36,9 +36,9 @@ const WATCHDOG_TICK_MS = 5_000;
 const HEARTBEAT_PING_MS = 8_000;
 const SYMBOL_DELTA_STALE_MS = 30_000; // increased from 14s — only trigger snapshot on confirmed prolonged stale
 const SNAPSHOT_SANITY_INTERVAL_MS = 45_000; // increased from 20s — reduce REST weight pressure
-const SNAPSHOT_REFRESH_MIN_MS = 90_000;
+const SNAPSHOT_REFRESH_MIN_MS = 180_000; // 3 min between sanity refreshes per symbol (was 90s)
 const SNAPSHOT_SANITY_BATCH = 2; // reduced from 3 — less REST pressure
-const SNAPSHOT_REQUEST_GAP_MS = 800; // increased from 350ms — more breathing room
+const SNAPSHOT_REQUEST_GAP_MS = 1500; // 1.5s between snapshots — significant REST weight saver
 const SNAPSHOT_BLOCK_COOLDOWN_MS = 600_000; // 10 min — Binance IP bans are long, no point retrying often
 const CONTRACT_REFRESH_INTERVAL_MS = 45 * 60_000;
 const RECONNECT_BASE_MS = 500;
@@ -1130,6 +1130,11 @@ export class BinanceFuturesMarketAdapter implements IExchangeMarketAdapter {
     if (!normalized || !this.isDepthEligible(normalized)) return;
     if (this.pendingSnapshotSymbols.has(normalized)) return;
     if (this.snapshotQueueSet.has(normalized)) return;
+    // Per-symbol cooldown: minimum 60s between snapshots for the same symbol
+    const lastSnap = this.lastSnapshotAtBySymbol.get(normalized) ?? 0;
+    if (lastSnap > 0 && Date.now() - lastSnap < 60_000) return;
+    // Global queue cap: never queue more than 5 snapshots at once
+    if (this.snapshotQueue.length >= 5) return;
     this.snapshotQueue.push(normalized);
     this.snapshotQueueSet.add(normalized);
     void this.drainSnapshotQueue();
