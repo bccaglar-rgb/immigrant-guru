@@ -473,21 +473,25 @@ bootstrap()
         void traderHubEngine.start();
 
         // ── FAZ 1.3/1.4/2.1: Background depth ingestion (Worker 0 only) ──
-        // Fetches depth for all active symbols every 5s, writes to Redis cache.
-        // API routes read from cache ONLY — user count doesn't increase exchange requests.
-        import("./services/marketDataCache.ts").then(({ startDepthIngestion }) => {
-          startDepthIngestion({
-            intervalMs: 5_000,
-            getHubAdapters: () => {
-              try {
-                return (exchangeMarketHub as any).adapters ?? new Map();
-              } catch { return new Map(); }
-            },
+        // LOCAL MODE: Fetches depth from hub adapters + REST fallback, writes to Redis cache.
+        // EXTERNAL MODE: Skipped — market-hub writes depth directly to Redis via HubEventBridge.
+        if (!HUB_EXTERNAL) {
+          import("./services/marketDataCache.ts").then(({ startDepthIngestion }) => {
+            startDepthIngestion({
+              intervalMs: 5_000,
+              getHubAdapters: () => {
+                try {
+                  return (exchangeMarketHub as any).adapters ?? new Map();
+                } catch { return new Map(); }
+              },
+            });
+            console.log(`[Worker ${WORKER_ID}] MarketDataCache depth ingestion started (5s interval)`);
+          }).catch((err) => {
+            console.error(`[Worker ${WORKER_ID}] MarketDataCache init failed:`, err);
           });
-          console.log(`[Worker ${WORKER_ID}] MarketDataCache depth ingestion started (5s interval)`);
-        }).catch((err) => {
-          console.error(`[Worker ${WORKER_ID}] MarketDataCache init failed:`, err);
-        });
+        } else {
+          console.log(`[Worker ${WORKER_ID}] Depth ingestion SKIPPED (HUB_EXTERNAL=true — market-hub handles depth)`);
+        }
 
         // ── FAZ 1: MarketHealth sweep timer (Worker 0 — primary health tracker) ──
         import("./services/marketHealth.ts").then(({ marketHealth }) => {

@@ -347,7 +347,15 @@ async function setRedisCandle(symbol: string, bars: OhlcvBar[], source: string):
 /* ------------------------------------------------------------------ */
 
 async function fetchBinanceKlines(symbol: string): Promise<OhlcvBar[] | null> {
-  // Pre-check: don't even attempt if Binance is banned/in cooldown
+  // Cache-first: try Redis kline cache before REST (zero weight)
+  try {
+    const { readKlines } = await import("../marketDataCache.ts");
+    const cached = await readKlines(symbol, KLINES_INTERVAL);
+    if (cached?.data && Array.isArray(cached.data) && cached.data.length >= 10) {
+      return cached.data.map((k: any) => ({ time: k[0], open: +k[1], high: +k[2], low: +k[3], close: +k[4], volume: +k[5] }));
+    }
+  } catch { /* cache miss */ }
+
   if (!isExchangeAvailable("binance")) return null;
   try {
     const url = `https://fapi.binance.com/fapi/v1/klines?symbol=${symbol}&interval=${KLINES_INTERVAL}&limit=${KLINES_BARS}`;
