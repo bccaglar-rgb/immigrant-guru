@@ -296,7 +296,7 @@ export class BinanceFuturesHub {
     try {
       const res = await guardedBinanceFetch(
         "https://fapi.binance.com/fapi/v1/exchangeInfo",
-        { timeoutMs: 8_000, dedupKey: "hub-exchangeInfo" },
+        { timeoutMs: 8_000, dedupKey: "hub-exchangeInfo", reason: "precision_refresh" },
       );
       if (!res.ok) throw new Error(`precision_http_${res.status}`);
       const raw = (await res.json()) as Record<string, unknown>;

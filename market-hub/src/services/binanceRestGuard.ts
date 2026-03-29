@@ -119,6 +119,60 @@ const isDuplicate = (url: string): boolean => {
 const BOOT_TIME = Date.now();
 const STARTUP_DAMPER_MS = 60_000;
 
+// ── Attribution Tracker — endpoint + reason + symbol metrics ──
+interface AttrEntry { req: number; weight: number; byReason: Record<string, number>; bySymbol: Record<string, number> }
+const attribution = new Map<string, AttrEntry>();
+let lastAttrLog = Date.now();
+const ATTR_LOG_INTERVAL_MS = 60_000;
+
+function classifyEndpoint(url: string): string {
+  if (url.includes("/depth")) return "depthSnapshot";
+  if (url.includes("/klines")) return "klines";
+  if (url.includes("/exchangeInfo")) return "exchangeInfo";
+  if (url.includes("/ticker")) return "ticker";
+  if (url.includes("/listenKey")) return "listenKey";
+  if (url.includes("/time") || url.includes("/ping")) return "health";
+  return "other";
+}
+
+function extractSymbol(url: string): string {
+  const m = url.match(/symbol=([A-Z0-9]+)/);
+  return m?.[1] ?? "GLOBAL";
+}
+
+function recordAttribution(url: string, weight: number, reason?: string): void {
+  const ep = classifyEndpoint(url);
+  let entry = attribution.get(ep);
+  if (!entry) { entry = { req: 0, weight: 0, byReason: {}, bySymbol: {} }; attribution.set(ep, entry); }
+  entry.req++;
+  entry.weight += weight;
+  const r = reason ?? "unknown";
+  entry.byReason[r] = (entry.byReason[r] ?? 0) + 1;
+  const sym = extractSymbol(url);
+  entry.bySymbol[sym] = (entry.bySymbol[sym] ?? 0) + 1;
+}
+
+function maybeLogAttribution(): void {
+  const now = Date.now();
+  if (now - lastAttrLog < ATTR_LOG_INTERVAL_MS) return;
+  lastAttrLog = now;
+  if (!attribution.size) return;
+
+  let totalReq = 0, totalWeight = 0;
+  const lines: string[] = [];
+  for (const [ep, a] of [...attribution.entries()].sort((a, b) => b[1].weight - a[1].weight)) {
+    totalReq += a.req;
+    totalWeight += a.weight;
+    const topSymbols = Object.entries(a.bySymbol).sort((a, b) => b[1] - a[1]).slice(0, 3).map(([s, c]) => `${s}:${c}`).join(",");
+    const topReasons = Object.entries(a.byReason).sort((a, b) => b[1] - a[1]).slice(0, 3).map(([r, c]) => `${r}:${c}`).join(",");
+    lines.push(`  ${ep}: req=${a.req} w=${a.weight} sym=[${topSymbols}] reason=[${topReasons}]`);
+  }
+  console.log(`[HubAttribution] 60s report: total req=${totalReq} weight=${totalWeight}\n${lines.join("\n")}`);
+
+  // Reset for next period
+  attribution.clear();
+}
+
 // ── Public API ──
 
 export interface GuardedFetchResult {
@@ -134,11 +188,15 @@ export interface GuardedFetchResult {
  */
 export async function guardedBinanceFetch(
   url: string,
-  opts?: { method?: string; headers?: Record<string, string>; timeoutMs?: number; dedupKey?: string; skipBudgetCheck?: boolean },
+  opts?: { method?: string; headers?: Record<string, string>; timeoutMs?: number; dedupKey?: string; skipBudgetCheck?: boolean; reason?: string },
 ): Promise<Response> {
   const weight = getWeight(url);
   const dedupKey = opts?.dedupKey ?? url.split("?")[0];
   const tier = getEndpointTier(url);
+
+  // Attribution tracking
+  recordAttribution(url, weight, opts?.reason);
+  maybeLogAttribution();
 
   // 0a. Per-endpoint budget cap
   if (!checkEndpointBudget(url)) {

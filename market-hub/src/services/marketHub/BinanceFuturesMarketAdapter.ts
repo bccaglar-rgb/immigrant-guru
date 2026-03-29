@@ -1185,7 +1185,7 @@ export class BinanceFuturesMarketAdapter implements IExchangeMarketAdapter {
     try {
       const res = await guardedBinanceFetch(
         `${BINANCE_DEPTH_SNAPSHOT_BASE}/fapi/v1/depth?symbol=${encodeURIComponent(symbol)}&limit=100`,
-        { timeoutMs: 3_800, dedupKey: `hub-depth-${symbol}` },
+        { timeoutMs: 3_800, dedupKey: `hub-depth-${symbol}`, reason: "depth_snapshot" },
       );
       if (timeout) { clearTimeout(timeout); timeout = null; }
       if (!res.ok) {
@@ -1297,7 +1297,7 @@ export class BinanceFuturesMarketAdapter implements IExchangeMarketAdapter {
     try {
       const res = await guardedBinanceFetch(
         `${BINANCE_DEPTH_SNAPSHOT_BASE}/fapi/v1/exchangeInfo`,
-        { timeoutMs: 6_000, dedupKey: "hub-exchangeInfo" },
+        { timeoutMs: 6_000, dedupKey: "hub-exchangeInfo", reason: "contract_refresh" },
       );
       if (timeout) { clearTimeout(timeout); timeout = null; }
       if (!res.ok) {
@@ -1403,7 +1403,7 @@ export class BinanceFuturesMarketAdapter implements IExchangeMarketAdapter {
         try {
           const res = await guardedBinanceFetch(
             `${BINANCE_DEPTH_SNAPSHOT_BASE}/fapi/v1/klines?symbol=${encodeURIComponent(symbol)}&interval=${interval}&limit=2`,
-            { timeoutMs: 4_000, dedupKey: `hub-klines-${symbol}-${interval}` },
+            { timeoutMs: 4_000, dedupKey: `hub-klines-${symbol}-${interval}`, reason: "reconnect_backfill" },
           );
           if (!res.ok) continue;
           const rows = (await res.json()) as unknown[];
