@@ -34,13 +34,13 @@ const BINANCE_DEPTH_SNAPSHOT_BASE = "https://fapi.binance.com";
 const WATCHDOG_STALE_MS = 20_000;
 const WATCHDOG_TICK_MS = 5_000;
 const HEARTBEAT_PING_MS = 8_000;
-const SYMBOL_DELTA_STALE_MS = 30_000; // increased from 14s — only trigger snapshot on confirmed prolonged stale
-const SNAPSHOT_SANITY_INTERVAL_MS = 45_000; // increased from 20s — reduce REST weight pressure
-const SNAPSHOT_REFRESH_MIN_MS = 180_000; // 3 min between sanity refreshes per symbol (was 90s)
-const SNAPSHOT_SANITY_BATCH = 2; // reduced from 3 — less REST pressure
-const SNAPSHOT_REQUEST_GAP_MS = 1500; // 1.5s between snapshots — significant REST weight saver
+const SYMBOL_DELTA_STALE_MS = 60_000; // 60s — only snapshot on truly dead symbols
+const SNAPSHOT_SANITY_INTERVAL_MS = 120_000; // 2 min — sanity is verification, not data source
+const SNAPSHOT_REFRESH_MIN_MS = 300_000; // 5 min between sanity refreshes per symbol
+const SNAPSHOT_SANITY_BATCH = 1; // 1 symbol per sanity cycle — absolute minimum
+const SNAPSHOT_REQUEST_GAP_MS = 3000; // 3s between snapshots
 const SNAPSHOT_BLOCK_COOLDOWN_MS = 600_000; // 10 min — Binance IP bans are long, no point retrying often
-const CONTRACT_REFRESH_INTERVAL_MS = 45 * 60_000;
+const CONTRACT_REFRESH_INTERVAL_MS = 4 * 60 * 60_000; // 4 hours — contracts rarely change
 const RECONNECT_BASE_MS = 500;
 const RECONNECT_MAX_MS = 12_000;
 const DEPTH_BUFFER_MAX = 400;
@@ -439,16 +439,21 @@ export class BinanceFuturesMarketAdapter implements IExchangeMarketAdapter {
       this.touchMessage(Date.now());
       this.pushReason("depth_open");
       this.subscribeDepthStreams([...this.depthSymbols]);
-      for (const symbol of this.depthSymbols) {
-        this.resetSymbolSyncState(symbol);
-        this.enqueueSnapshot(symbol);
+      // Staggered reconnect snapshots — don't burst all at once
+      const depthArr = [...this.depthSymbols];
+      for (let i = 0; i < depthArr.length; i++) {
+        this.resetSymbolSyncState(depthArr[i]);
+        // Stagger: 2s apart per symbol to avoid REST burst
+        setTimeout(() => { if (this.started) this.enqueueSnapshot(depthArr[i]); }, i * 2000);
       }
-      // Backfill candles only if REST API is not blocked (403 = IP ban)
-      if (this.snapshotBlockedUntil <= Date.now()) {
-        void this.backfillCandles([...this.depthSymbols]);
-      } else {
-        this.pushReason("backfill_skipped:rest_blocked");
-      }
+      // Backfill candles only if REST API is not blocked — delayed 20s after reconnect
+      setTimeout(() => {
+        if (this.snapshotBlockedUntil <= Date.now()) {
+          void this.backfillCandles(depthArr);
+        } else {
+          this.pushReason("backfill_skipped:rest_blocked");
+        }
+      }, 20_000);
     });
 
     ws.on("message", (raw) => {
@@ -633,24 +638,33 @@ export class BinanceFuturesMarketAdapter implements IExchangeMarketAdapter {
 
   private startSnapshotSanity(): void {
     if (this.snapshotSanityTimer) clearInterval(this.snapshotSanityTimer);
+    // ═══ SNAPSHOT POLICY: WS-first, REST-minimal ═══
+    // REST snapshots are ONLY for recovery, NEVER for routine data.
+    // If WS is healthy → zero REST calls. Period.
     this.snapshotSanityTimer = setInterval(() => {
       if (!this.started) return;
       const now = Date.now();
+
       for (const symbol of this.depthSymbols) {
         if (!this.isDepthEligible(symbol)) continue;
+
+        // Case 1: Book not initialized yet → need initial snapshot (one-time)
         if (!this.orderbooks.isReady(symbol)) {
           if (!this.pendingSnapshotSymbols.has(symbol)) this.enqueueSnapshot(symbol);
           continue;
         }
-        // Confirmed desync check — stale alone is NOT sufficient for snapshot.
-        // Snapshot only triggers when: prolonged stale (30s+) AND orderbook has known gaps.
+
+        // Case 2: WS deltas flowing → book is healthy → NO snapshot needed
         const lastDeltaAt = this.lastBookDeltaAtBySymbol.get(symbol) ?? 0;
+        if (lastDeltaAt > 0 && now - lastDeltaAt < SYMBOL_DELTA_STALE_MS) {
+          continue; // WS healthy — skip entirely
+        }
+
+        // Case 3: WS stopped for 60s+ AND book has issues → confirmed desync → snapshot
         if (lastDeltaAt > 0 && now - lastDeltaAt > SYMBOL_DELTA_STALE_MS) {
-          // Additional guard: only snapshot if orderbook shows signs of desync
-          const bookReady = this.orderbooks.isReady(symbol);
-          const hasGaps = !bookReady;
           const consecutiveFails = (this.snapshotFailuresBySymbol.get(symbol) ?? 0);
-          if (hasGaps || consecutiveFails > 0) {
+          // Only snapshot if: book not ready OR previous failures exist
+          if (!this.orderbooks.isReady(symbol) || consecutiveFails > 0) {
             if (!this.pendingSnapshotSymbols.has(symbol)) {
               this.symbolStaleResyncs += 1;
               this.pushReason(`confirmed_desync:${symbol}:${Math.round(now - lastDeltaAt)}ms`);
@@ -658,31 +672,32 @@ export class BinanceFuturesMarketAdapter implements IExchangeMarketAdapter {
               this.enqueueSnapshot(symbol);
             }
           }
-          // If no gaps and no failures → stale is just a quiet period, skip snapshot
+          // stale but book OK and no failures → just a quiet period, skip
         }
       }
 
-      // Only sanity-refresh symbols that are NOT currently receiving healthy WS deltas.
-      // If a symbol has received a delta in the last 30s AND its orderbook is ready, skip it.
-      const symbols = [...this.depthSymbols].filter((symbol) => {
+      // ═══ SANITY REFRESH: DISABLED when WS is healthy ═══
+      // Sanity only runs for symbols that have NO recent WS data AND are potentially stale.
+      // If all depth symbols have fresh WS data → zero sanity REST calls.
+      const unhealthySymbols = [...this.depthSymbols].filter((symbol) => {
         if (!this.isDepthEligible(symbol)) return false;
-        // Skip symbols with healthy recent deltas — no need to waste REST weight
         const lastDelta = this.lastBookDeltaAtBySymbol.get(symbol) ?? 0;
-        if (lastDelta > 0 && now - lastDelta < 30_000 && this.orderbooks.isReady(symbol)) return false;
+        // Only consider symbols with no WS data for 2+ minutes AND book issues
+        if (lastDelta > 0 && now - lastDelta < 120_000) return false; // WS recent → skip
+        if (this.orderbooks.isReady(symbol)) return false; // book OK → skip
         return true;
       });
-      if (!symbols.length) return;
-      const total = symbols.length;
-      const batch = Math.min(SNAPSHOT_SANITY_BATCH, total);
+      if (!unhealthySymbols.length) return; // ALL healthy → zero REST
+      const batch = Math.min(SNAPSHOT_SANITY_BATCH, unhealthySymbols.length);
       for (let i = 0; i < batch; i += 1) {
-        const idx = (this.snapshotCursor + i) % total;
-        const symbol = symbols[idx]!;
+        const idx = (this.snapshotCursor + i) % unhealthySymbols.length;
+        const symbol = unhealthySymbols[idx]!;
         const lastSnapshotAt = this.lastSnapshotAtBySymbol.get(symbol) ?? 0;
         if (lastSnapshotAt > 0 && now - lastSnapshotAt < SNAPSHOT_REFRESH_MIN_MS) continue;
         if (this.pendingSnapshotSymbols.has(symbol)) continue;
         this.enqueueSnapshot(symbol);
       }
-      this.snapshotCursor = (this.snapshotCursor + batch) % total;
+      this.snapshotCursor = (this.snapshotCursor + batch) % Math.max(1, unhealthySymbols.length);
     }, SNAPSHOT_SANITY_INTERVAL_MS);
   }
 
@@ -1378,8 +1393,8 @@ export class BinanceFuturesMarketAdapter implements IExchangeMarketAdapter {
   // Only backfill critical intervals (1m, 15m, 1h) — others will fill from WS kline stream.
   // Staggered with jitter to avoid burst.
   private async backfillCandles(symbols: string[]): Promise<void> {
-    const BACKFILL_INTERVALS = ["1m", "15m", "1h"] as const; // reduced from 7 to 3
-    const MAX_BACKFILL_SYMBOLS = 5; // cap symbols per reconnect backfill
+    const BACKFILL_INTERVALS = ["1m", "15m"] as const; // only critical timeframes
+    const MAX_BACKFILL_SYMBOLS = 3; // minimal reconnect backfill
     const limited = symbols.slice(0, MAX_BACKFILL_SYMBOLS);
 
     for (const symbol of limited) {
