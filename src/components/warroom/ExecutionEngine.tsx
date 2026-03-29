@@ -16,7 +16,6 @@ export const ExecutionEngine = ({ currentPrice, symbol }: Props) => {
   const e = parseFloat(entry) || 0;
   const s = parseFloat(sl) || 0;
   const t1 = parseFloat(tp1) || 0;
-  const t2 = parseFloat(tp2) || 0;
   const t3 = parseFloat(tp3) || 0;
   const bal = parseFloat(balance) || 0;
   const risk = parseFloat(riskPct) || 0;

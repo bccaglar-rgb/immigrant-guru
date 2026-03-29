@@ -1,7 +1,4 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { setAuthToken, me } from "../services/authClient";
-import { useAuthStore } from "../hooks/useAuthStore";
 
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID ?? "";
 
@@ -18,21 +15,9 @@ const SocialButton = ({ icon, label, onClick, loading }: { icon: React.ReactNode
 );
 
 export const SocialLoginButtons = ({ mode = "login" }: { mode?: "login" | "signup" }) => {
-  const nav = useNavigate();
-  const [loading, setLoading] = useState<string | null>(null);
+  const [loading] = useState<string | null>(null);
   const [error, setError] = useState("");
 
-  const handleSuccess = async (token: string) => {
-    setAuthToken(token);
-    // Reload user state
-    try {
-      const user = await me();
-      useAuthStore.setState({ user, loading: false });
-      nav("/pricing");
-    } catch {
-      nav("/pricing");
-    }
-  };
 
   const handleGoogle = () => {
     if (!GOOGLE_CLIENT_ID) {

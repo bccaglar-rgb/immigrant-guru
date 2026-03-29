@@ -28,8 +28,8 @@ export default function GoogleCallbackPage() {
         if (body.ok && body.token) {
           setAuthToken(body.token);
           try {
-            const user = await me();
-            useAuthStore.setState({ user, loading: false });
+            const data = await me();
+            useAuthStore.setState({ user: data.user, loading: false });
           } catch {}
           nav("/pricing");
         } else {

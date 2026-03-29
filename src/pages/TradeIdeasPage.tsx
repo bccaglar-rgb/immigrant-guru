@@ -781,6 +781,7 @@ export default function TradeIdeasPage() {
           CHATGPT: { running: false, lastRunAt: "", error: "" },
           QWEN: { running: false, lastRunAt: "", error: "" },
           QWEN2: { running: false, lastRunAt: "", error: "" },
+          CLAUDE: { running: false, lastRunAt: "", error: "" },
         };
         const enabledModules: Partial<Record<AiProviderId, boolean>> = {};
         for (const moduleState of state.modules ?? []) {

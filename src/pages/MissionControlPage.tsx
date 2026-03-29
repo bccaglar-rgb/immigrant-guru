@@ -6,7 +6,6 @@ const panel = "rounded-2xl border border-white/[0.08] bg-[#0D0E11] p-5";
 const card = "rounded-xl border border-white/[0.06] bg-[#121316] p-4";
 const statBox = "rounded-lg border border-white/[0.06] bg-[#0F1012] px-3 py-2.5 flex flex-col gap-0.5";
 const labelCls = "text-[10px] uppercase tracking-wider text-[#6B6F76] font-medium";
-const valCls = "text-sm font-semibold text-white";
 const badgeCls = "inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide";
 
 // ── Types ───────────────────────────────────────────────────────
@@ -57,10 +56,6 @@ function fmtMs(ms: number | null | undefined): string {
   return `${(ms / 1000).toFixed(1)}s`;
 }
 
-function fmtMb(bytes: number | null | undefined): string {
-  if (bytes == null) return "—";
-  return `${(bytes / 1e6).toFixed(0)}MB`;
-}
 
 function fmtUptime(sec: number | null | undefined): string {
   if (sec == null) return "—";

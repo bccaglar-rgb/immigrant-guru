@@ -364,7 +364,7 @@ export default function SuperChartsPage() {
 
   const [groups, setGroups] = useState<ChartGroup[]>(loadGroups);
   const [activeGroupId, setActiveGroupId] = useState("TOP10");
-  const [timeframe, setTimeframe] = useState<Tf>("1h");
+  const [timeframe] = useState<Tf>("1h");
   const [favorites, setFavorites] = useState<string[]>([]);
   const [slotOverrides, setSlotOverrides] = useState<Record<number, SlotOverride>>({});
   const [editingGroupId, setEditingGroupId] = useState<string | null>(null);

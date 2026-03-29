@@ -41,9 +41,7 @@ export const ExchangeTopBar = ({
 }: ExchangeTopBarProps) => {
   const {
     selectedExchange,
-    selectedSymbol,
     accountMode,
-    connectionStatus,
     selectedExchangeAccount,
     setSelectedExchange,
     setSelectedExchangeAccount,

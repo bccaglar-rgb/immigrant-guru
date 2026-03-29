@@ -22,21 +22,6 @@ const tabs: Array<{ key: TabKey; label: string; accent?: boolean }> = [
   { key: "assets", label: "Assets" },
 ];
 
-// ── Bot definitions for inline bot panel ──
-const INLINE_BOTS = [
-  { id: "trend-pullback", name: "Trend Pullback", strategy: "Trend Following", risk: "Medium", rate: "~62%", desc: "EMA trend + RSI pullback entry" },
-  { id: "breakout-retest", name: "Breakout Retest", strategy: "Breakout", risk: "Medium", rate: "~58%", desc: "S/R breakout + retest confirmation" },
-  { id: "grid", name: "Grid Bot", strategy: "Market Making", risk: "Low", rate: "~70%", desc: "Auto grid orders in price range" },
-  { id: "rsi-reversal", name: "RSI Reversal", strategy: "Mean Reversion", risk: "Medium", rate: "~60%", desc: "RSI extreme + candle reversal" },
-  { id: "smart-dca", name: "Smart DCA", strategy: "DCA", risk: "Low", rate: "~72%", desc: "Kademeli alim + maliyet yonetimi" },
-  { id: "scalping", name: "Scalping", strategy: "Scalping", risk: "High", rate: "~52%", desc: "Orderbook imbalance + micro momentum" },
-  { id: "bollinger-reversion", name: "Bollinger", strategy: "Volatility", risk: "Low", rate: "~65%", desc: "Band reversion to mean" },
-  { id: "momentum-volume", name: "Momentum+Vol", strategy: "Momentum", risk: "Medium", rate: "~57%", desc: "Price momentum + volume spike" },
-  { id: "trend", name: "Trend Bot", strategy: "Trend Following", risk: "Medium", rate: "~55%", desc: "Simple EMA cross system" },
-  { id: "vwap-reversion", name: "VWAP Reversion", strategy: "VWAP", risk: "Low", rate: "~63%", desc: "Deviation from fair value" },
-] as const;
-
-const riskColor = (r: string) => r === "Low" ? "text-[#2bc48a]" : r === "High" ? "text-[#f6465d]" : "text-[#F5C542]";
 
 const BotsInlinePanel = () => {
   return (

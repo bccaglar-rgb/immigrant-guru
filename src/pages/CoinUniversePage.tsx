@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { CoinIcon } from "../components/CoinIcon";
 import { MarketDataRouter } from "../data/MarketDataRouter";
@@ -169,23 +169,6 @@ const regimeChipCls = (r: MarketRegime) => {
   }
 };
 
-const atrChipCls = (v: number) => {
-  if (v > 1.5) return "text-[#f87171]";
-  if (v > 0.8) return "text-[#F5C542]";
-  return "text-[#60a5fa]";
-};
-
-const srDistCls = (v: number) => {
-  if (v < 1) return "text-[#4ade80] font-semibold";
-  if (v < 3) return "text-[#8fc9ab]";
-  return "text-[#6B6F76]";
-};
-
-const rsiCls = (v: number) => {
-  if (v < 30) return "text-[#4ade80]";
-  if (v > 70) return "text-[#f87171]";
-  return "text-[#8f95a3]";
-};
 
 const spreadCls = (v: number) => {
   if (v <= 2) return "text-[#4ade80]";

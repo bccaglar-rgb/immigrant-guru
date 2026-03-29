@@ -55,12 +55,16 @@ function BiasGauge({ score }: { score: number }) {
 }
 
 /* ── TP/SL visual ─────────────────────────────────────── */
-function TpSlVisual({ tpSl, direction }: { tpSl: NonNullable<HubSnapshotItem["payload"]["tpSl"]>; direction: string }) {
-  const isLong = direction === "LONG";
+function TpSlVisual({ tpSl, direction: _direction }: { tpSl: NonNullable<HubSnapshotItem["payload"]["tpSl"]>; direction: string }) {
+  const entryMid = (tpSl.entryZone[0] + tpSl.entryZone[1]) / 2;
+  const sl = tpSl.stopLoss;
+  const tp = tpSl.tp1.price;
+  const slMarginPct = entryMid > 0 ? Math.abs(((sl - entryMid) / entryMid) * 100).toFixed(1) : "0";
+  const tpMarginPct = entryMid > 0 ? Math.abs(((tp - entryMid) / entryMid) * 100).toFixed(1) : "0";
   const levels = [
-    { label: `SL (${tpSl.slMarginPct}%)`, price: tpSl.sl, color: "#d46a6a", alloc: null },
-    { label: "Entry", price: (tpSl.entryZone[0] + tpSl.entryZone[1]) / 2, color: "#F5C542", alloc: null },
-    { label: `TP (${tpSl.tpMarginPct}%)`, price: tpSl.tp, color: "#53d18a", alloc: null },
+    { label: `SL (${slMarginPct}%)`, price: sl, color: "#d46a6a", alloc: null },
+    { label: "Entry", price: entryMid, color: "#F5C542", alloc: null },
+    { label: `TP (${tpMarginPct}%)`, price: tp, color: "#53d18a", alloc: null },
   ].sort((a, b) => a.price - b.price);
 
   const min = levels[0].price;

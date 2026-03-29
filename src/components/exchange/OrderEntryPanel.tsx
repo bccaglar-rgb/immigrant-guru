@@ -12,12 +12,6 @@ const roundToTick = (value: number, tick: number): number => {
   if (tick <= 0 || !Number.isFinite(tick)) return value;
   return Math.round(value / tick) * tick;
 };
-const countDecimals = (n: number): number => {
-  if (Number.isInteger(n)) return 0;
-  const s = String(n);
-  return s.includes(".") ? s.split(".")[1].length : 0;
-};
-
 // Sensible defaults when symbol info is unavailable
 const DEFAULT_SYMBOL_INFO = { stepSize: 0.001, tickSize: 0.01, minQty: 0.001, minNotional: 5, pricePrecision: 2, qtyPrecision: 3 };
 
@@ -77,7 +71,7 @@ export const OrderEntryPanel = ({ showBalances = true, className = "" }: Props) 
   const ticker = useMemo(() => tickers.find((t) => t.symbol === selectedSymbol), [tickers, selectedSymbol]);
   const total = useMemo(() => (Number(price) || 0) * (Number(amount) || 0), [price, amount]);
   const base = selectedSymbol.split("/")[0];
-  const leverageOptions = useMemo(() => [1, 2, 3, 5, 10, 20, 25, 50, 75, 100], []);
+  // leverageOptions: [1, 2, 3, 5, 10, 20, 25, 50, 75, 100]
   const hasPosition = useMemo(() => positions.some((p) => p.symbol === selectedSymbol && p.size > 0), [positions, selectedSymbol]);
 
   useEffect(() => {
@@ -107,11 +101,6 @@ export const OrderEntryPanel = ({ showBalances = true, className = "" }: Props) 
 
     // Open order margin = sum of (price * qty / leverage) for all open orders
     const openOrderMargin = openOrders.reduce((sum, o) => sum + (o.total / Math.max(leverage, 1)), 0);
-
-    // Position margin from existing positions
-    const positionMargin = positions
-      .filter((p) => p.size > 0)
-      .reduce((sum, p) => sum + (p.entry * p.size / Math.max(p.leverage, 1)), 0);
 
     // Unrealized PnL from positions
     const unrealizedPnl = positions.reduce((sum, p) => sum + p.pnl, 0);

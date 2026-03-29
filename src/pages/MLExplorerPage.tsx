@@ -9,7 +9,6 @@ import {
 const panel = "rounded-2xl border border-white/10 bg-[#121316] p-4";
 const inputCls = "w-full rounded-lg border border-[var(--borderSoft)] bg-[var(--panelMuted)] px-3 py-2 text-sm text-[var(--text)] outline-none focus:border-[var(--accent)]/60";
 const btnCls = "rounded-lg border border-[var(--accent)] bg-[color-mix(in_srgb,var(--accent)_12%,transparent)] px-4 py-2 text-sm font-semibold text-[var(--accent)] disabled:opacity-50";
-const labelCls = "text-[10px] uppercase tracking-wider text-[#6B6F76]";
 
 type Tab = "training" | "features";
 

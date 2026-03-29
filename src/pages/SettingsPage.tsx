@@ -45,7 +45,6 @@ interface ExchangeConnectReport {
 
 const EXCHANGE_MANAGER_STORAGE_KEY = "exchange-manager-connections-v1";
 const MODELS_KEY = "admin-ai-models-v1";
-const MEMBERSHIP_EXPIRES_KEY = "membership.expiresAt";
 
 type ProviderPreset = {
   provider: string;
@@ -104,24 +103,6 @@ const readStoredModels = (): AiModelConfig[] => {
   }
 };
 
-const readMembershipExpiry = (): Date => {
-  try {
-    const raw = window.localStorage.getItem(MEMBERSHIP_EXPIRES_KEY);
-    if (raw) {
-      const d = new Date(raw);
-      if (!Number.isNaN(d.getTime())) return d;
-    }
-  } catch {
-    // noop
-  }
-  const fallback = new Date();
-  fallback.setMonth(fallback.getMonth() + 6);
-  window.localStorage.setItem(MEMBERSHIP_EXPIRES_KEY, fallback.toISOString());
-  if (!window.localStorage.getItem("membership.planId")) {
-    window.localStorage.setItem("membership.planId", "explorer-6m");
-  }
-  return fallback;
-};
 
 const isValidUrl = (value: string) => {
   try {

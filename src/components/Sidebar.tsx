@@ -202,67 +202,6 @@ const menuItems = [
 
 const aiTraderItem = { label: "AI Trader", accent: "var(--menu-accent-4)", icon: <AiTraderIcon /> } as const;
 const toolsItem = { label: "Tools", accent: "var(--menu-accent-12)", icon: <ToolsIcon /> } as const;
-const aiTraderSubItems = [
-  {
-    label: "Leaderboard",
-    to: "/ai-trader/leaderboard",
-    accent: "#66b3ff",
-    icon: (
-      <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.8">
-        <path d="M5 19h14" />
-        <path d="M7 17V9" />
-        <path d="M12 17V5" />
-        <path d="M17 17v-7" />
-      </svg>
-    ),
-  },
-  {
-    label: "AI Trader",
-    to: "/ai-trader/dashboard",
-    accent: "#F5C542",
-    icon: (
-      <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.8">
-        <rect x="4" y="5" width="16" height="14" rx="2" />
-        <path d="M8 10h8" />
-        <path d="M8 14h5" />
-      </svg>
-    ),
-  },
-  {
-    label: "Strategy",
-    to: "/ai-trader/strategy",
-    accent: "#9f8bff",
-    icon: (
-      <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.8">
-        <path d="M4 18l4-6 4 3 8-10" />
-        <circle cx="8" cy="12" r="1.2" />
-      </svg>
-    ),
-  },
-  {
-    label: "AI Arena",
-    to: "/ai-trader/arena",
-    accent: "#2bc48a",
-    icon: (
-      <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.8">
-        <circle cx="12" cy="12" r="8" />
-        <path d="M12 8v8" />
-        <path d="M8 12h8" />
-      </svg>
-    ),
-  },
-  {
-    label: "Backtest",
-    to: "/ai-trader/backtest",
-    accent: "#f4906c",
-    icon: (
-      <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.8">
-        <path d="M4 19h16" />
-        <path d="M7 16l3-3 2 2 5-6" />
-      </svg>
-    ),
-  },
-] as const;
 const toolsSubItems = [
   {
     label: "Coin Calculator",
@@ -328,7 +267,7 @@ export const Sidebar = ({
   const [collapseWidth, setCollapseWidth] = useState(!(expanded || mobile));
   const [labelTimer, setLabelTimer] = useState<number | null>(null);
   const [shrinkTimer, setShrinkTimer] = useState<number | null>(null);
-  const [aiTraderOpen, setAiTraderOpen] = useState(false);
+  const [, setAiTraderOpen] = useState(false);
   const [toolsOpen, setToolsOpen] = useState(false);
   const aiTraderRef = useRef<HTMLDivElement | null>(null);
   const toolsRef = useRef<HTMLDivElement | null>(null);
@@ -572,8 +511,6 @@ export const Sidebar = ({
     toolsCloseTimerRef.current = window.setTimeout(() => setToolsOpen(false), 120);
   };
 
-  // Public paths that don't require auth
-  const publicPaths = new Set(["/crypto-market", "/bitrium-token", "/pricing"]);
 
   const topMenu = menuItems.slice(0, 6);
   // Items between AI Trader and Tools: Exchanges..Indicators (index 6-10)

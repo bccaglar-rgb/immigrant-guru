@@ -40,17 +40,17 @@ const TIERS: Tier[] = [
     planIdPrefix: "explorer",
     features: [
       "Bitrium Quant Engine",
-      "Quant Trade Ideas",
+      "Sniper",
+      "Coin Insight",
       "Super Charts",
-      "Indicators",
       "Crypto Market",
-      "Coin Universe",
+      "Indicators",
     ],
     pricing: {
-      "1m": { total: 49, monthly: 49 },
-      "3m": { total: 117, monthly: 39 },
-      "6m": { total: 179, monthly: 29 },
-      "12m": { total: 228, monthly: 19 },
+      "1m": { total: 9, monthly: 9 },
+      "3m": { total: 24, monthly: 8 },
+      "6m": { total: 42, monthly: 7 },
+      "12m": { total: 72, monthly: 6 },
     },
   },
   {
@@ -59,20 +59,21 @@ const TIERS: Tier[] = [
     planIdPrefix: "trader",
     features: [
       "Bitrium Quant Engine",
-      "Quant Trade Ideas",
-      "AI Trade Ideas",
-      "AI Trader (1 Bot)",
-      "3 Exchange Accounts",
+      "Sniper",
       "Super Charts",
-      "Indicators",
+      "Coin Universe (10 Charts)",
       "Crypto Market",
-      "Coin Universe",
+      "AI Trader (1 Bot)",
+      "1 Exchange Account",
+      "Bots",
+      "Portfolio",
+      "Indicators",
     ],
     pricing: {
-      "1m": { total: 79, monthly: 79 },
-      "3m": { total: 177, monthly: 59 },
-      "6m": { total: 294, monthly: 49 },
-      "12m": { total: 468, monthly: 39 },
+      "1m": { total: 19, monthly: 19 },
+      "3m": { total: 51, monthly: 17 },
+      "6m": { total: 90, monthly: 15 },
+      "12m": { total: 156, monthly: 13 },
     },
     highlight: true,
     badge: "Most Popular",
@@ -83,20 +84,26 @@ const TIERS: Tier[] = [
     planIdPrefix: "strategist",
     features: [
       "Bitrium Quant Engine",
-      "Quant Trade Ideas",
-      "AI Trade Ideas",
+      "Sniper",
+      "Coin Insight",
+      "Master",
+      "War Room",
+      "Super Charts (20 Charts)",
+      "Coin Universe",
+      "Crypto Market",
       "AI Trader (5 Bots)",
       "5 Exchange Accounts",
-      "Super Charts",
+      "Bots",
+      "Portfolio",
       "Indicators",
-      "Crypto Market",
-      "Coin Universe",
+      "Bitrium Token",
+      "Pricing",
     ],
     pricing: {
-      "1m": { total: 99, monthly: 99 },
-      "3m": { total: 237, monthly: 79 },
-      "6m": { total: 414, monthly: 69 },
-      "12m": { total: 708, monthly: 59 },
+      "1m": { total: 29, monthly: 29 },
+      "3m": { total: 78, monthly: 26 },
+      "6m": { total: 138, monthly: 23 },
+      "12m": { total: 228, monthly: 19 },
     },
   },
   {
@@ -106,20 +113,25 @@ const TIERS: Tier[] = [
     badge: "Best Value",
     features: [
       "Bitrium Quant Engine",
-      "Quant Trade Ideas",
-      "AI Trade Ideas",
-      "AI Trader (Unlimited Bots)",
-      "Unlimited Exchange Accounts",
-      "Super Charts",
-      "Indicators",
-      "Crypto Market",
+      "Sniper",
+      "Coin Insight",
+      "Master",
+      "War Room",
+      "Institutional Command",
+      "Super Charts (50 Charts)",
       "Coin Universe",
+      "Crypto Market",
+      "AI Trader (Unlimited)",
+      "Unlimited Exchange Accounts",
+      "Bots",
+      "Portfolio",
+      "Indicators",
     ],
     pricing: {
-      "1m": { total: 179, monthly: 179 },
-      "3m": { total: 417, monthly: 139 },
-      "6m": { total: 714, monthly: 119 },
-      "12m": { total: 1188, monthly: 99 },
+      "1m": { total: 49, monthly: 49 },
+      "3m": { total: 129, monthly: 43 },
+      "6m": { total: 234, monthly: 39 },
+      "12m": { total: 396, monthly: 33 },
     },
   },
 ];
@@ -131,12 +143,6 @@ const BILLING_OPTIONS: { key: BillingPeriod; label: string }[] = [
   { key: "12m", label: "12 Months" },
 ];
 
-const PERIOD_LABELS: Record<BillingPeriod, string> = {
-  "1m": "1 Month",
-  "3m": "3 Months",
-  "6m": "6 Months",
-  "12m": "12 Months",
-};
 
 const tierBorder = (highlight?: boolean) => {
   if (highlight) return "border-[#F5C542]/50 shadow-[0_0_24px_rgba(245,197,66,0.08)]";
@@ -241,8 +247,6 @@ export default function PricingPage() {
   const localExpiry = localExpiryRaw ? new Date(localExpiryRaw) : null;
   const expiryDate = authEndAt ?? serverExpiry ?? localExpiry;
   const hasMembership = authUser?.hasActivePlan ?? Boolean(expiryDate && !Number.isNaN(expiryDate.getTime()) && expiryDate.getTime() > Date.now());
-  const daysRemaining = hasMembership && expiryDate ? Math.max(0, Math.ceil((expiryDate.getTime() - Date.now()) / (24 * 60 * 60 * 1000))) : 0;
-  const expiryLabel = expiryDate ? expiryDate.toLocaleDateString("en-US") : "";
 
   // ── Current plan (auth store → server → localStorage) ──
   const serverPlanId = activeSub?.planId ?? null;
@@ -368,7 +372,7 @@ export default function PricingPage() {
                 {/* Features */}
                 <ul className="mt-4 flex-1 space-y-2 text-sm">
                   {tier.features.map((f) => {
-                    const isPremiumFeature = f.includes("AI Trader") || f.includes("Exchange Accounts") || f === "AI Trade Ideas";
+                    const isPremiumFeature = f.includes("AI Trader") || f.includes("Exchange Accounts") || f === "Master" || f === "War Room" || f === "Institutional Command" || f.includes("Bots") || f === "Portfolio" || f === "Bitrium Token" || f.includes("Charts)");
                     // When another (lower) tier is selected: this is a higher tier → show glow on unique features
                     const isUniqueAdvantage = anotherTierSelected && isPremiumFeature && !selectedTierFeatures.includes(f);
                     // When a higher tier is selected: this is a lower tier → demote premium styling

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { CandlestickData, UTCTimestamp } from "lightweight-charts";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation } from "react-router-dom";
 import { ChartPanel } from "../components/exchange/ChartPanel";
 import { ExchangeTopBar } from "../components/exchange/ExchangeTopBar";
 import { FuturesAccountPanel } from "../components/exchange/FuturesAccountPanel";
@@ -57,7 +57,6 @@ const normalizeCandlesForChart = (
 };
 
 export default function ExchangeTerminalPage() {
-  const navigate = useNavigate();
   const location = useLocation();
   const [chartTimeframe, setChartTimeframe] = useState<"1m" | "15m" | "1H" | "4H" | "1D" | "1W">("15m");
   const indicators = useIndicatorsStore();

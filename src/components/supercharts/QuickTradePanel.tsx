@@ -34,11 +34,8 @@ interface Props {
   onTradeComplete?: () => void;
 }
 
-const fmt = (v?: number | null, d = 2) =>
-  typeof v === "number" && Number.isFinite(v) ? v.toFixed(d) : "-";
-
 export const QuickTradePanel = ({ symbol, price: livePrice, idea, onTradeComplete }: Props) => {
-  const { selectedExchange, selectedExchangeAccount, accountMode, balances, positions, openOrders } =
+  const { selectedExchange, accountMode, balances, openOrders } =
     useExchangeTerminalStore();
 
   // ── State ──
@@ -182,10 +179,6 @@ export const QuickTradePanel = ({ symbol, price: livePrice, idea, onTradeComplet
     }
   }, [amount, entryPrice, orderType, symbolInfo, selectedExchange, symbol, accountMode, leverage, marginMode, mode, tpslEnabled, tpPrice, slPrice, onTradeComplete]);
 
-  const hasPosition = useMemo(
-    () => positions.some((p) => p.symbol === symbol && p.size > 0),
-    [positions, symbol],
-  );
 
   return (
     <div className="flex flex-col gap-1.5 text-[11px]">

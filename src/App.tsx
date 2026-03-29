@@ -50,7 +50,6 @@ const LoginPage = lazyRetry(() => import("./pages/LoginPage"));
 const SignupPage = lazyRetry(() => import("./pages/SignupPage"));
 const GoogleCallbackPage = lazyRetry(() => import("./pages/GoogleCallbackPage"));
 const PaymentCheckoutPage = lazyRetry(() => import("./pages/PaymentCheckoutPage"));
-const AdminPaymentsPage = lazyRetry(() => import("./pages/AdminPaymentsPage"));
 const SettingsPage = lazyRetry(() => import("./pages/SettingsPage"));
 const AdminPage = lazyRetry(() => import("./pages/AdminPage"));
 const OptimizerDashboardPage = lazyRetry(() => import("./pages/OptimizerDashboardPage"));
