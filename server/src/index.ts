@@ -88,6 +88,12 @@ const IS_PRIMARY = process.env.IS_PRIMARY === "false" ? false : WORKER_ID === 0;
 // When false (default), Worker 0 runs the hub locally (backward compatible).
 const HUB_EXTERNAL = process.env.HUB_EXTERNAL === "true";
 
+// ── Startup mode log — MANDATORY for migration verification ──
+console.log(`[Worker ${WORKER_ID}] ═══ STARTUP MODE ═══`);
+console.log(`[Worker ${WORKER_ID}]   HUB_EXTERNAL=${HUB_EXTERNAL} (env=${process.env.HUB_EXTERNAL ?? "unset"})`);
+console.log(`[Worker ${WORKER_ID}]   IS_PRIMARY=${IS_PRIMARY}`);
+console.log(`[Worker ${WORKER_ID}]   Mode: ${HUB_EXTERNAL ? "EXTERNAL HUB — server is READ-ONLY consumer" : "LOCAL HUB — server runs WS connections"}`);
+
 const app = express();
 app.use(requestIdMiddleware);  // Must be first — wraps all requests in trace context
 app.use(express.json());
@@ -185,8 +191,12 @@ app.get("/api/admin/market-health", async (req, res) => {
 
 const audit = new AuditLogService();
 const connections = new ConnectionService();
-// Clean up stale __test__ rows from old "Test Connection" dry-runs
-connections.purgeTestAccounts().catch(() => {});
+// Clean up stale __test__ rows — guarded to prevent crash if method missing
+if (typeof connections.purgeTestAccounts === "function") {
+  connections.purgeTestAccounts().catch(() => {});
+} else {
+  console.warn(`[Worker ${WORKER_ID}] purgeTestAccounts not available, skipping`);
+}
 
 // ── Persistent Encryption Key ──────────────────────────────────
 // Resolved via keyManager: file → env var → dev fallback

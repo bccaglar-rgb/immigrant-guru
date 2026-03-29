@@ -579,6 +579,11 @@ export function startDepthIngestion(opts?: {
   getHubDepth?: (symbol: string) => { bids: Array<{ price: number; qty: number }>; asks: Array<{ price: number; qty: number }> } | null;
   getHubAdapters?: () => Map<string, { getOrderbook?: (symbol: string) => { bids: Array<{ price: number; qty: number }>; asks: Array<{ price: number; qty: number }> } | null }>;
 }): void {
+  // Hard guard: refuse to start if HUB_EXTERNAL=true (safety net)
+  if (process.env.HUB_EXTERNAL === "true") {
+    console.log("[DepthIngestion] DISABLED — HUB_EXTERNAL=true, market-hub handles depth");
+    return;
+  }
   if (depthIngestTimer) return; // already running
 
   const intervalMs = opts?.intervalMs ?? 5_000;
