@@ -36,10 +36,15 @@ export class FailoverPolicy {
   private events: FailoverEvent[] = [];
   private readonly MAX_EVENTS = 50;
 
+  private paths: EgressPath[];
+  private config: EgressConfig;
+
   constructor(
-    private paths: EgressPath[],
-    private config: EgressConfig,
+    paths: EgressPath[],
+    config: EgressConfig,
   ) {
+    this.paths = paths;
+    this.config = config;
     // Start with PRIMARY as active
     const primary = paths.find((p) => p.role === "PRIMARY");
     this.activePathId = primary?.id ?? paths[0]?.id ?? "unknown";

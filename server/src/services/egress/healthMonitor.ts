@@ -37,11 +37,19 @@ export class EgressHealthMonitor {
   private probeHistory = new Map<string, ProbeResult[]>();
   private readonly HISTORY_SIZE = 20;
 
+  private paths: EgressPath[];
+  private config: EgressConfig;
+  private onStateChange: (pathId: string, oldState: EgressPathState, newState: EgressPathState, reason: string) => void;
+
   constructor(
-    private paths: EgressPath[],
-    private config: EgressConfig,
-    private onStateChange: (pathId: string, oldState: EgressPathState, newState: EgressPathState, reason: string) => void,
-  ) {}
+    paths: EgressPath[],
+    config: EgressConfig,
+    onStateChange: (pathId: string, oldState: EgressPathState, newState: EgressPathState, reason: string) => void,
+  ) {
+    this.paths = paths;
+    this.config = config;
+    this.onStateChange = onStateChange;
+  }
 
   /** Start probing all paths */
   start(): void {
