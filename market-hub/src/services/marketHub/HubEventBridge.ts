@@ -421,6 +421,31 @@ export class HubEventBridge {
     }
   }
 
+  /**
+   * Subscribe to hub:commands Redis channel.
+   * Server process sends commands like ensureSymbol via this channel.
+   */
+  startCommandSubscriber(hub: ExchangeMarketHub, binanceHub?: { getSymbols?: () => string[] }): void {
+    const cmdSub = new Redis({
+      host: process.env.REDIS_HOST ?? "127.0.0.1",
+      port: Number(process.env.REDIS_PORT ?? 6379),
+      password: process.env.REDIS_PASSWORD || undefined,
+      maxRetriesPerRequest: 3,
+    });
+    cmdSub.subscribe("hub:commands").catch((err) => {
+      console.error("[HubEventBridge] Failed to subscribe to hub:commands:", err?.message);
+    });
+    cmdSub.on("message", (_channel, message) => {
+      try {
+        const cmd = JSON.parse(message) as { action: string; symbol?: string };
+        if (cmd.action === "ensureSymbol" && cmd.symbol) {
+          hub.ensureSymbol(cmd.symbol);
+        }
+      } catch { /* ignore malformed commands */ }
+    });
+    console.log("[HubEventBridge] Command subscriber started (hub:commands)");
+  }
+
   stop(): void {
     if (this.unsubHub) {
       this.unsubHub();
