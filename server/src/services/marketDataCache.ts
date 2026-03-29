@@ -628,8 +628,11 @@ export function startDepthIngestion(opts?: {
           }
         }
 
-        // SOURCE 2: Binance REST (only if WS didn't have it, max 5 per cycle)
-        if (!depthResult && restFetchCount < MAX_REST_PER_CYCLE) {
+        // SOURCE 2: Binance REST — DISABLED
+        // market-hub is the sole depth acquisition source. Server reads from hub adapters only.
+        // This eliminates duplicate REST calls that were consuming ~120 weight/min.
+        // To re-enable in emergency: set ENABLE_SERVER_DEPTH_REST=true
+        if (!depthResult && process.env.ENABLE_SERVER_DEPTH_REST === "true" && restFetchCount < MAX_REST_PER_CYCLE) {
           try {
             const { exchangeFetch, isExchangeAvailable } = await import("./binanceRateLimiter.ts");
             if (isExchangeAvailable("binance")) {

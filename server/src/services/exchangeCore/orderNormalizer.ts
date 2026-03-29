@@ -177,6 +177,17 @@ export class OrderNormalizer {
 
   private async fetchCurrentPrice(venue: CoreVenue, symbolVenue: string): Promise<number | null> {
     try {
+      // Cache-first: try Redis ticker cache before REST (zero weight cost)
+      try {
+        const { redisControl } = await import("../../db/redis.ts");
+        const cached = await redisControl.get(`mdc:ticker:${symbolVenue}`);
+        if (cached) {
+          const parsed = JSON.parse(cached);
+          const price = Number(parsed.lastPrice ?? parsed.price ?? 0);
+          if (price > 0) return price;
+        }
+      } catch { /* cache miss — fall through to REST */ }
+
       const venueKey = venue.toLowerCase().replace(/[.\-_\s]/g, "");
       if (!isExchangeAvailable(venueKey)) return null;
 

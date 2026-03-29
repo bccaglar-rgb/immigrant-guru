@@ -768,19 +768,28 @@ export class ExchangeCoreService {
     }
 
     // If we need to compute qty from notional, get the current price first
+    // Cache-first: try Redis ticker before REST
     if (params.quantity === "0" && intent.notionalUsdt != null) {
       try {
-        const priceRes = await exchangeFetch(`${base}/fapi/v1/ticker/price?symbol=${intent.symbolVenue}`, undefined, { exchange: "binance", weight: 1, priority: "critical", dedupKey: `price:${intent.symbolVenue}` });
-        if (priceRes.ok) {
-          const priceData = (await priceRes.json()) as { price: string };
-          const price = Number(priceData.price);
-          if (price > 0) {
-            const effectiveLeverage = intent.leverage ?? 3;
-            // notional * leverage / price = qty (with some rounding)
-            const rawQty = (intent.notionalUsdt * effectiveLeverage) / price;
-            // Round to 3 decimal places (safe for most pairs)
-            params.quantity = String(Math.floor(rawQty * 1000) / 1000);
+        let price = 0;
+        // Try Redis cache first (zero weight cost)
+        try {
+          const { redisControl } = await import("../../db/redis.ts");
+          const cached = await redisControl.get(`mdc:ticker:${intent.symbolVenue}`);
+          if (cached) { const p = JSON.parse(cached); price = Number(p.lastPrice ?? p.price ?? 0); }
+        } catch { /* cache miss */ }
+        // Fallback to REST only if cache miss
+        if (price <= 0) {
+          const priceRes = await exchangeFetch(`${base}/fapi/v1/ticker/price?symbol=${intent.symbolVenue}`, undefined, { exchange: "binance", weight: 1, priority: "critical", dedupKey: `price:${intent.symbolVenue}` });
+          if (priceRes.ok) {
+            const priceData = (await priceRes.json()) as { price: string };
+            price = Number(priceData.price);
           }
+        }
+        if (price > 0) {
+            const effectiveLeverage = intent.leverage ?? 3;
+            const rawQty = (intent.notionalUsdt * effectiveLeverage) / price;
+            params.quantity = String(Math.floor(rawQty * 1000) / 1000);
         }
       } catch {
         // Price fetch failed

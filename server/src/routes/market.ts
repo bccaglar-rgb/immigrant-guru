@@ -1295,6 +1295,16 @@ const fetchBinanceFuturesJson = async <T,>(path: string, timeoutMs = 9000): Prom
  * Spot kline format is identical to futures — safe for chart display.
  */
 const fetchBinanceKlinesFallback = async (symbol: string, interval: string, limit: number): Promise<unknown[]> => {
+  // 0. Redis cache first (zero REST weight) — only for small requests
+  if (limit <= 100) {
+    try {
+      const { readKlines } = await import("../services/marketDataCache.ts");
+      const cached = await readKlines(symbol, interval);
+      if (cached && cached.data && Array.isArray(cached.data) && cached.data.length >= Math.min(10, limit)) {
+        return cached.data;
+      }
+    } catch { /* cache miss */ }
+  }
   // 1. Futures API (primary)
   try {
     const data = await fetchBinanceFuturesJson<unknown>(`/fapi/v1/klines?symbol=${symbol}&interval=${interval}&limit=${limit}`, 3000);
