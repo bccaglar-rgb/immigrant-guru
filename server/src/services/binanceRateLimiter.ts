@@ -848,17 +848,22 @@ export const getFullMetrics = () => {
 
 export const logRateLimiterStatus = () => {
   const s = getRateLimiterStatus();
-  if (s.cooldownActive || s.currentWeight > 200 || s.total429s > 0 || s.total418s > 0 || s.circuitState !== "CLOSED") {
-    console.log(
-      `[ExchangeRL] w=${s.currentWeight}/${s.weightLimit} ` +
-      `redis=${redisAvailable ? "ok" : "down"} ` +
-      `circuit=${s.circuitState}(${s.circuitFailures}) ` +
-      `cd=${s.cooldownActive ? `${s.cooldownReason} ${Math.ceil(s.cooldownRemainingMs / 1000)}s` : "off"} ` +
-      `429=${s.total429s} 418=${s.total418s} 403=${s.total403s} ` +
-      `dedup=${s.totalDedupHits} drops=${s.totalPriorityDrops} ` +
-      `req=${s.totalRequests} fly=${s.inFlightCount}`,
-    );
-  }
+  // Always log — critical observability for weight debugging
+  const topEps = [...endpointProfiles.entries()]
+    .sort((a, b) => b[1].totalEstimatedWeight - a[1].totalEstimatedWeight)
+    .slice(0, 5)
+    .map(([ep, p]) => `${ep.replace("/fapi/v1/", "")}:${p.calls}c/${p.totalEstimatedWeight}w`)
+    .join(" ");
+  console.log(
+    `[ExchangeRL] w=${s.currentWeight}/${s.weightLimit} ` +
+    `redis=${redisAvailable ? "ok" : "down"} ` +
+    `circuit=${s.circuitState}(${s.circuitFailures}) ` +
+    `cd=${s.cooldownActive ? `${s.cooldownReason} ${Math.ceil(s.cooldownRemainingMs / 1000)}s` : "off"} ` +
+    `429=${s.total429s} 418=${s.total418s} 403=${s.total403s} ` +
+    `dedup=${s.totalDedupHits} drops=${s.totalPriorityDrops} ` +
+    `req=${s.totalRequests} fly=${s.inFlightCount}` +
+    (topEps ? ` TOP:[${topEps}]` : ""),
+  );
 };
 
 // ═══════════════════════════════════════════════════════════════════
