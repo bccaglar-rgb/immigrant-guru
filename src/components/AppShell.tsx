@@ -34,6 +34,7 @@ const titleForPath = (path: string) => {
   if (path.startsWith("/ml-explorer")) return "ML Data Explorer";
   if (path.startsWith("/master")) return "Master Terminal";
   if (path.startsWith("/alpha-war-room")) return "Alpha War Room";
+  if (path.startsWith("/institutional")) return "Institutional Command";
   if (path === "/") return "Bitrium";
   return "Bitrium Quant Engine";
 };
