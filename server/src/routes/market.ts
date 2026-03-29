@@ -7,6 +7,7 @@ import { getConsensusBucketLabel, isTradeIdeaEligibleBucket } from "../../../src
 import { computeExtremeConsensus } from "../../../src/data/extremeConsensus.ts";
 import { computeVelocityConsensus, computeFlowGoldSetup, computeAggressiveGoldSetup } from "../../../src/data/velocityConsensus.ts";
 import { normalizeScoringMode, SCORING_MODES, DETERMINISTIC_SCORING_MODES, type ScoringMode } from "../services/scoringMode.ts";
+import { exchangeFetch, isExchangeAvailable } from "../services/binanceRateLimiter.ts";
 import type { AdminProviderStore } from "../services/adminProviderStore.ts";
 import type { BinanceFuturesHub } from "../services/binanceFuturesHub.ts";
 import type { ExchangeMarketHub } from "../services/marketHub/index.ts";
@@ -1273,15 +1274,20 @@ const fetchJson = async <T,>(url: string, headers?: Record<string, string>, time
 };
 
 const fetchBinanceFuturesJson = async <T,>(path: string, timeoutMs = 9000): Promise<T> => {
-  let lastError: unknown = null;
-  for (const base of BINANCE_FUTURES_BASES) {
-    try {
-      return await fetchJson<T>(`${base}${path}`, undefined, timeoutMs);
-    } catch (err) {
-      lastError = err;
-    }
+  // Route through central rate limiter instead of bare fetch with 5-base retry cascade
+  if (!isExchangeAvailable("binance")) {
+    throw new Error(`BINANCE_FUTURES_UNAVAILABLE:${path} (cooldown/circuit active)`);
   }
-  throw (lastError instanceof Error ? lastError : new Error(`BINANCE_FUTURES_UNAVAILABLE:${path}`));
+  const url = `${BINANCE_FUTURES_BASES[0]}${path}`;
+  const res = await exchangeFetch(url, undefined, {
+    exchange: "binance",
+    weight: path.includes("klines") ? 5 : path.includes("depth") ? 10 : 5,
+    priority: "normal",
+    dedupKey: `chart:${path.split("?")[0]}`,
+    timeoutMs,
+  });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return (await res.json()) as T;
 };
 
 /**

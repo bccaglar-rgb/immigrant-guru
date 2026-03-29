@@ -19,6 +19,7 @@ import { circuitBreakers } from "./circuitBreaker.ts";
 import { IntentFactory, type ManualIntentInput } from "./intentFactory.ts";
 import { IntentDeduplicator } from "./intentDedup.ts";
 import { RiskGate } from "./riskGate.ts";
+import { exchangeFetch } from "../binanceRateLimiter.ts";
 import { SymbolRegistry } from "./symbolRegistry.ts";
 import { OrderNormalizer } from "./orderNormalizer.ts";
 import { ExchangeTimeSync } from "./timeSync.ts";
@@ -769,7 +770,7 @@ export class ExchangeCoreService {
     // If we need to compute qty from notional, get the current price first
     if (params.quantity === "0" && intent.notionalUsdt != null) {
       try {
-        const priceRes = await fetch(`${base}/fapi/v1/ticker/price?symbol=${intent.symbolVenue}`);
+        const priceRes = await exchangeFetch(`${base}/fapi/v1/ticker/price?symbol=${intent.symbolVenue}`, undefined, { exchange: "binance", weight: 1, priority: "critical", dedupKey: `price:${intent.symbolVenue}` });
         if (priceRes.ok) {
           const priceData = (await priceRes.json()) as { price: string };
           const price = Number(priceData.price);

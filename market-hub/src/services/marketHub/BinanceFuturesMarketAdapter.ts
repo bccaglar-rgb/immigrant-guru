@@ -12,6 +12,7 @@ import type {
   NormalizedTradeEvent,
 } from "./types.ts";
 import { SequenceSafeOrderbookStore } from "./sequenceSafeOrderbook.ts";
+import { guardedBinanceFetch } from "../binanceRestGuard.ts";
 
 // !bookTicker REMOVED: it fires for ALL 300+ symbols on every trade = 2000-5000 msgs/sec,
 // saturating the event loop. Bid/ask data is available from depth WS for subscribed symbols
@@ -1145,14 +1146,11 @@ export class BinanceFuturesMarketAdapter implements IExchangeMarketAdapter {
     this.pendingSnapshotSymbols.add(symbol);
     let timeout: ReturnType<typeof setTimeout> | null = null;
     try {
-      const controller = new AbortController();
-      timeout = setTimeout(() => controller.abort(), 3_800);
-      const res = await fetch(
+      const res = await guardedBinanceFetch(
         `${BINANCE_DEPTH_SNAPSHOT_BASE}/fapi/v1/depth?symbol=${encodeURIComponent(symbol)}&limit=100`,
-        { signal: controller.signal },
+        { timeoutMs: 3_800, dedupKey: `hub-depth-${symbol}` },
       );
-      clearTimeout(timeout);
-      timeout = null;
+      if (timeout) { clearTimeout(timeout); timeout = null; }
       if (!res.ok) {
         throw new Error(`snapshot_http_${res.status}`);
       }
@@ -1260,11 +1258,11 @@ export class BinanceFuturesMarketAdapter implements IExchangeMarketAdapter {
     this.contractsLoading = true;
     let timeout: ReturnType<typeof setTimeout> | null = null;
     try {
-      const controller = new AbortController();
-      timeout = setTimeout(() => controller.abort(), 6_000);
-      const res = await fetch(`${BINANCE_DEPTH_SNAPSHOT_BASE}/fapi/v1/exchangeInfo`, { signal: controller.signal });
-      clearTimeout(timeout);
-      timeout = null;
+      const res = await guardedBinanceFetch(
+        `${BINANCE_DEPTH_SNAPSHOT_BASE}/fapi/v1/exchangeInfo`,
+        { timeoutMs: 6_000, dedupKey: "hub-exchangeInfo" },
+      );
+      if (timeout) { clearTimeout(timeout); timeout = null; }
       if (!res.ok) {
         throw new Error(`contracts_http_${res.status}`);
       }
@@ -1361,13 +1359,10 @@ export class BinanceFuturesMarketAdapter implements IExchangeMarketAdapter {
       if (!this.started) return;
       for (const interval of intervals) {
         try {
-          const controller = new AbortController();
-          const timeout = setTimeout(() => controller.abort(), 4_000);
-          const res = await fetch(
+          const res = await guardedBinanceFetch(
             `${BINANCE_DEPTH_SNAPSHOT_BASE}/fapi/v1/klines?symbol=${encodeURIComponent(symbol)}&interval=${interval}&limit=2`,
-            { signal: controller.signal },
+            { timeoutMs: 4_000, dedupKey: `hub-klines-${symbol}-${interval}` },
           );
-          clearTimeout(timeout);
           if (!res.ok) continue;
           const rows = (await res.json()) as unknown[];
           if (!Array.isArray(rows)) continue;
