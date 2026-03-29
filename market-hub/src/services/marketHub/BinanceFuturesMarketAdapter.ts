@@ -34,11 +34,11 @@ const BINANCE_DEPTH_SNAPSHOT_BASE = "https://fapi.binance.com";
 const WATCHDOG_STALE_MS = 20_000;
 const WATCHDOG_TICK_MS = 5_000;
 const HEARTBEAT_PING_MS = 8_000;
-const SYMBOL_DELTA_STALE_MS = 14_000;
+const SYMBOL_DELTA_STALE_MS = 30_000; // increased from 14s — only trigger snapshot on confirmed prolonged stale
 const SNAPSHOT_SANITY_INTERVAL_MS = 45_000; // increased from 20s — reduce REST weight pressure
 const SNAPSHOT_REFRESH_MIN_MS = 90_000;
 const SNAPSHOT_SANITY_BATCH = 2; // reduced from 3 — less REST pressure
-const SNAPSHOT_REQUEST_GAP_MS = 350;
+const SNAPSHOT_REQUEST_GAP_MS = 800; // increased from 350ms — more breathing room
 const SNAPSHOT_BLOCK_COOLDOWN_MS = 600_000; // 10 min — Binance IP bans are long, no point retrying often
 const CONTRACT_REFRESH_INTERVAL_MS = 45 * 60_000;
 const RECONNECT_BASE_MS = 500;
@@ -653,7 +653,15 @@ export class BinanceFuturesMarketAdapter implements IExchangeMarketAdapter {
         }
       }
 
-      const symbols = [...this.depthSymbols].filter((symbol) => this.isDepthEligible(symbol));
+      // Only sanity-refresh symbols that are NOT currently receiving healthy WS deltas.
+      // If a symbol has received a delta in the last 30s AND its orderbook is ready, skip it.
+      const symbols = [...this.depthSymbols].filter((symbol) => {
+        if (!this.isDepthEligible(symbol)) return false;
+        // Skip symbols with healthy recent deltas — no need to waste REST weight
+        const lastDelta = this.lastBookDeltaAtBySymbol.get(symbol) ?? 0;
+        if (lastDelta > 0 && now - lastDelta < 30_000 && this.orderbooks.isReady(symbol)) return false;
+        return true;
+      });
       if (!symbols.length) return;
       const total = symbols.length;
       const batch = Math.min(SNAPSHOT_SANITY_BATCH, total);
@@ -1353,11 +1361,16 @@ export class BinanceFuturesMarketAdapter implements IExchangeMarketAdapter {
   }
 
   // ── Reconnect backfill: fetch last 2 candles per symbol via REST ──
+  // Only backfill critical intervals (1m, 15m, 1h) — others will fill from WS kline stream.
+  // Staggered with jitter to avoid burst.
   private async backfillCandles(symbols: string[]): Promise<void> {
-    const intervals = BINANCE_CANDLE_INTERVALS;
-    for (const symbol of symbols) {
+    const BACKFILL_INTERVALS = ["1m", "15m", "1h"] as const; // reduced from 7 to 3
+    const MAX_BACKFILL_SYMBOLS = 5; // cap symbols per reconnect backfill
+    const limited = symbols.slice(0, MAX_BACKFILL_SYMBOLS);
+
+    for (const symbol of limited) {
       if (!this.started) return;
-      for (const interval of intervals) {
+      for (const interval of BACKFILL_INTERVALS) {
         try {
           const res = await guardedBinanceFetch(
             `${BINANCE_DEPTH_SNAPSHOT_BASE}/fapi/v1/klines?symbol=${encodeURIComponent(symbol)}&interval=${interval}&limit=2`,
@@ -1380,8 +1393,7 @@ export class BinanceFuturesMarketAdapter implements IExchangeMarketAdapter {
               open, high, low, close,
               volume: Math.max(0, volume),
             });
-            // Emit as kline event so gateway pushes it to clients
-            const closed = Number(row[6]) < Date.now(); // closeTime < now → closed
+            const closed = Number(row[6]) < Date.now();
             this.emit({
               type: "kline",
               exchange: this.exchange,
@@ -1399,8 +1411,9 @@ export class BinanceFuturesMarketAdapter implements IExchangeMarketAdapter {
           // backfill is best-effort; continue with next
         }
       }
-      // Gap between symbols — 500ms to stay within weight budget
-      await new Promise((resolve) => setTimeout(resolve, 500));
+      // 1.5s base delay + random 0-2.5s jitter between symbols
+      const delay = 1500 + Math.floor(Math.random() * 2500);
+      await new Promise((resolve) => setTimeout(resolve, delay));
     }
     this.pushReason(`backfill_done:${symbols.length}_symbols`);
   }
