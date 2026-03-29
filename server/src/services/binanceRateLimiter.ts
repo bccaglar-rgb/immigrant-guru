@@ -110,74 +110,114 @@ interface CircuitBreaker {
   halfOpenAllowed: number;  // allow 1 request to test
 }
 
-const CIRCUIT_FAILURE_THRESHOLD = 8;   // 8 failures → OPEN (tolerant to brief hiccups)
-const CIRCUIT_OPEN_DURATION_MS = 30_000;   // 30s open before half-open (fast recovery)
+const CIRCUIT_FAILURE_THRESHOLD = 8;   // 8 failures → OPEN
+const CIRCUIT_OPEN_DURATION_MS = 30_000;   // 30s open before half-open
 const CIRCUIT_WINDOW_MS = 60_000;       // 60s failure window
 
-const circuits = new Map<string, CircuitBreaker>();
+// ── REDIS-BACKED circuit breaker (shared across all PM2 workers) ──
+// Keys: rl:{exchange}:cb:state, rl:{exchange}:cb:openUntil, rl:{exchange}:cb:fails
+// Local cache refreshed every 500ms to avoid Redis round-trip on every request.
 
-const getCircuit = (exchange: string): CircuitBreaker => {
-  let cb = circuits.get(exchange);
-  if (!cb) {
-    cb = { state: "CLOSED", failureCount: 0, lastFailureAt: 0, openUntil: 0, halfOpenAllowed: 0 };
-    circuits.set(exchange, cb);
-  }
-  return cb;
+interface CBLocal { state: CircuitState; openUntil: number; failureCount: number; lastSyncAt: number; halfOpenAllowed: number }
+const cbCache = new Map<string, CBLocal>();
+const CB_SYNC_INTERVAL_MS = 500; // refresh from Redis every 500ms
+
+const getCBLocal = (exchange: string): CBLocal => {
+  let c = cbCache.get(exchange);
+  if (!c) { c = { state: "CLOSED", openUntil: 0, failureCount: 0, lastSyncAt: 0, halfOpenAllowed: 0 }; cbCache.set(exchange, c); }
+  return c;
 };
 
-const circuitCanPass = (exchange: string, _priority: Priority): boolean => {
-  const cb = getCircuit(exchange);
+const syncCBFromRedis = async (exchange: string): Promise<CBLocal> => {
+  const c = getCBLocal(exchange);
   const now = Date.now();
+  if (now - c.lastSyncAt < CB_SYNC_INTERVAL_MS) return c;
+  try {
+    const [state, openUntil, fails] = await Promise.all([
+      redis.get(`rl:${exchange}:cb:state`),
+      redis.get(`rl:${exchange}:cb:openUntil`),
+      redis.get(`rl:${exchange}:cb:fails`),
+    ]);
+    c.state = (state === "OPEN" || state === "HALF_OPEN") ? state : "CLOSED";
+    c.openUntil = Number(openUntil ?? 0);
+    c.failureCount = Number(fails ?? 0);
+    c.lastSyncAt = now;
+  } catch { /* fallback to local cache on Redis error */ }
+  return c;
+};
 
+const circuitCanPass = async (exchange: string, _priority: Priority): Promise<boolean> => {
+  const cb = await syncCBFromRedis(exchange);
+  const now = Date.now();
   if (cb.state === "CLOSED") return true;
-
   if (cb.state === "OPEN") {
     if (now >= cb.openUntil) {
-      cb.state = "HALF_OPEN";
-      cb.halfOpenAllowed = 1;
+      // Transition to HALF_OPEN in Redis (atomic)
+      try {
+        await redis.set(`rl:${exchange}:cb:state`, "HALF_OPEN");
+        cb.state = "HALF_OPEN";
+        cb.halfOpenAllowed = 1;
+      } catch { cb.state = "HALF_OPEN"; cb.halfOpenAllowed = 1; }
       return true;
     }
-    // NEVER bypass OPEN state — even critical priority waits
     return false;
   }
-
   // HALF_OPEN: allow 1 request to probe
-  if (cb.halfOpenAllowed > 0) {
-    cb.halfOpenAllowed--;
-    return true;
-  }
+  if (cb.halfOpenAllowed > 0) { cb.halfOpenAllowed--; return true; }
   return false;
 };
 
-const circuitRecordSuccess = (exchange: string): void => {
-  const cb = getCircuit(exchange);
+const circuitRecordSuccess = async (exchange: string): Promise<void> => {
+  const cb = getCBLocal(exchange);
   if (cb.state === "HALF_OPEN") {
-    cb.state = "CLOSED";
-    cb.failureCount = 0;
-    console.log(`[ExchangeRL:${exchange}] Circuit breaker CLOSED (recovered)`);
-  }
-  // Decay failures over time
-  if (cb.failureCount > 0 && Date.now() - cb.lastFailureAt > CIRCUIT_WINDOW_MS) {
-    cb.failureCount = Math.max(0, cb.failureCount - 1);
+    try {
+      await Promise.all([
+        redis.set(`rl:${exchange}:cb:state`, "CLOSED"),
+        redis.del(`rl:${exchange}:cb:fails`),
+        redis.del(`rl:${exchange}:cb:openUntil`),
+      ]);
+    } catch { /* best-effort */ }
+    cb.state = "CLOSED"; cb.failureCount = 0; cb.lastSyncAt = 0;
+    console.log(`[ExchangeRL:${exchange}] Circuit CLOSED (recovered) — shared via Redis`);
   }
 };
 
-const circuitRecordFailure = (exchange: string, reason: string): void => {
-  const cb = getCircuit(exchange);
-  cb.failureCount++;
-  cb.lastFailureAt = Date.now();
+const circuitRecordFailure = async (exchange: string, reason: string): Promise<void> => {
+  const cb = getCBLocal(exchange);
+  const now = Date.now();
+
+  try {
+    const fails = await redis.incr(`rl:${exchange}:cb:fails`);
+    // Set TTL on fails counter so it decays
+    if (fails <= 1) await redis.expire(`rl:${exchange}:cb:fails`, Math.ceil(CIRCUIT_WINDOW_MS / 1000));
+    cb.failureCount = fails;
+  } catch { cb.failureCount++; }
 
   if (cb.state === "HALF_OPEN") {
-    cb.state = "OPEN";
-    cb.openUntil = Date.now() + CIRCUIT_OPEN_DURATION_MS; // same duration on re-open (no doubling)
-    console.error(`[ExchangeRL:${exchange}] Circuit breaker OPEN (half-open test failed: ${reason})`);
+    const openUntil = now + CIRCUIT_OPEN_DURATION_MS;
+    try {
+      await Promise.all([
+        redis.set(`rl:${exchange}:cb:state`, "OPEN"),
+        redis.set(`rl:${exchange}:cb:openUntil`, String(openUntil)),
+        redis.del(`rl:${exchange}:cb:fails`),
+      ]);
+    } catch { /* best-effort */ }
+    cb.state = "OPEN"; cb.openUntil = openUntil; cb.lastSyncAt = 0;
+    console.error(`[ExchangeRL:${exchange}] Circuit OPEN (half-open test failed: ${reason}) — shared via Redis`);
     return;
   }
 
   if (cb.failureCount >= CIRCUIT_FAILURE_THRESHOLD && cb.state === "CLOSED") {
-    cb.state = "OPEN";
-    cb.openUntil = Date.now() + CIRCUIT_OPEN_DURATION_MS;
-    console.error(`[ExchangeRL:${exchange}] Circuit breaker OPEN (${cb.failureCount} failures: ${reason})`);
+    const openUntil = now + CIRCUIT_OPEN_DURATION_MS;
+    try {
+      await Promise.all([
+        redis.set(`rl:${exchange}:cb:state`, "OPEN"),
+        redis.set(`rl:${exchange}:cb:openUntil`, String(openUntil)),
+        redis.del(`rl:${exchange}:cb:fails`),
+      ]);
+    } catch { /* best-effort */ }
+    cb.state = "OPEN"; cb.openUntil = openUntil; cb.lastSyncAt = 0;
+    console.error(`[ExchangeRL:${exchange}] Circuit OPEN (${cb.failureCount} failures: ${reason}) — shared via Redis`);
   }
 };
 
@@ -427,8 +467,8 @@ export const exchangeFetch = async (opts: ExchangeFetchOptions): Promise<Respons
   metrics.totalRequests++;
   exm.requests++;
 
-  // ── 1. Circuit breaker check ──
-  if (!circuitCanPass(exchange, priority)) {
+  // ── 1. Circuit breaker check (Redis-backed, shared across workers) ──
+  if (!await circuitCanPass(exchange, priority)) {
     metrics.totalCircuitRejected++;
     throw new Error(`${exchange}_circuit_open: REST temporarily disabled for ${exchange}`);
   }
@@ -586,7 +626,7 @@ export const exchangeFetch = async (opts: ExchangeFetchOptions): Promise<Respons
         const retryAfter = Number(res.headers.get("Retry-After") ?? 90);
         const cooldownMs = Math.max(policy.cooldown429Ms, retryAfter * 1000);
         void setCooldown(exchange, Date.now() + cooldownMs, "429");
-        circuitRecordFailure(exchange, "429");
+        void circuitRecordFailure(exchange, "429");
         // Inform egress controller — does NOT trigger failover
         egressCtrl?.reportRateLimit(exchange, egress.pathId, 429);
         console.error(`[ExchangeRL:${policy.name}] 429! Cooldown ${cooldownMs / 1000}s. weight=${current}+${weight} path=${egress.pathId}`);
@@ -594,33 +634,38 @@ export const exchangeFetch = async (opts: ExchangeFetchOptions): Promise<Respons
         metrics.total418++;
         exm.total418++;
         void setCooldown(exchange, Date.now() + policy.cooldown418Ms, "418");
-        // Force circuit breaker to OPEN for the FULL cooldown duration
-        const cb418 = getCircuit(exchange);
-        cb418.state = "OPEN";
-        cb418.openUntil = Date.now() + policy.cooldown418Ms;
-        cb418.failureCount = CIRCUIT_FAILURE_THRESHOLD;
+        // Force circuit breaker to OPEN for the FULL cooldown duration — Redis-backed
+        const openUntil418 = Date.now() + policy.cooldown418Ms;
+        const cb418 = getCBLocal(exchange);
+        cb418.state = "OPEN"; cb418.openUntil = openUntil418; cb418.failureCount = CIRCUIT_FAILURE_THRESHOLD; cb418.lastSyncAt = 0;
+        try {
+          await Promise.all([
+            redis.set(`rl:${exchange}:cb:state`, "OPEN"),
+            redis.set(`rl:${exchange}:cb:openUntil`, String(openUntil418)),
+          ]);
+        } catch { /* best-effort */ }
         // Inform egress controller — quarantines path but does NOT switch to continue
         egressCtrl?.reportRateLimit(exchange, egress.pathId, 418);
-        console.error(`[ExchangeRL:${policy.name}] 418 IP BAN! Circuit LOCKED for ${policy.cooldown418Ms / 1000}s path=${egress.pathId}`);
+        console.error(`[ExchangeRL:${policy.name}] 418 IP BAN! Circuit LOCKED for ${policy.cooldown418Ms / 1000}s path=${egress.pathId} — SHARED via Redis`);
       } else if (upstreamStatus === 403) {
         metrics.total403++;
         void setCooldown(exchange, Date.now() + policy.cooldown418Ms, "403");
-        circuitRecordFailure(exchange, "403");
+        void circuitRecordFailure(exchange, "403");
         egressCtrl?.reportRateLimit(exchange, egress.pathId, 403);
         console.error(`[ExchangeRL:${policy.name}] 403 FORBIDDEN! Cooldown ${policy.cooldown418Ms / 1000}s path=${egress.pathId}`);
       } else if (res.ok) {
-        circuitRecordSuccess(exchange);
+        void circuitRecordSuccess(exchange);
       } else {
         exm.errors++;
         if (upstreamStatus >= 500) {
-          circuitRecordFailure(exchange, `${upstreamStatus}`);
+          void circuitRecordFailure(exchange, `${upstreamStatus}`);
           // 5xx from exchange = potential connectivity/server issue
           egressCtrl?.reportConnectivityFailure(exchange, egress.pathId, `http_${upstreamStatus}`);
         }
       }
 
       exm.avgLatencyMs = exm.avgLatencyMs * 0.9 + latencyMs * 0.1;
-      exm.circuitState = getCircuit(exchange).state;
+      exm.circuitState = getCBLocal(exchange).state;
 
       // ── Cross-worker dedup: cache response in Redis for other workers ──
       if (dedupKey && res.ok && (!init?.method || init.method === "GET")) {
@@ -644,7 +689,7 @@ export const exchangeFetch = async (opts: ExchangeFetchOptions): Promise<Respons
       const errMsg = err instanceof Error ? err.message : "unknown";
       if (err instanceof Error && (err.name === "TimeoutError" || errMsg.includes("timeout"))) {
         metrics.totalTimeout++;
-        circuitRecordFailure(exchange, "timeout");
+        void circuitRecordFailure(exchange, "timeout");
         egressCtrl?.reportConnectivityFailure(exchange, egress.pathId, "timeout");
       } else if (errMsg.includes("ECONNREFUSED") || errMsg.includes("ECONNRESET")
         || errMsg.includes("ENOTFOUND") || errMsg.includes("EHOSTUNREACH")) {
@@ -672,7 +717,7 @@ export const getRateLimiterStatus = () => {
   const policy = getPolicy(exchange);
   const local = getLocal(exchange);
   const now = Date.now();
-  const cb = getCircuit(exchange);
+  const cb = getCBLocal(exchange);
   const egressCtrl = getEgressController();
   const egressStatus = egressCtrl?.getStatus() ?? {};
   return {
@@ -706,7 +751,7 @@ export const getRateLimiterStatus = () => {
 export const getFullMetrics = () => {
   const exchanges: Record<string, unknown> = {};
   for (const [ex, policy] of Object.entries(POLICIES)) {
-    const cb = getCircuit(ex);
+    const cb = getCBLocal(ex);
     const local = getLocal(ex);
     const exm = getExMetrics(ex);
     const now = Date.now();
@@ -790,7 +835,7 @@ export const isExchangeAvailable = (exchange: string = "binance"): boolean => {
   // Check local cooldown (always in sync with Redis via setCooldown)
   if (local.cooldownUntil > now) return false;
   // Check circuit breaker
-  const cb = getCircuit(ex);
+  const cb = getCBLocal(ex);
   if (cb.state === "OPEN" && now < cb.openUntil) return false;
   return true;
 };
@@ -801,7 +846,7 @@ export const isExchangeAvailable = (exchange: string = "binance"): boolean => {
 export const isExchangeAvailableAsync = async (exchange: string = "binance"): Promise<boolean> => {
   const ex = exchange.toLowerCase().replace(/[.\-_\s]/g, "");
   // Check circuit breaker first (instant)
-  const cb = getCircuit(ex);
+  const cb = getCBLocal(ex);
   const now = Date.now();
   if (cb.state === "OPEN" && now < cb.openUntil) return false;
   // Check Redis cooldown

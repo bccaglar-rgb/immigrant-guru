@@ -11,8 +11,10 @@ import { redis } from "../redis.ts";
 const BACKFILL_KEY_PREFIX = "candle:backfilled:";
 const BACKFILL_TTL_SEC = 86_400; // 24 hours
 const BINANCE_KLINES_URL = "https://fapi.binance.com/fapi/v1/klines";
-const MAX_RPS = 2; // max 2 requests per second
+const MAX_RPS = 1; // conservative: 1 req/sec to protect shared weight budget
 const CANDLES_PER_REQUEST = 1000; // max Binance allows
+const BACKFILL_WEIGHT_PER_CALL = 5; // Binance klines weight for limit=1000
+const MAX_WEIGHT_PER_BACKFILL_SESSION = 200; // hard cap: never burn more than 200 weight in one backfill run
 
 interface BackfillRow {
   time: Date;
@@ -54,8 +56,15 @@ export class CandleBackfill {
   async backfillSymbols(symbols: string[]): Promise<void> {
     let filled = 0;
     let skipped = 0;
+    let weightUsed = 0;
 
     for (const symbol of symbols) {
+      // Hard cap: stop if we've used too much weight in this session
+      if (weightUsed >= MAX_WEIGHT_PER_BACKFILL_SESSION) {
+        console.log(`[CandleBackfill] Weight cap reached (${weightUsed}/${MAX_WEIGHT_PER_BACKFILL_SESSION}), stopping.`);
+        break;
+      }
+
       try {
         const alreadyDone = await redis.get(BACKFILL_KEY_PREFIX + symbol);
         if (alreadyDone) {
@@ -63,19 +72,31 @@ export class CandleBackfill {
           continue;
         }
 
+        // Check shared cooldown in Redis before making any REST call
+        const cooldown = await redis.get("rl:binance:cooldown");
+        if (cooldown) {
+          console.warn(`[CandleBackfill] Binance cooldown active, aborting backfill.`);
+          break;
+        }
+
         await this.backfillSymbol(symbol);
         await redis.set(BACKFILL_KEY_PREFIX + symbol, "1", "EX", BACKFILL_TTL_SEC);
         filled++;
+        weightUsed += BACKFILL_WEIGHT_PER_CALL;
 
-        // Rate limit: sleep 500ms between requests (2 req/sec)
+        // Rate limit: 1 req/sec to stay conservative
         await sleep(1000 / MAX_RPS);
       } catch (err: any) {
+        if (err?.message?.includes("418") || err?.message?.includes("429")) {
+          console.error(`[CandleBackfill] Rate limited, aborting entire session.`);
+          break;
+        }
         console.error(`[CandleBackfill] Failed ${symbol}:`, err?.message ?? err);
       }
     }
 
     console.log(
-      `[CandleBackfill] Done: filled=${filled}, skipped=${skipped}, total=${symbols.length}`,
+      `[CandleBackfill] Done: filled=${filled}, skipped=${skipped}, weightUsed=${weightUsed}, total=${symbols.length}`,
     );
   }
 
@@ -84,13 +105,33 @@ export class CandleBackfill {
    */
   private async backfillSymbol(symbol: string): Promise<void> {
     const url = `${BINANCE_KLINES_URL}?symbol=${symbol}&interval=1m&limit=${CANDLES_PER_REQUEST}`;
-    const resp = await fetch(url);
+
+    // Record weight in shared Redis counter (same key as exchangeFetch uses)
+    const now = Date.now();
+    const weightKey = "rl:binance:weight";
+    try {
+      await redis.zadd(weightKey, now, `${now}:${BACKFILL_WEIGHT_PER_CALL}:bf-${symbol}`);
+      await redis.expire(weightKey, 65); // 65s window
+    } catch { /* best-effort weight tracking */ }
+
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 10_000); // 10s timeout
+    let resp: Response;
+    try {
+      resp = await fetch(url, { signal: controller.signal });
+    } finally {
+      clearTimeout(timeout);
+    }
 
     if (!resp.ok) {
       if (resp.status === 429 || resp.status === 418 || resp.status === 403) {
-        console.warn(`[CandleBackfill] Rate limited (${resp.status}), pausing 60s...`);
-        await sleep(60_000);
-        return;
+        // Write cooldown to shared Redis so ALL services respect it
+        const cooldownMs = resp.status === 418 ? 120_000 : 30_000;
+        try {
+          await redis.set("rl:binance:cooldown", `${Date.now() + cooldownMs}:backfill-${resp.status}`, "PX", cooldownMs);
+        } catch { /* best-effort */ }
+        console.error(`[CandleBackfill] ${resp.status} from Binance — cooldown ${cooldownMs / 1000}s written to Redis.`);
+        throw new Error(`Rate limited: ${resp.status}`);
       }
       throw new Error(`HTTP ${resp.status}: ${await resp.text().catch(() => "")}`);
     }
