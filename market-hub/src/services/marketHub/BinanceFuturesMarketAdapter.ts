@@ -642,14 +642,23 @@ export class BinanceFuturesMarketAdapter implements IExchangeMarketAdapter {
           if (!this.pendingSnapshotSymbols.has(symbol)) this.enqueueSnapshot(symbol);
           continue;
         }
+        // Confirmed desync check — stale alone is NOT sufficient for snapshot.
+        // Snapshot only triggers when: prolonged stale (30s+) AND orderbook has known gaps.
         const lastDeltaAt = this.lastBookDeltaAtBySymbol.get(symbol) ?? 0;
         if (lastDeltaAt > 0 && now - lastDeltaAt > SYMBOL_DELTA_STALE_MS) {
-          if (!this.pendingSnapshotSymbols.has(symbol)) {
-            this.symbolStaleResyncs += 1;
-            this.pushReason(`symbol_delta_stale:${symbol}:${Math.round(now - lastDeltaAt)}ms`);
-            this.resetSymbolSyncState(symbol);
-            this.enqueueSnapshot(symbol);
+          // Additional guard: only snapshot if orderbook shows signs of desync
+          const bookReady = this.orderbooks.isReady(symbol);
+          const hasGaps = !bookReady;
+          const consecutiveFails = (this.snapshotFailuresBySymbol.get(symbol) ?? 0);
+          if (hasGaps || consecutiveFails > 0) {
+            if (!this.pendingSnapshotSymbols.has(symbol)) {
+              this.symbolStaleResyncs += 1;
+              this.pushReason(`confirmed_desync:${symbol}:${Math.round(now - lastDeltaAt)}ms`);
+              this.resetSymbolSyncState(symbol);
+              this.enqueueSnapshot(symbol);
+            }
           }
+          // If no gaps and no failures → stale is just a quiet period, skip snapshot
         }
       }
 

@@ -42,7 +42,40 @@ const getWeight = (url: string): number => {
   for (const [path, w] of Object.entries(ENDPOINT_WEIGHTS)) {
     if (url.includes(path)) return w;
   }
-  return 5; // default conservative estimate
+  return 5;
+};
+
+// ── Per-endpoint budget caps (per minute) ──
+// Tier C endpoints auto-throttle when global weight is elevated
+const ENDPOINT_BUDGET: Record<string, { maxPerMin: number; tier: "A" | "B" | "C" }> = {
+  "/fapi/v1/depth": { maxPerMin: 8, tier: "B" },       // recovery snapshots
+  "/fapi/v1/klines": { maxPerMin: 6, tier: "C" },      // backfill
+  "/fapi/v1/exchangeInfo": { maxPerMin: 1, tier: "C" }, // contract refresh
+};
+
+const endpointCallCounts = new Map<string, { count: number; resetAt: number }>();
+
+const checkEndpointBudget = (url: string): boolean => {
+  const now = Date.now();
+  for (const [path, budget] of Object.entries(ENDPOINT_BUDGET)) {
+    if (!url.includes(path)) continue;
+    let tracker = endpointCallCounts.get(path);
+    if (!tracker || now > tracker.resetAt) {
+      tracker = { count: 0, resetAt: now + 60_000 };
+      endpointCallCounts.set(path, tracker);
+    }
+    if (tracker.count >= budget.maxPerMin) return false;
+    tracker.count++;
+    return true;
+  }
+  return true; // no budget cap for unlisted endpoints
+};
+
+const getEndpointTier = (url: string): "A" | "B" | "C" => {
+  for (const [path, budget] of Object.entries(ENDPOINT_BUDGET)) {
+    if (url.includes(path)) return budget.tier;
+  }
+  return "B";
 };
 
 // ── Concurrency control ──
@@ -105,8 +138,33 @@ export async function guardedBinanceFetch(
 ): Promise<Response> {
   const weight = getWeight(url);
   const dedupKey = opts?.dedupKey ?? url.split("?")[0];
+  const tier = getEndpointTier(url);
 
-  // 0. Startup burst damper — first 60s block non-essential REST
+  // 0a. Per-endpoint budget cap
+  if (!checkEndpointBudget(url)) {
+    throw new Error(`hub_endpoint_budget: ${url.split("?")[0]} exceeded per-minute cap`);
+  }
+
+  // 0b. Tier-based auto-throttle: when weight > 50%, Tier C is blocked; > 70%, Tier B delayed
+  if (!opts?.skipBudgetCheck) {
+    try {
+      const now = Date.now();
+      const entries = await redis.zrangebyscore(WEIGHT_KEY, now - 60_000, "+inf");
+      let cw = 0;
+      for (const e of entries) cw += Number(e.split(":")[1] ?? 0);
+      const usagePct = cw / WEIGHT_LIMIT;
+      if (tier === "C" && usagePct > 0.50) {
+        throw new Error(`hub_tier_throttle: Tier C blocked at ${Math.round(usagePct * 100)}% weight usage`);
+      }
+      if (tier === "B" && usagePct > 0.70) {
+        await new Promise((r) => setTimeout(r, 2000)); // 2s delay for Tier B above 70%
+      }
+    } catch (err: any) {
+      if (err.message?.startsWith("hub_tier")) throw err;
+    }
+  }
+
+  // 0c. Startup burst damper — first 60s block non-essential REST
   const elapsed = Date.now() - BOOT_TIME;
   if (elapsed < STARTUP_DAMPER_MS) {
     if (elapsed < 20_000) {

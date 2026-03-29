@@ -512,6 +512,19 @@ export const exchangeFetch = async (opts: ExchangeFetchOptions): Promise<Respons
   const softLimit = Math.floor(policy.weightPerMinute * policy.softPct);
   const hardLimit = Math.floor(policy.weightPerMinute * policy.hardPct);
 
+  // Tier-based rejection: Tier C (backfill/sanity) blocked at 50%, Tier B (recovery) delayed at 70%
+  const usagePct = current / policy.weightPerMinute;
+  const isTierC = endpoint.includes("klines") || endpoint.includes("exchangeInfo") || endpoint.includes("ticker/24hr");
+  const isTierB = endpoint.includes("depth");
+  if (isTierC && usagePct > 0.50 && priority !== "critical") {
+    metrics.totalPriorityDrops++;
+    throw new Error(`${exchange}_tier_c_throttle: ${endpoint} blocked at ${Math.round(usagePct * 100)}% weight`);
+  }
+  if (isTierB && usagePct > 0.70 && priority !== "critical") {
+    // Delay Tier B instead of blocking
+    await new Promise((r) => setTimeout(r, 2000));
+  }
+
   // Priority-based rejection near limits
   if (current >= hardLimit && priority !== "critical") {
     metrics.totalPriorityDrops++;
