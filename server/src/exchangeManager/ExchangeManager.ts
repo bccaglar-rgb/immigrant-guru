@@ -22,7 +22,7 @@ import type { ExchangeAdapter } from "./adapters/BaseAdapter.ts";
 interface ConnectInput {
   exchangeId: string;
   credentials: ExchangeCredentials;
-  options?: OnboardingOptions;
+  options?: OnboardingOptions & { dryRun?: boolean };
   accountName?: string;
 }
 
@@ -127,37 +127,42 @@ export class ExchangeManager {
       checkedAt: new Date().toISOString(),
     };
 
-    await this.connections.upsertExchangeConnection({
-      userId,
-      exchangeId,
-      exchangeDisplayName: adapter.displayName,
-      accountName: input.accountName ?? input.credentials.subaccount ?? "Main",
-      enabled: overallStatus !== "FAILED",
-      environment: options.environment ?? "mainnet",
-      credentialsEncrypted: {
-        apiKey: encryptSecret(input.credentials.apiKey, this.encryptionKey),
-        apiSecret: encryptSecret(input.credentials.apiSecret, this.encryptionKey),
-        ...(input.credentials.passphrase
-          ? { passphrase: encryptSecret(input.credentials.passphrase, this.encryptionKey) }
-          : {}),
-      },
-      status: overallStatus,
-      statusReport: report,
-      discoveryCache: {
-        marketTypes: discovery.marketTypes,
-        symbolsIndex: discovery.symbolsIndex,
-        sampleSymbols: discovery.sampleSymbols,
-        preferredSymbols: discovery.preferredSymbols,
-        checkedAt: report.checkedAt,
-      },
-    });
+    // dryRun = test-only — validate credentials but do NOT persist to DB
+    if (!input.options?.dryRun) {
+      await this.connections.upsertExchangeConnection({
+        userId,
+        exchangeId,
+        exchangeDisplayName: adapter.displayName,
+        accountName: input.accountName ?? input.credentials.subaccount ?? "Main",
+        enabled: overallStatus !== "FAILED",
+        environment: options.environment ?? "mainnet",
+        credentialsEncrypted: {
+          apiKey: encryptSecret(input.credentials.apiKey, this.encryptionKey),
+          apiSecret: encryptSecret(input.credentials.apiSecret, this.encryptionKey),
+          ...(input.credentials.passphrase
+            ? { passphrase: encryptSecret(input.credentials.passphrase, this.encryptionKey) }
+            : {}),
+        },
+        status: overallStatus,
+        statusReport: report,
+        discoveryCache: {
+          marketTypes: discovery.marketTypes,
+          symbolsIndex: discovery.symbolsIndex,
+          sampleSymbols: discovery.sampleSymbols,
+          preferredSymbols: discovery.preferredSymbols,
+          checkedAt: report.checkedAt,
+        },
+      });
+      this.cache.set(`${userId}:${exchangeId}`, { report, expiresAt: Date.now() + DISCOVERY_TTL_MS });
+    }
 
-    this.cache.set(`${userId}:${exchangeId}`, { report, expiresAt: Date.now() + DISCOVERY_TTL_MS });
     return report;
   }
 
   async list(userId: string) {
-    const rows = await this.connections.listExchangeConnections(userId);
+    const allRows = await this.connections.listExchangeConnections(userId);
+    // Filter out stale __test__ accounts left over from "Test Connection" dry-runs
+    const rows = allRows.filter((row) => (row.accountName ?? "Main") !== "__test__");
     return rows.map((row) => ({
       id: row.id,
       exchangeId: row.exchangeId,

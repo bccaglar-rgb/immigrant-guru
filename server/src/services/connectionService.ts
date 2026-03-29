@@ -219,4 +219,11 @@ export class ConnectionService {
       [userId, exchangeId, name],
     );
   }
+
+  /** Remove stale __test__ rows left by old "Test Connection" dry-runs */
+  async purgeTestAccounts() {
+    await pool.query(
+      `DELETE FROM exchange_connection_records WHERE account_name = '__test__'`,
+    );
+  }
 }

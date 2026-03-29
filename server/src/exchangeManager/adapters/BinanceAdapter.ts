@@ -15,10 +15,11 @@ export class BinanceAdapter implements ExchangeAdapter {
     if (!base.ok) return base;
     const started = Date.now();
     try {
-      await fetchJsonWithTimeout<{ timezone: string }>(`${BASE}/api/v3/time`, 4000);
+      await fetchJsonWithTimeout<{ timezone: string }>(`${BASE}/api/v3/time`, 6000);
       return { ok: true, warnings: [], errors: [], latencyMs: Date.now() - started };
     } catch (err) {
-      return { ok: true, warnings: ["Public ping failed, continuing with discovery"], errors: [], latencyMs: Date.now() - started };
+      const msg = err instanceof Error ? err.message : "unknown";
+      return { ok: false, warnings: [], errors: [issue("NETWORK_TIMEOUT", `Binance API unreachable: ${msg}`, true)], latencyMs: Date.now() - started };
     }
   }
 

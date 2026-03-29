@@ -72,10 +72,11 @@ const readExchangeAccounts = (): ManagerConnection[] =>
 export const writeExchangeAccounts = (rows: ManagerConnection[]) => {
   try {
     window.localStorage.setItem(EXCHANGE_ACCOUNTS_KEY, JSON.stringify(rows));
-    window.dispatchEvent(new Event("exchange-manager-updated"));
   } catch {
-    // noop
+    // noop — localStorage full or unavailable
   }
+  // Always dispatch even if localStorage write failed so in-memory state updates
+  window.dispatchEvent(new Event("exchange-manager-updated"));
 };
 
 export const useExchangeConfigs = () => {
@@ -110,7 +111,7 @@ export const useExchangeConfigs = () => {
             exchangeId: String(row.exchangeId),
             exchangeDisplayName: String(row.exchangeDisplayName),
             accountName: String(row.accountName ?? "Main"),
-            status: row.status === "READY" || row.status === "FAILED" ? row.status : "PARTIAL",
+            status: (row.status === "READY" || row.status === "PARTIAL" || row.status === "FAILED") ? row.status : "READY",
             enabled: Boolean(row.enabled),
             marketTypes: Array.isArray(row.marketTypes) ? row.marketTypes : [],
             symbolsCount: Number.isFinite(Number(row.symbolsCount)) ? Number(row.symbolsCount) : undefined,
@@ -179,7 +180,11 @@ export const useExchangeConfigs = () => {
   }, [accountRows, managerConnections, exchanges]);
 
   const enabledAccounts = useMemo(
-    () => registeredAccounts.filter((row) => row.enabled && (row.status === "READY" || row.status === "PARTIAL")),
+    () => registeredAccounts.filter((row) =>
+      row.enabled &&
+      (row.status === "READY" || row.status === "PARTIAL") &&
+      row.accountName !== "__test__"
+    ),
     [registeredAccounts],
   );
 

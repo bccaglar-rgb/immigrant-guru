@@ -14,10 +14,11 @@ export class BybitAdapter implements ExchangeAdapter {
     const base = credentialsPresent(creds);
     if (!base.ok) return base;
     try {
-      await fetchJsonWithTimeout(`${BASE}/v5/market/time`, 4000);
+      await fetchJsonWithTimeout(`${BASE}/v5/market/time`, 6000);
       return { ok: true, warnings: [], errors: [] };
-    } catch {
-      return { ok: true, warnings: ["Bybit ping failed, continuing"], errors: [] };
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "unknown";
+      return { ok: false, warnings: [], errors: [issue("NETWORK_TIMEOUT", `Bybit API unreachable: ${msg}`, true)] };
     }
   }
 

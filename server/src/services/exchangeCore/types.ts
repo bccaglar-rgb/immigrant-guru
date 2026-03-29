@@ -128,5 +128,20 @@ export interface ExchangeCoreMetrics {
   intentsTotal: number;
   eventsTotal: number;
   lastTickAt: string;
+  // Extended execution metrics (populated by ExecutionStatsTracker)
+  executionStats?: ExecutionStats;
+}
+
+export interface ExecutionStats {
+  totalSubmitted: number;
+  totalSuccess: number;
+  totalFailed: number;
+  totalRejected: number;
+  totalDedupPrevented: number;
+  avgExecutionMs: number;
+  p95ExecutionMs: number;
+  intentsBySource: { manual: number; ai: number };
+  intentsByVenue: Record<string, number>;
+  recentErrors: Array<{ ts: string; venue: string; code: string; message: string }>;
 }
 

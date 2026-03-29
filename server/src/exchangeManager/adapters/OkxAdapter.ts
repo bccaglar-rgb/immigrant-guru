@@ -16,10 +16,11 @@ export class OkxAdapter implements ExchangeAdapter {
     const warnings: string[] = [];
     if (!creds.passphrase) warnings.push("OKX usually requires passphrase for private endpoints");
     try {
-      await fetchJsonWithTimeout(`${BASE}/api/v5/public/time`, 4000);
+      await fetchJsonWithTimeout(`${BASE}/api/v5/public/time`, 6000);
       return { ok: true, warnings, errors: [] };
-    } catch {
-      return { ok: true, warnings: [...warnings, "OKX ping failed, continuing"], errors: [] };
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "unknown";
+      return { ok: false, warnings, errors: [issue("NETWORK_TIMEOUT", `OKX API unreachable: ${msg}`, true)] };
     }
   }
 

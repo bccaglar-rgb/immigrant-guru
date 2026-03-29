@@ -155,12 +155,20 @@ export default function ExchangeTerminalPage() {
       });
       const body = await res.json();
       if (!res.ok || !body.ok) return { ok: false, error: body.message ?? body.error ?? "Connection failed" };
-      // Refresh exchange list
-      const listRes = await fetch("/api/exchanges", { headers: { ...authHeaders() } });
-      const listBody = await listRes.json();
-      if (listBody.exchanges) {
-        writeExchangeAccounts(listBody.exchanges);
-        window.dispatchEvent(new Event("exchange-manager-updated"));
+      // Refresh exchange list — retry once on failure to ensure header updates
+      for (let attempt = 0; attempt < 2; attempt++) {
+        try {
+          const listRes = await fetch("/api/exchanges", { headers: { ...authHeaders() } });
+          if (listRes.ok) {
+            const listBody = await listRes.json();
+            if (listBody.exchanges) {
+              writeExchangeAccounts(listBody.exchanges);
+              window.dispatchEvent(new Event("exchange-manager-updated"));
+            }
+            break;
+          }
+        } catch { /* retry */ }
+        if (attempt === 0) await new Promise((r) => setTimeout(r, 500));
       }
       setConnectModalOpen(false);
       return { ok: true };
@@ -177,6 +185,7 @@ export default function ExchangeTerminalPage() {
           options: { accountName: "__test__", dryRun: true, environment: payload.testnet ? "testnet" : "mainnet" },
         }),
       });
+      if (!res.ok) return { ok: false, error: `Server error (${res.status})` };
       const body = await res.json();
       return body.ok ? { ok: true } : { ok: false, error: body.message ?? body.error ?? "Test failed" };
     } catch { return { ok: false, error: "Network error" }; }

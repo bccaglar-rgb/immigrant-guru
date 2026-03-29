@@ -30,10 +30,10 @@ import type { ExchangeVenue } from "./exchangeRateLimiter.ts";
 
 type CircuitState = "CLOSED" | "OPEN" | "HALF_OPEN";
 
-const FAILURE_THRESHOLD = Number(process.env.CB_FAILURE_THRESHOLD ?? 5);
-const FAILURE_WINDOW_SEC = Number(process.env.CB_FAILURE_WINDOW_SEC ?? 60);
-const COOLDOWN_SEC       = Number(process.env.CB_COOLDOWN_SEC ?? 30);
-const SUCCESS_THRESHOLD  = Number(process.env.CB_SUCCESS_THRESHOLD ?? 2);
+const FAILURE_THRESHOLD = Math.max(1, Number(process.env.CB_FAILURE_THRESHOLD) || 10);
+const FAILURE_WINDOW_SEC = Math.max(10, Number(process.env.CB_FAILURE_WINDOW_SEC) || 60);
+const COOLDOWN_SEC       = Math.max(5, Number(process.env.CB_COOLDOWN_SEC) || 20);
+const SUCCESS_THRESHOLD  = Math.max(1, Number(process.env.CB_SUCCESS_THRESHOLD) || 2);
 
 export class CircuitBreaker {
   private venue: ExchangeVenue;

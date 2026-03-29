@@ -185,6 +185,8 @@ app.get("/api/admin/market-health", async (req, res) => {
 
 const audit = new AuditLogService();
 const connections = new ConnectionService();
+// Clean up stale __test__ rows from old "Test Connection" dry-runs
+connections.purgeTestAccounts().catch(() => {});
 
 // ── Persistent Encryption Key ──────────────────────────────────
 // Resolved via keyManager: file → env var → dev fallback

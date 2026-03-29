@@ -41,20 +41,20 @@ interface ExchangePolicy {
 
 const POLICIES: Record<string, ExchangePolicy> = {
   binance: {
-    name: "Binance", weightPerMinute: 1200, softPct: 0.55, hardPct: 0.85,
-    cooldown429Ms: 60_000, cooldown418Ms: 300_000, weightHeaderName: "X-MBX-USED-WEIGHT-1M",
+    name: "Binance", weightPerMinute: 1200, softPct: 0.70, hardPct: 0.90,
+    cooldown429Ms: 10_000, cooldown418Ms: 60_000, weightHeaderName: "X-MBX-USED-WEIGHT-1M",
   },
   bybit: {
-    name: "Bybit", weightPerMinute: 600, softPct: 0.60, hardPct: 0.80,
-    cooldown429Ms: 60_000, cooldown418Ms: 300_000, weightHeaderName: "",
+    name: "Bybit", weightPerMinute: 600, softPct: 0.70, hardPct: 0.90,
+    cooldown429Ms: 10_000, cooldown418Ms: 60_000, weightHeaderName: "",
   },
   okx: {
-    name: "OKX", weightPerMinute: 600, softPct: 0.60, hardPct: 0.80,
-    cooldown429Ms: 60_000, cooldown418Ms: 300_000, weightHeaderName: "",
+    name: "OKX", weightPerMinute: 600, softPct: 0.70, hardPct: 0.90,
+    cooldown429Ms: 10_000, cooldown418Ms: 60_000, weightHeaderName: "",
   },
   gateio: {
-    name: "Gate.io", weightPerMinute: 900, softPct: 0.60, hardPct: 0.80,
-    cooldown429Ms: 60_000, cooldown418Ms: 300_000, weightHeaderName: "",
+    name: "Gate.io", weightPerMinute: 900, softPct: 0.70, hardPct: 0.90,
+    cooldown429Ms: 10_000, cooldown418Ms: 60_000, weightHeaderName: "",
   },
 };
 
@@ -110,9 +110,9 @@ interface CircuitBreaker {
   halfOpenAllowed: number;  // allow 1 request to test
 }
 
-const CIRCUIT_FAILURE_THRESHOLD = 3;   // 3 failures → OPEN (was 5)
-const CIRCUIT_OPEN_DURATION_MS = 300_000;  // 5 min open before half-open (was 30s)
-const CIRCUIT_WINDOW_MS = 120_000;      // failure window (was 60s)
+const CIRCUIT_FAILURE_THRESHOLD = 8;   // 8 failures → OPEN (tolerant to brief hiccups)
+const CIRCUIT_OPEN_DURATION_MS = 30_000;   // 30s open before half-open (fast recovery)
+const CIRCUIT_WINDOW_MS = 60_000;       // 60s failure window
 
 const circuits = new Map<string, CircuitBreaker>();
 
@@ -169,7 +169,7 @@ const circuitRecordFailure = (exchange: string, reason: string): void => {
 
   if (cb.state === "HALF_OPEN") {
     cb.state = "OPEN";
-    cb.openUntil = Date.now() + CIRCUIT_OPEN_DURATION_MS * 2; // longer on re-open
+    cb.openUntil = Date.now() + CIRCUIT_OPEN_DURATION_MS; // same duration on re-open (no doubling)
     console.error(`[ExchangeRL:${exchange}] Circuit breaker OPEN (half-open test failed: ${reason})`);
     return;
   }

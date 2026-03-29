@@ -48,12 +48,12 @@ export interface SymbolHealth {
 // THRESHOLDS
 // ═══════════════════════════════════════════════════════════════════
 
-const DEPTH_HEALTHY_MS     = 3_000;   // < 3s → healthy
-const DEPTH_DEGRADED_MS    = 8_000;   // 3-8s → degraded
-const DEPTH_STALE_MS       = 8_000;   // > 8s → stale
-const DEPTH_UNAVAILABLE_MS = 60_000;  // > 60s → unavailable
-const TICKER_STALE_MS      = 15_000;  // > 15s → stale
-const MIN_DEPTH_LEVELS     = 5;       // < 5 levels → degraded
+const DEPTH_HEALTHY_MS     = 5_000;   // < 5s → healthy
+const DEPTH_DEGRADED_MS    = 16_000;  // 5-16s → degraded (aligned with hub/fallback 16s threshold)
+const DEPTH_STALE_MS       = 16_000;  // > 16s → stale (aligned with hub/fallback 16s threshold)
+const DEPTH_UNAVAILABLE_MS = 90_000;  // > 90s → unavailable (grace for reconnects)
+const TICKER_STALE_MS      = 30_000;  // > 30s → stale (relaxed: tickers can lag during fallback)
+const MIN_DEPTH_LEVELS     = 3;       // < 3 levels → degraded (relaxed for thin markets)
 const SWEEP_INTERVAL_MS    = 5_000;   // sweep every 5s
 
 type StatusListener = (symbol: string, prev: HealthStatus, next: HealthStatus, health: SymbolHealth) => void;
@@ -156,7 +156,10 @@ class SymbolHealthStore {
   updateWsState(symbol: string, connected: boolean): void {
     const existing = this.store.get(symbol);
     if (!existing) return;
+    const prev = { ...existing };
     existing.wsConnected = connected;
+    this.recomputeStatus(existing);
+    this.checkTransition(prev, existing);
   }
 
   // ── READ METHODS ────────────────────────────────────────────────

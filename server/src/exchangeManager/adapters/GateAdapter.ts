@@ -17,7 +17,13 @@ export class GateAdapter implements ExchangeAdapter {
   async validateCredentials(creds: ExchangeCredentials): Promise<ValidationResult> {
     const base = credentialsPresent(creds);
     if (!base.ok) return base;
-    return { ok: true, warnings: [], errors: [] };
+    try {
+      await fetchJsonWithTimeout(`${MAINNET_BASE}/spot/time`, 6000);
+      return { ok: true, warnings: [], errors: [] };
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "unknown";
+      return { ok: false, warnings: [], errors: [issue("NETWORK_TIMEOUT", `Gate.io API unreachable: ${msg}`, true)] };
+    }
   }
 
   async discover(ctx: ExchangeAdapterContext): Promise<DiscoveryResult> {

@@ -668,7 +668,7 @@ export function startDepthIngestion(opts?: {
               source: depthResult.source,
               levels: Math.max(depthResult.bids.length, depthResult.asks.length),
               seqSynced: true,
-              wsConnected: depthResult.source !== "BINANCE", // REST = not WS
+              wsConnected: depthResult.source.includes("WS"), // only true when data comes from WebSocket
             });
           } catch { /* health update best-effort */ }
         }
