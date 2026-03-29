@@ -438,6 +438,18 @@ const getExMetrics = (ex: string) => {
 };
 
 // ═══════════════════════════════════════════════════════════════════
+// STARTUP BURST DAMPER
+// First 60s after boot: only critical requests pass, others are delayed/dropped.
+// This prevents all 3 workers + market-hub from hammering REST simultaneously on restart.
+// ═══════════════════════════════════════════════════════════════════
+
+const BOOT_TIME = Date.now();
+const STARTUP_DAMPER_MS = 60_000; // 60s warmup period
+const STARTUP_SOFT_LIMIT_MULTIPLIER = 0.35; // during startup, soft limit = 35% (420/1200)
+
+export const isInStartupDamper = (): boolean => Date.now() - BOOT_TIME < STARTUP_DAMPER_MS;
+
+// ═══════════════════════════════════════════════════════════════════
 // PUBLIC API — exchangeFetch (replaces binanceFetch)
 // ═══════════════════════════════════════════════════════════════════
 
@@ -466,6 +478,22 @@ export const exchangeFetch = async (opts: ExchangeFetchOptions): Promise<Respons
   const exm = getExMetrics(exchange);
   metrics.totalRequests++;
   exm.requests++;
+
+  // ── Startup damper: first 60s only critical requests pass ──
+  if (isInStartupDamper() && priority !== "critical") {
+    const elapsed = Date.now() - BOOT_TIME;
+    // First 15s: block everything except critical
+    if (elapsed < 15_000) {
+      metrics.totalPriorityDrops++;
+      throw new Error(`${exchange}_startup_damper: first 15s, only critical requests allowed (${elapsed}ms since boot)`);
+    }
+    // 15-60s: progressive ramp — add delay proportional to remaining warmup
+    const rampFraction = 1 - (elapsed - 15_000) / (STARTUP_DAMPER_MS - 15_000);
+    const delayMs = Math.floor(rampFraction * 3000); // max 3s delay, linearly decreasing
+    if (delayMs > 100) {
+      await new Promise((r) => setTimeout(r, delayMs));
+    }
+  }
 
   // ── 1. Circuit breaker check (Redis-backed, shared across workers) ──
   if (!await circuitCanPass(exchange, priority)) {
@@ -786,6 +814,8 @@ export const getFullMetrics = () => {
   return {
     global: {
       redisAvailable,
+      startupDamperActive: isInStartupDamper(),
+      uptimeSeconds: Math.floor((Date.now() - BOOT_TIME) / 1000),
       totalRequests: metrics.totalRequests,
       total429: metrics.total429,
       total418: metrics.total418,

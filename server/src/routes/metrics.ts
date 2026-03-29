@@ -122,4 +122,33 @@ export function registerMetricsRoute(app: Express, deps: {
     res.setHeader("Content-Type", "text/plain; version=0.0.4; charset=utf-8");
     res.send(lines.join(""));
   });
+
+  // ── JSON Rate Limiter Dashboard ──
+  // GET /api/metrics/rate-limiter — full JSON snapshot of REST weight usage
+  app.get("/api/metrics/rate-limiter", async (_req, res) => {
+    try {
+      const { getFullMetrics, isInStartupDamper, getRateLimiterStatus } = await import("../services/binanceRateLimiter.ts");
+      const full = getFullMetrics();
+      const status = getRateLimiterStatus();
+      res.json({
+        ok: true,
+        timestamp: new Date().toISOString(),
+        startupDamperActive: isInStartupDamper(),
+        uptimeSeconds: Math.floor(process.uptime()),
+        summary: {
+          currentWeight: status.currentWeight,
+          weightLimit: status.weightLimit,
+          usagePct: Math.round((status.currentWeight / status.weightLimit) * 100),
+          circuitState: status.circuitState,
+          cooldownActive: status.cooldownActive,
+          total429: status.total429s,
+          total418: status.total418s,
+          health: status.currentWeight < 400 ? "HEALTHY" : status.currentWeight < 700 ? "ELEVATED" : status.currentWeight < 1000 ? "WARNING" : "CRITICAL",
+        },
+        ...full,
+      });
+    } catch (err: any) {
+      res.status(500).json({ ok: false, error: err?.message ?? "metrics_failed" });
+    }
+  });
 }

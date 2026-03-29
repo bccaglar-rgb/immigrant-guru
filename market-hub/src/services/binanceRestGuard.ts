@@ -82,6 +82,10 @@ const isDuplicate = (url: string): boolean => {
   return false;
 };
 
+// ── Startup burst damper ──
+const BOOT_TIME = Date.now();
+const STARTUP_DAMPER_MS = 60_000;
+
 // ── Public API ──
 
 export interface GuardedFetchResult {
@@ -101,6 +105,17 @@ export async function guardedBinanceFetch(
 ): Promise<Response> {
   const weight = getWeight(url);
   const dedupKey = opts?.dedupKey ?? url.split("?")[0];
+
+  // 0. Startup burst damper — first 60s block non-essential REST
+  const elapsed = Date.now() - BOOT_TIME;
+  if (elapsed < STARTUP_DAMPER_MS) {
+    if (elapsed < 20_000) {
+      throw new Error(`hub_startup_damper: first 20s, REST blocked (${elapsed}ms since boot)`);
+    }
+    // 20-60s: progressive delay
+    const rampDelay = Math.floor((1 - (elapsed - 20_000) / (STARTUP_DAMPER_MS - 20_000)) * 2000);
+    if (rampDelay > 100) await new Promise((r) => setTimeout(r, rampDelay));
+  }
 
   // 1. Dedup check
   if (isDuplicate(dedupKey)) {
