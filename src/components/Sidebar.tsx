@@ -169,6 +169,7 @@ const PortfolioIcon = () => <Icon>
   <path d="M14 14h4" stroke="url(#iconGold)" strokeWidth="1.2" strokeLinecap="round" />
   <path d="M14 16.5h3" stroke="url(#iconGold)" strokeWidth="1" strokeLinecap="round" />
 </Icon>;
+const WarRoomIcon = () => <Icon><path d="M12 2L2 7l10 5 10-5-10-5z" stroke="url(#iconGold)" strokeWidth="1.2" fill="none" /><path d="M2 17l10 5 10-5" stroke="url(#iconGold)" strokeWidth="1.2" fill="none" /><path d="M2 12l10 5 10-5" stroke="url(#iconGold)" strokeWidth="1.2" fill="none" /><circle cx="12" cy="12" r="2" fill="url(#iconGold)" /></Icon>;
 const MasterIcon = () => <Icon><rect x="3" y="3" width="8" height="8" rx="1.5" stroke="url(#iconGold)" strokeWidth="1.2" fill="none" /><rect x="13" y="3" width="8" height="8" rx="1.5" stroke="url(#iconGold)" strokeWidth="1.2" fill="none" /><rect x="3" y="13" width="8" height="8" rx="1.5" stroke="url(#iconGold)" strokeWidth="1.2" fill="none" /><rect x="13" y="13" width="8" height="8" rx="1.5" stroke="url(#iconGold)" strokeWidth="1.2" fill="none" /><circle cx="7" cy="7" r="1.5" fill="url(#iconGold)" /><circle cx="17" cy="7" r="1.5" fill="url(#iconGold)" /><path d="M5 17l4-4" stroke="url(#iconGold)" strokeWidth="1.2" /><path d="M15 15h4v4" stroke="url(#iconGold)" strokeWidth="1.2" fill="none" /></Icon>;
 const SuperChartIcon = () => <Icon><path d="M3 3v18h18" stroke="url(#iconGold)" strokeWidth="1.4" /><path d="M5 18l4.5-5.5 3.5 2.5 7-9" stroke="url(#iconGold)" strokeWidth="1.6" fill="none" /><path d="M17 6h3.5v3.5" stroke="url(#iconGold)" strokeWidth="1.4" /><circle cx="9.5" cy="12.5" r="1" fill="url(#iconGold)" stroke="none" /><circle cx="13" cy="15" r="1" fill="url(#iconGold)" stroke="none" /></Icon>;
 const SignInIcon = () => <Icon>
@@ -187,6 +188,7 @@ const menuItems = [
   { label: "Crypto Market", to: "/crypto-market", accent: "var(--menu-accent-4)", icon: () => <MarketIcon /> },
   // 6: AI Trader submenu inserted here in render
   { label: "Master", to: "/master", accent: "#F5C542", icon: () => <MasterIcon /> },
+  { label: "War Room", to: "/alpha-war-room", accent: "#f6465d", icon: () => <WarRoomIcon /> },
   { label: "Exchanges", to: "/exchanges", accent: "var(--menu-accent-3)", icon: () => <ExchangeIcon /> },
   { label: "Bots", to: "/bot", accent: "var(--menu-accent-10)", icon: () => <BotIcon /> },
   { label: "Portfolio", to: "/portfolio", accent: "#4ecdc4", icon: () => <PortfolioIcon /> },
