@@ -32,6 +32,7 @@ const titleForPath = (path: string) => {
   if (path.startsWith("/optimizer")) return "Optimizer Evolution";
   if (path.startsWith("/system-monitor")) return "System Monitor";
   if (path.startsWith("/ml-explorer")) return "ML Data Explorer";
+  if (path.startsWith("/master")) return "Master Terminal";
   if (path === "/") return "Bitrium";
   return "Bitrium Quant Engine";
 };

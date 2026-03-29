@@ -60,6 +60,7 @@ const MLExplorerPage = lazyRetry(() => import("./pages/MLExplorerPage"));
 const BotPage = lazyRetry(() => import("./pages/BotPage"));
 const PortfolioPage = lazyRetry(() => import("./pages/PortfolioPage"));
 const SniperPage = lazyRetry(() => import("./pages/SniperPage"));
+const MasterPage = lazyRetry(() => import("./pages/MasterPage"));
 
 const PageLoader = () => (
   <div className="flex min-h-[60vh] items-center justify-center">
@@ -172,6 +173,7 @@ function App() {
         <Route path="/system-monitor" element={<RequireAdmin><Suspense fallback={<PageLoader />}><SystemMonitorPage /></Suspense></RequireAdmin>} />
         <Route path="/mission-control" element={<RequireAdmin><Suspense fallback={<PageLoader />}><MissionControlPage /></Suspense></RequireAdmin>} />
         <Route path="/ml-explorer" element={<RequireAdmin><Suspense fallback={<PageLoader />}><MLExplorerPage /></Suspense></RequireAdmin>} />
+        <Route path="/master" element={<RequireAuth><Suspense fallback={<PageLoader />}><MasterPage /></Suspense></RequireAuth>} />
 
         <Route path="*" element={<Navigate to="/" replace />} />
       </Route>
