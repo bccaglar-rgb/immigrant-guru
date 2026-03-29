@@ -596,7 +596,7 @@ export function startDepthIngestion(opts?: {
     // 1. Try in-memory WS orderbook FIRST (zero REST cost — already subscribed via WS)
     // 2. Only use REST for symbols without WS data (max 5 per cycle to stay within budget)
     let restFetchCount = 0;
-    const MAX_REST_PER_CYCLE = 5;
+    const MAX_REST_PER_CYCLE = 2; // reduced from 5 — WS is primary, REST only for gaps
 
     for (const symbol of symbols) {
       try {

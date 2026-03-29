@@ -35,9 +35,9 @@ const WATCHDOG_STALE_MS = 20_000;
 const WATCHDOG_TICK_MS = 5_000;
 const HEARTBEAT_PING_MS = 8_000;
 const SYMBOL_DELTA_STALE_MS = 14_000;
-const SNAPSHOT_SANITY_INTERVAL_MS = 20_000;
+const SNAPSHOT_SANITY_INTERVAL_MS = 45_000; // increased from 20s — reduce REST weight pressure
 const SNAPSHOT_REFRESH_MIN_MS = 90_000;
-const SNAPSHOT_SANITY_BATCH = 3;
+const SNAPSHOT_SANITY_BATCH = 2; // reduced from 3 — less REST pressure
 const SNAPSHOT_REQUEST_GAP_MS = 350;
 const SNAPSHOT_BLOCK_COOLDOWN_MS = 600_000; // 10 min — Binance IP bans are long, no point retrying often
 const CONTRACT_REFRESH_INTERVAL_MS = 45 * 60_000;
@@ -1399,8 +1399,8 @@ export class BinanceFuturesMarketAdapter implements IExchangeMarketAdapter {
           // backfill is best-effort; continue with next
         }
       }
-      // Tiny gap between symbols to avoid rate-limiting
-      await new Promise((resolve) => setTimeout(resolve, 100));
+      // Gap between symbols — 500ms to stay within weight budget
+      await new Promise((resolve) => setTimeout(resolve, 500));
     }
     this.pushReason(`backfill_done:${symbols.length}_symbols`);
   }
