@@ -50,7 +50,8 @@ export class CgModeHub {
   private lastSnapshot: CgHubOutput[] = [];
   private cycleCount = 0;
 
-  constructor(private deps: HubDeps) {}
+  private deps: HubDeps;
+  constructor(deps: HubDeps) { this.deps = deps; }
 
   start(): void {
     const cfg = loadCgHubConfig();

@@ -21,10 +21,16 @@ export interface MetaLabel {
 }
 
 export class MetaLabelingFilter {
+  private modeTracker: ModePerformanceTracker;
+  private regimeEngine: RegimeParameterEngine;
+
   constructor(
-    private modeTracker: ModePerformanceTracker,
-    private regimeEngine: RegimeParameterEngine,
-  ) {}
+    modeTracker: ModePerformanceTracker,
+    regimeEngine: RegimeParameterEngine,
+  ) {
+    this.modeTracker = modeTracker;
+    this.regimeEngine = regimeEngine;
+  }
 
   /**
    * Evaluate whether a setup should be traded.

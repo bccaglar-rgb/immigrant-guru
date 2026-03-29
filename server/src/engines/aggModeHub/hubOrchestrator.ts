@@ -31,7 +31,8 @@ export class AggModeHub {
   private lastSnapshot: AggHubOutput[] = [];
   private cycleCount = 0;
 
-  constructor(private deps: HubDeps) {}
+  private deps: HubDeps;
+  constructor(deps: HubDeps) { this.deps = deps; }
 
   start(): void {
     const cfg = loadAggHubConfig();

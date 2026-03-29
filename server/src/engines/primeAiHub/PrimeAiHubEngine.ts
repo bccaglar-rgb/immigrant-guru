@@ -55,7 +55,8 @@ export class PrimeAiHubEngine {
   private cycleCount = 0;
   private lastMetrics: PrimeAiCycleMetrics | null = null;
 
-  constructor(private deps: HubDeps) {}
+  private deps: HubDeps;
+  constructor(deps: HubDeps) { this.deps = deps; }
 
   start(): void {
     const cfg = loadPrimeAiConfig();

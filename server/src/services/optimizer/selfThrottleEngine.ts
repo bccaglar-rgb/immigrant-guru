@@ -32,7 +32,8 @@ export class SelfThrottleEngine {
     lastChecked: "",
   };
 
-  constructor(private modeTracker: ModePerformanceTracker) {}
+  private modeTracker: ModePerformanceTracker;
+  constructor(modeTracker: ModePerformanceTracker) { this.modeTracker = modeTracker; }
 
   /** Evaluate system health and apply throttle if needed */
   evaluate(): ThrottleState {
