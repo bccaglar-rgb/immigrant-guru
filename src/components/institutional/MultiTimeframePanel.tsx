@@ -15,7 +15,7 @@ export const MultiTimeframePanel = ({ contexts }: Props) => (
             <span className="rounded bg-white/[0.06] px-1.5 py-0.5 font-mono text-[9px] font-bold text-[var(--text)]">{c.tf}</span>
             <span className="text-[9px] font-bold" style={{ color: tc(c.trend) }}>{c.trend}</span>
           </div>
-          <span className="font-mono text-[8px] text-[var(--textSubtle)]">${c.keyLevel.toFixed(2)}</span>
+          <span className="font-mono text-[9px] text-[var(--textSubtle)]">${c.keyLevel.toFixed(2)}</span>
         </div>
         <div className="grid grid-cols-3 gap-1">
           <Chip label="Struct" value={c.structure} color={tc(c.trend)} />
@@ -29,7 +29,7 @@ export const MultiTimeframePanel = ({ contexts }: Props) => (
 );
 
 const Chip = ({ label, value, color }: { label: string; value: string; color: string }) => (
-  <div><div className="text-[7px] text-[var(--textSubtle)]">{label}</div><div className="text-[8px] font-bold" style={{ color }}>{value}</div></div>
+  <div><div className="text-[9px] text-[var(--textSubtle)]">{label}</div><div className="text-[9px] font-bold" style={{ color }}>{value}</div></div>
 );
 
 const BiasBar = ({ value }: { value: number }) => (

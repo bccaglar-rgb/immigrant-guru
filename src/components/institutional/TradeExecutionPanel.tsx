@@ -28,7 +28,7 @@ export const TradeExecutionPanel = ({ price, symbol }: Props) => {
   return (
     <div className="rounded-2xl border border-white/[0.04] bg-white/[0.015] p-2.5 space-y-2">
       <SectionHead icon={<svg viewBox="0 0 24 24" className="h-3 w-3" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 2v20M2 12h20" /></svg>} label="Execution" color="#5B8DEF"
-        right={<span className="rounded bg-white/[0.05] px-1.5 py-0.5 text-[7px] text-[var(--textMuted)]">{symbol}</span>} />
+        right={<span className="rounded bg-white/[0.05] px-1.5 py-0.5 text-[9px] text-[var(--textMuted)]">{symbol}</span>} />
 
       {/* Side */}
       <div className="grid grid-cols-2 gap-1 rounded-lg bg-black/30 p-0.5">
@@ -45,7 +45,7 @@ export const TradeExecutionPanel = ({ price, symbol }: Props) => {
       <div className="flex gap-0.5">
         {(["structure", "atr", "liquidity"] as const).map((m) => (
           <button key={m} type="button" onClick={() => setSlMode(m)}
-            className={`rounded px-1.5 py-0.5 text-[7px] font-bold ${slMode === m ? "bg-white/10 text-[var(--text)]" : "text-[var(--textSubtle)]"}`}>{m.charAt(0).toUpperCase() + m.slice(1)}</button>
+            className={`rounded px-1.5 py-0.5 text-[9px] font-bold ${slMode === m ? "bg-white/10 text-[var(--text)]" : "text-[var(--textSubtle)]"}`}>{m.charAt(0).toUpperCase() + m.slice(1)}</button>
         ))}
       </div>
 
@@ -73,8 +73,8 @@ export const TradeExecutionPanel = ({ price, symbol }: Props) => {
 
       {/* Trade Plan */}
       <div className="rounded-lg border border-[#F5C542]/10 bg-[#F5C542]/[0.02] px-2 py-1.5">
-        <span className="text-[7px] font-bold text-[#F5C542] uppercase tracking-wider">Trade Plan</span>
-        <p className="mt-0.5 text-[8px] leading-relaxed text-[var(--textMuted)]">
+        <span className="text-[9px] font-bold text-[#F5C542] uppercase tracking-wider">Trade Plan</span>
+        <p className="mt-0.5 text-[9px] leading-relaxed text-[var(--textMuted)]">
           {side} {symbol} @ ${entry} | SL ${sl} ({slMode}) | TP1 ${tp1} TP2 ${tp2} TP3 ${tp3} | Risk {riskPct}% (${ calc.ra.toFixed(0)}) | R {calc.rr1.toFixed(1)}–{calc.rr3.toFixed(1)}
         </p>
       </div>
@@ -82,7 +82,7 @@ export const TradeExecutionPanel = ({ price, symbol }: Props) => {
       {/* Buttons */}
       <div className="grid grid-cols-4 gap-1">
         {[{ l: "LONG", c: "#2bc48a", a: side === "LONG" }, { l: "SHORT", c: "#f6465d", a: side === "SHORT" }, { l: "SCALE", c: "#5B8DEF" }, { l: "CLOSE", c: "#FF9F43" }].map((b) => (
-          <button key={b.l} type="button" className="rounded-lg py-1.5 text-[8px] font-bold tracking-wide transition"
+          <button key={b.l} type="button" className="rounded-lg py-1.5 text-[9px] font-bold tracking-wide transition"
             style={{ background: b.a ? `${b.c}18` : "rgba(255,255,255,0.02)", color: b.a ? b.c : "var(--textSubtle)", border: `1px solid ${b.a ? `${b.c}35` : "rgba(255,255,255,0.04)"}` }}>{b.l}</button>
         ))}
       </div>
@@ -92,15 +92,15 @@ export const TradeExecutionPanel = ({ price, symbol }: Props) => {
 
 const In = ({ l, v, set, p, s, c }: { l: string; v: string; set: (v: string) => void; p?: string; s?: string; c?: string }) => (
   <label className="space-y-0.5">
-    <span className="text-[7px] text-[var(--textSubtle)]">{l}</span>
+    <span className="text-[9px] text-[var(--textSubtle)]">{l}</span>
     <div className="flex items-center rounded border border-white/[0.05] bg-black/20 px-1.5 py-1">
-      {p && <span className="mr-0.5 text-[7px] text-[var(--textSubtle)]">{p}</span>}
+      {p && <span className="mr-0.5 text-[9px] text-[var(--textSubtle)]">{p}</span>}
       <input type="text" inputMode="decimal" value={v} onChange={(e) => set(e.target.value)} className="w-full bg-transparent font-mono text-[9px] outline-none" style={{ color: c ?? "var(--text)" }} />
-      {s && <span className="ml-0.5 text-[7px] text-[var(--textSubtle)]">{s}</span>}
+      {s && <span className="ml-0.5 text-[9px] text-[var(--textSubtle)]">{s}</span>}
     </div>
   </label>
 );
 
 const CV = ({ l, v, c }: { l: string; v: string; c?: string }) => (
-  <div className="text-center"><div className="text-[6px] text-[var(--textSubtle)]">{l}</div><div className="font-mono text-[9px] font-bold" style={{ color: c ?? "var(--text)" }}>{v}</div></div>
+  <div className="text-center"><div className="text-[9px] text-[var(--textSubtle)]">{l}</div><div className="font-mono text-[9px] font-bold" style={{ color: c ?? "var(--text)" }}>{v}</div></div>
 );

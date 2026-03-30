@@ -25,7 +25,7 @@ export const SessionPanel = ({ sentiment, session }: Props) => (
             </svg>
           </div>
           <span className="font-mono text-base font-bold" style={{ color: fgColor(sentiment.fearGreed) }}>{sentiment.fearGreed}</span>
-          <span className="text-[8px] font-bold uppercase" style={{ color: fgColor(sentiment.fearGreed) }}>{sentiment.fearGreedLabel}</span>
+          <span className="text-[9px] font-bold uppercase" style={{ color: fgColor(sentiment.fearGreed) }}>{sentiment.fearGreedLabel}</span>
         </div>
       </div>
 
@@ -34,7 +34,7 @@ export const SessionPanel = ({ sentiment, session }: Props) => (
         <MiniStat label="Contrarian" value={sentiment.contrarianSignal} color={sentiment.contrarianSignal === "Strong" ? "#f6465d" : "#F5C542"} />
       </div>
       <div className="rounded-lg bg-black/20 px-2 py-1">
-        <span className="text-[8px] text-[var(--textSubtle)]">Positioning:</span>
+        <span className="text-[9px] text-[var(--textSubtle)]">Positioning:</span>
         <p className="text-[9px] text-[var(--textMuted)]">{sentiment.positioning}</p>
       </div>
     </div>
@@ -66,7 +66,7 @@ export const SessionPanel = ({ sentiment, session }: Props) => (
 
 const MiniStat = ({ label, value, color }: { label: string; value: string; color?: string }) => (
   <div>
-    <div className="text-[7px] text-[var(--textSubtle)]">{label}</div>
+    <div className="text-[9px] text-[var(--textSubtle)]">{label}</div>
     <div className="font-mono text-[9px] font-bold" style={{ color: color ?? "var(--text)" }}>{value}</div>
   </div>
 );

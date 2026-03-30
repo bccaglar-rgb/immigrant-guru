@@ -88,7 +88,7 @@ const InsightCard = ({ insight }: { insight: InsightBlock }) => {
     <div className="rounded-xl border-l-2 bg-white/[0.02] px-3 py-2" style={{ borderColor }}>
       <div className="flex items-center justify-between">
         <span className="text-[10px] font-semibold text-[var(--text)]">{insight.title}</span>
-        <span className="text-[8px] text-[var(--textSubtle)]">{insight.timestamp}</span>
+        <span className="text-[9px] text-[var(--textSubtle)]">{insight.timestamp}</span>
       </div>
       <p className="mt-0.5 text-[10px] leading-relaxed text-[var(--textMuted)]">{insight.content}</p>
     </div>

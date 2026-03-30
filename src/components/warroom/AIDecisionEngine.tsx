@@ -29,14 +29,14 @@ export const AIDecisionEngine = ({ data }: Props) => {
 
       {/* Strategy */}
       <div className="flex items-center gap-2 rounded-lg bg-black/20 px-2.5 py-1.5">
-        <span className="text-[8px] text-[var(--textSubtle)]">Best Strategy:</span>
+        <span className="text-[9px] text-[var(--textSubtle)]">Best Strategy:</span>
         <span className="rounded border border-[#5B8DEF]/20 bg-[#5B8DEF]/10 px-2 py-0.5 text-[9px] font-bold text-[#5B8DEF]">{data.bestStrategy}</span>
       </div>
 
       {/* Confirms / Invalidates */}
       <div className="grid grid-cols-2 gap-2">
         <div className="space-y-1">
-          <span className="text-[8px] font-bold text-[#2bc48a] uppercase">Confirms</span>
+          <span className="text-[9px] font-bold text-[#2bc48a] uppercase">Confirms</span>
           {data.confirms.map((c, i) => (
             <div key={i} className="flex gap-1.5">
               <span className="mt-0.5 h-1 w-1 flex-shrink-0 rounded-full bg-[#2bc48a]" />
@@ -45,7 +45,7 @@ export const AIDecisionEngine = ({ data }: Props) => {
           ))}
         </div>
         <div className="space-y-1">
-          <span className="text-[8px] font-bold text-[#f6465d] uppercase">Invalidates</span>
+          <span className="text-[9px] font-bold text-[#f6465d] uppercase">Invalidates</span>
           {data.invalidates.map((c, i) => (
             <div key={i} className="flex gap-1.5">
               <span className="mt-0.5 h-1 w-1 flex-shrink-0 rounded-full bg-[#f6465d]" />
@@ -57,11 +57,11 @@ export const AIDecisionEngine = ({ data }: Props) => {
 
       {/* Optimal + Risk */}
       <div className="rounded-lg border border-[#5B8DEF]/10 bg-[#5B8DEF]/[0.03] px-2.5 py-1.5">
-        <span className="text-[7px] font-bold text-[#5B8DEF] uppercase">Optimal Entry</span>
+        <span className="text-[9px] font-bold text-[#5B8DEF] uppercase">Optimal Entry</span>
         <p className="mt-0.5 text-[9px] text-[var(--textMuted)]">{data.optimalConditions}</p>
       </div>
       <div className="rounded-lg border border-[#FF9F43]/10 bg-[#FF9F43]/[0.03] px-2.5 py-1.5">
-        <span className="text-[7px] font-bold text-[#FF9F43] uppercase">Risk Warning</span>
+        <span className="text-[9px] font-bold text-[#FF9F43] uppercase">Risk Warning</span>
         <p className="mt-0.5 text-[9px] text-[var(--textMuted)]">{data.riskWarning}</p>
       </div>
     </div>

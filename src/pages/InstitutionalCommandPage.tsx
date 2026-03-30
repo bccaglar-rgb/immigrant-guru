@@ -35,8 +35,8 @@ export default function InstitutionalCommandPage() {
         <div className="flex items-center gap-2.5">
           <Pill l="Quality" v={`${aiDecision.marketQuality}/100`} c={aiDecision.marketQuality >= 70 ? "#2bc48a" : "#F5C542"} />
           <Sep />
-          <span className="font-mono text-[8px] text-[var(--textSubtle)]">UTC {utc}</span>
-          <span className="font-mono text-[8px] text-[var(--textMuted)]">{local}</span>
+          <span className="font-mono text-[9px] text-[var(--textSubtle)]">UTC {utc}</span>
+          <span className="font-mono text-[9px] text-[var(--textMuted)]">{local}</span>
         </div>
       </header>
 
@@ -73,7 +73,7 @@ export default function InstitutionalCommandPage() {
   );
 }
 
-const Sep = () => <span className="text-[8px] text-white/[0.08]">|</span>;
+const Sep = () => <span className="text-[9px] text-white/[0.08]">|</span>;
 const Pill = ({ l, v, c }: { l: string; v: string; c: string }) => (
-  <div className="flex items-center gap-1"><span className="text-[7px] text-[var(--textSubtle)]">{l}:</span><span className="text-[8px] font-bold" style={{ color: c }}>{v}</span></div>
+  <div className="flex items-center gap-1"><span className="text-[9px] text-[var(--textSubtle)]">{l}:</span><span className="text-[9px] font-bold" style={{ color: c }}>{v}</span></div>
 );

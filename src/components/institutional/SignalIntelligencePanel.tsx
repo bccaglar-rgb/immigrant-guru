@@ -28,8 +28,8 @@ export const SignalIntelligencePanel = ({ data }: Props) => {
         {rows.map((r) => (
           <div key={r.l} className="space-y-px">
             <div className="flex items-center justify-between">
-              <span className="text-[8px] text-[var(--textMuted)]">{r.l}</span>
-              <span className="font-mono text-[8px] font-bold" style={{ color: r.c }}>{typeof r.v === "number" ? r.v : r.v}</span>
+              <span className="text-[9px] text-[var(--textMuted)]">{r.l}</span>
+              <span className="font-mono text-[9px] font-bold" style={{ color: r.c }}>{typeof r.v === "number" ? r.v : r.v}</span>
             </div>
             {r.bar && typeof r.v === "number" && (
               <div className="h-[3px] w-full rounded-full bg-white/[0.05]">

@@ -85,7 +85,7 @@ const Divider = () => <span className="text-[10px] text-white/10">|</span>;
 
 const CommandPill = ({ label, value, color }: { label: string; value: string; color: string }) => (
   <div className="flex items-center gap-1.5">
-    <span className="text-[8px] text-[var(--textSubtle)]">{label}:</span>
+    <span className="text-[9px] text-[var(--textSubtle)]">{label}:</span>
     <span className="text-[9px] font-bold" style={{ color }}>{value}</span>
   </div>
 );

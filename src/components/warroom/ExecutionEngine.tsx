@@ -41,7 +41,7 @@ export const ExecutionEngine = ({ currentPrice, symbol }: Props) => {
           <svg viewBox="0 0 24 24" className="h-3.5 w-3.5 text-[#5B8DEF]" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 2v20M2 12h20" /></svg>
           <span className="text-[10px] font-bold tracking-wider text-[#5B8DEF] uppercase">Execution Engine</span>
         </div>
-        <span className="rounded border border-white/10 bg-white/[0.04] px-1.5 py-0.5 text-[8px] text-[var(--textMuted)]">{symbol}</span>
+        <span className="rounded border border-white/10 bg-white/[0.04] px-1.5 py-0.5 text-[9px] text-[var(--textMuted)]">{symbol}</span>
       </div>
 
       {/* Side Toggle */}
@@ -66,7 +66,7 @@ export const ExecutionEngine = ({ currentPrice, symbol }: Props) => {
       <div className="flex gap-1">
         {(["structure", "volatility", "liquidity"] as const).map((t) => (
           <button key={t} type="button" onClick={() => setSlType(t)}
-            className={`rounded px-2 py-0.5 text-[8px] font-bold transition ${slType === t ? "bg-white/10 text-[var(--text)]" : "text-[var(--textSubtle)] hover:text-[var(--textMuted)]"}`}>
+            className={`rounded px-2 py-0.5 text-[9px] font-bold transition ${slType === t ? "bg-white/10 text-[var(--text)]" : "text-[var(--textSubtle)] hover:text-[var(--textMuted)]"}`}>
             {t.charAt(0).toUpperCase() + t.slice(1)}
           </button>
         ))}
@@ -97,7 +97,7 @@ export const ExecutionEngine = ({ currentPrice, symbol }: Props) => {
 
       {/* Trade Plan Summary */}
       <div className="rounded-lg border border-[#F5C542]/10 bg-[#F5C542]/[0.03] px-2.5 py-2">
-        <span className="text-[8px] font-bold text-[#F5C542] uppercase tracking-wider">Trade Plan</span>
+        <span className="text-[9px] font-bold text-[#F5C542] uppercase tracking-wider">Trade Plan</span>
         <p className="mt-0.5 text-[9px] leading-relaxed text-[var(--textMuted)]">
           {side} {symbol} @ ${entry} | SL ${sl} ({slType}) | TP1 ${tp1} / TP2 ${tp2} / TP3 ${tp3} | Risk ${riskPct}% (${`$${calc.riskAmt.toFixed(0)}`}) | R:R {calc.rr1.toFixed(1)}–{calc.rr3.toFixed(1)}
         </p>
@@ -118,19 +118,19 @@ const Field = ({ label, value, onChange, prefix, suffix, color }: {
   label: string; value: string; onChange: (v: string) => void; prefix?: string; suffix?: string; color?: string;
 }) => (
   <label className="space-y-0.5">
-    <span className="text-[8px] text-[var(--textSubtle)]">{label}</span>
+    <span className="text-[9px] text-[var(--textSubtle)]">{label}</span>
     <div className="flex items-center rounded border border-white/[0.06] bg-black/20 px-1.5 py-1">
-      {prefix && <span className="mr-0.5 text-[8px] text-[var(--textSubtle)]">{prefix}</span>}
+      {prefix && <span className="mr-0.5 text-[9px] text-[var(--textSubtle)]">{prefix}</span>}
       <input type="text" inputMode="decimal" value={value} onChange={(e) => onChange(e.target.value)}
         className="w-full bg-transparent font-mono text-[10px] outline-none" style={{ color: color ?? "var(--text)" }} />
-      {suffix && <span className="ml-0.5 text-[8px] text-[var(--textSubtle)]">{suffix}</span>}
+      {suffix && <span className="ml-0.5 text-[9px] text-[var(--textSubtle)]">{suffix}</span>}
     </div>
   </label>
 );
 
 const CalcItem = ({ label, value, color }: { label: string; value: string; color?: string }) => (
   <div className="text-center">
-    <div className="text-[7px] text-[var(--textSubtle)]">{label}</div>
+    <div className="text-[9px] text-[var(--textSubtle)]">{label}</div>
     <div className="font-mono text-[10px] font-bold" style={{ color: color ?? "var(--text)" }}>{value}</div>
   </div>
 );

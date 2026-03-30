@@ -45,7 +45,7 @@ export const SignalMatrix = ({ data }: Props) => {
           <span className="text-[10px] font-bold tracking-wider text-[#F5C542] uppercase">Signal Matrix</span>
         </div>
         <div className="flex items-center gap-1.5">
-          <span className="text-[8px] text-[var(--textSubtle)]">Regime:</span>
+          <span className="text-[9px] text-[var(--textSubtle)]">Regime:</span>
           <span className="rounded px-1.5 py-0.5 text-[9px] font-bold" style={{ color: regimeColor(data.regimeClassification), background: `${regimeColor(data.regimeClassification)}15` }}>
             {data.regimeClassification}
           </span>

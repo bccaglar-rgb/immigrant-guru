@@ -50,9 +50,9 @@ export const ContextEngine = ({ contexts }: Props) => (
         {/* Bias Bar */}
         <div className="space-y-0.5">
           <div className="flex justify-between">
-            <span className="text-[8px] text-[#f6465d]">Bear</span>
-            <span className="text-[8px] text-[var(--textSubtle)]">Bias: {ctx.bias > 0 ? "+" : ""}{ctx.bias}</span>
-            <span className="text-[8px] text-[#2bc48a]">Bull</span>
+            <span className="text-[9px] text-[#f6465d]">Bear</span>
+            <span className="text-[9px] text-[var(--textSubtle)]">Bias: {ctx.bias > 0 ? "+" : ""}{ctx.bias}</span>
+            <span className="text-[9px] text-[#2bc48a]">Bull</span>
           </div>
           <BiasBar value={ctx.bias} />
         </div>
@@ -63,7 +63,7 @@ export const ContextEngine = ({ contexts }: Props) => (
 
 const Metric = ({ label, value, color }: { label: string; value: string; color: string }) => (
   <div className="space-y-0.5">
-    <span className="text-[8px] text-[var(--textSubtle)]">{label}</span>
+    <span className="text-[9px] text-[var(--textSubtle)]">{label}</span>
     <div className="text-[9px] font-bold" style={{ color }}>{value}</div>
   </div>
 );
