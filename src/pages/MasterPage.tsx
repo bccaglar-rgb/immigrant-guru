@@ -1,4 +1,6 @@
+import { useState } from "react";
 import { ChartCard } from "../components/master/ChartCard";
+import { MiniChartCard } from "../components/master/MiniChartCard";
 import {
   CompactStrip,
   CapitalFlowPanel,
@@ -20,6 +22,17 @@ import {
 import { useLiveMarketData } from "../hooks/useLiveMarketData";
 import type { OHLCVData } from "../components/shared/LWChart";
 
+/* ── Filter data ── */
+const FILTER_KEYS = ["OI Increase", "OI Decrease", "Sniper", "Coin Universe"] as const;
+type FilterKey = (typeof FILTER_KEYS)[number];
+
+const filterCoins: Record<FilterKey, string[]> = {
+  "OI Increase": ["SOLUSDT", "BTCUSDT", "ETHUSDT", "AVAXUSDT", "BNBUSDT"],
+  "OI Decrease": ["ARBUSDT", "DOGEUSDT", "LINKUSDT", "XRPUSDT", "DOTUSDT"],
+  Sniper: ["SOLUSDT", "AVAXUSDT", "LINKUSDT", "BTCUSDT", "MATICUSDT"],
+  "Coin Universe": ["BTCUSDT", "ETHUSDT", "SOLUSDT", "BNBUSDT", "XRPUSDT"],
+};
+
 /* ── Loading skeleton ── */
 const LoadingSkeleton = () => (
   <main className="min-h-screen bg-[var(--bg)] flex items-center justify-center">
@@ -31,14 +44,19 @@ const LoadingSkeleton = () => (
 );
 
 export default function MasterPage() {
-  const solLive = useLiveMarketData("SOLUSDT");
+  const [activeFilter, setActiveFilter] = useState<FilterKey>("OI Increase");
+  const [selectedSymbol, setSelectedSymbol] = useState("SOLUSDT");
 
-  if (solLive.loading) return <LoadingSkeleton />;
+  const mainLive = useLiveMarketData(selectedSymbol);
+  const coins = filterCoins[activeFilter];
+  const displaySymbol = selectedSymbol.replace("USDT", "/USDT");
+
+  if (mainLive.loading) return <LoadingSkeleton />;
 
   return (
     <main className="min-h-screen bg-[var(--bg)] p-1.5 md:p-2 flex flex-col gap-1.5">
 
-      {/* ═══ TOP BAR ═══ */}
+      {/* TOP BAR */}
       <div className="flex items-center justify-between rounded-lg border border-white/[0.06] bg-[var(--panel)] px-3 py-1.5">
         <div className="flex items-center gap-2">
           <div className="flex items-center gap-1.5">
@@ -61,36 +79,64 @@ export default function MasterPage() {
         </div>
       </div>
 
-      {/* ═══ COMPACT STRIP (replaces old MarketMode + AI Score row) ═══ */}
+      {/* COMPACT STRIP */}
       <CompactStrip />
 
-      {/* ═══ MAIN LAYOUT: 3-6-3 ═══ */}
+      {/* MAIN LAYOUT: 3-6-3 */}
       <div className="grid grid-cols-12 gap-1.5 flex-1 min-h-0" style={{ height: "calc(100vh - 200px)" }}>
 
-        {/* LEFT COLUMN (3 cols) */}
-        <div className="col-span-3 flex flex-col gap-1.5 overflow-y-auto pr-0.5">
-          <CapitalFlowPanel />
-          <InstitutionalFlowPanel />
-          <SectorDominance />
+        {/* ═══ LEFT COLUMN (3 cols) — Mini charts + filters ═══ */}
+        <div className="col-span-3 flex flex-col gap-1 overflow-y-auto pr-0.5">
+          {/* Filter buttons */}
+          <div className="flex items-center gap-1 flex-wrap px-0.5 py-1">
+            {FILTER_KEYS.map((key) => (
+              <button
+                key={key}
+                type="button"
+                onClick={() => {
+                  setActiveFilter(key);
+                  // Switch main chart to first coin of new filter
+                  setSelectedSymbol(filterCoins[key][0]);
+                }}
+                className={`text-[9px] px-2 py-1 rounded-md font-semibold transition-all ${
+                  activeFilter === key
+                    ? "border border-[var(--accent)] bg-[var(--accent)]/15 text-[var(--accent)]"
+                    : "border border-white/[0.08] bg-white/[0.03] text-[var(--textMuted)] hover:bg-white/[0.05]"
+                }`}
+              >
+                {key}
+              </button>
+            ))}
+          </div>
+
+          {/* 5 mini chart cards */}
+          {coins.map((symbol) => (
+            <MiniChartCard
+              key={symbol}
+              symbol={symbol}
+              isActive={selectedSymbol === symbol}
+              onClick={() => setSelectedSymbol(symbol)}
+            />
+          ))}
         </div>
 
-        {/* CENTER COLUMN (6 cols) — Chart + signals + entry + decision */}
+        {/* ═══ CENTER COLUMN (6 cols) — Chart + signals + entry + decision ═══ */}
         <div className="col-span-6 flex flex-col gap-1.5 min-h-0">
-          {/* Main SOL 1m chart */}
+          {/* Main chart */}
           <div className="flex-1 min-h-0">
             <ChartCard
-              symbol="SOL/USDT"
+              symbol={displaySymbol}
               timeframe="1m"
-              data={solLive.candles1m as OHLCVData[]}
+              data={mainLive.candles1m as OHLCVData[]}
               className="h-full"
             />
           </div>
-          {/* Multi-TF strip — 60px height */}
+          {/* Multi-TF strip */}
           <div className="grid grid-cols-4 gap-1" style={{ height: "60px" }}>
-            <ChartCard symbol="SOL" timeframe="15m" data={solLive.candles15m as OHLCVData[]} compact className="h-full" />
-            <ChartCard symbol="SOL" timeframe="1H" data={solLive.candles1h as OHLCVData[]} compact className="h-full" />
-            <ChartCard symbol="SOL" timeframe="4H" data={solLive.candles4h as OHLCVData[]} compact className="h-full" />
-            <ChartCard symbol="SOL" timeframe="1D" data={solLive.candles1d as OHLCVData[]} compact className="h-full" />
+            <ChartCard symbol={selectedSymbol.replace("USDT", "")} timeframe="15m" data={mainLive.candles15m as OHLCVData[]} compact className="h-full" />
+            <ChartCard symbol={selectedSymbol.replace("USDT", "")} timeframe="1H" data={mainLive.candles1h as OHLCVData[]} compact className="h-full" />
+            <ChartCard symbol={selectedSymbol.replace("USDT", "")} timeframe="4H" data={mainLive.candles4h as OHLCVData[]} compact className="h-full" />
+            <ChartCard symbol={selectedSymbol.replace("USDT", "")} timeframe="1D" data={mainLive.candles1d as OHLCVData[]} compact className="h-full" />
           </div>
           {/* Micro Signal Bar */}
           <MicroSignalBar />
@@ -100,8 +146,13 @@ export default function MasterPage() {
           <DecisionBox />
         </div>
 
-        {/* RIGHT COLUMN (3 cols) */}
+        {/* ═══ RIGHT COLUMN (3 cols) — All panels merged ═══ */}
         <div className="col-span-3 flex flex-col gap-1.5 overflow-y-auto pl-0.5">
+          {/* Old left panels */}
+          <CapitalFlowPanel />
+          <InstitutionalFlowPanel />
+          <SectorDominance />
+          {/* Old right panels */}
           <RiskEngine />
           <StrategyMode />
           <TopAssets />
@@ -111,7 +162,7 @@ export default function MasterPage() {
         </div>
       </div>
 
-      {/* ═══ BOTTOM STRIP ═══ */}
+      {/* BOTTOM STRIP */}
       <div className="grid grid-cols-3 gap-1.5">
         <TimeframeControl />
         <MarketStructure />
