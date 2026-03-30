@@ -1,8 +1,17 @@
 import { ChartCard } from "../components/master/ChartCard";
-import { SignalPanel } from "../components/master/SignalPanel";
-import { TradePanel } from "../components/master/TradePanel";
-import { MarketInsightPanel } from "../components/master/MarketInsightPanel";
-import { signalData, marketInsightData } from "../components/master/mockData";
+import {
+  MarketModePanel,
+  AIMasterScore,
+  CapitalFlowPanel,
+  InstitutionalFlowPanel,
+  SectorDominance,
+  RiskEngine,
+  StrategyMode,
+  TopAssets,
+  TimeframeControl,
+  MarketStructure,
+  AutoModeSwitch,
+} from "../components/master/MasterPanels";
 import { useLiveMarketData } from "../hooks/useLiveMarketData";
 import type { OHLCVData } from "../components/shared/LWChart";
 
@@ -17,77 +26,85 @@ const LoadingSkeleton = () => (
 );
 
 export default function MasterPage() {
-  /* ── Live data for SOL and BTC ── */
   const solLive = useLiveMarketData("SOLUSDT");
-  const btcLive = useLiveMarketData("BTCUSDT");
-
-  const solPrice = solLive.currentPrice || solLive.candles1m[solLive.candles1m.length - 1]?.close || 0;
 
   if (solLive.loading) return <LoadingSkeleton />;
 
   return (
-    <main className="min-h-screen bg-[var(--bg)] p-2 md:p-3">
-      {/* Top Status Bar */}
-      <div className="mb-2 flex items-center justify-between rounded-xl border border-white/[0.06] bg-[var(--panel)] px-4 py-2">
+    <main className="min-h-screen bg-[var(--bg)] p-2 md:p-3 flex flex-col gap-2">
+
+      {/* ═══ TOP BAR ═══ */}
+      <div className="flex items-center justify-between rounded-xl border border-white/[0.06] bg-[var(--panel)] px-4 py-2">
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-2">
             <div className="h-2 w-2 rounded-full bg-[#2bc48a] animate-pulse" />
-            <span className="text-[11px] font-bold text-[var(--text)]">MASTER TERMINAL</span>
+            <span className="text-[11px] font-bold text-[var(--text)]">MASTER CONTROL</span>
           </div>
           <span className="text-[10px] text-[var(--textSubtle)]">|</span>
-          <span className="text-[10px] text-[var(--textMuted)]">SOL/USDT</span>
-          <span className="text-[10px] text-[var(--textSubtle)]">|</span>
-          <span className="text-[10px] text-[var(--textMuted)]">BTC/USDT</span>
+          <span className="text-[10px] text-[var(--textMuted)]">Mode:</span>
+          <span className="inline-flex items-center rounded-md border border-[#2bc48a]/20 bg-[#2bc48a]/15 px-2 py-0.5 text-[10px] font-bold text-[#2bc48a]">
+            Aggressive
+          </span>
         </div>
         <div className="flex items-center gap-4">
+          <StatusPill label="AI Score" value="8.2/10" color="#2bc48a" />
           <StatusPill label="Data" value="Live" color="#2bc48a" />
-          <StatusPill label="AI Engine" value="Active" color="#F5C542" />
-          <StatusPill label="Signals" value="8 Active" color="#5B8DEF" />
+          <StatusPill label="Risk" value="Elevated" color="#F5C542" />
           <span className="font-mono text-[10px] text-[var(--textSubtle)]">
             {new Date().toLocaleTimeString()}
           </span>
         </div>
       </div>
 
-      {/* Main Grid -- 12 column layout */}
-      <div className="grid h-[calc(100vh-80px)] grid-cols-12 grid-rows-[1fr_1fr] gap-2">
+      {/* ═══ ROW 1: Market Mode + AI Score (2 cols full width) ═══ */}
+      <div className="grid grid-cols-2 gap-2">
+        <MarketModePanel />
+        <AIMasterScore />
+      </div>
 
-        {/* TOP ROW */}
+      {/* ═══ ROW 2: 3-6-3 layout ═══ */}
+      <div className="grid grid-cols-12 gap-2 flex-1 min-h-0" style={{ height: "calc(100vh - 290px)" }}>
 
-        {/* SOL 15m -- cols 1-3 */}
-        <div className="col-span-3 row-span-1">
-          <ChartCard symbol="SOL/USDT" timeframe="15m" data={solLive.candles15m as OHLCVData[]} className="h-full" />
+        {/* LEFT COLUMN (3 cols) */}
+        <div className="col-span-3 flex flex-col gap-2 overflow-y-auto pr-0.5">
+          <CapitalFlowPanel />
+          <InstitutionalFlowPanel />
+          <SectorDominance />
         </div>
 
-        {/* SOL 1m (MAIN) -- cols 4-8 */}
-        <div className="col-span-5 row-span-1">
-          <ChartCard symbol="SOL/USDT" timeframe="1m" data={solLive.candles1m as OHLCVData[]} className="h-full" />
+        {/* CENTER COLUMN (6 cols) — Main Chart + multi-TF strip */}
+        <div className="col-span-6 flex flex-col gap-2 min-h-0">
+          {/* Main SOL 1m chart */}
+          <div className="flex-1 min-h-0">
+            <ChartCard
+              symbol="SOL/USDT"
+              timeframe="1m"
+              data={solLive.candles1m as OHLCVData[]}
+              className="h-full"
+            />
+          </div>
+          {/* Multi-TF strip */}
+          <div className="grid grid-cols-4 gap-1.5" style={{ height: "80px" }}>
+            <ChartCard symbol="SOL" timeframe="15m" data={solLive.candles15m as OHLCVData[]} compact className="h-full" />
+            <ChartCard symbol="SOL" timeframe="1H" data={solLive.candles1h as OHLCVData[]} compact className="h-full" />
+            <ChartCard symbol="SOL" timeframe="4H" data={solLive.candles4h as OHLCVData[]} compact className="h-full" />
+            <ChartCard symbol="SOL" timeframe="1D" data={solLive.candles1d as OHLCVData[]} compact className="h-full" />
+          </div>
         </div>
 
-        {/* BTC 1m -- cols 9-12 */}
-        <div className="col-span-4 row-span-1 flex flex-col gap-2">
-          <ChartCard symbol="BTC/USDT" timeframe="1m" data={btcLive.candles1m as OHLCVData[]} className="flex-[2]" />
+        {/* RIGHT COLUMN (3 cols) */}
+        <div className="col-span-3 flex flex-col gap-2 overflow-y-auto pl-0.5">
+          <RiskEngine />
+          <StrategyMode />
+          <TopAssets />
         </div>
+      </div>
 
-        {/* BOTTOM ROW */}
-
-        {/* SOL Timeframe Stack -- cols 1-3 */}
-        <div className="col-span-3 row-span-1 flex flex-col gap-2">
-          <ChartCard symbol="SOL/USDT" timeframe="1H" data={solLive.candles1h as OHLCVData[]} compact className="flex-1" />
-          <ChartCard symbol="SOL/USDT" timeframe="4H" data={solLive.candles4h as OHLCVData[]} compact className="flex-1" />
-          <ChartCard symbol="SOL/USDT" timeframe="24H" data={solLive.candles1d as OHLCVData[]} compact className="flex-1" />
-        </div>
-
-        {/* Signal + Trade Panels -- cols 4-8 */}
-        <div className="col-span-5 row-span-1 flex flex-col gap-2 overflow-y-auto">
-          <SignalPanel data={signalData} />
-          <TradePanel currentPrice={solPrice} symbol="SOL/USDT" />
-        </div>
-
-        {/* Market Intelligence -- cols 9-12 */}
-        <div className="col-span-4 row-span-1 overflow-y-auto">
-          <MarketInsightPanel data={marketInsightData} />
-        </div>
+      {/* ═══ BOTTOM STRIP ═══ */}
+      <div className="grid grid-cols-3 gap-2">
+        <TimeframeControl />
+        <MarketStructure />
+        <AutoModeSwitch />
       </div>
     </main>
   );
