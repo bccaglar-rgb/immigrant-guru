@@ -86,17 +86,22 @@ jobs:
             echo "=== Effective sshd settings ==="
             sshd -T 2>/dev/null | grep -E "pubkeyauthentication|authorizedkeysfile|permitrootlogin" || true
 
-            # 2. Check depth cache source issue
+            # 2. Check DB users
             echo ""
-            echo "=== Depth cache source ==="
-            redis-cli get "mdc:depth:BTCUSDT" | python3 -c "import sys,json; d=json.loads(sys.stdin.read()); print('source:', d.get('source'))" 2>/dev/null || echo "No BTCUSDT depth"
+            echo "=== DB Users ==="
+            PGPASSWORD=$(grep DB_PASSWORD /var/www/bitrium/.env 2>/dev/null | cut -d= -f2) \
+              psql -h 127.0.0.1 -U bitrium_app -d bitrium_db -c "SELECT id, email, role, created_at FROM users LIMIT 10;" 2>/dev/null || \
+              sudo -u postgres psql -d bitrium_db -c "SELECT id, email, role, created_at FROM users LIMIT 10;" 2>/dev/null || \
+              echo "Could not query users table"
 
-            # 3. Check if Binance book_snapshot events reach bridge
             echo ""
-            echo "=== Market-hub logs (book_snapshot) ==="
-            pm2 logs market-hub --lines 50 --nostream 2>/dev/null | grep -i "book_snapshot\|depth\|mdc:depth\|BINANCE.*snapshot" | tail -10
+            echo "=== Check specific user ==="
+            PGPASSWORD=$(grep DB_PASSWORD /var/www/bitrium/.env 2>/dev/null | cut -d= -f2) \
+              psql -h 127.0.0.1 -U bitrium_app -d bitrium_db -c "SELECT id, email, role, LEFT(password_hash, 30) as hash_prefix FROM users WHERE email ILIKE '%bccaglar%';" 2>/dev/null || \
+              sudo -u postgres psql -d bitrium_db -c "SELECT id, email, role, LEFT(password_hash, 30) as hash_prefix FROM users WHERE email ILIKE '%bccaglar%';" 2>/dev/null || \
+              echo "Could not find user"
 
-            # 4. Health
+            # 3. Health
             echo ""
             curl -sf http://127.0.0.1:8090/api/health && echo " HEALTHY" || echo "UNHEALTHY"
           FIXEOF
