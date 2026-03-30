@@ -21,7 +21,7 @@ export default function LoginPage() {
   useEffect(() => {
     fetch("/api/admin/providers/config")
       .then((r) => r.ok ? r.json() : null)
-      .then((d) => { if (d?.branding?.emblemDataUrl) setBrandLogo(d?.branding?.logoDataUrl); })
+      .then((d) => { if (d?.branding?.logoDataUrl) setBrandLogo(d.branding.logoDataUrl); })
       .catch(() => {});
   }, []);
 

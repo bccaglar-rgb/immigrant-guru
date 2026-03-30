@@ -64,12 +64,6 @@ export const SocialLoginButtons = ({ mode = "login" }: { mode?: "login" | "signu
       </div>
 
       <SocialButton
-        loading={loading === "passkey"}
-        onClick={handlePasskey}
-        label={`${verb} with Passkey`}
-        icon={<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M15 3a6 6 0 0 1 0 12h-3m-3-6a6 6 0 1 0 0 12"/><path d="M12 15v6m-3-3h6"/></svg>}
-      />
-      <SocialButton
         loading={loading === "google"}
         onClick={handleGoogle}
         label={`${verb} with Google`}
