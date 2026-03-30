@@ -86,18 +86,29 @@ jobs:
             echo "=== Effective sshd settings ==="
             sshd -T 2>/dev/null | grep -E "pubkeyauthentication|authorizedkeysfile|permitrootlogin" || true
 
-            # 2. Market-hub state machine + budget logs
+            # 2. Create admin user via API signup then promote to ADMIN
             echo ""
-            echo "=== Market-hub logs (last 40 lines) ==="
-            pm2 logs market-hub --lines 40 --nostream 2>/dev/null | tail -40
+            echo "=== Create admin user ==="
+            # Signup
+            SIGNUP=$(curl -sf -X POST http://127.0.0.1:8090/api/auth/signup \
+              -H "Content-Type: application/json" \
+              -d '{"email":"bccaglar@gmail.com","password":"Cagdas1907?"}' 2>&1)
+            echo "Signup result: $SIGNUP"
 
-            echo ""
-            echo "=== State transitions ==="
-            pm2 logs market-hub --lines 200 --nostream 2>/dev/null | grep -i "DepthState\|Budget\|HubMetrics\|BLOCKED\|COOLDOWN\|RECOVERING\|budget_blocked\|tier" | tail -20
+            # Promote to ADMIN in DB
+            PGPASSWORD=$(grep DB_PASSWORD /var/www/bitrium/.env 2>/dev/null | cut -d= -f2) \
+              psql -h 127.0.0.1 -U bitrium_app -d bitrium_db \
+              -c "UPDATE users SET role='ADMIN' WHERE email='bccaglar@gmail.com';" 2>/dev/null || \
+              sudo -u postgres psql -d bitrium_db \
+              -c "UPDATE users SET role='ADMIN' WHERE email='bccaglar@gmail.com';" 2>/dev/null
+            echo "Promoted to ADMIN"
 
-            echo ""
-            echo "=== Attribution ==="
-            pm2 logs market-hub --lines 200 --nostream 2>/dev/null | grep -i "HubAttribution\|depthSnapshot\|req=" | tail -5
+            # Verify
+            PGPASSWORD=$(grep DB_PASSWORD /var/www/bitrium/.env 2>/dev/null | cut -d= -f2) \
+              psql -h 127.0.0.1 -U bitrium_app -d bitrium_db \
+              -c "SELECT id, email, role FROM users;" 2>/dev/null || \
+              sudo -u postgres psql -d bitrium_db \
+              -c "SELECT id, email, role FROM users;" 2>/dev/null
 
             echo ""
             echo "=== Health ==="
