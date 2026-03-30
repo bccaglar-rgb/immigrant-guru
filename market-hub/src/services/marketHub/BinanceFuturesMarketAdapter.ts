@@ -1145,6 +1145,8 @@ export class BinanceFuturesMarketAdapter implements IExchangeMarketAdapter {
     if (!normalized || !this.isDepthEligible(normalized)) return;
     if (this.pendingSnapshotSymbols.has(normalized)) return;
     if (this.snapshotQueueSet.has(normalized)) return;
+    // Global block: if REST API returned 418/429, don't enqueue anything
+    if (this.snapshotBlockedUntil > Date.now()) return;
     // Per-symbol cooldown: minimum 60s between snapshots for the same symbol
     const lastSnap = this.lastSnapshotAtBySymbol.get(normalized) ?? 0;
     if (lastSnap > 0 && Date.now() - lastSnap < 60_000) return;
@@ -1264,8 +1266,17 @@ export class BinanceFuturesMarketAdapter implements IExchangeMarketAdapter {
       } else if (currentFail >= 6) {
         // Don't terminate WS on repeated snapshot failures — WS data is still valuable
         // even without snapshots. The depth deltas are emitted and can be used client-side.
-        this.pushReason(`snapshot_fail_threshold:${symbol}`);
-        console.log(`[BinanceFuturesAdapter] Snapshot failed 6+ times for ${symbol} — skipping (WS still running)`);
+        // CRITICAL: Exclude symbol from depth to stop the fail→retry→fail loop
+        // that burns REST weight and eventually causes IP bans.
+        this.excludedDepthSymbols.add(symbol);
+        this.pushReason(`snapshot_fail_threshold:${symbol}:excluded`);
+        console.log(`[BinanceFuturesAdapter] Snapshot failed 6+ times for ${symbol} — EXCLUDED from depth (WS still running). Will retry in ${SNAPSHOT_BLOCK_COOLDOWN_MS / 1000}s`);
+        // Schedule re-inclusion after cooldown so symbol can recover
+        setTimeout(() => {
+          this.excludedDepthSymbols.delete(symbol);
+          this.snapshotFailuresBySymbol.delete(symbol);
+          console.log(`[BinanceFuturesAdapter] Re-enabled depth for ${symbol} after cooldown`);
+        }, SNAPSHOT_BLOCK_COOLDOWN_MS);
       }
     } finally {
       if (timeout) clearTimeout(timeout);
