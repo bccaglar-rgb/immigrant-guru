@@ -44,34 +44,25 @@ export const ContextEngine = ({ contexts }: Props) => (
         </div>
 
         {/* Mini Chart */}
-        <div className="h-[60px] w-full rounded overflow-hidden">
+        <div className="h-[180px] w-full rounded overflow-hidden">
           <LWChart data={tfChartData[ctx.timeframe] ?? sol15m} compact showVolume={false} showIndicators={false} />
         </div>
 
-        {/* Metrics Row */}
-        <div className="grid grid-cols-3 gap-1.5">
-          <Metric label="Structure" value={ctx.structure} color={trendColor(ctx.trend)} />
-          <Metric label="Momentum" value={ctx.momentum} color={momentumColor(ctx.momentum)} />
-          <Metric label="State" value={ctx.compression} color={compressionColor(ctx.compression)} />
-        </div>
-
-        {/* Bias Bar */}
-        <div className="space-y-0.5">
-          <div className="flex justify-between">
-            <span className="text-[9px] text-[#f6465d]">Bear</span>
-            <span className="text-[9px] text-[var(--textSubtle)]">Bias: {ctx.bias > 0 ? "+" : ""}{ctx.bias}</span>
-            <span className="text-[9px] text-[#2bc48a]">Bull</span>
-          </div>
-          <BiasBar value={ctx.bias} />
+        {/* Metrics + Bias — single row */}
+        <div className="flex items-center gap-3">
+          <MetricInline label="Struct" value={ctx.structure} color={trendColor(ctx.trend)} />
+          <MetricInline label="Mom" value={ctx.momentum} color={momentumColor(ctx.momentum)} />
+          <MetricInline label="State" value={ctx.compression} color={compressionColor(ctx.compression)} />
+          <div className="flex-1"><BiasBar value={ctx.bias} /></div>
         </div>
       </div>
     ))}
   </div>
 );
 
-const Metric = ({ label, value, color }: { label: string; value: string; color: string }) => (
-  <div className="space-y-0.5">
+const MetricInline = ({ label, value, color }: { label: string; value: string; color: string }) => (
+  <div className="flex items-center gap-1">
     <span className="text-[9px] text-[var(--textSubtle)]">{label}</span>
-    <div className="text-[9px] font-bold" style={{ color }}>{value}</div>
+    <span className="text-[9px] font-bold" style={{ color }}>{value}</span>
   </div>
 );

@@ -31,21 +31,24 @@ const TFCard = ({ context: c }: { context: TFContext }) => {
         </div>
         <span className="font-mono text-[9px] text-[var(--textSubtle)]">${c.keyLevel.toFixed(2)}</span>
       </div>
-      <div className="h-[60px] w-full rounded overflow-hidden">
+      <div className="h-[180px] w-full rounded overflow-hidden">
         <LWChart data={data} compact showVolume={false} showIndicators={false} />
       </div>
-      <div className="grid grid-cols-3 gap-1">
-        <Chip label="Struct" value={c.structure} color={tc(c.trend)} />
-        <Chip label="Mom" value={c.momentum} color={mc(c.momentum)} />
-        <Chip label="State" value={c.state} color={sc(c.state)} />
+      <div className="flex items-center gap-3">
+        <ChipInline label="Struct" value={c.structure} color={tc(c.trend)} />
+        <ChipInline label="Mom" value={c.momentum} color={mc(c.momentum)} />
+        <ChipInline label="State" value={c.state} color={sc(c.state)} />
+        <div className="flex-1"><BiasBar value={c.bias} /></div>
       </div>
-      <BiasBar value={c.bias} />
     </div>
   );
 };
 
-const Chip = ({ label, value, color }: { label: string; value: string; color: string }) => (
-  <div><div className="text-[9px] text-[var(--textSubtle)]">{label}</div><div className="text-[9px] font-bold" style={{ color }}>{value}</div></div>
+const ChipInline = ({ label, value, color }: { label: string; value: string; color: string }) => (
+  <div className="flex items-center gap-1">
+    <span className="text-[9px] text-[var(--textSubtle)]">{label}</span>
+    <span className="text-[9px] font-bold" style={{ color }}>{value}</span>
+  </div>
 );
 
 const BiasBar = ({ value }: { value: number }) => (
