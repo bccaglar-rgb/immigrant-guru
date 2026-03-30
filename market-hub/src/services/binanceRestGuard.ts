@@ -17,6 +17,13 @@
  */
 
 import { redis } from "../redis.ts";
+import {
+  canRequest as budgetCanRequest,
+  recordRequest as budgetRecordRequest,
+  onBanDetected as budgetOnBanDetected,
+  classifyEndpoint as budgetClassifyEndpoint,
+} from "./budgetEngine.ts";
+import { recordReason } from "./hubObservability.ts";
 
 // ── Config ──
 const WEIGHT_LIMIT = 1200;
@@ -198,6 +205,18 @@ export async function guardedBinanceFetch(
   recordAttribution(url, weight, opts?.reason);
   maybeLogAttribution();
 
+  // Feed reason into observability
+  if (opts?.reason) recordReason(opts.reason);
+
+  // 0-pre. Budget engine check — synthetic 429 if local budget says no
+  if (!opts?.skipBudgetCheck) {
+    const endpoint = budgetClassifyEndpoint(url);
+    const budgetCheck = budgetCanRequest(endpoint, weight);
+    if (!budgetCheck.allowed) {
+      throw new Error(`hub_budget_blocked: ${budgetCheck.reason}`);
+    }
+  }
+
   // 0a. Per-endpoint budget cap
   if (!checkEndpointBudget(url)) {
     throw new Error(`hub_endpoint_budget: ${url.split("?")[0]} exceeded per-minute cap`);
@@ -307,6 +326,9 @@ export async function guardedBinanceFetch(
       await redis.expire(WEIGHT_KEY, 65);
     } catch { /* best-effort */ }
 
+    // 6b. Record in local budget engine
+    budgetRecordRequest(budgetClassifyEndpoint(url), weight);
+
     // 7. Execute fetch with timeout
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), opts?.timeoutMs ?? FETCH_TIMEOUT_MS);
@@ -331,6 +353,7 @@ export async function guardedBinanceFetch(
         await redis.set(COOLDOWN_KEY, `${until}:hub-429`, "PX", cooldownMs);
       } catch { /* best-effort */ }
       console.error(`[BinanceRestGuard] 429! Cooldown ${cooldownMs / 1000}s written to Redis`);
+      budgetOnBanDetected(429);
     }
 
     if (res.status === 418) {
@@ -344,6 +367,7 @@ export async function guardedBinanceFetch(
         ]);
       } catch { /* best-effort */ }
       console.error(`[BinanceRestGuard] 418 IP BAN! Circuit OPEN + cooldown written to Redis (${cooldownMs / 1000}s)`);
+      budgetOnBanDetected(418);
     }
 
     if (res.status === 403) {
