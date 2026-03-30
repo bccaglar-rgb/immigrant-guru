@@ -77,17 +77,15 @@ export default function InstitutionalCommandPage() {
 
         {/* ── LEFT: 3 cols — Alerts+QuickStats side by side + MultiTF ── */}
         <div className="col-span-3 overflow-y-auto space-y-1 pr-0.5 scrollbar-thin">
-          <div className="flex gap-1">
-            <div className="w-[65%] min-w-0"><AlertMatrixPanel alerts={alerts} /></div>
-            <div className="w-[35%] min-w-0"><QuickStatsPanel /></div>
-          </div>
+          <AlertMatrixPanel alerts={alerts} />
+          <QuickStatsPanel horizontal />
           <MultiTimeframePanel contexts={tfContexts} />
         </div>
 
         {/* ── CENTER: 6 cols — Chart starts below 15m level ── */}
         <div className="col-span-6 flex flex-col gap-1 overflow-hidden">
           {/* Spacer: aligns chart top with bottom of left panel's 15m chart (~Alerts+QuickStats+15m header+chart+info) */}
-          <div className="flex-shrink-0" style={{ height: 280 }} />
+          <div className="flex-shrink-0" style={{ height: 230 }} />
           <div className="flex-1 min-h-0">
             <HeroExecutionChart data={sol1m} symbol="SOL/USDT" aiOverlay={{ bias: biasLabel, confidence: aiDecision.confidence, setup: aiDecision.strategy }} />
           </div>
@@ -159,13 +157,30 @@ export default function InstitutionalCommandPage() {
 }
 
 /* ── Quick Stats Mini Panel ── */
-const QuickStatsPanel = () => {
+const QuickStatsPanel = ({ horizontal }: { horizontal?: boolean }) => {
   const stats = [
     { label: "Bias", value: "Bullish", color: "#2bc48a" },
-    { label: "Momentum", value: 71, color: "#2bc48a", bar: true },
-    { label: "Volatility", value: "Medium", color: "#F5C542" },
+    { label: "Mom", value: "71", color: "#2bc48a" },
+    { label: "Vol", value: "Medium", color: "#F5C542" },
     { label: "Flow", value: "Buy", color: "#2bc48a" },
   ];
+
+  if (horizontal) {
+    return (
+      <div className="rounded-xl border border-white/[0.04] bg-white/[0.015] px-2.5 py-1.5 flex items-center gap-3">
+        <div className="flex items-center gap-1">
+          <svg viewBox="0 0 24 24" className="h-3 w-3 text-[#5B8DEF]" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 20V10M12 20V4M6 20v-6" /></svg>
+          <span className="text-[9px] font-bold tracking-widest uppercase text-[#5B8DEF]">Stats</span>
+        </div>
+        {stats.map((s) => (
+          <div key={s.label} className="flex items-center gap-1">
+            <span className="text-[9px] text-[var(--textSubtle)]">{s.label}</span>
+            <span className="text-[9px] font-bold" style={{ color: s.color }}>{s.value}</span>
+          </div>
+        ))}
+      </div>
+    );
+  }
 
   return (
     <div className="rounded-2xl border border-white/[0.04] bg-white/[0.015] p-2.5 space-y-1">
@@ -176,16 +191,7 @@ const QuickStatsPanel = () => {
       {stats.map((s) => (
         <div key={s.label} className="flex items-center justify-between gap-2 px-1">
           <span className="text-[10px] text-[var(--textSubtle)]">{s.label}</span>
-          {s.bar && typeof s.value === "number" ? (
-            <div className="flex items-center gap-1.5 flex-1 justify-end">
-              <div className="h-[4px] w-16 rounded-full bg-white/[0.06] overflow-hidden">
-                <div className="h-full rounded-full" style={{ width: `${s.value}%`, background: s.color }} />
-              </div>
-              <span className="font-mono text-[10px] font-bold" style={{ color: s.color }}>{s.value}</span>
-            </div>
-          ) : (
-            <span className="rounded px-1.5 py-0.5 text-[10px] font-bold" style={{ color: s.color, background: `${s.color}15` }}>{s.value}</span>
-          )}
+          <span className="rounded px-1.5 py-0.5 text-[10px] font-bold" style={{ color: s.color, background: `${s.color}15` }}>{s.value}</span>
         </div>
       ))}
     </div>
