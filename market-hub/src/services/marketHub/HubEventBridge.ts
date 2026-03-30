@@ -96,6 +96,9 @@ export class HubEventBridge {
    *   book_ticker → topBid, topAsk, bidQty, askQty (throttled to 200ms)
    *   ticker     → price, change24hPct, volume24hUsd
    */
+  /** Throttle map for depth cache writes: "symbol" → last write timestamp */
+  private depthCacheLastWrite = new Map<string, number>();
+
   private writeLiveFields(event: NormalizedEvent): void {
     if (!this.pub) return;
     const key = SNAPSHOT_KEY_PREFIX + event.symbol;
@@ -105,6 +108,32 @@ export class HubEventBridge {
     // the canonical Binance price, causing the UI to show values BTC never reached.
     const eventExchange = String((event as Record<string, unknown>).exchange ?? "").toUpperCase();
     if (eventExchange && !eventExchange.includes("BINANCE")) return;
+
+    // ── HUB_EXTERNAL depth cache bridge ──
+    // When market-hub runs externally, server's startDepthIngestion is skipped.
+    // Server's readDepth() reads from "mdc:depth:SYMBOL" (JSON string key).
+    // We must write depth data here so server can read it without any REST calls.
+    if (event.type === "book_snapshot") {
+      const now = Date.now();
+      const lastWrite = this.depthCacheLastWrite.get(event.symbol) ?? 0;
+      // Throttle to once per 3 seconds per symbol (depth doesn't change that fast)
+      if (now - lastWrite < 3_000) return;
+      this.depthCacheLastWrite.set(event.symbol, now);
+
+      const bids = (event as any).bids as Array<[number, number]>;
+      const asks = (event as any).asks as Array<[number, number]>;
+      if (bids && asks && bids.length > 0 && asks.length > 0) {
+        const depthPayload = JSON.stringify({
+          bids: bids.slice(0, 20).map(([p, q]: [number, number]) => [String(p), String(q)]),
+          asks: asks.slice(0, 20).map(([p, q]: [number, number]) => [String(p), String(q)]),
+          source: "BINANCE",
+          fetchedAt: now,
+          cachedAt: now,
+        });
+        // Write to mdc:depth:SYMBOL — same format server's readDepth() expects
+        this.pub.set(`mdc:depth:${event.symbol}`, depthPayload, "EX", 60);
+      }
+    }
 
     if (event.type === "trade") {
       // Throttle trade snapshot writes to 50ms per symbol (20/sec vs 180/sec raw)
@@ -472,5 +501,6 @@ export class HubEventBridge {
     this.marketListListeners.clear();
     this.bookTickerLastWrite.clear();
     this.tradeLastWrite.clear();
+    this.depthCacheLastWrite.clear();
   }
 }
