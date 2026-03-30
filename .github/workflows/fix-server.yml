@@ -42,6 +42,13 @@ jobs:
             chmod 700 /root/.ssh
             chmod 600 /root/.ssh/authorized_keys
             chown -R root:root /root/.ssh
+            # Check sshd config
+            echo "=== sshd config ==="
+            grep -E "AuthorizedKeysFile|PubkeyAuthentication|PermitRootLogin" /etc/ssh/sshd_config | grep -v "^#"
+            # Ensure PubkeyAuthentication is enabled
+            sed -i 's/^PubkeyAuthentication no/PubkeyAuthentication yes/' /etc/ssh/sshd_config
+            sed -i 's/^#PubkeyAuthentication/PubkeyAuthentication/' /etc/ssh/sshd_config
+            grep -q "^PubkeyAuthentication" /etc/ssh/sshd_config || echo "PubkeyAuthentication yes" >> /etc/ssh/sshd_config
             # Restart sshd to pick up changes
             systemctl restart sshd || service ssh restart || true
             echo "sshd restarted"
