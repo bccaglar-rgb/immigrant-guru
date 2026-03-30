@@ -84,7 +84,7 @@ export default function InstitutionalCommandPage() {
 
         {/* ── CENTER: 6 cols — Chart at top, 80% height ── */}
         <div className="col-span-6 flex flex-col gap-1 overflow-hidden">
-          <div style={{ height: "80%" }} className="min-h-0">
+          <div style={{ height: "60%" }} className="min-h-0">
             <HeroExecutionChart data={sol1m} symbol="SOL/USDT" aiOverlay={{ bias: biasLabel, confidence: aiDecision.confidence, setup: aiDecision.strategy }} />
           </div>
         </div>
