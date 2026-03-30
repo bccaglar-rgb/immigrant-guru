@@ -43,11 +43,11 @@ export default function InstitutionalCommandPage() {
       {/* ═══ MAIN 12-COL GRID ═══ */}
       <div className="flex-1 grid grid-cols-12 gap-1" style={{ height: "calc(100vh - 52px)" }}>
 
-        {/* ── LEFT: Multi-Timeframe + Alerts (4 cols) ── */}
+        {/* ── LEFT: Alerts + Session/Sentiment + Multi-Timeframe (4 cols) ── */}
         <div className="col-span-4 overflow-y-auto space-y-1 pr-0.5 scrollbar-thin">
-          <MultiTimeframePanel contexts={tfContexts} />
           <AlertMatrixPanel alerts={alerts} />
           <BottomStrip session={session} sentiment={sentiment} execQuality={execQuality} />
+          <MultiTimeframePanel contexts={tfContexts} />
         </div>
 
         {/* ── CENTER: Hero + Decision Stack (5 cols) ── */}
