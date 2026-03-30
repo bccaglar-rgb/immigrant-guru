@@ -82,11 +82,9 @@ export default function InstitutionalCommandPage() {
           <MultiTimeframePanel contexts={tfContexts} />
         </div>
 
-        {/* ── CENTER: 6 cols — Chart starts below 15m level ── */}
+        {/* ── CENTER: 6 cols — Chart at top, 80% height ── */}
         <div className="col-span-6 flex flex-col gap-1 overflow-hidden">
-          {/* Spacer: aligns chart top with bottom of left panel's 15m chart (~Alerts+QuickStats+15m header+chart+info) */}
-          <div className="flex-shrink-0" style={{ height: 230 }} />
-          <div className="flex-1 min-h-0">
+          <div style={{ height: "80%" }} className="min-h-0">
             <HeroExecutionChart data={sol1m} symbol="SOL/USDT" aiOverlay={{ bias: biasLabel, confidence: aiDecision.confidence, setup: aiDecision.strategy }} />
           </div>
         </div>
