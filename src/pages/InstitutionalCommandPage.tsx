@@ -5,8 +5,22 @@ import {
   sol1m, btc1m, tfContexts, signals, aiDecision, levels,
   alerts, session, marketIntel,
 } from "../components/institutional/mockData";
+import { useState, useRef, useEffect } from "react";
+
+const COINS = ["SOL/USDT", "BTC/USDT", "ETH/USDT", "BNB/USDT", "XRP/USDT", "DOGE/USDT", "ADA/USDT", "AVAX/USDT", "DOT/USDT", "LINK/USDT"];
 
 export default function InstitutionalCommandPage() {
+  const [selectedCoin, setSelectedCoin] = useState("SOL/USDT");
+  const [coinDropOpen, setCoinDropOpen] = useState(false);
+  const coinDropRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (coinDropRef.current && !coinDropRef.current.contains(e.target as Node)) setCoinDropOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
   const now = new Date();
   const utc = now.toLocaleTimeString("en-US", { timeZone: "UTC", hour12: false, hour: "2-digit", minute: "2-digit", second: "2-digit" });
   const local = now.toLocaleTimeString("en-US", { hour12: false, hour: "2-digit", minute: "2-digit", second: "2-digit" });
@@ -39,14 +53,37 @@ export default function InstitutionalCommandPage() {
       {/* ═══ TOP BAR — Two lines: Command + System Health ═══ */}
       <header className="flex-shrink-0 rounded-xl border border-white/[0.05] bg-[var(--panel)]">
         {/* Line 1: Command Bar */}
-        <div className="flex items-center justify-between px-3.5 py-1">
+        <div className="flex items-center justify-between px-3.5 py-2">
           <div className="flex items-center gap-2.5">
             <div className="flex items-center gap-1.5">
               <div className="h-1.5 w-1.5 rounded-full bg-[#2bc48a] animate-pulse" />
               <span className="text-[10px] font-black tracking-[0.15em] text-[var(--text)]">INSTITUTIONAL COMMAND</span>
             </div>
             <Sep />
-            <Pill l="Asset" v="SOL/USDT" c="#F5C542" />
+            {/* Coin Dropdown */}
+            <div ref={coinDropRef} className="relative">
+              <button
+                onClick={() => setCoinDropOpen(!coinDropOpen)}
+                className="flex items-center gap-1 rounded-lg border border-[#F5C542]/30 bg-[#F5C542]/10 px-2 py-0.5 text-[10px] font-bold text-[#F5C542] hover:bg-[#F5C542]/20 transition-colors"
+              >
+                <span className="text-[9px] text-[var(--textMuted)]">Asset</span>
+                <span>{selectedCoin}</span>
+                <svg className="h-3 w-3 opacity-60" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" /></svg>
+              </button>
+              {coinDropOpen && (
+                <div className="absolute z-50 mt-1 w-40 rounded-xl border border-white/10 bg-[#1A1B1E] py-1 shadow-2xl max-h-60 overflow-y-auto">
+                  {COINS.map((c) => (
+                    <button
+                      key={c}
+                      onClick={() => { setSelectedCoin(c); setCoinDropOpen(false); }}
+                      className={`w-full px-3 py-1.5 text-left text-[10px] font-medium hover:bg-white/5 transition-colors ${c === selectedCoin ? "text-[#F5C542] bg-[#F5C542]/10" : "text-[var(--text)]"}`}
+                    >
+                      {c}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
             <Pill l="Session" v={session.name} c="var(--accent)" />
             <Sep />
             <Pill l="Regime" v={signals.regime} c="#2bc48a" />
@@ -61,7 +98,7 @@ export default function InstitutionalCommandPage() {
           </div>
         </div>
         {/* Line 2: System Health */}
-        <div className="flex items-center gap-4 border-t border-white/[0.04] px-3.5 py-0.5">
+        <div className="flex items-center gap-4 border-t border-white/[0.04] px-3.5 py-1">
           {healthItems.map((it) => (
             <div key={it.label} className="flex items-center gap-1">
               <span className="text-[9px] text-[var(--textMuted)]">{it.label}:</span>
@@ -84,7 +121,7 @@ export default function InstitutionalCommandPage() {
         {/* ── CENTER: 6 cols — Chart at top, 80% height ── */}
         <div className="col-span-6 flex flex-col gap-1 overflow-hidden">
           <div style={{ height: "60%" }} className="min-h-0">
-            <HeroExecutionChart data={sol1m} symbol="SOL/USDT" aiOverlay={{ bias: biasLabel, confidence: aiDecision.confidence, setup: aiDecision.strategy }} />
+            <HeroExecutionChart data={sol1m} symbol={selectedCoin} aiOverlay={{ bias: biasLabel, confidence: aiDecision.confidence, setup: aiDecision.strategy }} />
           </div>
           <QuickStatsPanel horizontal />
         </div>

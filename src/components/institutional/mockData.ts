@@ -1,24 +1,30 @@
 /* ═══ Institutional Command — Mock Data ═══ */
 
-function gen(base: number, count: number, vol: number, seed: number) {
+function gen(base: number, count: number, vol: number, seed: number, intervalMs = 60_000) {
   const out: Array<{ time: number; open: number; high: number; low: number; close: number; volume: number }> = [];
   let p = base, s = seed;
   const r = () => { s = (s * 16807) % 2147483647; return (s & 0x7fffffff) / 0x7fffffff; };
   for (let i = 0; i < count; i++) {
     const c = (r() - 0.48) * vol, o = p, cl = p + c;
     const h = Math.max(o, cl) + r() * vol * 0.5, l = Math.min(o, cl) - r() * vol * 0.5;
-    out.push({ time: Date.now() - (count - i) * 60000, open: +o.toFixed(4), high: +h.toFixed(4), low: +l.toFixed(4), close: +cl.toFixed(4), volume: +(70000 + r() * 930000).toFixed(0) });
+    out.push({ time: Date.now() - (count - i) * intervalMs, open: +o.toFixed(4), high: +h.toFixed(4), low: +l.toFixed(4), close: +cl.toFixed(4), volume: +(70000 + r() * 930000).toFixed(0) });
     p = cl;
   }
   return out;
 }
 
-export const sol1m = gen(147.25, 160, 0.40, 42);
-export const sol15m = gen(146.10, 80, 1.4, 73);
-export const sol1h = gen(144.80, 60, 4.0, 91);
-export const sol4h = gen(141.50, 50, 9.0, 17);
-export const sol1d = gen(137.00, 40, 17.0, 55);
-export const btc1m = gen(87680, 120, 52, 33);
+const MIN1 = 60_000;
+const MIN15 = 15 * MIN1;
+const HOUR1 = 60 * MIN1;
+const HOUR4 = 4 * HOUR1;
+const DAY1 = 24 * HOUR1;
+
+export const sol1m = gen(147.25, 160, 0.40, 42, MIN1);
+export const sol15m = gen(146.10, 80, 1.4, 73, MIN15);
+export const sol1h = gen(144.80, 60, 4.0, 91, HOUR1);
+export const sol4h = gen(141.50, 50, 9.0, 17, HOUR4);
+export const sol1d = gen(137.00, 40, 17.0, 55, DAY1);
+export const btc1m = gen(87680, 120, 52, 33, MIN1);
 
 export type TFContext = { tf: string; trend: "Bullish" | "Bearish" | "Neutral"; structure: string; momentum: string; state: string; keyLevel: number; bias: number };
 export const tfContexts: TFContext[] = [

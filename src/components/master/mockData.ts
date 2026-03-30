@@ -1,6 +1,6 @@
 /* ── Mock data for Master Trading Terminal ── */
 
-function generateCandles(basePrice: number, count: number, volatility: number, seed: number): Array<{
+function generateCandles(basePrice: number, count: number, volatility: number, seed: number, intervalMs = 60_000): Array<{
   time: number; open: number; high: number; low: number; close: number; volume: number;
 }> {
   const candles = [];
@@ -16,7 +16,7 @@ function generateCandles(basePrice: number, count: number, volatility: number, s
     const low = Math.min(open, close) - rng() * volatility * 0.5;
     const volume = 100000 + rng() * 900000;
     candles.push({
-      time: Date.now() - (count - i) * 60000,
+      time: Date.now() - (count - i) * intervalMs,
       open: +open.toFixed(4),
       high: +high.toFixed(4),
       low: +low.toFixed(4),
@@ -28,15 +28,21 @@ function generateCandles(basePrice: number, count: number, volatility: number, s
   return candles;
 }
 
+const MIN1 = 60_000;
+const MIN15 = 15 * MIN1;
+const HOUR1 = 60 * MIN1;
+const HOUR4 = 4 * HOUR1;
+const DAY1 = 24 * HOUR1;
+
 // SOL charts
-export const sol1m = generateCandles(145.32, 120, 0.35, 42);
-export const sol15m = generateCandles(144.80, 80, 1.2, 73);
-export const sol1h = generateCandles(143.50, 60, 3.5, 91);
-export const sol4h = generateCandles(140.20, 50, 8.0, 17);
-export const sol24h = generateCandles(135.00, 40, 15.0, 55);
+export const sol1m = generateCandles(145.32, 120, 0.35, 42, MIN1);
+export const sol15m = generateCandles(144.80, 80, 1.2, 73, MIN15);
+export const sol1h = generateCandles(143.50, 60, 3.5, 91, HOUR1);
+export const sol4h = generateCandles(140.20, 50, 8.0, 17, HOUR4);
+export const sol24h = generateCandles(135.00, 40, 15.0, 55, DAY1);
 
 // BTC chart
-export const btc1m = generateCandles(87250, 120, 45, 33);
+export const btc1m = generateCandles(87250, 120, 45, 33, MIN1);
 
 export const signalData = {
   trendDirection: "Bullish" as const,

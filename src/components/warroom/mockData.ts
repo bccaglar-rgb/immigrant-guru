@@ -1,6 +1,6 @@
 /* ═══ Alpha War Room — Mock Data Engine ═══ */
 
-function genCandles(base: number, count: number, vol: number, seed: number) {
+function genCandles(base: number, count: number, vol: number, seed: number, intervalMs = 60_000) {
   const out: Array<{ time: number; open: number; high: number; low: number; close: number; volume: number }> = [];
   let p = base, s = seed;
   const r = () => { s = (s * 16807) % 2147483647; return (s & 0x7fffffff) / 0x7fffffff; };
@@ -9,18 +9,24 @@ function genCandles(base: number, count: number, vol: number, seed: number) {
     const o = p, cl = p + c;
     const h = Math.max(o, cl) + r() * vol * 0.5;
     const l = Math.min(o, cl) - r() * vol * 0.5;
-    out.push({ time: Date.now() - (count - i) * 60000, open: +o.toFixed(4), high: +h.toFixed(4), low: +l.toFixed(4), close: +cl.toFixed(4), volume: +(80000 + r() * 920000).toFixed(0) });
+    out.push({ time: Date.now() - (count - i) * intervalMs, open: +o.toFixed(4), high: +h.toFixed(4), low: +l.toFixed(4), close: +cl.toFixed(4), volume: +(80000 + r() * 920000).toFixed(0) });
     p = cl;
   }
   return out;
 }
 
-export const sol1m = genCandles(146.82, 150, 0.38, 42);
-export const sol15m = genCandles(145.50, 80, 1.3, 73);
-export const sol1h = genCandles(144.00, 60, 3.8, 91);
-export const sol4h = genCandles(141.20, 50, 8.5, 17);
-export const sol1d = genCandles(136.00, 40, 16.0, 55);
-export const btc1m = genCandles(87450, 120, 48, 33);
+const MIN1 = 60_000;
+const MIN15 = 15 * MIN1;
+const HOUR1 = 60 * MIN1;
+const HOUR4 = 4 * HOUR1;
+const DAY1 = 24 * HOUR1;
+
+export const sol1m = genCandles(146.82, 150, 0.38, 42, MIN1);
+export const sol15m = genCandles(145.50, 80, 1.3, 73, MIN15);
+export const sol1h = genCandles(144.00, 60, 3.8, 91, HOUR1);
+export const sol4h = genCandles(141.20, 50, 8.5, 17, HOUR4);
+export const sol1d = genCandles(136.00, 40, 16.0, 55, DAY1);
+export const btc1m = genCandles(87450, 120, 48, 33, MIN1);
 
 export type TimeframeContext = {
   timeframe: string;
