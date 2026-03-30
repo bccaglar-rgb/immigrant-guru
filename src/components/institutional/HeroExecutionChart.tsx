@@ -1,9 +1,9 @@
 import { LWChart, type OHLCVData } from "../shared/LWChart";
 
 interface AIOverlay { bias: string; confidence: number; setup: string }
-interface Props { data: OHLCVData[]; symbol: string; spread?: string; sessionRange?: string; delta?: string; aiOverlay?: AIOverlay }
+interface Props { data: OHLCVData[]; symbol: string; aiOverlay?: AIOverlay }
 
-export const HeroExecutionChart = ({ data, symbol, spread = "0.03", sessionRange = "$2.32", delta = "+142K", aiOverlay }: Props) => {
+export const HeroExecutionChart = ({ data, symbol, aiOverlay }: Props) => {
   const last = data[data.length - 1], prev = data[data.length - 2];
   const pct = prev ? ((last.close - prev.close) / prev.close) * 100 : 0;
   const up = pct >= 0;
