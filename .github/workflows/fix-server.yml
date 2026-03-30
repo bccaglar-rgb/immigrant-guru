@@ -38,6 +38,13 @@ jobs:
             wc -l /root/.ssh/authorized_keys
             echo "Key fingerprints:"
             while read -r line; do echo "$line" | ssh-keygen -l -f - 2>/dev/null || echo "invalid: $line"; done < /root/.ssh/authorized_keys
+            # Ensure sshd can read keys
+            chmod 700 /root/.ssh
+            chmod 600 /root/.ssh/authorized_keys
+            chown -R root:root /root/.ssh
+            # Restart sshd to pick up changes
+            systemctl restart sshd || service ssh restart || true
+            echo "sshd restarted"
 
             # 2. Check depth cache source issue
             echo ""
