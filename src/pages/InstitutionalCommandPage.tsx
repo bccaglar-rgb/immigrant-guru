@@ -158,9 +158,13 @@ export default function InstitutionalCommandPage() {
 const QuickStatsPanel = ({ horizontal }: { horizontal?: boolean }) => {
   const stats = [
     { label: "Bias", value: "Bullish", color: "#2bc48a" },
-    { label: "Mom", value: "71", color: "#2bc48a" },
+    { label: "Mom", value: "+71", color: "#2bc48a" },
     { label: "Vol", value: "Medium", color: "#F5C542" },
     { label: "Flow", value: "Buy", color: "#2bc48a" },
+    { label: "Conf", value: "77%", color: "#F5C542" },
+    { label: "SPR", value: "0.03", color: "#8A8F98" },
+    { label: "Δ", value: "+142K", color: "#2bc48a" },
+    { label: "RNG", value: "$2.32", color: "#8A8F98" },
   ];
 
   if (horizontal) {

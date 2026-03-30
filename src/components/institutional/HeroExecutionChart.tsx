@@ -49,15 +49,7 @@ export const HeroExecutionChart = ({ data, symbol, spread = "0.03", sessionRange
         </div>
       )}
 
-      {/* Overlay Metrics */}
-      <div className="absolute top-9 left-2.5 z-10 flex flex-col gap-0.5">
-        {[["SPR", spread, "#8A8F98"], ["MOM", "+71", "#2bc48a"], ["VOL", "Medium", "#F5C542"], ["FLOW", "Buy", "#5B8DEF"], ["CONF", "77%", "#F5C542"], ["\u0394", delta, "#2bc48a"], ["RNG", sessionRange, "#8A8F98"]].map(([l, v, c]) => (
-          <div key={l as string} className="flex items-center gap-1 rounded bg-black/70 px-1 py-px backdrop-blur-sm">
-            <span className="text-[9px] font-bold text-[var(--textSubtle)]">{l}</span>
-            <span className="text-[9px] font-bold" style={{ color: c as string }}>{v}</span>
-          </div>
-        ))}
-      </div>
+      {/* Overlay metrics moved to Quick Stats panel */}
       <div className="relative flex-1 min-h-0">
         <LWChart data={data} showVolume showIndicators />
       </div>
