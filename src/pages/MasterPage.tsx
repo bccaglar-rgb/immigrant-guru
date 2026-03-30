@@ -38,7 +38,7 @@ export default function MasterPage() {
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-2">
             <div className="h-2 w-2 rounded-full bg-[#2bc48a] animate-pulse" />
-            <span className="text-[11px] font-bold text-[var(--text)]">MASTER CONTROL</span>
+            <span className="text-2xl font-bold tracking-wide text-[var(--text)]">MASTER CONTROL</span>
           </div>
           <span className="text-[10px] text-[var(--textSubtle)]">|</span>
           <span className="text-[10px] text-[var(--textMuted)]">Mode:</span>
@@ -114,6 +114,6 @@ export default function MasterPage() {
 const StatusPill = ({ label, value, color }: { label: string; value: string; color: string }) => (
   <div className="flex items-center gap-1.5">
     <span className="text-[9px] text-[var(--textSubtle)]">{label}:</span>
-    <span className="text-[9px] font-semibold" style={{ color }}>{value}</span>
+    <span className="text-[9px] font-semibold font-mono" style={{ color }}>{value}</span>
   </div>
 );

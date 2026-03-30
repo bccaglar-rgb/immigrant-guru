@@ -34,7 +34,7 @@ export default function AlphaWarRoomPage() {
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-2">
             <div className="h-2 w-2 rounded-full bg-[#f6465d] animate-pulse" />
-            <span className="text-[11px] font-black tracking-wider text-[var(--text)]">ALPHA WAR ROOM</span>
+            <span className="text-2xl font-bold tracking-wide text-[var(--text)]">ALPHA WAR ROOM</span>
           </div>
           <Divider />
           <CommandPill label="Market" value="Risk-On" color="#2bc48a" />

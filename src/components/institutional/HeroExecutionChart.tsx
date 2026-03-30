@@ -30,7 +30,7 @@ export const HeroExecutionChart = ({ data, symbol, aiOverlay }: Props) => {
               <span className="text-[10px] font-black" style={{ color: overlayColor }}>{aiOverlay.bias}</span>
               <span className="text-white/[0.08]">|</span>
               <span className="text-[9px] text-[var(--textSubtle)]">Conf:</span>
-              <span className="text-[10px] font-bold" style={{ color: overlayColor }}>{aiOverlay.confidence}%</span>
+              <span className="text-[10px] font-bold font-mono" style={{ color: overlayColor }}>{aiOverlay.confidence}%</span>
               <span className="text-white/[0.08]">|</span>
               <span className="text-[9px] text-[var(--textSubtle)]">Setup:</span>
               <span className="text-[10px] font-bold text-[#5B8DEF]">{aiOverlay.setup}</span>

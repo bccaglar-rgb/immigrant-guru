@@ -30,7 +30,7 @@ export const AIDecisionPanel = ({ data }: Props) => {
       <div className="space-y-1">
         <div className="flex items-end justify-between px-0.5">
           <span className="text-[10px] font-bold uppercase text-[var(--textSubtle)]">Confidence</span>
-          <span className="font-mono text-2xl font-black leading-none" style={{ color: cfg.color }}>{data.confidence}%</span>
+          <span className="font-mono text-xl font-bold leading-none" style={{ color: cfg.color }}>{data.confidence}%</span>
         </div>
         <div className="h-2 w-full rounded-full bg-white/[0.06] overflow-hidden">
           <div className="h-full rounded-full transition-all duration-700" style={{ width: `${confPct}%`, background: `linear-gradient(90deg, ${cfg.color}88, ${cfg.color})` }} />
@@ -43,7 +43,7 @@ export const AIDecisionPanel = ({ data }: Props) => {
           {data.strategy}
         </span>
         <span className="rounded-lg border px-2 py-1 text-[10px] font-bold" style={{ color: "#F5C542", borderColor: "rgba(245,197,66,0.25)", background: "rgba(245,197,66,0.06)" }}>
-          Quality {data.marketQuality}/100
+          Quality <span className="font-mono">{data.marketQuality}/100</span>
         </span>
       </div>
 

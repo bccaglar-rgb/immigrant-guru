@@ -31,7 +31,7 @@ export const TopTradesPanel = () => (
                 <span className="text-[11px] font-black text-white">{t.coin}</span>
                 <span className={`text-[8px] font-bold px-1.5 py-0.5 rounded ${badgeColor}`}>{t.direction}</span>
               </div>
-              <span className="text-[9px] text-white/50">RR {t.rr}</span>
+              <span className="text-[9px] font-mono text-white/50">RR {t.rr}</span>
             </div>
             <p className="text-[9px] text-white/50 mb-1.5">{t.reason}</p>
             <div className="flex items-center justify-between">
@@ -40,9 +40,10 @@ export const TopTradesPanel = () => (
                 <div className="w-14 h-1 rounded-full bg-white/10 overflow-hidden">
                   <div className="h-full rounded-full bg-emerald-400" style={{ width: `${t.confidence}%` }} />
                 </div>
-                <span className="text-[8px] font-bold text-emerald-400">{t.confidence}%</span>
+                <span className="text-[8px] font-bold font-mono text-emerald-400">{t.confidence}%</span>
               </div>
               <span className="text-[9px] font-mono font-bold text-white">{t.entry}</span>
+
             </div>
           </div>
         );
@@ -92,9 +93,9 @@ export const OpportunityFeed = () => (
           <span className="text-[9px] text-white/50 flex-1 truncate">{o.reason}</span>
           <div className="flex items-center gap-1">
             <span className="text-[8px] text-white/30">Conf</span>
-            <span className="text-[9px] font-bold text-emerald-400">{o.confidence}%</span>
+            <span className="text-[9px] font-bold font-mono text-emerald-400">{o.confidence}%</span>
           </div>
-          <span className="text-[8px] text-white/30">RR {o.rr}</span>
+          <span className="text-[8px] font-mono text-white/30">RR {o.rr}</span>
           <span className="text-[8px] text-white/20 w-6 text-right">{o.time}</span>
         </div>
       ))}
@@ -235,7 +236,7 @@ export const WhaleActivityBoard = () => (
         return (
           <div key={i} className="flex items-center gap-1.5">
             <div className={`h-1.5 w-1.5 rounded-full ${isBuy ? "bg-emerald-500" : "bg-red-500"}`} />
-            <span className="text-[9px] font-bold text-white">{w.amount}</span>
+            <span className="text-[9px] font-bold font-mono text-white">{w.amount}</span>
             <span className="text-[9px] text-white/70">{w.coin}</span>
             <span className={`text-[8px] font-bold ${isBuy ? "text-emerald-400" : "text-red-400"}`}>{w.side}</span>
             <span className="text-[8px] text-white/30 flex-1">({w.exchange})</span>
@@ -246,7 +247,7 @@ export const WhaleActivityBoard = () => (
     </div>
     <div className="mt-2 pt-1.5 border-t border-white/[0.06] flex items-center justify-between">
       <span className="text-[8px] text-white/30">Net Flow</span>
-      <span className="text-[10px] font-bold text-emerald-400">+$6.3M</span>
+      <span className="text-[10px] font-bold font-mono text-emerald-400">+$6.3M</span>
     </div>
   </div>
 );
@@ -264,8 +265,8 @@ export const LongShortPanel = () => (
         <div className="bg-red-500" style={{ width: "32%" }} />
       </div>
       <div className="flex items-center justify-between">
-        <span className="text-[9px] font-bold text-emerald-400">Long 68%</span>
-        <span className="text-[9px] font-bold text-red-400">Short 32%</span>
+        <span className="text-[9px] font-bold font-mono text-emerald-400">Long 68%</span>
+        <span className="text-[9px] font-bold font-mono text-red-400">Short 32%</span>
       </div>
       <div className="mt-1.5 space-y-0.5">
         <div className="flex items-center justify-between">
@@ -302,14 +303,14 @@ export const LiquidationMap = () => (
             <span className={`text-[9px] ${isAbove ? "text-emerald-400" : "text-red-400"}`}>{isAbove ? "\u25B2" : "\u25BC"}</span>
             <span className="text-[8px] text-white/30">{l.direction}</span>
             <span className="text-[9px] font-mono font-bold text-white">{l.price}</span>
-            <span className="text-[8px] text-white/40 flex-1 text-right">{l.liquidity} liq</span>
+            <span className="text-[8px] font-mono text-white/40 flex-1 text-right">{l.liquidity} liq</span>
           </div>
         );
       })}
     </div>
     <div className="mt-1.5 pt-1.5 border-t border-white/[0.06] flex items-center justify-between">
       <span className="text-[8px] text-white/30">Magnet</span>
-      <span className="text-[9px] font-bold text-yellow-400">$150.00 &#x2B06;&#xFE0F;</span>
+      <span className="text-[9px] font-bold font-mono text-yellow-400">$150.00 &#x2B06;&#xFE0F;</span>
     </div>
   </div>
 );
@@ -335,7 +336,7 @@ export const AIGlobalBias = () => (
           <div key={b.coin}>
             <div className="flex items-center justify-between mb-0.5">
               <span className="text-[9px] font-bold text-white">{b.coin}</span>
-              <span className={`text-[8px] font-bold ${textColor}`}>{b.bias} ({b.pct}%)</span>
+              <span className={`text-[8px] font-bold font-mono ${textColor}`}>{b.bias} ({b.pct}%)</span>
             </div>
             <div className="w-full h-1 rounded-full bg-white/10 overflow-hidden">
               <div className={`h-full rounded-full ${barColor}`} style={{ width: `${b.pct}%` }} />
@@ -367,8 +368,8 @@ export const KeyLevelsDashboard = () => (
       {keyLevels.map((k) => (
         <div key={k.coin} className="flex items-center gap-2">
           <span className="text-[9px] font-bold text-white">{k.coin}</span>
-          <span className="text-[8px] text-emerald-400">S: {k.support}</span>
-          <span className="text-[8px] text-red-400">R: {k.resistance}</span>
+          <span className="text-[8px] font-mono text-emerald-400">S: {k.support}</span>
+          <span className="text-[8px] font-mono text-red-400">R: {k.resistance}</span>
         </div>
       ))}
     </div>

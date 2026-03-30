@@ -2,8 +2,19 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Institutional Trading Font System */
+@layer utilities {
+  .font-price {
+    font-family: "JetBrains Mono", monospace;
+    font-variant-numeric: tabular-nums;
+  }
+  .font-data {
+    font-variant-numeric: tabular-nums;
+  }
+}
+
 :root {
-  font-family: "IBM Plex Sans", "Suisse Int'l", "Avenir Next", sans-serif;
+  font-family: "Inter", "IBM Plex Sans", "Suisse Int'l", system-ui, sans-serif;
   --bg: #0B0B0C;
   --panel: #121316;
   --panelMuted: #0F1012CC;

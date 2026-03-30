@@ -128,7 +128,7 @@ export const AIMasterScore = () => {
             className="transition-all duration-1000 ease-out"
           />
         </svg>
-        <span className="font-mono text-2xl font-black text-[#2bc48a]">{score}</span>
+        <span className="font-mono text-xl font-bold text-[#2bc48a]">{score}</span>
       </div>
       {/* Metrics below */}
       <div className="w-full mt-2 space-y-1.5">
@@ -144,6 +144,7 @@ export const AIMasterScore = () => {
           <div className="flex items-center justify-between">
             <span className="text-[9px] text-[var(--textSubtle)]">Market Quality</span>
             <span className="font-mono text-[10px] font-semibold text-[var(--text)]">8.2/10</span>
+
           </div>
           <div className="h-1.5 w-full overflow-hidden rounded-full bg-white/[0.06]">
             <div className="h-full rounded-full bg-[#2bc48a] transition-all duration-700" style={{ width: "82%" }} />

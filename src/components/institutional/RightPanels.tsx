@@ -43,7 +43,7 @@ export const MarketIntelFeed = ({ intel }: IntelProps) => {
           <div className="text-[10px] text-[var(--textSubtle)]">Risk</div>
           <div className="flex items-center gap-1">
             <span className="h-1.5 w-1.5 rounded-full" style={{ background: rc }} />
-            <span className="text-[10px] font-bold" style={{ color: rc }}>{intel.riskMode}</span>
+            <span className="text-[10px] font-bold font-mono" style={{ color: rc }}>{intel.riskMode}</span>
           </div>
         </div>
         <KV l="Dom" v={intel.dominance} />
@@ -54,7 +54,7 @@ export const MarketIntelFeed = ({ intel }: IntelProps) => {
       <div className="rounded-lg bg-black/20 px-2 py-1.5 space-y-1">
         <div className="flex items-center justify-between">
           <span className="text-[10px] font-bold text-[var(--textSubtle)] uppercase">Sentiment</span>
-          <span className="text-[10px] font-bold" style={{ color: fgColor }}>Fear/Greed: {fgVal}</span>
+          <span className="text-[10px] font-bold font-mono" style={{ color: fgColor }}>Fear/Greed: {fgVal}</span>
         </div>
         <div className="h-2 w-full rounded-full overflow-hidden" style={{ background: "linear-gradient(90deg, #f6465d, #FF9F43, #F5C542, #8fc9ab, #2bc48a)" }}>
           <div className="relative h-full">
@@ -111,7 +111,7 @@ export const StructureLevelsPanel = ({ data }: LvlProps) => (
     <div className="space-y-0.5"><span className="text-[10px] font-bold text-[var(--textSubtle)] uppercase">Imbalances</span>
       {data.imbalances.map((z, i) => (
         <div key={i} className="flex items-center justify-between py-px">
-          <span className="font-mono text-[10px] text-[var(--textMuted)]">${z.from} — ${z.to}</span>
+          <span className="font-mono text-[10px] text-[var(--textMuted)]">${z.from} &mdash; ${z.to}</span>
           <span className={`text-[10px] font-bold ${z.status === "Open" ? "text-[#F5C542]" : "text-[var(--textSubtle)]"}`}>{z.status}</span>
         </div>
       ))}
@@ -200,7 +200,7 @@ export const SystemHealthPanel = () => {
         {items.map((it) => (
           <div key={it.label} className="flex items-center gap-1">
             <span className="text-[10px] text-[var(--textMuted)]">{it.label}:</span>
-            <span className="text-[10px] font-bold text-[var(--text)]">{it.value}</span>
+            <span className="text-[10px] font-bold font-mono text-[var(--text)]">{it.value}</span>
             <span className="h-1.5 w-1.5 rounded-full" style={{ background: dotColor[it.status] }} />
           </div>
         ))}
@@ -211,7 +211,7 @@ export const SystemHealthPanel = () => {
 
 /* ── Helpers ── */
 const KV = ({ l, v, c }: { l: string; v: string; c?: string }) => (
-  <div className="rounded bg-black/20 px-1.5 py-0.5"><div className="text-[10px] text-[var(--textSubtle)]">{l}</div><div className="text-[10px] font-bold" style={{ color: c ?? "var(--text)" }}>{v}</div></div>
+  <div className="rounded bg-black/20 px-1.5 py-0.5"><div className="text-[10px] text-[var(--textSubtle)]">{l}</div><div className="text-[10px] font-bold font-mono" style={{ color: c ?? "var(--text)" }}>{v}</div></div>
 );
 const IB = ({ l, t }: { l: string; t: string }) => (
   <div className="rounded-lg bg-black/20 px-2 py-1"><span className="text-[10px] font-bold text-[var(--textSubtle)] uppercase">{l}</span><p className="text-[10px] text-[var(--textMuted)]">{t}</p></div>

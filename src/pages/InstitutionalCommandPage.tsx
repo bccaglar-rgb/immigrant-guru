@@ -89,7 +89,7 @@ export default function InstitutionalCommandPage() {
           <div className="flex items-center gap-2.5">
             <div className="flex items-center gap-1.5">
               <div className="h-1.5 w-1.5 rounded-full bg-[#2bc48a] animate-pulse" />
-              <span className="text-[10px] font-black tracking-[0.15em] text-[var(--text)]">INSTITUTIONAL COMMAND</span>
+              <span className="text-2xl font-bold tracking-wide text-[var(--text)]">INSTITUTIONAL COMMAND</span>
             </div>
             <Sep />
             {/* Coin Dropdown */}
@@ -141,7 +141,7 @@ export default function InstitutionalCommandPage() {
             <div key={it.label} className="flex items-center gap-1">
               <span className="text-[10px] text-[var(--textMuted)]">{it.label}:</span>
               {it.value && <span className="text-[10px]">{it.value}</span>}
-              {it.text && <span className="text-[10px] font-bold text-[var(--text)]">{it.text}</span>}
+              {it.text && <span className="text-[10px] font-bold font-mono text-[var(--text)]">{it.text}</span>}
             </div>
           ))}
         </div>
@@ -183,27 +183,27 @@ export default function InstitutionalCommandPage() {
         <div className="flex items-center gap-2">
           <span className="text-[10px]">{aiDecision.bias === "Bullish" ? "\u{1F7E2}" : aiDecision.bias === "Bearish" ? "\u{1F534}" : "\u26AA"}</span>
           <span className="text-sm font-black tracking-wider" style={{ color: biasColor }}>{coinBiasLabel}</span>
-          <span className="text-xs font-bold text-[var(--textSubtle)]">({aiDecision.confidence}%)</span>
+          <span className="text-xs font-bold font-mono text-[var(--textSubtle)]">({aiDecision.confidence}%)</span>
         </div>
         <BarSep />
         <div className="flex items-center gap-1">
           <span className="text-[10px] text-[var(--textSubtle)]">Entry:</span>
-          <span className="text-[11px] font-bold text-[var(--text)]">{entry}–{entryLow}</span>
+          <span className="text-[11px] font-bold font-mono text-[var(--text)]">{entry}–{entryLow}</span>
         </div>
         <BarSep />
         <div className="flex items-center gap-1">
           <span className="text-[10px] text-[var(--textSubtle)]">SL:</span>
-          <span className="text-[11px] font-bold text-[#f6465d]">{sl}</span>
+          <span className="text-[11px] font-bold font-mono text-[#f6465d]">{sl}</span>
         </div>
         <BarSep />
         <div className="flex items-center gap-2">
           <div className="flex items-center gap-1">
             <span className="text-[10px] text-[var(--textSubtle)]">TP1:</span>
-            <span className="text-[11px] font-bold text-[#2bc48a]">{tp1}</span>
+            <span className="text-[11px] font-bold font-mono text-[#2bc48a]">{tp1}</span>
           </div>
           <div className="flex items-center gap-1">
             <span className="text-[10px] text-[var(--textSubtle)]">TP2:</span>
-            <span className="text-[11px] font-bold text-[#2bc48a]">{tp2}</span>
+            <span className="text-[11px] font-bold font-mono text-[#2bc48a]">{tp2}</span>
           </div>
         </div>
         <BarSep />
@@ -214,7 +214,7 @@ export default function InstitutionalCommandPage() {
         <BarSep />
         <div className="flex items-center gap-1 flex-shrink-0">
           <span className="text-[10px] text-[var(--textSubtle)]">Invalid:</span>
-          <span className="text-[10px] font-bold text-[#f6465d]">&lt;{invalidation}</span>
+          <span className="text-[10px] font-bold font-mono text-[#f6465d]">&lt;{invalidation}</span>
         </div>
       </div>
     </main>
@@ -248,7 +248,7 @@ const QuickStatsPanel = ({ horizontal, coinData: cd }: { horizontal?: boolean; c
         {stats.map((s) => (
           <div key={s.label} className="flex items-center gap-1">
             <span className="text-[10px] text-[var(--textSubtle)]">{s.label}</span>
-            <span className="text-[10px] font-bold" style={{ color: s.color }}>{s.value}</span>
+            <span className="text-[10px] font-bold font-mono" style={{ color: s.color }}>{s.value}</span>
           </div>
         ))}
       </div>
@@ -264,7 +264,7 @@ const QuickStatsPanel = ({ horizontal, coinData: cd }: { horizontal?: boolean; c
       {stats.map((s) => (
         <div key={s.label} className="flex items-center justify-between gap-2 px-1">
           <span className="text-[10px] text-[var(--textSubtle)]">{s.label}</span>
-          <span className="rounded px-1.5 py-0.5 text-[10px] font-bold" style={{ color: s.color, background: `${s.color}15` }}>{s.value}</span>
+          <span className="rounded px-1.5 py-0.5 text-[10px] font-bold font-mono" style={{ color: s.color, background: `${s.color}15` }}>{s.value}</span>
         </div>
       ))}
     </div>
@@ -275,5 +275,5 @@ const QuickStatsPanel = ({ horizontal, coinData: cd }: { horizontal?: boolean; c
 const Sep = () => <span className="text-[10px] text-white/[0.08]">|</span>;
 const BarSep = () => <span className="text-white/[0.08]">|</span>;
 const Pill = ({ l, v, c }: { l: string; v: string; c: string }) => (
-  <div className="flex items-center gap-1"><span className="text-[10px] text-[var(--textSubtle)]">{l}:</span><span className="text-[10px] font-bold" style={{ color: c }}>{v}</span></div>
+  <div className="flex items-center gap-1"><span className="text-[10px] text-[var(--textSubtle)]">{l}:</span><span className="text-[10px] font-bold font-mono" style={{ color: c }}>{v}</span></div>
 );

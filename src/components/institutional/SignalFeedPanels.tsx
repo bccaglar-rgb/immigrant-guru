@@ -32,7 +32,7 @@ const SectionHeader = ({ title, color }: { title: string; color: string }) => (
 const Row = ({ label, value, valueColor }: { label: string; value: string; valueColor?: string }) => (
   <div className="flex items-center justify-between gap-2">
     <span className="text-[9px]" style={{ color: COLORS.muted }}>{label}</span>
-    <span className="text-[10px] font-bold" style={{ color: valueColor || COLORS.text }}>{value}</span>
+    <span className="text-[10px] font-bold font-mono" style={{ color: valueColor || COLORS.text }}>{value}</span>
   </div>
 );
 
@@ -54,7 +54,7 @@ export function SignalFeedPanels() {
           {signalChips.map((s) => (
             <span
               key={s.label}
-              className="flex-shrink-0 rounded-full px-2 py-0.5 text-[9px] font-bold whitespace-nowrap"
+              className="flex-shrink-0 rounded-full px-2 py-0.5 text-[9px] font-bold font-mono whitespace-nowrap"
               style={{ color: s.color, background: `${s.color}18`, border: `1px solid ${s.color}30` }}
             >
               {s.label}
@@ -156,7 +156,7 @@ export function SignalFeedPanels() {
                   strokeLinecap="round"
                   transform="rotate(-90 30 30)"
                 />
-                <text x="30" y="33" textAnchor="middle" className="text-[11px] font-black" fill="white">8.5</text>
+                <text x="30" y="33" textAnchor="middle" className="text-[11px] font-black font-mono" fill="white">8.5</text>
               </svg>
               <span className="text-[8px] font-bold tracking-wider mt-0.5" style={{ color: COLORS.green }}>STRONG</span>
             </div>

@@ -55,7 +55,7 @@ const TFCard = ({ context: c, chartData }: { context: TFContext; chartData?: Rec
 const ChipInline = ({ label, value, color }: { label: string; value: string; color: string }) => (
   <div className="flex items-center gap-1">
     <span className="text-[10px] text-[var(--textSubtle)]">{label}</span>
-    <span className="text-[10px] font-bold" style={{ color }}>{value}</span>
+    <span className="text-[10px] font-bold font-mono" style={{ color }}>{value}</span>
   </div>
 );
 
