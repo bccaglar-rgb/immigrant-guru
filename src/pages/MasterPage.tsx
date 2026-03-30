@@ -1,7 +1,6 @@
 import { ChartCard } from "../components/master/ChartCard";
 import {
-  MarketModePanel,
-  AIMasterScore,
+  CompactStrip,
   CapitalFlowPanel,
   InstitutionalFlowPanel,
   SectorDominance,
@@ -11,6 +10,12 @@ import {
   TimeframeControl,
   MarketStructure,
   AutoModeSwitch,
+  MicroSignalBar,
+  QuickEntryPanel,
+  DecisionBox,
+  LiveOrderFlowMini,
+  MomentumGauge,
+  LiquidityMagnet,
 } from "../components/master/MasterPanels";
 import { useLiveMarketData } from "../hooks/useLiveMarketData";
 import type { OHLCVData } from "../components/shared/LWChart";
@@ -18,9 +23,9 @@ import type { OHLCVData } from "../components/shared/LWChart";
 /* ── Loading skeleton ── */
 const LoadingSkeleton = () => (
   <main className="min-h-screen bg-[var(--bg)] flex items-center justify-center">
-    <div className="flex flex-col items-center gap-3">
+    <div className="flex flex-col items-center gap-2">
       <div className="h-8 w-8 rounded-full border-2 border-[#5B8DEF] border-t-transparent animate-spin" />
-      <span className="text-xs text-[var(--textMuted)]">Loading live market data...</span>
+      <span className="text-[9px] text-[var(--textMuted)]">Loading live market data...</span>
     </div>
   </main>
 );
@@ -31,49 +36,46 @@ export default function MasterPage() {
   if (solLive.loading) return <LoadingSkeleton />;
 
   return (
-    <main className="min-h-screen bg-[var(--bg)] p-2 md:p-3 flex flex-col gap-2">
+    <main className="min-h-screen bg-[var(--bg)] p-1.5 md:p-2 flex flex-col gap-1.5">
 
       {/* ═══ TOP BAR ═══ */}
-      <div className="flex items-center justify-between rounded-xl border border-white/[0.06] bg-[var(--panel)] px-4 py-2">
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2">
-            <div className="h-2 w-2 rounded-full bg-[#2bc48a] animate-pulse" />
-            <span className="text-2xl font-bold tracking-wide text-[var(--text)]">MASTER CONTROL</span>
+      <div className="flex items-center justify-between rounded-lg border border-white/[0.06] bg-[var(--panel)] px-3 py-1.5">
+        <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5">
+            <div className="h-1.5 w-1.5 rounded-full bg-[#2bc48a] animate-pulse" />
+            <span className="text-lg font-bold tracking-wide text-[var(--text)]">MASTER CONTROL</span>
           </div>
-          <span className="text-[10px] text-[var(--textSubtle)]">|</span>
-          <span className="text-[10px] text-[var(--textMuted)]">Mode:</span>
-          <span className="inline-flex items-center rounded-md border border-[#2bc48a]/20 bg-[#2bc48a]/15 px-2 py-0.5 text-[10px] font-bold text-[#2bc48a]">
+          <span className="text-[9px] text-[var(--textSubtle)]">|</span>
+          <span className="text-[9px] text-[var(--textMuted)]">Mode:</span>
+          <span className="inline-flex items-center rounded-md border border-[#2bc48a]/20 bg-[#2bc48a]/15 px-1.5 py-0.5 text-[9px] font-bold text-[#2bc48a]">
             Aggressive
           </span>
         </div>
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3">
           <StatusPill label="AI Score" value="8.2/10" color="#2bc48a" />
           <StatusPill label="Data" value="Live" color="#2bc48a" />
           <StatusPill label="Risk" value="Elevated" color="#F5C542" />
-          <span className="font-mono text-[10px] text-[var(--textSubtle)]">
+          <span className="font-mono text-[9px] text-[var(--textSubtle)]">
             {new Date().toLocaleTimeString()}
           </span>
         </div>
       </div>
 
-      {/* ═══ ROW 1: Market Mode + AI Score (2 cols full width) ═══ */}
-      <div className="grid grid-cols-2 gap-2">
-        <MarketModePanel />
-        <AIMasterScore />
-      </div>
+      {/* ═══ COMPACT STRIP (replaces old MarketMode + AI Score row) ═══ */}
+      <CompactStrip />
 
-      {/* ═══ ROW 2: 3-6-3 layout ═══ */}
-      <div className="grid grid-cols-12 gap-2 flex-1 min-h-0" style={{ height: "calc(100vh - 290px)" }}>
+      {/* ═══ MAIN LAYOUT: 3-6-3 ═══ */}
+      <div className="grid grid-cols-12 gap-1.5 flex-1 min-h-0" style={{ height: "calc(100vh - 200px)" }}>
 
         {/* LEFT COLUMN (3 cols) */}
-        <div className="col-span-3 flex flex-col gap-2 overflow-y-auto pr-0.5">
+        <div className="col-span-3 flex flex-col gap-1.5 overflow-y-auto pr-0.5">
           <CapitalFlowPanel />
           <InstitutionalFlowPanel />
           <SectorDominance />
         </div>
 
-        {/* CENTER COLUMN (6 cols) — Main Chart + multi-TF strip */}
-        <div className="col-span-6 flex flex-col gap-2 min-h-0">
+        {/* CENTER COLUMN (6 cols) — Chart + signals + entry + decision */}
+        <div className="col-span-6 flex flex-col gap-1.5 min-h-0">
           {/* Main SOL 1m chart */}
           <div className="flex-1 min-h-0">
             <ChartCard
@@ -83,25 +85,34 @@ export default function MasterPage() {
               className="h-full"
             />
           </div>
-          {/* Multi-TF strip */}
-          <div className="grid grid-cols-4 gap-1.5" style={{ height: "80px" }}>
+          {/* Multi-TF strip — 60px height */}
+          <div className="grid grid-cols-4 gap-1" style={{ height: "60px" }}>
             <ChartCard symbol="SOL" timeframe="15m" data={solLive.candles15m as OHLCVData[]} compact className="h-full" />
             <ChartCard symbol="SOL" timeframe="1H" data={solLive.candles1h as OHLCVData[]} compact className="h-full" />
             <ChartCard symbol="SOL" timeframe="4H" data={solLive.candles4h as OHLCVData[]} compact className="h-full" />
             <ChartCard symbol="SOL" timeframe="1D" data={solLive.candles1d as OHLCVData[]} compact className="h-full" />
           </div>
+          {/* Micro Signal Bar */}
+          <MicroSignalBar />
+          {/* Quick Entry Panel */}
+          <QuickEntryPanel />
+          {/* Decision Box */}
+          <DecisionBox />
         </div>
 
         {/* RIGHT COLUMN (3 cols) */}
-        <div className="col-span-3 flex flex-col gap-2 overflow-y-auto pl-0.5">
+        <div className="col-span-3 flex flex-col gap-1.5 overflow-y-auto pl-0.5">
           <RiskEngine />
           <StrategyMode />
           <TopAssets />
+          <LiveOrderFlowMini />
+          <MomentumGauge />
+          <LiquidityMagnet />
         </div>
       </div>
 
       {/* ═══ BOTTOM STRIP ═══ */}
-      <div className="grid grid-cols-3 gap-2">
+      <div className="grid grid-cols-3 gap-1.5">
         <TimeframeControl />
         <MarketStructure />
         <AutoModeSwitch />
@@ -112,8 +123,8 @@ export default function MasterPage() {
 
 /* ── Status Pill ── */
 const StatusPill = ({ label, value, color }: { label: string; value: string; color: string }) => (
-  <div className="flex items-center gap-1.5">
-    <span className="text-[9px] text-[var(--textSubtle)]">{label}:</span>
-    <span className="text-[9px] font-semibold font-mono" style={{ color }}>{value}</span>
+  <div className="flex items-center gap-1">
+    <span className="text-[8px] text-[var(--textSubtle)]">{label}:</span>
+    <span className="text-[8px] font-semibold font-mono" style={{ color }}>{value}</span>
   </div>
 );
