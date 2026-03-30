@@ -3,7 +3,7 @@ import { HeroExecutionChart } from "../components/institutional/HeroExecutionCha
 import { SignalIntelligencePanel } from "../components/institutional/SignalIntelligencePanel";
 import { TradeExecutionPanel } from "../components/institutional/TradeExecutionPanel";
 import { AIDecisionPanel } from "../components/institutional/AIDecisionPanel";
-import { BTCChart, MarketIntelFeed, StructureLevelsPanel, AlertMatrixPanel, BottomStrip } from "../components/institutional/RightPanels";
+import { BTCChart, MarketIntelFeed, StructureLevelsPanel, AlertMatrixPanel, BottomStrip, SystemHealthPanel } from "../components/institutional/RightPanels";
 import {
   sol1m, btc1m, tfContexts, signals, aiDecision, levels,
   alerts, session, sentiment, execQuality, marketIntel,
@@ -67,6 +67,7 @@ export default function InstitutionalCommandPage() {
           <BTCChart data={btc1m} />
           <MarketIntelFeed intel={marketIntel} />
           <StructureLevelsPanel data={levels} />
+          <SystemHealthPanel />
         </div>
       </div>
     </main>

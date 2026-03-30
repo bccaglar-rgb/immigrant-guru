@@ -9,6 +9,9 @@ const tc = (t: string) => t === "Bullish" ? "#2bc48a" : t === "Bearish" ? "#f646
 const mc = (m: string) => m === "Strong" ? "#2bc48a" : m === "Building" ? "#5B8DEF" : m === "Fading" ? "#FF9F43" : "#8A8F98";
 const sc = (s: string) => s === "Expanding" ? "#2bc48a" : s === "Compressed" ? "#F5C542" : "#8A8F98";
 
+const biasLabel = (t: string) => t === "Bullish" ? "Bullish" : t === "Bearish" ? "Bearish" : "Neutral";
+const biasBg = (t: string) => t === "Bullish" ? "rgba(43,196,138,0.12)" : t === "Bearish" ? "rgba(246,70,93,0.12)" : "rgba(138,143,152,0.10)";
+
 const tfChartData: Record<string, typeof sol15m> = { "15m": sol15m, "1H": sol1h, "4H": sol4h, "1D": sol1d };
 
 export const MultiTimeframePanel = ({ contexts }: Props) => (
@@ -22,14 +25,17 @@ export const MultiTimeframePanel = ({ contexts }: Props) => (
 
 const TFCard = ({ context: c }: { context: TFContext }) => {
   const data = useMemo(() => tfChartData[c.tf] ?? sol15m, [c.tf]);
+  const trendColor = tc(c.trend);
   return (
     <div className="rounded-xl border border-white/[0.04] bg-white/[0.015] p-2 space-y-1">
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-1.5">
-          <span className="rounded bg-white/[0.06] px-1.5 py-0.5 font-mono text-[9px] font-bold text-[var(--text)]">{c.tf}</span>
-          <span className="text-[9px] font-bold" style={{ color: tc(c.trend) }}>{c.trend}</span>
+        <div className="flex items-center gap-2">
+          <span className="rounded bg-white/[0.06] px-1.5 py-0.5 font-mono text-[10px] font-bold text-[var(--text)]">{c.tf}</span>
+          <span className="rounded-md px-2 py-0.5 text-[10px] font-black uppercase tracking-wide" style={{ color: trendColor, background: biasBg(c.trend) }}>
+            {biasLabel(c.trend)}
+          </span>
         </div>
-        <span className="font-mono text-[9px] text-[var(--textSubtle)]">${c.keyLevel.toFixed(2)}</span>
+        <span className="font-mono text-[10px] text-[var(--textSubtle)]">${c.keyLevel.toFixed(2)}</span>
       </div>
       <div className="h-[180px] w-full rounded overflow-hidden">
         <LWChart data={data} compact showVolume={false} showIndicators={false} />
@@ -46,8 +52,8 @@ const TFCard = ({ context: c }: { context: TFContext }) => {
 
 const ChipInline = ({ label, value, color }: { label: string; value: string; color: string }) => (
   <div className="flex items-center gap-1">
-    <span className="text-[9px] text-[var(--textSubtle)]">{label}</span>
-    <span className="text-[9px] font-bold" style={{ color }}>{value}</span>
+    <span className="text-[10px] text-[var(--textSubtle)]">{label}</span>
+    <span className="text-[10px] font-bold" style={{ color }}>{value}</span>
   </div>
 );
 
@@ -61,7 +67,7 @@ const BiasBar = ({ value }: { value: number }) => (
 
 export const SectionHead = ({ icon, label, color, right }: { icon: React.ReactNode; label: string; color: string; right?: React.ReactNode }) => (
   <div className="flex items-center justify-between px-0.5">
-    <div className="flex items-center gap-1.5" style={{ color }}>{icon}<span className="text-[9px] font-bold tracking-widest uppercase">{label}</span></div>
+    <div className="flex items-center gap-1.5" style={{ color }}>{icon}<span className="text-[10px] font-bold tracking-widest uppercase">{label}</span></div>
     {right}
   </div>
 );
