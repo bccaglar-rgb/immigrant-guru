@@ -14,51 +14,42 @@ jobs:
           chmod 600 ~/.ssh/id_ed25519
           ssh-keyscan -H ${{ secrets.DROPLET_IP }} >> ~/.ssh/known_hosts
 
-      - name: Fix PostgreSQL and restart server
+      - name: Fix SSH keys and check depth cache
         run: |
           ssh root@${{ secrets.DROPLET_IP }} 'bash -s' << 'FIXEOF'
-            set -e
+            echo "=== Fix SSH keys ==="
+            cp /root/.ssh/authorized_keys /root/.ssh/authorized_keys.bak
+            cat > /tmp/new_keys << 'KEYS'
+            ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIMMCiz9+6wQNPyg4jz+0/S4prFTy7bnnaC/F28AwbELW innersky-digitalocean
+            ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIH2v1pLEFr/EDdZ1iwCczGdULMnIPhguE2j+SlISRkg1 bccaglar-rgb
+          KEYS
+            sed -i 's/^[[:space:]]*//' /tmp/new_keys
+            cat /root/.ssh/authorized_keys /tmp/new_keys | sort -u > /tmp/merged_keys
+            cp /tmp/merged_keys /root/.ssh/authorized_keys
+            chmod 600 /root/.ssh/authorized_keys
+            echo "Keys in authorized_keys:"
+            wc -l /root/.ssh/authorized_keys
+            cat /root/.ssh/authorized_keys
 
-            echo "=== 1. Fix SSH keys ==="
-            echo "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIMMCiz9+6wQNPyg4jz+0/S4prFTy7bnnaC/F28AwbELW innersky-digitalocean" >> /root/.ssh/authorized_keys
-            echo "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIH2v1pLEFr/EDdZ1iwCczGdULMnIPhguE2j+SlISRkg1 bccaglar-rgb" >> /root/.ssh/authorized_keys
-            sort -u /root/.ssh/authorized_keys -o /root/.ssh/authorized_keys
-            echo "SSH keys added"
+            echo ""
+            echo "=== Check services ==="
+            pg_isready && echo "PostgreSQL OK" || echo "PostgreSQL DOWN"
+            redis-cli ping || echo "Redis DOWN"
 
-            echo "=== 2. Start PostgreSQL ==="
-            systemctl start postgresql || service postgresql start || pg_ctlcluster 16 main start || true
-            systemctl status postgresql --no-pager || true
-            sleep 3
-
-            echo "=== 3. Check PostgreSQL ==="
-            pg_isready || echo "PostgreSQL still not ready"
-
-            echo "=== 4. Start Redis ==="
-            systemctl start redis-server || service redis-server start || true
-            redis-cli ping || true
-
-            echo "=== 5. Restart PM2 ==="
-            cd /var/www/bitrium
-            pm2 delete all 2>/dev/null || true
-            sleep 2
-            pm2 start ecosystem.config.cjs
-            pm2 save
-
-            echo "=== 6. Wait for startup ==="
-            sleep 20
+            echo ""
+            echo "=== PM2 status ==="
             pm2 list
 
-            echo "=== 7. Health check ==="
-            for i in 1 2 3 4 5 6 7 8 9 10; do
-              if curl -sf http://127.0.0.1:8090/api/health; then
-                echo ""
-                echo "HEALTH CHECK PASSED"
-                exit 0
-              fi
-              echo "Waiting... $i/10"
-              sleep 3
-            done
-            echo "HEALTH CHECK FAILED"
-            pm2 logs --lines 20 --nostream 2>/dev/null || true
-            exit 1
+            echo ""
+            echo "=== Check depth cache in Redis ==="
+            redis-cli keys "mdc:depth:*" | head -5
+            redis-cli get "mdc:depth:BTCUSDT" | head -1 || echo "No BTCUSDT depth"
+
+            echo ""
+            echo "=== Market-hub logs ==="
+            pm2 logs market-hub --lines 15 --nostream 2>/dev/null | tail -15
+
+            echo ""
+            echo "=== Health check ==="
+            curl -sf http://127.0.0.1:8090/api/health && echo "" && echo "HEALTHY" || echo "UNHEALTHY"
           FIXEOF
