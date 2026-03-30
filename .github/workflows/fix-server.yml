@@ -14,68 +14,51 @@ jobs:
           chmod 600 ~/.ssh/id_ed25519
           ssh-keyscan -H ${{ secrets.DROPLET_IP }} >> ~/.ssh/known_hosts
 
-      - name: Debug and fix server
+      - name: Fix PostgreSQL and restart server
         run: |
-          ssh root@${{ secrets.DROPLET_IP }} << 'FIXEOF'
-            echo "=== PM2 status ==="
-            pm2 list
+          ssh root@${{ secrets.DROPLET_IP }} 'bash -s' << 'FIXEOF'
+            set -e
 
-            echo "=== Check .env files ==="
-            ls -la /root/bitrium/.env 2>/dev/null && echo "Found /root/bitrium/.env" || echo "NOT found /root/bitrium/.env"
-            ls -la /var/www/bitrium/.env 2>/dev/null && echo "Found /var/www/bitrium/.env" || echo "NOT found /var/www/bitrium/.env"
+            echo "=== 1. Fix SSH keys ==="
+            echo "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIMMCiz9+6wQNPyg4jz+0/S4prFTy7bnnaC/F28AwbELW innersky-digitalocean" >> /root/.ssh/authorized_keys
+            echo "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIH2v1pLEFr/EDdZ1iwCczGdULMnIPhguE2j+SlISRkg1 bccaglar-rgb" >> /root/.ssh/authorized_keys
+            sort -u /root/.ssh/authorized_keys -o /root/.ssh/authorized_keys
+            echo "SSH keys added"
 
-            echo "=== Check paths ==="
-            ls -la /var/www/bitrium/server/src/index.ts 2>/dev/null && echo "server code exists at /var/www" || echo "NO server code at /var/www"
-            ls -la /root/bitrium/server/src/index.ts 2>/dev/null && echo "server code exists at /root" || echo "NO server code at /root"
+            echo "=== 2. Start PostgreSQL ==="
+            systemctl start postgresql || service postgresql start || pg_ctlcluster 16 main start || true
+            systemctl status postgresql --no-pager || true
+            sleep 3
 
-            echo "=== PM2 process details ==="
-            pm2 describe market-worker 2>/dev/null | grep -E "exec cwd|script|status|restart" | head -10
+            echo "=== 3. Check PostgreSQL ==="
+            pg_isready || echo "PostgreSQL still not ready"
 
-            echo "=== Copy .env if missing ==="
-            if [ -f /root/bitrium/.env ] && [ ! -f /var/www/bitrium/.env ]; then
-              cp /root/bitrium/.env /var/www/bitrium/.env
-              echo "✓ Copied .env to /var/www/bitrium/"
-            elif [ ! -f /root/bitrium/.env ] && [ ! -f /var/www/bitrium/.env ]; then
-              echo "ERROR: No .env found anywhere!"
-              find / -name ".env" -path "*/bitrium*" 2>/dev/null
-            else
-              echo ".env already exists at /var/www/bitrium/"
-            fi
+            echo "=== 4. Start Redis ==="
+            systemctl start redis-server || service redis-server start || true
+            redis-cli ping || true
 
-            echo "=== Symlink .env for safety ==="
-            if [ -f /var/www/bitrium/.env ] && [ ! -f /root/bitrium/.env ]; then
-              ln -sf /var/www/bitrium/.env /root/bitrium/.env
-            fi
-
-            echo "=== Add SSH keys ==="
-            grep -q "innersky-digitalocean" /root/.ssh/authorized_keys 2>/dev/null || echo "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIMMCiz9+6wQNPyg4jz+0/S4prFTy7bnnaC/F28AwbELW innersky-digitalocean" >> /root/.ssh/authorized_keys
-            grep -q "bccaglar-rgb" /root/.ssh/authorized_keys 2>/dev/null || echo "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIH2v1pLEFr/EDdZ1iwCczGdULMnIPhguE2j+SlISRkg1 bccaglar-rgb" >> /root/.ssh/authorized_keys
-            echo "✓ SSH keys ensured"
-
-            echo "=== PM2 logs (last errors) ==="
-            pm2 logs market-worker --lines 20 --nostream 2>/dev/null | tail -20
-
-            echo "=== Restart PM2 from correct path ==="
+            echo "=== 5. Restart PM2 ==="
             cd /var/www/bitrium
             pm2 delete all 2>/dev/null || true
+            sleep 2
             pm2 start ecosystem.config.cjs
             pm2 save
 
-            echo "=== Wait and check ==="
-            sleep 15
+            echo "=== 6. Wait for startup ==="
+            sleep 20
             pm2 list
-            pm2 logs market-worker --lines 10 --nostream 2>/dev/null | tail -10
 
-            echo "=== Health check ==="
-            for i in $(seq 1 10); do
-              if curl -sf http://127.0.0.1:8090/api/health > /dev/null 2>&1; then
-                echo "✓ Health check PASSED"
-                curl -s http://127.0.0.1:8090/api/health
+            echo "=== 7. Health check ==="
+            for i in 1 2 3 4 5 6 7 8 9 10; do
+              if curl -sf http://127.0.0.1:8090/api/health; then
+                echo ""
+                echo "HEALTH CHECK PASSED"
                 exit 0
               fi
-              echo "Waiting... ($i/10)"
+              echo "Waiting... $i/10"
               sleep 3
             done
-            echo "✗ Health check failed after 30s"
-            pm2 logs market-worker --lines 30 --nostream 2>/dev/null | tail -30
+            echo "HEALTH CHECK FAILED"
+            pm2 logs --lines 20 --nostream 2>/dev/null || true
+            exit 1
           FIXEOF
