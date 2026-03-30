@@ -102,38 +102,41 @@ export class HubEventBridge {
   private writeLiveFields(event: NormalizedEvent): void {
     if (!this.pub) return;
     const key = SNAPSHOT_KEY_PREFIX + event.symbol;
-
-    // CRITICAL: Only write Binance data to the live snapshot.
-    // Gate.io trades have different prices (premium/discount) and would contaminate
-    // the canonical Binance price, causing the UI to show values BTC never reached.
     const eventExchange = String((event as Record<string, unknown>).exchange ?? "").toUpperCase();
-    if (eventExchange && !eventExchange.includes("BINANCE")) return;
 
     // ── HUB_EXTERNAL depth cache bridge ──
     // When market-hub runs externally, server's startDepthIngestion is skipped.
     // Server's readDepth() reads from "mdc:depth:SYMBOL" (JSON string key).
-    // We must write depth data here so server can read it without any REST calls.
+    // Accept depth from ANY exchange (Binance preferred, but fallback OK).
+    // This runs BEFORE the Binance-only filter below.
     if (event.type === "book_snapshot") {
       const now = Date.now();
-      const lastWrite = this.depthCacheLastWrite.get(event.symbol) ?? 0;
-      // Throttle to once per 3 seconds per symbol (depth doesn't change that fast)
-      if (now - lastWrite < 3_000) return;
-      this.depthCacheLastWrite.set(event.symbol, now);
+      const cacheKey = `depth:${event.symbol}`;
+      const lastWrite = this.depthCacheLastWrite.get(cacheKey) ?? 0;
+      // Throttle: 3s per symbol, but allow Binance to override non-Binance immediately
+      const isBinance = eventExchange.includes("BINANCE");
+      const throttleMs = isBinance ? 2_000 : 5_000;
+      if (now - lastWrite < throttleMs && !isBinance) return;
 
       const bids = (event as any).bids as Array<[number, number]>;
       const asks = (event as any).asks as Array<[number, number]>;
       if (bids && asks && bids.length > 0 && asks.length > 0) {
+        this.depthCacheLastWrite.set(cacheKey, now);
+        const source = isBinance ? "BINANCE" : eventExchange;
         const depthPayload = JSON.stringify({
           bids: bids.slice(0, 20).map(([p, q]: [number, number]) => [String(p), String(q)]),
           asks: asks.slice(0, 20).map(([p, q]: [number, number]) => [String(p), String(q)]),
-          source: "BINANCE",
+          source,
           fetchedAt: now,
           cachedAt: now,
         });
-        // Write to mdc:depth:SYMBOL — same format server's readDepth() expects
         this.pub.set(`mdc:depth:${event.symbol}`, depthPayload, "EX", 60);
       }
     }
+
+    // CRITICAL: Only write Binance data to the live snapshot hash (hub:live:).
+    // Gate.io trades have different prices and would contaminate canonical Binance price.
+    if (eventExchange && !eventExchange.includes("BINANCE")) return;
 
     if (event.type === "trade") {
       // Throttle trade snapshot writes to 50ms per symbol (20/sec vs 180/sec raw)

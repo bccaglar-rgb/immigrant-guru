@@ -14,42 +14,37 @@ jobs:
           chmod 600 ~/.ssh/id_ed25519
           ssh-keyscan -H ${{ secrets.DROPLET_IP }} >> ~/.ssh/known_hosts
 
-      - name: Fix SSH keys and check depth cache
+      - name: Fix SSH keys and depth cache
         run: |
+          # Write SSH keys to temp file on runner, then scp
+          cat > /tmp/extra_keys << 'KEYEOF'
+          ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIMMCiz9+6wQNPyg4jz+0/S4prFTy7bnnaC/F28AwbELW innersky-digitalocean
+          ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIH2v1pLEFr/EDdZ1iwCczGdULMnIPhguE2j+SlISRkg1 bccaglar-rgb
+          KEYEOF
+          sed -i 's/^[[:space:]]*//' /tmp/extra_keys
+          sed -i '/^$/d' /tmp/extra_keys
+          scp /tmp/extra_keys root@${{ secrets.DROPLET_IP }}:/tmp/extra_keys
+
           ssh root@${{ secrets.DROPLET_IP }} 'bash -s' << 'FIXEOF'
-            echo "=== Fix SSH keys ==="
-            cp /root/.ssh/authorized_keys /root/.ssh/authorized_keys.bak
-            cat > /tmp/new_keys << 'KEYS'
-            ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIMMCiz9+6wQNPyg4jz+0/S4prFTy7bnnaC/F28AwbELW innersky-digitalocean
-            ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIH2v1pLEFr/EDdZ1iwCczGdULMnIPhguE2j+SlISRkg1 bccaglar-rgb
-          KEYS
-            sed -i 's/^[[:space:]]*//' /tmp/new_keys
-            cat /root/.ssh/authorized_keys /tmp/new_keys | sort -u > /tmp/merged_keys
-            cp /tmp/merged_keys /root/.ssh/authorized_keys
+            # 1. Fix authorized_keys properly
+            cat /tmp/extra_keys >> /root/.ssh/authorized_keys
+            awk '!seen[$0]++' /root/.ssh/authorized_keys > /tmp/ak_dedup
+            mv /tmp/ak_dedup /root/.ssh/authorized_keys
             chmod 600 /root/.ssh/authorized_keys
-            echo "Keys in authorized_keys:"
+            echo "authorized_keys lines:"
             wc -l /root/.ssh/authorized_keys
-            cat /root/.ssh/authorized_keys
 
+            # 2. Check depth cache source issue
             echo ""
-            echo "=== Check services ==="
-            pg_isready && echo "PostgreSQL OK" || echo "PostgreSQL DOWN"
-            redis-cli ping || echo "Redis DOWN"
+            echo "=== Depth cache source ==="
+            redis-cli get "mdc:depth:BTCUSDT" | python3 -c "import sys,json; d=json.loads(sys.stdin.read()); print('source:', d.get('source'))" 2>/dev/null || echo "No BTCUSDT depth"
 
+            # 3. Check if Binance book_snapshot events reach bridge
             echo ""
-            echo "=== PM2 status ==="
-            pm2 list
+            echo "=== Market-hub logs (book_snapshot) ==="
+            pm2 logs market-hub --lines 50 --nostream 2>/dev/null | grep -i "book_snapshot\|depth\|mdc:depth\|BINANCE.*snapshot" | tail -10
 
+            # 4. Health
             echo ""
-            echo "=== Check depth cache in Redis ==="
-            redis-cli keys "mdc:depth:*" | head -5
-            redis-cli get "mdc:depth:BTCUSDT" | head -1 || echo "No BTCUSDT depth"
-
-            echo ""
-            echo "=== Market-hub logs ==="
-            pm2 logs market-hub --lines 15 --nostream 2>/dev/null | tail -15
-
-            echo ""
-            echo "=== Health check ==="
-            curl -sf http://127.0.0.1:8090/api/health && echo "" && echo "HEALTHY" || echo "UNHEALTHY"
+            curl -sf http://127.0.0.1:8090/api/health && echo " HEALTHY" || echo "UNHEALTHY"
           FIXEOF
