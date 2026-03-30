@@ -1,6 +1,7 @@
 import { MultiTimeframePanel } from "../components/institutional/MultiTimeframePanel";
 import { HeroExecutionChart } from "../components/institutional/HeroExecutionChart";
 import { BTCChart, MarketIntelFeed, StructureLevelsPanel, AlertMatrixPanel } from "../components/institutional/RightPanels";
+import { SignalFeedPanels } from "../components/institutional/SignalFeedPanels";
 import {
   sol1m, btc1m, tfContexts, signals, aiDecision, levels,
   alerts, session, marketIntel,
@@ -118,12 +119,15 @@ export default function InstitutionalCommandPage() {
           <MultiTimeframePanel contexts={tfContexts} />
         </div>
 
-        {/* ── CENTER: 6 cols — Chart at top, 80% height ── */}
+        {/* ── CENTER: 6 cols — Chart at top, 50% height + signal panels ── */}
         <div className="col-span-6 flex flex-col gap-1 overflow-hidden">
-          <div style={{ height: "60%" }} className="min-h-0">
+          <div style={{ height: "50%" }} className="min-h-0 flex-shrink-0">
             <HeroExecutionChart data={sol1m} symbol={selectedCoin} aiOverlay={{ bias: biasLabel, confidence: aiDecision.confidence, setup: aiDecision.strategy }} />
           </div>
           <QuickStatsPanel horizontal />
+          <div className="flex-1 min-h-0 overflow-y-auto scrollbar-thin pr-0.5">
+            <SignalFeedPanels />
+          </div>
         </div>
 
         {/* ── RIGHT: 3 cols — BTC + Intelligence + Structure ── */}
