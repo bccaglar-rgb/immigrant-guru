@@ -42,16 +42,40 @@ jobs:
             chmod 700 /root/.ssh
             chmod 600 /root/.ssh/authorized_keys
             chown -R root:root /root/.ssh
-            # Check sshd config
-            echo "=== sshd config ==="
-            grep -E "AuthorizedKeysFile|PubkeyAuthentication|PermitRootLogin" /etc/ssh/sshd_config | grep -v "^#"
-            # Ensure PubkeyAuthentication is enabled
+            # Check ALL sshd config sources
+            echo "=== Main sshd_config ==="
+            grep -n -E "Include|AuthorizedKeysFile|PubkeyAuthentication|PermitRootLogin|PasswordAuthentication" /etc/ssh/sshd_config | grep -v "^#"
+            echo "=== sshd_config.d/ files ==="
+            ls -la /etc/ssh/sshd_config.d/ 2>/dev/null || echo "No sshd_config.d"
+            for f in /etc/ssh/sshd_config.d/*.conf; do
+              if [ -f "$f" ]; then
+                echo "--- $f ---"
+                cat "$f"
+              fi
+            done
+            echo "=== cloud-init sshd ==="
+            cat /etc/ssh/sshd_config.d/50-cloud-init.conf 2>/dev/null || echo "No cloud-init sshd"
+
+            # Fix: ensure PubkeyAuthentication yes everywhere
             sed -i 's/^PubkeyAuthentication no/PubkeyAuthentication yes/' /etc/ssh/sshd_config
-            sed -i 's/^#PubkeyAuthentication/PubkeyAuthentication/' /etc/ssh/sshd_config
+            sed -i 's/^#PubkeyAuthentication.*/PubkeyAuthentication yes/' /etc/ssh/sshd_config
             grep -q "^PubkeyAuthentication" /etc/ssh/sshd_config || echo "PubkeyAuthentication yes" >> /etc/ssh/sshd_config
-            # Restart sshd to pick up changes
+            # Fix in ALL config.d files
+            for f in /etc/ssh/sshd_config.d/*.conf; do
+              if [ -f "$f" ]; then
+                sed -i 's/^PubkeyAuthentication no/PubkeyAuthentication yes/' "$f"
+              fi
+            done
+            # If PasswordAuthentication only, enable pubkey
+            grep -rn "PubkeyAuthentication" /etc/ssh/sshd_config.d/ 2>/dev/null || true
+
+            # Restart sshd
             systemctl restart sshd || service ssh restart || true
             echo "sshd restarted"
+
+            # Verify final effective config
+            echo "=== Effective sshd settings ==="
+            sshd -T 2>/dev/null | grep -E "pubkeyauthentication|authorizedkeysfile|permitrootlogin" || true
 
             # 2. Check depth cache source issue
             echo ""
