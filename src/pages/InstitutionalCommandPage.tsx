@@ -78,7 +78,6 @@ export default function InstitutionalCommandPage() {
         {/* ── LEFT: 3 cols — Alerts+QuickStats side by side + MultiTF ── */}
         <div className="col-span-3 overflow-y-auto space-y-1 pr-0.5 scrollbar-thin">
           <AlertMatrixPanel alerts={alerts} />
-          <QuickStatsPanel horizontal />
           <MultiTimeframePanel contexts={tfContexts} />
         </div>
 
@@ -87,6 +86,7 @@ export default function InstitutionalCommandPage() {
           <div style={{ height: "60%" }} className="min-h-0">
             <HeroExecutionChart data={sol1m} symbol="SOL/USDT" aiOverlay={{ bias: biasLabel, confidence: aiDecision.confidence, setup: aiDecision.strategy }} />
           </div>
+          <QuickStatsPanel horizontal />
         </div>
 
         {/* ── RIGHT: 3 cols — BTC + Intelligence + Structure ── */}
