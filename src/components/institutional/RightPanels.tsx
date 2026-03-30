@@ -217,8 +217,14 @@ const IB = ({ l, t }: { l: string; t: string }) => (
   <div className="rounded-lg bg-black/20 px-2 py-1"><span className="text-[10px] font-bold text-[var(--textSubtle)] uppercase">{l}</span><p className="text-[10px] text-[var(--textMuted)]">{t}</p></div>
 );
 const LR = ({ p, lbl, s, c, htf }: { p: number; lbl: string; s: number; c: string; htf: boolean }) => (
-  <div className="flex items-center justify-between py-px">
-    <div className="flex items-center gap-1"><span className="rounded px-0.5 py-px text-[10px] font-bold" style={{ color: c, background: `${c}12` }}>{htf ? "HTF" : "LTF"}</span><span className="font-mono text-[10px] text-[var(--text)]">${p.toFixed(2)}</span></div>
-    <div className="flex items-center gap-1"><span className="text-[10px] text-[var(--textSubtle)]">{lbl}</span><div className="h-[3px] w-6 rounded-full bg-white/[0.05]"><div className="h-full rounded-full" style={{ width: `${s}%`, background: c }} /></div></div>
+  <div className="flex items-center justify-between rounded-md px-1.5 py-0.5" style={{ background: `${c}08` }}>
+    <div className="flex items-center gap-1.5">
+      <span className="rounded px-1 py-px text-[9px] font-black uppercase" style={{ color: c, background: `${c}18` }}>{htf ? "HTF" : "LTF"}</span>
+      <span className="font-mono text-[10px] font-bold" style={{ color: c }}>${p.toFixed(2)}</span>
+    </div>
+    <div className="flex items-center gap-1.5">
+      <span className="text-[9px] text-[var(--textSubtle)]">{lbl}</span>
+      <div className="h-[4px] w-8 rounded-full bg-white/[0.06]"><div className="h-full rounded-full" style={{ width: `${s}%`, background: c }} /></div>
+    </div>
   </div>
 );

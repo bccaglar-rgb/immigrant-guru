@@ -37,7 +37,7 @@ const TFCard = ({ context: c }: { context: TFContext }) => {
         </div>
         <span className="font-mono text-[10px] text-[var(--textSubtle)]">${c.keyLevel.toFixed(2)}</span>
       </div>
-      <div className="h-[180px] w-full rounded overflow-hidden">
+      <div className="h-[80px] w-full rounded overflow-hidden">
         <LWChart data={data} compact showVolume={false} showIndicators={false} />
       </div>
       <div className="flex items-center gap-3">
