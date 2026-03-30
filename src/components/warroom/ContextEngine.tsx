@@ -1,6 +1,9 @@
 import type { TimeframeContext } from "./mockData";
+import { sol15m, sol1h, sol4h, sol1d } from "./mockData";
+import { LWChart } from "../shared/LWChart";
 
 interface Props { contexts: TimeframeContext[] }
+const tfChartData: Record<string, typeof sol15m> = { "15m": sol15m, "1H": sol1h, "4H": sol4h, "1D": sol1d };
 
 const trendColor = (t: string) => t === "Bullish" ? "#2bc48a" : t === "Bearish" ? "#f6465d" : "#8A8F98";
 const momentumColor = (m: string) => m === "Strong" ? "#2bc48a" : m === "Building" ? "#5B8DEF" : m === "Fading" ? "#FF9F43" : "#8A8F98";
@@ -38,6 +41,11 @@ export const ContextEngine = ({ contexts }: Props) => (
             <span className="text-[10px] font-bold" style={{ color: trendColor(ctx.trend) }}>{ctx.trend}</span>
           </div>
           <span className="font-mono text-[9px] text-[var(--textSubtle)]">${ctx.keyLevel.toFixed(2)}</span>
+        </div>
+
+        {/* Mini Chart */}
+        <div className="h-[60px] w-full rounded overflow-hidden">
+          <LWChart data={tfChartData[ctx.timeframe] ?? sol15m} compact showVolume={false} showIndicators={false} />
         </div>
 
         {/* Metrics Row */}
