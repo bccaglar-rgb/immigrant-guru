@@ -77,7 +77,7 @@ export default function InstitutionalCommandPage() {
 
         {/* ── LEFT: 3 cols — Alerts+QuickStats side by side + MultiTF ── */}
         <div className="col-span-3 overflow-y-auto space-y-1 pr-0.5 scrollbar-thin">
-          <div className="grid grid-cols-2 gap-1">
+          <div className="grid gap-1" style={{ gridTemplateColumns: "3fr 2fr" }}>
             <AlertMatrixPanel alerts={alerts} />
             <QuickStatsPanel />
           </div>
