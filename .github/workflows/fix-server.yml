@@ -40,6 +40,17 @@ jobs:
             chown -R root:root /root/.ssh
             # Debug: show hex of first key line
             head -1 /root/.ssh/authorized_keys | xxd | head -3
+            # Check /root permissions (must not be group/world writable for sshd)
+            echo "=== Permissions ==="
+            ls -la / | grep root
+            ls -la /root/ | grep ssh
+            ls -la /root/.ssh/
+            # Fix /root permissions if needed
+            chmod 755 /root
+            chmod 700 /root/.ssh
+            # Check sshd auth log
+            echo "=== Auth log ==="
+            tail -20 /var/log/auth.log 2>/dev/null | grep -i "ssh\|key\|auth" | tail -10
             # Check ALL sshd config sources
             echo "=== Main sshd_config ==="
             grep -n -E "Include|AuthorizedKeysFile|PubkeyAuthentication|PermitRootLogin|PasswordAuthentication" /etc/ssh/sshd_config | grep -v "^#"
