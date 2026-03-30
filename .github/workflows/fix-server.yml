@@ -26,13 +26,18 @@ jobs:
           scp /tmp/extra_keys root@${{ secrets.DROPLET_IP }}:/tmp/extra_keys
 
           ssh root@${{ secrets.DROPLET_IP }} 'bash -s' << 'FIXEOF'
-            # 1. Fix authorized_keys properly
+            # 1. Fix authorized_keys — append new keys, keep existing CI key
+            echo "" >> /root/.ssh/authorized_keys
             cat /tmp/extra_keys >> /root/.ssh/authorized_keys
-            awk '!seen[$0]++' /root/.ssh/authorized_keys > /tmp/ak_dedup
-            mv /tmp/ak_dedup /root/.ssh/authorized_keys
+            # Remove blank lines and deduplicate
+            grep -v '^[[:space:]]*$' /root/.ssh/authorized_keys | awk '!seen[$0]++' > /tmp/ak_clean
+            cp /tmp/ak_clean /root/.ssh/authorized_keys
             chmod 600 /root/.ssh/authorized_keys
+            chown root:root /root/.ssh/authorized_keys
             echo "authorized_keys lines:"
             wc -l /root/.ssh/authorized_keys
+            echo "Key fingerprints:"
+            while read -r line; do echo "$line" | ssh-keygen -l -f - 2>/dev/null || echo "invalid: $line"; done < /root/.ssh/authorized_keys
 
             # 2. Check depth cache source issue
             echo ""
