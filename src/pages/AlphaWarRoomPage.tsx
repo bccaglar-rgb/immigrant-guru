@@ -1,3 +1,4 @@
+import { useState } from "react";
 import {
   TopTradesPanel,
   MarketHeatmap,
@@ -17,6 +18,19 @@ import {
   KeyLevelsDashboard,
   NarrativeEngine,
 } from "../components/warroom/WarRoomPanels";
+import { LWChart } from "../components/shared/LWChart";
+import { useLiveMarketData } from "../hooks/useLiveMarketData";
+
+const COINS = [
+  { label: "SOL", symbol: "SOLUSDT" },
+  { label: "BTC", symbol: "BTCUSDT" },
+  { label: "ETH", symbol: "ETHUSDT" },
+  { label: "AVAX", symbol: "AVAXUSDT" },
+  { label: "BNB", symbol: "BNBUSDT" },
+  { label: "LINK", symbol: "LINKUSDT" },
+  { label: "ARB", symbol: "ARBUSDT" },
+  { label: "DOGE", symbol: "DOGEUSDT" },
+];
 
 const sessions: Record<string, string> = { Asia: "\uD83C\uDF0F", London: "\uD83C\uDDEC\uD83C\uDDE7", "New York": "\uD83C\uDDFA\uD83C\uDDF8" };
 
@@ -28,6 +42,8 @@ function getActiveSession(): string {
 }
 
 export default function AlphaWarRoomPage() {
+  const [selectedSymbol, setSelectedSymbol] = useState("SOLUSDT");
+  const marketData = useLiveMarketData(selectedSymbol);
   const now = new Date();
   const utc = now.toLocaleTimeString("en-US", { timeZone: "UTC", hour12: false, hour: "2-digit", minute: "2-digit", second: "2-digit" });
   const local = now.toLocaleTimeString("en-US", { hour12: false, hour: "2-digit", minute: "2-digit", second: "2-digit" });
@@ -61,7 +77,59 @@ export default function AlphaWarRoomPage() {
       {/* ── ROW 1: TOP TRADES ── */}
       <TopTradesPanel />
 
-      {/* ── ROW 2: HEATMAP | SECTORS | BREAKOUT ── */}
+      {/* ── ROW 2: MAIN CHART ── */}
+      <div className="rounded-lg border border-white/[0.06] bg-white/[0.02] p-2">
+        {/* Coin selector */}
+        <div className="flex items-center gap-1.5 mb-2">
+          {COINS.map((c) => (
+            <button
+              key={c.symbol}
+              onClick={() => setSelectedSymbol(c.symbol)}
+              className={`px-3 py-1 text-[10px] font-bold rounded-md transition-colors ${
+                selectedSymbol === c.symbol
+                  ? "border border-[var(--accent)] bg-white/[0.06] text-[var(--text)]"
+                  : "border border-white/[0.06] bg-white/[0.02] text-[var(--textSubtle)] hover:bg-white/[0.04]"
+              }`}
+            >
+              {c.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Price + 24h change */}
+        <div className="flex items-center gap-3 mb-1.5 px-1">
+          <span className="text-xl font-mono font-bold text-[var(--text)]">
+            {marketData.currentPrice
+              ? marketData.currentPrice.toLocaleString(undefined, {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: marketData.currentPrice < 1 ? 6 : 2,
+                })
+              : "—"}
+          </span>
+          <span
+            className={`text-xs font-mono font-bold ${
+              marketData.priceChange24hPct >= 0 ? "text-[#2bc48a]" : "text-[#f6465d]"
+            }`}
+          >
+            {marketData.priceChange24hPct >= 0 ? "+" : ""}
+            {marketData.priceChange24hPct.toFixed(2)}%
+          </span>
+          <span className="text-[9px] text-[var(--textMuted)] font-mono">
+            {selectedSymbol.replace("USDT", "/USDT")} · 1m
+          </span>
+        </div>
+
+        {/* Chart */}
+        <div className="h-[380px]">
+          <LWChart
+            data={marketData.candles1m}
+            showVolume={true}
+            showIndicators={true}
+          />
+        </div>
+      </div>
+
+      {/* ── ROW 3: HEATMAP | SECTORS | BREAKOUT ── */}
       <div className="grid grid-cols-3 gap-1.5">
         <MarketHeatmap />
         <SectorRotation />
