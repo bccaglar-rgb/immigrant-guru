@@ -75,17 +75,19 @@ export default function InstitutionalCommandPage() {
       {/* ═══ MAIN 12-COL GRID ═══ */}
       <div className="flex-1 grid grid-cols-12 gap-1 min-h-0">
 
-        {/* ── LEFT: 3 cols — Alerts + Quick Stats + MultiTF ── */}
+        {/* ── LEFT: 3 cols — Alerts+QuickStats side by side + MultiTF ── */}
         <div className="col-span-3 overflow-y-auto space-y-1 pr-0.5 scrollbar-thin">
-          <AlertMatrixPanel alerts={alerts} />
-          <QuickStatsPanel />
+          <div className="grid grid-cols-2 gap-1">
+            <AlertMatrixPanel alerts={alerts} />
+            <QuickStatsPanel />
+          </div>
           <MultiTimeframePanel contexts={tfContexts} />
         </div>
 
         {/* ── CENTER: 6 cols — Chart starts below 15m level ── */}
         <div className="col-span-6 flex flex-col gap-1 overflow-hidden">
           {/* Spacer: aligns chart top with bottom of left panel's 15m chart (~Alerts+QuickStats+15m header+chart+info) */}
-          <div className="flex-shrink-0" style={{ height: 420 }} />
+          <div className="flex-shrink-0" style={{ height: 280 }} />
           <div className="flex-1 min-h-0">
             <HeroExecutionChart data={sol1m} symbol="SOL/USDT" aiOverlay={{ bias: biasLabel, confidence: aiDecision.confidence, setup: aiDecision.strategy }} />
           </div>
