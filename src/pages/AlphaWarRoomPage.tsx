@@ -1,13 +1,19 @@
 import {
   TopTradesPanel,
-  OpportunityFeed,
   MarketHeatmap,
   SectorRotation,
   BreakoutScanner,
+  SmartSignalGrid,
+  OpportunityFeed,
+  MoneyFlowPanel,
+  LiveTape,
+  BuySellPressure,
   WhaleActivityBoard,
-  LongShortPanel,
   LiquidationMap,
   AIGlobalBias,
+  CorrelationPanel,
+  DangerZone,
+  MarketCondition,
   KeyLevelsDashboard,
   NarrativeEngine,
 } from "../components/warroom/WarRoomPanels";
@@ -30,17 +36,17 @@ export default function AlphaWarRoomPage() {
   return (
     <main className="min-h-screen bg-[var(--bg)] p-1.5 md:p-2 flex flex-col gap-1.5">
       {/* ── COMMAND BAR ── */}
-      <div className="flex items-center justify-between rounded-xl border border-white/[0.06] bg-[var(--panel)] px-4 py-1.5">
+      <div className="flex items-center justify-between rounded-lg border border-white/[0.06] bg-[var(--panel)] px-3 py-1">
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-2">
             <div className="h-2 w-2 rounded-full bg-[#f6465d] animate-pulse" />
-            <span className="text-2xl font-bold tracking-wide text-[var(--text)]">ALPHA WAR ROOM</span>
+            <span className="text-xl font-bold tracking-wide text-[var(--text)]">ALPHA WAR ROOM</span>
           </div>
           <Divider />
           <CommandPill label="Market" value="Risk-On" color="#2bc48a" />
           <Divider />
           <CommandPill label="AI" value="Active" color="#F5C542" />
-          <CommandPill label="Mode" value="Opportunity Radar" color="#5B8DEF" />
+          <CommandPill label="Mode" value="Battle Station" color="#5B8DEF" />
         </div>
         <div className="flex items-center gap-3">
           <CommandPill label="Session" value={`${sessions[activeSession] ?? ""} ${activeSession}`} color="var(--accent)" />
@@ -52,31 +58,41 @@ export default function AlphaWarRoomPage() {
         </div>
       </div>
 
-      {/* ── TOP TRADES (full width) ── */}
+      {/* ── ROW 1: TOP TRADES ── */}
       <TopTradesPanel />
 
-      {/* ── MAIN GRID — 12 columns ── */}
-      <div className="flex-1 grid grid-cols-12 gap-1.5" style={{ minHeight: "calc(100vh - 200px)" }}>
+      {/* ── ROW 2: HEATMAP | SECTORS | BREAKOUT ── */}
+      <div className="grid grid-cols-3 gap-1.5">
+        <MarketHeatmap />
+        <SectorRotation />
+        <BreakoutScanner />
+      </div>
 
-        {/* LEFT: 3 cols — Heatmap, Sector, Breakout */}
-        <div className="col-span-3 flex flex-col gap-1.5 overflow-y-auto pr-0.5">
-          <MarketHeatmap />
-          <SectorRotation />
-          <BreakoutScanner />
-        </div>
+      {/* ── ROW 3: SMART SIGNAL GRID ── */}
+      <SmartSignalGrid />
 
-        {/* CENTER: 6 cols — Opportunity Feed */}
-        <div className="col-span-6 flex flex-col gap-1.5 overflow-hidden">
-          <OpportunityFeed />
-        </div>
+      {/* ── ROW 4: OPPORTUNITY FEED ── */}
+      <OpportunityFeed />
 
-        {/* RIGHT: 3 cols — Whale, Long/Short, Liquidation, AI Bias */}
-        <div className="col-span-3 flex flex-col gap-1.5 overflow-y-auto pl-0.5">
-          <WhaleActivityBoard />
-          <LongShortPanel />
-          <LiquidationMap />
-          <AIGlobalBias />
-        </div>
+      {/* ── ROW 5: MONEY FLOW | LIVE TAPE | BUY/SELL PRESSURE ── */}
+      <div className="grid grid-cols-3 gap-1.5">
+        <MoneyFlowPanel />
+        <LiveTape />
+        <BuySellPressure />
+      </div>
+
+      {/* ── ROW 6: WHALE | LIQUIDATION | AI BIAS ── */}
+      <div className="grid grid-cols-3 gap-1.5">
+        <WhaleActivityBoard />
+        <LiquidationMap />
+        <AIGlobalBias />
+      </div>
+
+      {/* ── ROW 7: CORRELATION | DANGER ZONE | MARKET CONDITION ── */}
+      <div className="grid grid-cols-3 gap-1.5">
+        <CorrelationPanel />
+        <DangerZone />
+        <MarketCondition />
       </div>
 
       {/* ── BOTTOM STRIP ── */}
