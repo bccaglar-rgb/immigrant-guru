@@ -35,9 +35,7 @@ const WATCHDOG_STALE_MS = 20_000;
 const WATCHDOG_TICK_MS = 5_000;
 const HEARTBEAT_PING_MS = 8_000;
 const SYMBOL_DELTA_STALE_MS = 60_000; // 60s — only snapshot on truly dead symbols
-const SNAPSHOT_SANITY_INTERVAL_MS = 120_000; // 2 min — sanity is verification, not data source
-const SNAPSHOT_REFRESH_MIN_MS = 300_000; // 5 min between sanity refreshes per symbol
-const SNAPSHOT_SANITY_BATCH = 1; // 1 symbol per sanity cycle — absolute minimum
+const SNAPSHOT_SANITY_INTERVAL_MS = 30_000; // 30s — state machine tick (lightweight, no REST unless needed)
 const SNAPSHOT_REQUEST_GAP_MS = 3000; // 3s between snapshots
 const SNAPSHOT_BLOCK_COOLDOWN_MS = 600_000; // 10 min — Binance IP bans are long, no point retrying often
 const CONTRACT_REFRESH_INTERVAL_MS = 4 * 60 * 60_000; // 4 hours — contracts rarely change
@@ -57,6 +55,31 @@ const PRIORITY_DEPTH_SYMBOLS = ["BTCUSDT", "ETHUSDT", "SOLUSDT", "BNBUSDT", "XRP
 const BINANCE_CANDLE_INTERVALS = ["1m", "5m", "15m", "30m", "1h", "4h", "1d"] as const;
 const CANDLE_STORE_MAX = 900;
 const TRADE_STORE_MAX = 500;
+
+// ═══════════════════════════════════════════════════════════════════
+// RECOVERY STATE MACHINE — prevents fail→retry→fail snapshot loops
+// that burn REST weight and trigger 418 IP bans.
+// ═══════════════════════════════════════════════════════════════════
+enum DepthSymbolState {
+  INIT = "INIT",                       // Never had a snapshot
+  SYNCING = "SYNCING",                 // Initial snapshot in-flight
+  READY = "READY",                     // Book healthy, WS flowing
+  DESYNC_SUSPECTED = "DESYNC_SUSPECTED", // Might need recovery (WS stale 60s)
+  RECOVERING = "RECOVERING",           // Recovery snapshot in-flight
+  COOLDOWN = "COOLDOWN",               // Failed, waiting before retry
+  BLOCKED = "BLOCKED",                 // Too many failures, long block
+}
+
+// Exponential backoff schedule for COOLDOWN state
+const RECOVERY_COOLDOWN_MS: Record<number, number> = {
+  1: 30_000,    // attempt 1 → 30s
+  2: 120_000,   // attempt 2 → 2min
+  3: 300_000,   // attempt 3 → 5min
+};
+const RECOVERY_BLOCK_MS = 600_000;     // 4+ attempts → BLOCKED for 10min
+const RECOVERY_MAX_BEFORE_BLOCK = 4;   // attempts before BLOCKED
+const DESYNC_CONFIRMATION_DELAY_MS = 10_000; // wait 10s before confirming desync
+const WS_STALE_THRESHOLD_MS = 60_000;  // WS deltas stopped for 60s → DESYNC_SUSPECTED
 
 const toText = (raw: WebSocket.RawData): string => {
   if (typeof raw === "string") return raw;
@@ -131,6 +154,10 @@ export class BinanceFuturesMarketAdapter implements IExchangeMarketAdapter {
   private readonly lastSnapshotAtBySymbol = new Map<string, number>();
   private readonly snapshotFailuresBySymbol = new Map<string, number>();
   private readonly excludedDepthSymbols = new Set<string>();
+  // ── Recovery State Machine tracking ──
+  private readonly symbolStates = new Map<string, DepthSymbolState>();
+  private readonly symbolStateChangedAt = new Map<string, number>();
+  private readonly symbolRecoveryAttempts = new Map<string, number>();
   private readonly futuresContracts = new Set<string>();
   private readonly depthSymbols = new Set<string>();
   private readonly pendingSnapshotSymbols = new Set<string>();
@@ -145,7 +172,6 @@ export class BinanceFuturesMarketAdapter implements IExchangeMarketAdapter {
   private gapCount = 0;
   private snapshotFailures = 0;
   private symbolStaleResyncs = 0;
-  private snapshotCursor = 0;
   private snapshotBlockedUntil = 0;
   private contractsLoading = false;
   private snapshotDrainInFlight = false;
@@ -267,6 +293,11 @@ export class BinanceFuturesMarketAdapter implements IExchangeMarketAdapter {
     this.subscribeDepthStreams(newlyAdded);
     this.subscribeTradeStreams(newlyAdded);  // Fast lane: subscribe on trade WS too
     for (const symbol of newlyAdded) {
+      // Ensure state is INIT for newly subscribed symbols
+      if (!this.symbolStates.has(symbol)) {
+        this.symbolStates.set(symbol, DepthSymbolState.INIT);
+        this.symbolStateChangedAt.set(symbol, Date.now());
+      }
       this.enqueueSnapshot(symbol);
     }
   }
@@ -322,6 +353,15 @@ export class BinanceFuturesMarketAdapter implements IExchangeMarketAdapter {
     if (this.snapshotFailures > 0) reasons.push(`snapshot_failures_${this.snapshotFailures}`);
     if (this.pendingSnapshotSymbols.size > 0) reasons.push(`snapshot_pending_${this.pendingSnapshotSymbols.size}`);
     if (this.snapshotBlockedUntil > now) reasons.push(`snapshot_blocked_${Math.max(1, Math.round((this.snapshotBlockedUntil - now) / 1000))}s`);
+    // State machine summary
+    let cooldownCount = 0;
+    let blockedCount = 0;
+    for (const [, symState] of this.symbolStates) {
+      if (symState === DepthSymbolState.COOLDOWN) cooldownCount++;
+      if (symState === DepthSymbolState.BLOCKED) blockedCount++;
+    }
+    if (cooldownCount > 0) reasons.push(`depth_cooldown_${cooldownCount}`);
+    if (blockedCount > 0) reasons.push(`depth_blocked_${blockedCount}`);
     if (this.lastError) reasons.push(this.lastError);
     for (const reason of this.recentReasons.slice(-3)) reasons.push(reason);
     return {
@@ -372,6 +412,25 @@ export class BinanceFuturesMarketAdapter implements IExchangeMarketAdapter {
     if (this.recentReasons.length > 30) {
       this.recentReasons.splice(0, this.recentReasons.length - 30);
     }
+  }
+
+  // ── Recovery State Machine helpers ──
+
+  private getSymbolState(symbol: string): DepthSymbolState {
+    return this.symbolStates.get(symbol) ?? DepthSymbolState.INIT;
+  }
+
+  private transitionState(symbol: string, to: DepthSymbolState, reason: string): void {
+    const from = this.getSymbolState(symbol);
+    if (from === to) return;
+    this.symbolStates.set(symbol, to);
+    this.symbolStateChangedAt.set(symbol, Date.now());
+    console.log(`[DepthState] ${symbol}: ${from} → ${to} (reason: ${reason})`);
+  }
+
+  private getRecoveryCooldownMs(attempt: number): number {
+    if (attempt >= RECOVERY_MAX_BEFORE_BLOCK) return RECOVERY_BLOCK_MS;
+    return RECOVERY_COOLDOWN_MS[attempt] ?? RECOVERY_COOLDOWN_MS[3] ?? 300_000;
   }
 
   private touchMessage(eventTs?: number | null): void {
@@ -443,6 +502,11 @@ export class BinanceFuturesMarketAdapter implements IExchangeMarketAdapter {
       const depthArr = [...this.depthSymbols];
       for (let i = 0; i < depthArr.length; i++) {
         this.resetSymbolSyncState(depthArr[i]);
+        // Reset state machine to INIT on WS reconnect so symbols can re-sync
+        this.symbolRecoveryAttempts.set(depthArr[i], 0);
+        this.snapshotFailuresBySymbol.set(depthArr[i], 0);
+        this.excludedDepthSymbols.delete(depthArr[i]);
+        this.transitionState(depthArr[i], DepthSymbolState.INIT, "ws_reconnect");
         // Stagger: 2s apart per symbol to avoid REST burst
         setTimeout(() => { if (this.started) this.enqueueSnapshot(depthArr[i]); }, i * 2000);
       }
@@ -638,66 +702,93 @@ export class BinanceFuturesMarketAdapter implements IExchangeMarketAdapter {
 
   private startSnapshotSanity(): void {
     if (this.snapshotSanityTimer) clearInterval(this.snapshotSanityTimer);
-    // ═══ SNAPSHOT POLICY: WS-first, REST-minimal ═══
+    // ═══ SNAPSHOT POLICY: State-machine driven, REST-minimal ═══
     // REST snapshots are ONLY for recovery, NEVER for routine data.
-    // If WS is healthy → zero REST calls. Period.
+    // State machine prevents fail→retry→fail loops that cause 418 IP bans.
     this.snapshotSanityTimer = setInterval(() => {
       if (!this.started) return;
       const now = Date.now();
 
       for (const symbol of this.depthSymbols) {
         if (!this.isDepthEligible(symbol)) continue;
-
-        // Case 1: Book not initialized yet → need initial snapshot (one-time)
-        if (!this.orderbooks.isReady(symbol)) {
-          if (!this.pendingSnapshotSymbols.has(symbol)) this.enqueueSnapshot(symbol);
-          continue;
-        }
-
-        // Case 2: WS deltas flowing → book is healthy → NO snapshot needed
+        const state = this.getSymbolState(symbol);
+        const stateAge = now - (this.symbolStateChangedAt.get(symbol) ?? 0);
         const lastDeltaAt = this.lastBookDeltaAtBySymbol.get(symbol) ?? 0;
-        if (lastDeltaAt > 0 && now - lastDeltaAt < SYMBOL_DELTA_STALE_MS) {
-          continue; // WS healthy — skip entirely
-        }
+        const wsStaleMs = lastDeltaAt > 0 ? now - lastDeltaAt : Infinity;
 
-        // Case 3: WS stopped for 60s+ AND book has issues → confirmed desync → snapshot
-        if (lastDeltaAt > 0 && now - lastDeltaAt > SYMBOL_DELTA_STALE_MS) {
-          const consecutiveFails = (this.snapshotFailuresBySymbol.get(symbol) ?? 0);
-          // Only snapshot if: book not ready OR previous failures exist
-          if (!this.orderbooks.isReady(symbol) || consecutiveFails > 0) {
+        switch (state) {
+          case DepthSymbolState.INIT: {
+            // Never had a snapshot — enqueue one (enqueueSnapshot handles INIT → SYNCING)
             if (!this.pendingSnapshotSymbols.has(symbol)) {
+              this.enqueueSnapshot(symbol);
+            }
+            break;
+          }
+
+          case DepthSymbolState.SYNCING: {
+            // Initial snapshot in-flight — do nothing, wait for requestDepthSnapshot result
+            break;
+          }
+
+          case DepthSymbolState.READY: {
+            // Book healthy — check if WS deltas stopped
+            if (wsStaleMs > WS_STALE_THRESHOLD_MS) {
+              this.transitionState(symbol, DepthSymbolState.DESYNC_SUSPECTED, `ws_stale_${Math.round(wsStaleMs / 1000)}s`);
+            }
+            // WS healthy → do nothing, zero REST calls
+            break;
+          }
+
+          case DepthSymbolState.DESYNC_SUSPECTED: {
+            // Wait for confirmation delay before recovering (not immediate!)
+            if (stateAge >= DESYNC_CONFIRMATION_DELAY_MS) {
+              const attempts = this.symbolRecoveryAttempts.get(symbol) ?? 0;
+              this.symbolRecoveryAttempts.set(symbol, attempts + 1);
+              this.transitionState(symbol, DepthSymbolState.RECOVERING, `desync_confirmed_after_${Math.round(stateAge / 1000)}s`);
               this.symbolStaleResyncs += 1;
-              this.pushReason(`confirmed_desync:${symbol}:${Math.round(now - lastDeltaAt)}ms`);
               this.resetSymbolSyncState(symbol);
               this.enqueueSnapshot(symbol);
             }
+            // else: still within confirmation delay, wait
+            break;
           }
-          // stale but book OK and no failures → just a quiet period, skip
+
+          case DepthSymbolState.RECOVERING: {
+            // Recovery snapshot in-flight — do nothing, wait for requestDepthSnapshot result
+            break;
+          }
+
+          case DepthSymbolState.COOLDOWN: {
+            // Check if cooldown has expired
+            const attempts = this.symbolRecoveryAttempts.get(symbol) ?? 0;
+            if (attempts >= RECOVERY_MAX_BEFORE_BLOCK) {
+              // Too many failures → BLOCKED
+              this.transitionState(symbol, DepthSymbolState.BLOCKED, `${attempts}_recovery_attempts_failed`);
+            } else {
+              const cooldownMs = this.getRecoveryCooldownMs(attempts);
+              if (stateAge >= cooldownMs) {
+                // Cooldown expired → retry recovery
+                this.transitionState(symbol, DepthSymbolState.RECOVERING, `cooldown_expired_attempt_${attempts + 1}`);
+                this.resetSymbolSyncState(symbol);
+                this.enqueueSnapshot(symbol);
+              }
+            }
+            break;
+          }
+
+          case DepthSymbolState.BLOCKED: {
+            // Long block — check if block period expired
+            if (stateAge >= RECOVERY_BLOCK_MS) {
+              // Reset and try once from scratch
+              this.symbolRecoveryAttempts.set(symbol, 0);
+              this.snapshotFailuresBySymbol.set(symbol, 0);
+              this.excludedDepthSymbols.delete(symbol);
+              this.transitionState(symbol, DepthSymbolState.INIT, `block_expired_${Math.round(stateAge / 1000)}s`);
+            }
+            break;
+          }
         }
       }
-
-      // ═══ SANITY REFRESH: DISABLED when WS is healthy ═══
-      // Sanity only runs for symbols that have NO recent WS data AND are potentially stale.
-      // If all depth symbols have fresh WS data → zero sanity REST calls.
-      const unhealthySymbols = [...this.depthSymbols].filter((symbol) => {
-        if (!this.isDepthEligible(symbol)) return false;
-        const lastDelta = this.lastBookDeltaAtBySymbol.get(symbol) ?? 0;
-        // Only consider symbols with no WS data for 2+ minutes AND book issues
-        if (lastDelta > 0 && now - lastDelta < 120_000) return false; // WS recent → skip
-        if (this.orderbooks.isReady(symbol)) return false; // book OK → skip
-        return true;
-      });
-      if (!unhealthySymbols.length) return; // ALL healthy → zero REST
-      const batch = Math.min(SNAPSHOT_SANITY_BATCH, unhealthySymbols.length);
-      for (let i = 0; i < batch; i += 1) {
-        const idx = (this.snapshotCursor + i) % unhealthySymbols.length;
-        const symbol = unhealthySymbols[idx]!;
-        const lastSnapshotAt = this.lastSnapshotAtBySymbol.get(symbol) ?? 0;
-        if (lastSnapshotAt > 0 && now - lastSnapshotAt < SNAPSHOT_REFRESH_MIN_MS) continue;
-        if (this.pendingSnapshotSymbols.has(symbol)) continue;
-        this.enqueueSnapshot(symbol);
-      }
-      this.snapshotCursor = (this.snapshotCursor + batch) % Math.max(1, unhealthySymbols.length);
     }, SNAPSHOT_SANITY_INTERVAL_MS);
   }
 
@@ -1116,6 +1207,13 @@ export class BinanceFuturesMarketAdapter implements IExchangeMarketAdapter {
     };
     this.emit(delta);
 
+    // ── State machine: WS delta arrived — if in DESYNC_SUSPECTED, WS recovered ──
+    const currentState = this.getSymbolState(symbol);
+    if (currentState === DepthSymbolState.DESYNC_SUSPECTED) {
+      // WS came back before we triggered recovery — cancel desync
+      this.transitionState(symbol, DepthSymbolState.READY, "ws_delta_resumed");
+    }
+
     if (!this.orderbooks.isReady(symbol)) {
       const queue = this.deltaBufferBySymbol.get(symbol) ?? [];
       queue.push(delta);
@@ -1132,7 +1230,15 @@ export class BinanceFuturesMarketAdapter implements IExchangeMarketAdapter {
       this.gapCount += 1;
       this.pushReason(`depth_gap:${symbol}:${startSeq}-${endSeq}`);
       this.resetSymbolSyncState(symbol);
-      this.enqueueSnapshot(symbol);
+      // ── State machine: gap detected → trigger recovery through state machine ──
+      const gapAttempts = this.symbolRecoveryAttempts.get(symbol) ?? 0;
+      this.symbolRecoveryAttempts.set(symbol, gapAttempts + 1);
+      if (gapAttempts + 1 >= RECOVERY_MAX_BEFORE_BLOCK) {
+        this.transitionState(symbol, DepthSymbolState.BLOCKED, `gap_${gapAttempts + 1}_attempts`);
+      } else {
+        this.transitionState(symbol, DepthSymbolState.RECOVERING, `depth_gap_seq_${startSeq}`);
+        this.enqueueSnapshot(symbol);
+      }
       return;
     }
     if (applied.applied) {
@@ -1147,9 +1253,20 @@ export class BinanceFuturesMarketAdapter implements IExchangeMarketAdapter {
     if (this.snapshotQueueSet.has(normalized)) return;
     // Global block: if REST API returned 418/429, don't enqueue anything
     if (this.snapshotBlockedUntil > Date.now()) return;
-    // Per-symbol cooldown: minimum 60s between snapshots for the same symbol
-    const lastSnap = this.lastSnapshotAtBySymbol.get(normalized) ?? 0;
-    if (lastSnap > 0 && Date.now() - lastSnap < 60_000) return;
+
+    // ── State machine gate: only allow snapshots in INIT or RECOVERING ──
+    const state = this.getSymbolState(normalized);
+    if (state !== DepthSymbolState.INIT && state !== DepthSymbolState.RECOVERING) {
+      // Symbol is in READY, SYNCING, COOLDOWN, BLOCKED, or DESYNC_SUSPECTED — no snapshot
+      return;
+    }
+
+    // Transition to SYNCING (first snapshot) or stay RECOVERING (recovery snapshot)
+    if (state === DepthSymbolState.INIT) {
+      this.transitionState(normalized, DepthSymbolState.SYNCING, "initial_snapshot_requested");
+    }
+    // RECOVERING state already set by the sanity timer — no transition needed
+
     // Global queue cap: never queue more than 5 snapshots at once
     if (this.snapshotQueue.length >= 5) return;
     this.snapshotQueue.push(normalized);
@@ -1214,6 +1331,9 @@ export class BinanceFuturesMarketAdapter implements IExchangeMarketAdapter {
       this.lastSnapshotAtBySymbol.set(symbol, Date.now());
       this.snapshotFailuresBySymbol.set(symbol, 0);
       this.snapshotFailures = Math.max(0, this.snapshotFailures - 1);
+      // ── State machine: snapshot succeeded → READY ──
+      this.symbolRecoveryAttempts.set(symbol, 0);
+      this.transitionState(symbol, DepthSymbolState.READY, "snapshot_success");
 
       const buffered = this.deltaBufferBySymbol.get(symbol) ?? [];
       this.deltaBufferBySymbol.delete(symbol);
@@ -1234,7 +1354,15 @@ export class BinanceFuturesMarketAdapter implements IExchangeMarketAdapter {
             this.resetSymbolSyncState(symbol);
             this.resyncs += 1;
             this.pendingSnapshotSymbols.delete(symbol);
-            this.enqueueSnapshot(symbol);
+            // Use state machine for reconciliation gap recovery
+            const reconAttempts = this.symbolRecoveryAttempts.get(symbol) ?? 0;
+            this.symbolRecoveryAttempts.set(symbol, reconAttempts + 1);
+            if (reconAttempts + 1 >= RECOVERY_MAX_BEFORE_BLOCK) {
+              this.transitionState(symbol, DepthSymbolState.BLOCKED, `reconcile_gap_${reconAttempts + 1}_attempts`);
+            } else {
+              this.transitionState(symbol, DepthSymbolState.RECOVERING, "reconcile_gap");
+              this.enqueueSnapshot(symbol);
+            }
             return;
           }
         }
@@ -1253,30 +1381,35 @@ export class BinanceFuturesMarketAdapter implements IExchangeMarketAdapter {
       const statusCode = statusMatch ? Number(statusMatch[1]) : null;
       if (statusCode === 403 || statusCode === 418 || statusCode === 429) {
         // IP blocked or rate limited — stop ALL snapshot requests for cooldown period
-        // 403 = IP ban (common with Binance), 418/429 = rate limit
         this.snapshotBlockedUntil = Date.now() + SNAPSHOT_BLOCK_COOLDOWN_MS;
         this.pushReason(`snapshot_blocked:${statusCode}`);
-        // Clear the entire snapshot queue to prevent cascade
         this.snapshotQueue.length = 0;
         this.snapshotQueueSet.clear();
         console.log(`[BinanceFuturesAdapter] REST API ${statusCode} — blocking snapshots for ${SNAPSHOT_BLOCK_COOLDOWN_MS / 1000}s`);
+        // All symbols in SYNCING/RECOVERING → BLOCKED immediately on IP ban
+        for (const sym of this.depthSymbols) {
+          const symState = this.getSymbolState(sym);
+          if (symState === DepthSymbolState.SYNCING || symState === DepthSymbolState.RECOVERING) {
+            this.transitionState(sym, DepthSymbolState.BLOCKED, `ip_ban_${statusCode}`);
+          }
+        }
       } else if (statusCode === 400 && currentFail >= 3) {
         this.excludedDepthSymbols.add(symbol);
+        this.transitionState(symbol, DepthSymbolState.BLOCKED, `bad_request_${currentFail}_fails`);
         this.pushReason(`exclude_depth_symbol:${symbol}`);
-      } else if (currentFail >= 6) {
-        // Don't terminate WS on repeated snapshot failures — WS data is still valuable
-        // even without snapshots. The depth deltas are emitted and can be used client-side.
-        // CRITICAL: Exclude symbol from depth to stop the fail→retry→fail loop
-        // that burns REST weight and eventually causes IP bans.
-        this.excludedDepthSymbols.add(symbol);
-        this.pushReason(`snapshot_fail_threshold:${symbol}:excluded`);
-        console.log(`[BinanceFuturesAdapter] Snapshot failed 6+ times for ${symbol} — EXCLUDED from depth (WS still running). Will retry in ${SNAPSHOT_BLOCK_COOLDOWN_MS / 1000}s`);
-        // Schedule re-inclusion after cooldown so symbol can recover
-        setTimeout(() => {
-          this.excludedDepthSymbols.delete(symbol);
-          this.snapshotFailuresBySymbol.delete(symbol);
-          console.log(`[BinanceFuturesAdapter] Re-enabled depth for ${symbol} after cooldown`);
-        }, SNAPSHOT_BLOCK_COOLDOWN_MS);
+      } else {
+        // ── State machine: snapshot failed → COOLDOWN or BLOCKED ──
+        const attempts = this.symbolRecoveryAttempts.get(symbol) ?? 0;
+        const newAttempts = attempts + 1;
+        this.symbolRecoveryAttempts.set(symbol, newAttempts);
+        if (newAttempts >= RECOVERY_MAX_BEFORE_BLOCK) {
+          this.transitionState(symbol, DepthSymbolState.BLOCKED, `${newAttempts}_attempts_exhausted`);
+          this.excludedDepthSymbols.add(symbol);
+          console.log(`[BinanceFuturesAdapter] ${symbol} → BLOCKED after ${newAttempts} failed attempts (WS still running)`);
+        } else {
+          const cooldownMs = this.getRecoveryCooldownMs(newAttempts);
+          this.transitionState(symbol, DepthSymbolState.COOLDOWN, `attempt_${newAttempts}_failed_cooldown_${Math.round(cooldownMs / 1000)}s`);
+        }
       }
     } finally {
       if (timeout) clearTimeout(timeout);
