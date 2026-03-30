@@ -51,12 +51,20 @@ jobs:
           # Upload deploy configs
           rsync -avz deploy/ root@${{ secrets.DROPLET_IP }}:/var/www/bitrium/deploy/
 
+          # Upload market-hub (external market data service)
+          rsync -avz --delete --exclude='node_modules/' market-hub/ root@${{ secrets.DROPLET_IP }}:/var/www/bitrium/market-hub/
+
           # Install deps, run DB migrations if needed, restart services
           ssh root@${{ secrets.DROPLET_IP }} << 'EOF'
             cd /var/www/bitrium
 
             # Install production dependencies
             npm ci --omit=dev
+
+            # Install market-hub dependencies
+            if [ -f market-hub/package.json ]; then
+              cd market-hub && npm ci --omit=dev 2>/dev/null || npm install --omit=dev && cd ..
+            fi
 
             # Run schema migration (idempotent — CREATE IF NOT EXISTS)
             PGPASSWORD="${DB_PASSWORD}" psql -U bitrium_app -d bitrium_db -f server/src/db/schema.sql || true
@@ -81,6 +89,10 @@ jobs:
 
             # Zero-downtime reload: PM2 restarts workers one by one
             pm2 reload ecosystem.config.cjs || pm2 start ecosystem.config.cjs
+
+            # Restart market-hub if it exists as PM2 process
+            pm2 restart market-hub 2>/dev/null || echo "market-hub PM2 process not found — skipping"
+
             pm2 save
 
             # Health check — wait for backend to be ready
