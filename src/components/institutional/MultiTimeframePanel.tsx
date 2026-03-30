@@ -1,9 +1,11 @@
 import { useMemo } from "react";
 import type { TFContext } from "./mockData";
-import { sol15m, sol1h, sol4h, sol1d } from "./mockData";
-import { LWChart } from "../shared/LWChart";
+import { LWChart, type OHLCVData } from "../shared/LWChart";
 
-interface Props { contexts: TFContext[] }
+interface Props {
+  contexts: TFContext[];
+  chartData?: Record<string, OHLCVData[]>;
+}
 
 const tc = (t: string) => t === "Bullish" ? "#2bc48a" : t === "Bearish" ? "#f6465d" : "#8A8F98";
 const mc = (m: string) => m === "Strong" ? "#2bc48a" : m === "Building" ? "#5B8DEF" : m === "Fading" ? "#FF9F43" : "#8A8F98";
@@ -12,19 +14,19 @@ const sc = (s: string) => s === "Expanding" ? "#2bc48a" : s === "Compressed" ? "
 const biasLabel = (t: string) => t === "Bullish" ? "Bullish" : t === "Bearish" ? "Bearish" : "Neutral";
 const biasBg = (t: string) => t === "Bullish" ? "rgba(43,196,138,0.12)" : t === "Bearish" ? "rgba(246,70,93,0.12)" : "rgba(138,143,152,0.10)";
 
-const tfChartData: Record<string, typeof sol15m> = { "15m": sol15m, "1H": sol1h, "4H": sol4h, "1D": sol1d };
+const EMPTY_DATA: OHLCVData[] = [];
 
-export const MultiTimeframePanel = ({ contexts }: Props) => (
+export const MultiTimeframePanel = ({ contexts, chartData }: Props) => (
   <div className="flex flex-col gap-1">
     <SectionHead icon={<svg viewBox="0 0 24 24" className="h-3 w-3" fill="none" stroke="currentColor" strokeWidth="2"><path d="M2 12h4l3-9 6 18 3-9h4" /></svg>} label="Multi-Timeframe" color="#5B8DEF" />
     {contexts.map((c) => (
-      <TFCard key={c.tf} context={c} />
+      <TFCard key={c.tf} context={c} chartData={chartData} />
     ))}
   </div>
 );
 
-const TFCard = ({ context: c }: { context: TFContext }) => {
-  const data = useMemo(() => tfChartData[c.tf] ?? sol15m, [c.tf]);
+const TFCard = ({ context: c, chartData }: { context: TFContext; chartData?: Record<string, OHLCVData[]> }) => {
+  const data = useMemo(() => chartData?.[c.tf] ?? EMPTY_DATA, [c.tf, chartData]);
   const trendColor = tc(c.trend);
   return (
     <div className="rounded-xl border border-white/[0.04] bg-white/[0.015] p-2 space-y-1">

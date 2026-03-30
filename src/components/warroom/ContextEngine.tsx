@@ -1,9 +1,11 @@
 import type { TimeframeContext } from "./mockData";
-import { sol15m, sol1h, sol4h, sol1d } from "./mockData";
-import { LWChart } from "../shared/LWChart";
+import { LWChart, type OHLCVData } from "../shared/LWChart";
 
-interface Props { contexts: TimeframeContext[] }
-const tfChartData: Record<string, typeof sol15m> = { "15m": sol15m, "1H": sol1h, "4H": sol4h, "1D": sol1d };
+interface Props {
+  contexts: TimeframeContext[];
+  chartData?: Record<string, OHLCVData[]>;
+}
+const EMPTY_DATA: OHLCVData[] = [];
 
 const trendColor = (t: string) => t === "Bullish" ? "#2bc48a" : t === "Bearish" ? "#f6465d" : "#8A8F98";
 const momentumColor = (m: string) => m === "Strong" ? "#2bc48a" : m === "Building" ? "#5B8DEF" : m === "Fading" ? "#FF9F43" : "#8A8F98";
@@ -26,7 +28,7 @@ const BiasBar = ({ value }: { value: number }) => {
   );
 };
 
-export const ContextEngine = ({ contexts }: Props) => (
+export const ContextEngine = ({ contexts, chartData }: Props) => (
   <div className="flex flex-col gap-1.5">
     <div className="flex items-center gap-2 px-1 mb-0.5">
       <svg viewBox="0 0 24 24" className="h-3.5 w-3.5 text-[#5B8DEF]" fill="none" stroke="currentColor" strokeWidth="2"><path d="M2 12h4l3-9 6 18 3-9h4" /></svg>
@@ -45,7 +47,7 @@ export const ContextEngine = ({ contexts }: Props) => (
 
         {/* Mini Chart */}
         <div className="h-[160px] w-full rounded overflow-hidden">
-          <LWChart data={tfChartData[ctx.timeframe] ?? sol15m} compact showVolume={false} showIndicators={false} showFibonacci />
+          <LWChart data={chartData?.[ctx.timeframe] ?? EMPTY_DATA} compact showVolume={false} showIndicators={false} showFibonacci />
         </div>
 
         {/* Metrics + Bias — single row */}
