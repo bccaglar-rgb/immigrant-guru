@@ -58,6 +58,12 @@ jobs:
           ssh root@${{ secrets.DROPLET_IP }} << 'EOF'
             cd /var/www/bitrium
 
+            # Copy .env from old location if not present
+            if [ ! -f .env ] && [ -f /root/bitrium/.env ]; then
+              cp /root/bitrium/.env .env
+              echo "✓ Copied .env from /root/bitrium/"
+            fi
+
             # Install production dependencies
             npm ci --omit=dev
 
@@ -95,16 +101,16 @@ jobs:
 
             pm2 save
 
-            # Health check — wait for backend to be ready
-            for i in $(seq 1 10); do
+            # Health check — wait for backend to be ready (up to 60s)
+            for i in $(seq 1 20); do
               if curl -sf http://127.0.0.1:8090/api/health > /dev/null 2>&1; then
                 echo "Health check passed"
                 exit 0
               fi
-              echo "Waiting for backend... ($i/10)"
-              sleep 2
+              echo "Waiting for backend... ($i/20)"
+              sleep 3
             done
-            echo "WARNING: Health check did not pass within 20s"
+            echo "WARNING: Health check did not pass within 60s"
           EOF
 
       - name: Verify deployment
