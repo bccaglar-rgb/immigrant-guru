@@ -44,8 +44,8 @@ export const ContextEngine = ({ contexts }: Props) => (
         </div>
 
         {/* Mini Chart */}
-        <div className="h-[180px] w-full rounded overflow-hidden">
-          <LWChart data={tfChartData[ctx.timeframe] ?? sol15m} compact showVolume={false} showIndicators={false} />
+        <div className="h-[160px] w-full rounded overflow-hidden">
+          <LWChart data={tfChartData[ctx.timeframe] ?? sol15m} compact showVolume={false} showIndicators={false} showFibonacci />
         </div>
 
         {/* Metrics + Bias — single row */}

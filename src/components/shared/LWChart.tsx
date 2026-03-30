@@ -36,6 +36,7 @@ interface LWChartProps {
   compact?: boolean;
   showVolume?: boolean;
   showIndicators?: boolean;
+  showFibonacci?: boolean;
   className?: string;
 }
 
@@ -46,6 +47,7 @@ export const LWChart = ({
   compact = false,
   showVolume = true,
   showIndicators = false,
+  showFibonacci = false,
   className = "",
 }: LWChartProps) => {
   const rootRef = useRef<HTMLDivElement | null>(null);
@@ -202,8 +204,37 @@ export const LWChart = ({
       );
     }
 
+    // Fibonacci retracement levels
+    if (showFibonacci && data.length > 5) {
+      const highs = data.map((d) => d.high);
+      const lows = data.map((d) => d.low);
+      const swingHigh = Math.max(...highs);
+      const swingLow = Math.min(...lows);
+      const range = swingHigh - swingLow;
+      const fibLevels = [
+        { level: 0, color: "rgba(128,128,128,0.4)", label: "0%" },
+        { level: 0.236, color: "rgba(91,141,239,0.35)", label: "23.6%" },
+        { level: 0.382, color: "rgba(245,197,66,0.35)", label: "38.2%" },
+        { level: 0.5, color: "rgba(255,159,67,0.35)", label: "50%" },
+        { level: 0.618, color: "rgba(43,196,138,0.4)", label: "61.8%" },
+        { level: 0.786, color: "rgba(210,79,181,0.35)", label: "78.6%" },
+        { level: 1, color: "rgba(128,128,128,0.4)", label: "100%" },
+      ];
+      for (const fib of fibLevels) {
+        const price = swingHigh - range * fib.level;
+        candleSeries.createPriceLine({
+          price,
+          color: fib.color,
+          lineWidth: 1,
+          lineStyle: 2, // dashed
+          axisLabelVisible: false,
+          title: fib.label,
+        });
+      }
+    }
+
     chart.timeScale().fitContent();
-  }, [data, showIndicators]);
+  }, [data, showIndicators, showFibonacci]);
 
   return (
     <div

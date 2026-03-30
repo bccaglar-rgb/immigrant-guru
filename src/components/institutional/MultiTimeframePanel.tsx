@@ -37,8 +37,8 @@ const TFCard = ({ context: c }: { context: TFContext }) => {
         </div>
         <span className="font-mono text-[10px] text-[var(--textSubtle)]">${c.keyLevel.toFixed(2)}</span>
       </div>
-      <div className="h-[80px] w-full rounded overflow-hidden">
-        <LWChart data={data} compact showVolume={false} showIndicators={false} />
+      <div className="h-[160px] w-full rounded overflow-hidden">
+        <LWChart data={data} compact showVolume={false} showIndicators={false} showFibonacci />
       </div>
       <div className="flex items-center gap-3">
         <ChipInline label="Struct" value={c.structure} color={tc(c.trend)} />

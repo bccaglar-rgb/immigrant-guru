@@ -75,11 +75,11 @@ export default function InstitutionalCommandPage() {
       {/* ═══ MAIN 12-COL GRID ═══ */}
       <div className="flex-1 grid grid-cols-12 gap-1 min-h-0">
 
-        {/* ── LEFT: 3 cols — Alerts + MultiTF + Quick Stats ── */}
+        {/* ── LEFT: 3 cols — Alerts + Quick Stats + MultiTF ── */}
         <div className="col-span-3 overflow-y-auto space-y-1 pr-0.5 scrollbar-thin">
           <AlertMatrixPanel alerts={alerts} />
-          <MultiTimeframePanel contexts={tfContexts} />
           <QuickStatsPanel />
+          <MultiTimeframePanel contexts={tfContexts} />
         </div>
 
         {/* ── CENTER: 6 cols — Chart dominant ── */}
