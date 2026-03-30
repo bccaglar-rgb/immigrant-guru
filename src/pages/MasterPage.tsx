@@ -27,10 +27,10 @@ const FILTER_KEYS = ["OI Increase", "OI Decrease", "Sniper", "Coin Universe"] as
 type FilterKey = (typeof FILTER_KEYS)[number];
 
 const filterCoins: Record<FilterKey, string[]> = {
-  "OI Increase": ["SOLUSDT", "BTCUSDT", "ETHUSDT", "AVAXUSDT", "BNBUSDT"],
-  "OI Decrease": ["ARBUSDT", "DOGEUSDT", "LINKUSDT", "XRPUSDT", "DOTUSDT"],
-  Sniper: ["SOLUSDT", "AVAXUSDT", "LINKUSDT", "BTCUSDT", "MATICUSDT"],
-  "Coin Universe": ["BTCUSDT", "ETHUSDT", "SOLUSDT", "BNBUSDT", "XRPUSDT"],
+  "OI Increase": ["SOLUSDT", "BTCUSDT", "ETHUSDT", "AVAXUSDT", "BNBUSDT", "LINKUSDT"],
+  "OI Decrease": ["ARBUSDT", "DOGEUSDT", "LINKUSDT", "XRPUSDT", "DOTUSDT", "AAVEUSDT"],
+  Sniper: ["SOLUSDT", "AVAXUSDT", "LINKUSDT", "BTCUSDT", "MATICUSDT", "ETHUSDT"],
+  "Coin Universe": ["BTCUSDT", "ETHUSDT", "SOLUSDT", "BNBUSDT", "XRPUSDT", "AVAXUSDT"],
 };
 
 /* ── Loading skeleton ── */
@@ -123,7 +123,7 @@ export default function MasterPage() {
         {/* ═══ CENTER COLUMN (6 cols) — Chart + signals + entry + decision ═══ */}
         <div className="col-span-6 flex flex-col gap-1.5 min-h-0">
           {/* Main chart */}
-          <div className="flex-1 min-h-0">
+          <div className="flex-[0.7] min-h-0">
             <ChartCard
               symbol={displaySymbol}
               timeframe="1m"
