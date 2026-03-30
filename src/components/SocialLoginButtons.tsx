@@ -47,10 +47,6 @@ export const SocialLoginButtons = ({ mode = "login" }: { mode?: "login" | "signu
     // TODO: Load Telegram Login Widget
   };
 
-  const handlePasskey = () => {
-    setError("Passkey support coming soon.");
-    // TODO: WebAuthn registration/authentication
-  };
 
   const verb = mode === "signup" ? "Sign up" : "Continue";
 
