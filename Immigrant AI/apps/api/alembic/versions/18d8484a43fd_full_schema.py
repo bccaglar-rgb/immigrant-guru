@@ -1,8 +1,8 @@
-"""init
+"""full_schema
 
-Revision ID: 7b4fc9b35c4b
+Revision ID: 18d8484a43fd
 Revises: 
-Create Date: 2026-04-03 21:57:10.141138
+Create Date: 2026-04-04 09:57:23.746086
 """
 
 from alembic import op
@@ -12,7 +12,7 @@ from sqlalchemy.dialects import postgresql
 
 
 # revision identifiers, used by Alembic.
-revision = '7b4fc9b35c4b'
+revision = '18d8484a43fd'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -57,8 +57,8 @@ def upgrade() -> None:
     op.create_index(op.f('ix_users_email'), 'users', ['email'], unique=True)
     op.create_table('audit_logs',
     sa.Column('actor_user_id', sa.UUID(), nullable=True),
-    sa.Column('event_type', sa.Enum('USER_REGISTERED', 'USER_LOGGED_IN', 'CASE_CREATED', 'CASE_UPDATED', 'AI_STRATEGY_GENERATED', 'DOCUMENT_UPLOADED', name='audit_event_type'), nullable=False),
-    sa.Column('target_entity_type', sa.Enum('USER', 'IMMIGRATION_CASE', 'DOCUMENT', name='audit_target_entity_type'), nullable=False),
+    sa.Column('event_type', sa.Enum('USER_REGISTERED', 'USER_LOGGED_IN', 'CASE_CREATED', 'CASE_UPDATED', 'CASE_OUTCOME_RECORDED', 'CASE_OUTCOME_UPDATED', 'AI_STRATEGY_GENERATED', 'AI_FEEDBACK_SUBMITTED', 'DOCUMENT_UPLOADED', name='audit_event_type'), nullable=False),
+    sa.Column('target_entity_type', sa.Enum('USER', 'IMMIGRATION_CASE', 'CASE_OUTCOME', 'DOCUMENT', 'AI_FEEDBACK', name='audit_target_entity_type'), nullable=False),
     sa.Column('target_entity_id', sa.UUID(), nullable=True),
     sa.Column('metadata', postgresql.JSONB(astext_type=sa.Text()), server_default=sa.text("'{}'::jsonb"), nullable=False),
     sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
@@ -80,11 +80,15 @@ def upgrade() -> None:
     sa.Column('notes', sa.Text(), nullable=True),
     sa.Column('latest_score', sa.Numeric(precision=5, scale=2), nullable=True),
     sa.Column('risk_score', sa.Numeric(precision=5, scale=2), nullable=True),
+    sa.Column('probability_score', sa.Numeric(precision=5, scale=2), nullable=True),
+    sa.Column('probability_confidence', sa.Enum('LOW', 'MEDIUM', 'HIGH', name='pathway_probability_confidence_level'), nullable=True),
+    sa.Column('probability_explanation_json', postgresql.JSONB(astext_type=sa.Text()), server_default=sa.text("'{}'::jsonb"), nullable=False),
     sa.Column('id', sa.UUID(), nullable=False),
     sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
     sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
     sa.CheckConstraint('latest_score IS NULL OR (latest_score >= 0 AND latest_score <= 100)', name=op.f('ck_immigration_cases_latest_score_range')),
     sa.CheckConstraint('length(trim(title)) > 0', name=op.f('ck_immigration_cases_title_not_blank')),
+    sa.CheckConstraint('probability_score IS NULL OR (probability_score >= 0 AND probability_score <= 100)', name=op.f('ck_immigration_cases_probability_score_range')),
     sa.CheckConstraint('risk_score IS NULL OR (risk_score >= 0 AND risk_score <= 100)', name=op.f('ck_immigration_cases_risk_score_range')),
     sa.ForeignKeyConstraint(['user_id'], ['users.id'], name=op.f('fk_immigration_cases_user_id_users'), ondelete='CASCADE'),
     sa.PrimaryKeyConstraint('id', name=op.f('pk_immigration_cases'))
@@ -95,6 +99,11 @@ def upgrade() -> None:
     sa.Column('chunk_index', sa.Integer(), nullable=False),
     sa.Column('chunk_text', sa.Text(), nullable=False),
     sa.Column('language', sa.String(length=32), nullable=True),
+    sa.Column('embedding', sa.LargeBinary(), nullable=True),
+    sa.Column('embedding_provider', sa.String(length=64), nullable=True),
+    sa.Column('embedding_model', sa.String(length=128), nullable=True),
+    sa.Column('embedding_dimension', sa.Integer(), nullable=True),
+    sa.Column('embedding_updated_at', sa.DateTime(timezone=True), nullable=True),
     sa.Column('metadata', postgresql.JSONB(astext_type=sa.Text()), server_default=sa.text("'{}'::jsonb"), nullable=False),
     sa.Column('id', sa.UUID(), nullable=False),
     sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
@@ -135,6 +144,68 @@ def upgrade() -> None:
     sa.PrimaryKeyConstraint('id', name=op.f('pk_user_profiles'))
     )
     op.create_index(op.f('ix_user_profiles_user_id'), 'user_profiles', ['user_id'], unique=True)
+    op.create_table('ai_feedback',
+    sa.Column('user_id', sa.UUID(), nullable=False),
+    sa.Column('case_id', sa.UUID(), nullable=False),
+    sa.Column('feature', sa.Enum('STRATEGY', 'COPILOT', 'DOCUMENT_ANALYSIS', 'COMPARISON', name='ai_feature'), nullable=False),
+    sa.Column('rating', sa.Enum('POSITIVE', 'NEGATIVE', name='ai_feedback_rating'), nullable=False),
+    sa.Column('comment', sa.Text(), nullable=True),
+    sa.Column('target_id', sa.UUID(), nullable=True),
+    sa.Column('id', sa.UUID(), nullable=False),
+    sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
+    sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
+    sa.CheckConstraint('comment IS NULL OR length(trim(comment)) > 0', name=op.f('ck_ai_feedback_comment_not_blank')),
+    sa.ForeignKeyConstraint(['case_id'], ['immigration_cases.id'], name=op.f('fk_ai_feedback_case_id_immigration_cases'), ondelete='CASCADE'),
+    sa.ForeignKeyConstraint(['user_id'], ['users.id'], name=op.f('fk_ai_feedback_user_id_users'), ondelete='CASCADE'),
+    sa.PrimaryKeyConstraint('id', name=op.f('pk_ai_feedback'))
+    )
+    op.create_index(op.f('ix_ai_feedback_case_id'), 'ai_feedback', ['case_id'], unique=False)
+    op.create_index(op.f('ix_ai_feedback_target_id'), 'ai_feedback', ['target_id'], unique=False)
+    op.create_index(op.f('ix_ai_feedback_user_id'), 'ai_feedback', ['user_id'], unique=False)
+    op.create_table('case_outcomes',
+    sa.Column('case_id', sa.UUID(), nullable=False),
+    sa.Column('outcome', sa.Enum('APPROVED', 'REJECTED', 'WITHDRAWN', 'PENDING', name='case_outcome_status'), nullable=False),
+    sa.Column('duration_months', sa.Integer(), nullable=True),
+    sa.Column('final_pathway', sa.String(length=120), nullable=True),
+    sa.Column('decision_date', sa.DateTime(timezone=True), nullable=True),
+    sa.Column('notes', sa.Text(), nullable=True),
+    sa.Column('recorded_by_user_id', sa.UUID(), nullable=True),
+    sa.Column('recorded_at', sa.DateTime(timezone=True), nullable=False),
+    sa.Column('id', sa.UUID(), nullable=False),
+    sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
+    sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
+    sa.CheckConstraint('duration_months IS NULL OR duration_months >= 0', name=op.f('ck_case_outcomes_duration_months_non_negative')),
+    sa.CheckConstraint('final_pathway IS NULL OR length(trim(final_pathway)) > 0', name=op.f('ck_case_outcomes_final_pathway_not_blank')),
+    sa.ForeignKeyConstraint(['case_id'], ['immigration_cases.id'], name=op.f('fk_case_outcomes_case_id_immigration_cases'), ondelete='CASCADE'),
+    sa.ForeignKeyConstraint(['recorded_by_user_id'], ['users.id'], name=op.f('fk_case_outcomes_recorded_by_user_id_users'), ondelete='SET NULL'),
+    sa.PrimaryKeyConstraint('id', name=op.f('pk_case_outcomes')),
+    sa.UniqueConstraint('case_id', name='uq_case_outcomes_case_id')
+    )
+    op.create_index(op.f('ix_case_outcomes_case_id'), 'case_outcomes', ['case_id'], unique=False)
+    op.create_index(op.f('ix_case_outcomes_recorded_by_user_id'), 'case_outcomes', ['recorded_by_user_id'], unique=False)
+    op.create_table('case_timeline_snapshots',
+    sa.Column('case_id', sa.UUID(), nullable=False),
+    sa.Column('simulation_json', postgresql.JSONB(astext_type=sa.Text()), server_default=sa.text("'{}'::jsonb"), nullable=False),
+    sa.Column('generated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
+    sa.Column('id', sa.UUID(), nullable=False),
+    sa.ForeignKeyConstraint(['case_id'], ['immigration_cases.id'], name=op.f('fk_case_timeline_snapshots_case_id_immigration_cases'), ondelete='CASCADE'),
+    sa.PrimaryKeyConstraint('id', name=op.f('pk_case_timeline_snapshots'))
+    )
+    op.create_index(op.f('ix_case_timeline_snapshots_case_id'), 'case_timeline_snapshots', ['case_id'], unique=False)
+    op.create_index('ix_case_timeline_snapshots_case_id_generated_at', 'case_timeline_snapshots', ['case_id', 'generated_at'], unique=False)
+    op.create_table('copilot_threads',
+    sa.Column('case_id', sa.UUID(), nullable=False),
+    sa.Column('user_id', sa.UUID(), nullable=False),
+    sa.Column('id', sa.UUID(), nullable=False),
+    sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
+    sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
+    sa.ForeignKeyConstraint(['case_id'], ['immigration_cases.id'], name=op.f('fk_copilot_threads_case_id_immigration_cases'), ondelete='CASCADE'),
+    sa.ForeignKeyConstraint(['user_id'], ['users.id'], name=op.f('fk_copilot_threads_user_id_users'), ondelete='CASCADE'),
+    sa.PrimaryKeyConstraint('id', name=op.f('pk_copilot_threads')),
+    sa.UniqueConstraint('case_id', 'user_id', name='uq_copilot_threads_case_user')
+    )
+    op.create_index(op.f('ix_copilot_threads_case_id'), 'copilot_threads', ['case_id'], unique=False)
+    op.create_index(op.f('ix_copilot_threads_user_id'), 'copilot_threads', ['user_id'], unique=False)
     op.create_table('documents',
     sa.Column('case_id', sa.UUID(), nullable=False),
     sa.Column('filename', sa.String(length=255), nullable=False),
@@ -161,13 +232,48 @@ def upgrade() -> None:
     sa.UniqueConstraint('storage_path', name=op.f('uq_documents_storage_path'))
     )
     op.create_index(op.f('ix_documents_case_id'), 'documents', ['case_id'], unique=False)
+    op.create_table('copilot_messages',
+    sa.Column('thread_id', sa.UUID(), nullable=False),
+    sa.Column('case_id', sa.UUID(), nullable=False),
+    sa.Column('user_id', sa.UUID(), nullable=False),
+    sa.Column('role', sa.Enum('USER', 'ASSISTANT', 'SYSTEM', name='copilot_message_role'), nullable=False),
+    sa.Column('content', sa.Text(), nullable=False),
+    sa.Column('metadata_json', postgresql.JSONB(astext_type=sa.Text()), server_default=sa.text("'{}'::jsonb"), nullable=False),
+    sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
+    sa.Column('id', sa.UUID(), nullable=False),
+    sa.CheckConstraint('length(trim(content)) > 0', name=op.f('ck_copilot_messages_content_not_blank')),
+    sa.ForeignKeyConstraint(['case_id'], ['immigration_cases.id'], name=op.f('fk_copilot_messages_case_id_immigration_cases'), ondelete='CASCADE'),
+    sa.ForeignKeyConstraint(['thread_id'], ['copilot_threads.id'], name=op.f('fk_copilot_messages_thread_id_copilot_threads'), ondelete='CASCADE'),
+    sa.ForeignKeyConstraint(['user_id'], ['users.id'], name=op.f('fk_copilot_messages_user_id_users'), ondelete='CASCADE'),
+    sa.PrimaryKeyConstraint('id', name=op.f('pk_copilot_messages'))
+    )
+    op.create_index(op.f('ix_copilot_messages_case_id'), 'copilot_messages', ['case_id'], unique=False)
+    op.create_index(op.f('ix_copilot_messages_thread_id'), 'copilot_messages', ['thread_id'], unique=False)
+    op.create_index(op.f('ix_copilot_messages_user_id'), 'copilot_messages', ['user_id'], unique=False)
     # ### end Alembic commands ###
 
 
 def downgrade() -> None:
     # ### commands auto generated by Alembic - please adjust! ###
+    op.drop_index(op.f('ix_copilot_messages_user_id'), table_name='copilot_messages')
+    op.drop_index(op.f('ix_copilot_messages_thread_id'), table_name='copilot_messages')
+    op.drop_index(op.f('ix_copilot_messages_case_id'), table_name='copilot_messages')
+    op.drop_table('copilot_messages')
     op.drop_index(op.f('ix_documents_case_id'), table_name='documents')
     op.drop_table('documents')
+    op.drop_index(op.f('ix_copilot_threads_user_id'), table_name='copilot_threads')
+    op.drop_index(op.f('ix_copilot_threads_case_id'), table_name='copilot_threads')
+    op.drop_table('copilot_threads')
+    op.drop_index('ix_case_timeline_snapshots_case_id_generated_at', table_name='case_timeline_snapshots')
+    op.drop_index(op.f('ix_case_timeline_snapshots_case_id'), table_name='case_timeline_snapshots')
+    op.drop_table('case_timeline_snapshots')
+    op.drop_index(op.f('ix_case_outcomes_recorded_by_user_id'), table_name='case_outcomes')
+    op.drop_index(op.f('ix_case_outcomes_case_id'), table_name='case_outcomes')
+    op.drop_table('case_outcomes')
+    op.drop_index(op.f('ix_ai_feedback_user_id'), table_name='ai_feedback')
+    op.drop_index(op.f('ix_ai_feedback_target_id'), table_name='ai_feedback')
+    op.drop_index(op.f('ix_ai_feedback_case_id'), table_name='ai_feedback')
+    op.drop_table('ai_feedback')
     op.drop_index(op.f('ix_user_profiles_user_id'), table_name='user_profiles')
     op.drop_table('user_profiles')
     op.drop_index(op.f('ix_knowledge_chunks_source_id'), table_name='knowledge_chunks')
