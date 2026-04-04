@@ -82,13 +82,13 @@ export function CompleteStep({ formValues }: CompleteStepProps) {
             </defs>
           </svg>
           <div className="absolute inset-0 flex items-center justify-center">
-            <span className="text-4xl font-bold tracking-tight text-ink">{displayCount}%</span>
+            <span className="text-4xl font-semibold tracking-tight text-ink">{displayCount}%</span>
           </div>
         </div>
       </Animate>
 
       <Animate animation="fade-up" delay={400} duration={700}>
-        <h2 className="mt-8 text-3xl font-bold tracking-tight text-ink md:text-4xl">
+        <h2 className="mt-8 text-3xl font-semibold tracking-tight text-ink md:text-4xl">
           You&apos;re all set!
         </h2>
       </Animate>

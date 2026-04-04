@@ -115,7 +115,7 @@ export function CaseForm({
     <Card className="p-6 md:p-7">
       <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
         <div>
-          <p className="text-sm font-semibold uppercase tracking-wider text-accent">
+          <p className="text-sm font-semibold uppercase tracking-[0.08em] text-accent">
             {mode === "create" ? "New strategy case" : "Case planning workspace"}
           </p>
           <h3 className="mt-3 text-xl font-semibold tracking-tight text-ink">
@@ -133,7 +133,7 @@ export function CaseForm({
       <form className="mt-8 space-y-8" noValidate onSubmit={handleSubmit}>
         <div className="space-y-6">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-wider text-muted">
+            <p className="text-xs font-semibold uppercase tracking-[0.08em] text-muted">
               Strategy identity
             </p>
             <div className="mt-4 grid gap-4 md:grid-cols-2">
@@ -188,7 +188,7 @@ export function CaseForm({
           </div>
 
           <div>
-            <p className="text-xs font-semibold uppercase tracking-wider text-muted">
+            <p className="text-xs font-semibold uppercase tracking-[0.08em] text-muted">
               Evaluation signals
             </p>
             <div className="mt-4 grid gap-4 md:grid-cols-2">

@@ -35,10 +35,10 @@ export function StrategyPlanCard({
     return (
       <Card className={cn("p-6", accentClasses)}>
         <div className="flex items-center justify-between gap-4">
-          <p className="text-sm font-semibold uppercase tracking-wider text-muted">
+          <p className="text-sm font-semibold uppercase tracking-[0.08em] text-muted">
             {slotLabel}
           </p>
-          <span className="rounded-full border border-line bg-white px-3 py-1 text-xs font-semibold uppercase tracking-wider text-muted">
+          <span className="rounded-full border border-line bg-white px-3 py-1 text-xs font-semibold uppercase tracking-[0.08em] text-muted">
             Insufficient signal
           </span>
         </div>
@@ -54,10 +54,10 @@ export function StrategyPlanCard({
   return (
     <Card className={cn("p-6", accentClasses)}>
       <div className="flex items-center justify-between gap-4">
-        <p className="text-sm font-semibold uppercase tracking-wider text-accent">
+        <p className="text-sm font-semibold uppercase tracking-[0.08em] text-accent">
           {plan.label}
         </p>
-        <span className="rounded-full border border-line bg-white px-3 py-1 text-xs font-semibold uppercase tracking-wider text-muted">
+        <span className="rounded-full border border-line bg-white px-3 py-1 text-xs font-semibold uppercase tracking-[0.08em] text-muted">
           Suitability {Math.round(plan.suitability_score)}/100
         </span>
       </div>
@@ -67,7 +67,7 @@ export function StrategyPlanCard({
 
       <div className="mt-5 grid gap-3 sm:grid-cols-3">
         <div className="rounded-xl border border-line bg-white px-4 py-4">
-          <p className="text-xs font-semibold uppercase tracking-wider text-muted">
+          <p className="text-xs font-semibold uppercase tracking-[0.08em] text-muted">
             Complexity
           </p>
           <p className="mt-2 text-sm font-semibold capitalize text-ink">
@@ -75,7 +75,7 @@ export function StrategyPlanCard({
           </p>
         </div>
         <div className="rounded-xl border border-line bg-white px-4 py-4">
-          <p className="text-xs font-semibold uppercase tracking-wider text-muted">
+          <p className="text-xs font-semibold uppercase tracking-[0.08em] text-muted">
             Timeline
           </p>
           <p className="mt-2 text-sm font-semibold capitalize text-ink">
@@ -83,7 +83,7 @@ export function StrategyPlanCard({
           </p>
         </div>
         <div className="rounded-xl border border-line bg-white px-4 py-4">
-          <p className="text-xs font-semibold uppercase tracking-wider text-muted">
+          <p className="text-xs font-semibold uppercase tracking-[0.08em] text-muted">
             Cost
           </p>
           <p className="mt-2 text-sm font-semibold capitalize text-ink">
@@ -93,7 +93,7 @@ export function StrategyPlanCard({
       </div>
 
       <div className="mt-5">
-        <p className="text-xs font-semibold uppercase tracking-wider text-muted">
+        <p className="text-xs font-semibold uppercase tracking-[0.08em] text-muted">
           Major risks
         </p>
         {plan.major_risks.length > 0 ? (
@@ -115,7 +115,7 @@ export function StrategyPlanCard({
       </div>
 
       <div className="mt-5 rounded-xl border border-accent/10 bg-accent/5 px-4 py-4">
-        <p className="text-xs font-semibold uppercase tracking-wider text-accent">
+        <p className="text-xs font-semibold uppercase tracking-[0.08em] text-accent">
           Next action
         </p>
         <p className="mt-2 text-sm leading-7 text-ink">{plan.next_action}</p>

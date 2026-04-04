@@ -17,6 +17,9 @@ html {
 body {
   @apply min-h-screen bg-canvas text-ink antialiased;
   font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  font-size: 15px;
+  line-height: 1.55;
+  letter-spacing: -0.01em;
 }
 
 h1,
@@ -45,7 +48,7 @@ select {
 input:-webkit-autofill,
 input:-webkit-autofill:hover,
 input:-webkit-autofill:focus {
-  -webkit-text-fill-color: #1d1d1f;
+  -webkit-text-fill-color: #111827;
   box-shadow: 0 0 0 1000px #ffffff inset;
 }
 

@@ -30,7 +30,7 @@ export function NextBestActionPanel({
   if (status === "error") {
     return (
       <Card className="border-red/20 bg-red/5 p-6">
-        <p className="text-sm font-semibold uppercase tracking-wider text-red">
+        <p className="text-sm font-semibold uppercase tracking-[0.08em] text-red">
           Next action unavailable
         </p>
         <p className="mt-3 text-sm leading-7 text-red">
@@ -55,7 +55,7 @@ export function NextBestActionPanel({
     <Card className="p-6 md:p-7">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div className="max-w-3xl">
-          <p className="text-sm font-semibold uppercase tracking-wider text-accent">
+          <p className="text-sm font-semibold uppercase tracking-[0.08em] text-accent">
             Next best action
           </p>
           <h3 className="mt-3 text-xl font-semibold tracking-tight text-ink">{action.title}</h3>
@@ -63,7 +63,7 @@ export function NextBestActionPanel({
         </div>
         <div className="grid gap-3 text-right">
           <div className="rounded-2xl border border-line bg-canvas/50 px-4 py-3">
-            <p className="text-xs font-semibold uppercase tracking-wider text-muted">
+            <p className="text-xs font-semibold uppercase tracking-[0.08em] text-muted">
               Priority
             </p>
             <p className="mt-2 text-sm font-semibold text-ink">
@@ -71,7 +71,7 @@ export function NextBestActionPanel({
             </p>
           </div>
           <div className="rounded-2xl border border-line bg-canvas/50 px-4 py-3">
-            <p className="text-xs font-semibold uppercase tracking-wider text-muted">
+            <p className="text-xs font-semibold uppercase tracking-[0.08em] text-muted">
               Timing
             </p>
             <p className="mt-2 text-sm font-semibold text-ink">
@@ -85,7 +85,7 @@ export function NextBestActionPanel({
       (missingInformation.critical.length > 0 || missingInformation.helpful.length > 0) ? (
         <div className="mt-6 grid gap-4 md:grid-cols-2">
           <div className="rounded-xl border border-red/20 bg-red/5 px-5 py-5">
-            <p className="text-xs font-semibold uppercase tracking-wider text-red">
+            <p className="text-xs font-semibold uppercase tracking-[0.08em] text-red">
               Critical missing information
             </p>
             <ul className="mt-3 space-y-2 text-sm leading-7 text-red">
@@ -97,7 +97,7 @@ export function NextBestActionPanel({
             </ul>
           </div>
           <div className="rounded-xl border border-line bg-canvas/50 px-5 py-5">
-            <p className="text-xs font-semibold uppercase tracking-wider text-muted">
+            <p className="text-xs font-semibold uppercase tracking-[0.08em] text-muted">
               Helpful missing information
             </p>
             <ul className="mt-3 space-y-2 text-sm leading-7 text-muted">

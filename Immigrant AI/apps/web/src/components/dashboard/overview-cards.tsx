@@ -18,10 +18,10 @@ type MetricCardProps = Readonly<{
 function MetricCard({ eyebrow, note, title, value }: MetricCardProps) {
   return (
     <div className="glass-card rounded-2xl p-5 transition-all duration-300 hover:shadow-soft hover:-translate-y-0.5">
-      <p className="text-xs font-semibold uppercase tracking-wider text-accent">
+      <p className="text-xs font-medium uppercase tracking-[0.08em] text-accent">
         {eyebrow}
       </p>
-      <h3 className="mt-3 text-3xl font-bold tracking-tight text-ink anim-count">{value}</h3>
+      <h3 className="mt-3 text-3xl font-semibold tracking-tight text-ink anim-count">{value}</h3>
       <p className="mt-1 text-sm font-medium text-ink">{title}</p>
       <p className="mt-2 text-xs leading-relaxed text-muted">{note}</p>
     </div>

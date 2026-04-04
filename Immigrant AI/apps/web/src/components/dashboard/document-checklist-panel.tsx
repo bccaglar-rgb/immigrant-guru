@@ -46,7 +46,7 @@ export function DocumentChecklistPanel({
   if (status === "error") {
     return (
       <Card className="border-red/20 bg-red/5 p-6">
-        <p className="text-sm font-semibold uppercase tracking-wider text-red">
+        <p className="text-sm font-semibold uppercase tracking-[0.08em] text-red">
           Checklist unavailable
         </p>
         <p className="mt-3 text-sm leading-7 text-red">
@@ -65,7 +65,7 @@ export function DocumentChecklistPanel({
 
   return (
     <Card className="p-6 md:p-7">
-      <p className="text-sm font-semibold uppercase tracking-wider text-accent">
+      <p className="text-sm font-semibold uppercase tracking-[0.08em] text-accent">
         Document checklist
       </p>
       <h3 className="mt-3 text-xl font-semibold tracking-tight text-ink">
@@ -78,7 +78,7 @@ export function DocumentChecklistPanel({
       {summary ? (
         <div className="mt-6 grid gap-4 md:grid-cols-4">
           <div className="rounded-xl border border-line bg-canvas/50 px-4 py-4">
-            <p className="text-xs font-semibold uppercase tracking-wider text-muted">
+            <p className="text-xs font-semibold uppercase tracking-[0.08em] text-muted">
               Readiness
             </p>
             <p className="mt-2 text-2xl font-semibold text-ink">
@@ -86,7 +86,7 @@ export function DocumentChecklistPanel({
             </p>
           </div>
           <div className="rounded-xl border border-line bg-canvas/50 px-4 py-4">
-            <p className="text-xs font-semibold uppercase tracking-wider text-muted">
+            <p className="text-xs font-semibold uppercase tracking-[0.08em] text-muted">
               Required
             </p>
             <p className="mt-2 text-2xl font-semibold text-ink">
@@ -94,7 +94,7 @@ export function DocumentChecklistPanel({
             </p>
           </div>
           <div className="rounded-xl border border-line bg-canvas/50 px-4 py-4">
-            <p className="text-xs font-semibold uppercase tracking-wider text-muted">
+            <p className="text-xs font-semibold uppercase tracking-[0.08em] text-muted">
               Uploaded
             </p>
             <p className="mt-2 text-2xl font-semibold text-ink">
@@ -102,7 +102,7 @@ export function DocumentChecklistPanel({
             </p>
           </div>
           <div className="rounded-xl border border-line bg-canvas/50 px-4 py-4">
-            <p className="text-xs font-semibold uppercase tracking-wider text-muted">
+            <p className="text-xs font-semibold uppercase tracking-[0.08em] text-muted">
               Missing required
             </p>
             <p className="mt-2 text-2xl font-semibold text-ink">
@@ -127,7 +127,7 @@ export function DocumentChecklistPanel({
                   </p>
                 </div>
                 <div
-                  className={`rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-wider ${getStatusClasses(item.status)}`}
+                  className={`rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-[0.08em] ${getStatusClasses(item.status)}`}
                 >
                   {formatLabel(item.status)}
                 </div>

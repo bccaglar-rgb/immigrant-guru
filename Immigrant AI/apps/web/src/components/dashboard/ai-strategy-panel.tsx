@@ -139,10 +139,10 @@ export function AIStrategyPanel({
       <Card className="overflow-hidden border-accent/10 bg-gradient-to-br from-white via-white to-accent/5 p-6 md:p-7">
         <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
           <div className="max-w-3xl">
-            <p className="text-sm font-semibold uppercase tracking-wider text-accent">
+            <p className="text-sm font-semibold uppercase tracking-[0.08em] text-accent">
               AI Strategy
             </p>
-            <h3 className="mt-3 text-2xl font-bold tracking-tight text-ink">
+            <h3 className="mt-3 text-2xl font-semibold tracking-tight text-ink">
               Decision panel for {caseRecord.target_country || "this migration case"}
             </h3>
             <p className="mt-3 text-sm leading-7 text-muted">
@@ -152,7 +152,7 @@ export function AIStrategyPanel({
           </div>
 
           <div className="rounded-xl border border-line bg-white/90 px-4 py-4 text-sm text-muted lg:max-w-[320px]">
-            <p className="text-xs font-semibold uppercase tracking-wider text-accent">
+            <p className="text-xs font-semibold uppercase tracking-[0.08em] text-accent">
               Case focus
             </p>
             <p className="mt-2 font-semibold text-ink">{caseRecord.title}</p>
@@ -204,7 +204,7 @@ export function AIStrategyPanel({
 
       {error ? (
         <Card className="border-red/20 bg-red/5 p-6">
-          <p className="text-sm font-semibold uppercase tracking-wider text-red">
+          <p className="text-sm font-semibold uppercase tracking-[0.08em] text-red">
             Strategy unavailable
           </p>
           <p className="mt-3 text-sm leading-7 text-red">{error}</p>
@@ -221,7 +221,7 @@ export function AIStrategyPanel({
 
       {staleMessage ? (
         <Card className="border-red/20 bg-red/5 p-6">
-          <p className="text-sm font-semibold uppercase tracking-wider text-red">
+          <p className="text-sm font-semibold uppercase tracking-[0.08em] text-red">
             Strategy refresh recommended
           </p>
           <p className="mt-3 text-sm leading-7 text-red">{staleMessage}</p>
@@ -243,7 +243,7 @@ export function AIStrategyPanel({
         <Card className="border-line bg-white/90 p-6 md:p-7">
           <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
             <div className="max-w-3xl">
-              <p className="text-sm font-semibold uppercase tracking-wider text-accent">
+              <p className="text-sm font-semibold uppercase tracking-[0.08em] text-accent">
                 Comparison surface
               </p>
               <h4 className="mt-3 text-xl font-semibold tracking-tight text-ink">
@@ -256,7 +256,7 @@ export function AIStrategyPanel({
               </p>
             </div>
             <div className="rounded-xl border border-line bg-canvas/50 px-4 py-4 text-sm text-muted lg:max-w-[300px]">
-              <p className="text-xs font-semibold uppercase tracking-wider text-accent">
+              <p className="text-xs font-semibold uppercase tracking-[0.08em] text-accent">
                 Recommended first pass
               </p>
               <p className="mt-2 leading-7">
@@ -284,7 +284,7 @@ export function AIStrategyPanel({
           <Card className="p-6 md:p-7">
             <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
               <div className="max-w-4xl">
-                <p className="text-sm font-semibold uppercase tracking-wider text-accent">
+                <p className="text-sm font-semibold uppercase tracking-[0.08em] text-accent">
                   Strategy summary
                 </p>
                 <h4 className="mt-3 text-xl font-semibold tracking-tight text-ink">
@@ -301,23 +301,23 @@ export function AIStrategyPanel({
                     strategy.confidence_label
                   )}`}
                 >
-                  <p className="text-xs font-semibold uppercase tracking-wider">
+                  <p className="text-xs font-semibold uppercase tracking-[0.08em]">
                     Confidence
                   </p>
                   <p className="mt-2 text-2xl font-semibold">
                     {formatConfidenceLabel(strategy.confidence_label)}
                   </p>
-                  <p className="mt-2 text-xs uppercase tracking-wider">
+                  <p className="mt-2 text-xs uppercase tracking-[0.08em]">
                     Score {Math.round(strategy.confidence_score)}/100
                   </p>
                 </div>
                 <div className="rounded-xl border border-line bg-canvas/50 px-4 py-4 text-sm text-muted">
-                  <p className="text-xs font-semibold uppercase tracking-wider text-accent">
+                  <p className="text-xs font-semibold uppercase tracking-[0.08em] text-accent">
                     Model context
                   </p>
                   <p className="mt-2 font-semibold text-ink">{strategy.model}</p>
                   <p className="mt-1">{strategy.provider}</p>
-                  <p className="mt-3 text-xs uppercase tracking-wider text-accent">
+                  <p className="mt-3 text-xs uppercase tracking-[0.08em] text-accent">
                     {strategy.grounding_used
                       ? `Grounded via ${strategy.grounding_backend || "knowledge base"}`
                       : "Ungrounded pass"}
@@ -328,12 +328,12 @@ export function AIStrategyPanel({
 
             <div className="mt-6 grid gap-4 xl:grid-cols-[1.1fr_0.9fr]">
               <div className="rounded-xl border border-line bg-canvas/50 px-5 py-5">
-                <p className="text-xs font-semibold uppercase tracking-wider text-muted">
+                <p className="text-xs font-semibold uppercase tracking-[0.08em] text-muted">
                   Missing information
                 </p>
                 <div className="mt-3 space-y-4">
                   <div>
-                    <p className="text-xs font-semibold uppercase tracking-wider text-red">
+                    <p className="text-xs font-semibold uppercase tracking-[0.08em] text-red">
                       Critical
                     </p>
                     {strategy.missing_information_by_severity.critical.length > 0 ? (
@@ -354,7 +354,7 @@ export function AIStrategyPanel({
                     )}
                   </div>
                   <div>
-                    <p className="text-xs font-semibold uppercase tracking-wider text-accent">
+                    <p className="text-xs font-semibold uppercase tracking-[0.08em] text-accent">
                       Helpful
                     </p>
                     {strategy.missing_information_by_severity.helpful.length > 0 ? (
@@ -378,7 +378,7 @@ export function AIStrategyPanel({
               </div>
 
               <div className="rounded-xl border border-line bg-canvas/50 px-5 py-5">
-                <p className="text-xs font-semibold uppercase tracking-wider text-muted">
+                <p className="text-xs font-semibold uppercase tracking-[0.08em] text-muted">
                   Next steps
                 </p>
                 {strategy.next_steps.length > 0 ? (
@@ -402,7 +402,7 @@ export function AIStrategyPanel({
 
             <div className="mt-4 grid gap-4 xl:grid-cols-[1fr_1fr]">
               <div className="rounded-xl border border-line bg-canvas/50 px-5 py-5">
-                <p className="text-xs font-semibold uppercase tracking-wider text-muted">
+                <p className="text-xs font-semibold uppercase tracking-[0.08em] text-muted">
                   Confidence drivers
                 </p>
                 {strategy.confidence_reasons.length > 0 ? (
@@ -424,7 +424,7 @@ export function AIStrategyPanel({
               </div>
 
               <div className="rounded-xl border border-line bg-canvas/50 px-5 py-5">
-                <p className="text-xs font-semibold uppercase tracking-wider text-muted">
+                <p className="text-xs font-semibold uppercase tracking-[0.08em] text-muted">
                   Source attribution
                 </p>
                 {strategy.sources_used.length > 0 ? (
@@ -435,7 +435,7 @@ export function AIStrategyPanel({
                         key={source.source_id}
                       >
                         <p className="font-semibold text-ink">{source.source_name}</p>
-                        <p className="mt-1 text-xs uppercase tracking-wider text-muted">
+                        <p className="mt-1 text-xs uppercase tracking-[0.08em] text-muted">
                           {source.source_type.replaceAll("_", " ")}
                           {source.country ? ` · ${source.country}` : ""}
                         </p>

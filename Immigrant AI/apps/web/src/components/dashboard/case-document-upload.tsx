@@ -152,7 +152,7 @@ export function CaseDocumentUpload({
 
         <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
           <div className="max-w-2xl">
-            <p className="text-sm font-semibold uppercase tracking-wider text-accent">
+            <p className="text-sm font-semibold uppercase tracking-[0.08em] text-accent">
               Case files
             </p>
             <h4 className="mt-3 text-xl font-semibold tracking-tight text-ink">
@@ -182,7 +182,7 @@ export function CaseDocumentUpload({
           <p className="mt-2 text-sm text-muted">
             or use the file picker to attach one file at a time
           </p>
-          <p className="mt-4 text-xs font-medium uppercase tracking-wider text-muted">
+          <p className="mt-4 text-xs font-medium uppercase tracking-[0.08em] text-muted">
             PDF, PNG, JPG, WEBP, DOC, DOCX up to 25 MB
           </p>
         </div>
@@ -217,7 +217,7 @@ export function CaseDocumentUpload({
 
       {selectedFile ? (
         <div className="rounded-xl border border-line bg-white/80 px-4 py-4 text-sm text-muted">
-          <p className="text-xs font-semibold uppercase tracking-wider text-accent">
+          <p className="text-xs font-semibold uppercase tracking-[0.08em] text-accent">
             Selected file
           </p>
           <p className="mt-2 font-semibold text-ink">{selectedFile.name}</p>

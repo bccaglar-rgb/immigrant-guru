@@ -366,7 +366,7 @@ export function DashboardCaseDetailPage({
             <Card className="p-6">
               <div className="flex items-start justify-between gap-4">
                 <div>
-                  <p className="text-sm font-semibold uppercase tracking-wider text-accent">
+                  <p className="text-sm font-semibold uppercase tracking-[0.08em] text-accent">
                     Case snapshot
                   </p>
                   <h3 className="mt-3 text-xl font-semibold tracking-tight text-ink">
@@ -378,7 +378,7 @@ export function DashboardCaseDetailPage({
 
               <dl className="mt-6 space-y-5">
                 <div>
-                  <dt className="text-xs font-semibold uppercase tracking-wider text-muted">
+                  <dt className="text-xs font-semibold uppercase tracking-[0.08em] text-muted">
                     Target country
                   </dt>
                   <dd className="mt-2 text-sm text-ink">
@@ -386,7 +386,7 @@ export function DashboardCaseDetailPage({
                   </dd>
                 </div>
                 <div>
-                  <dt className="text-xs font-semibold uppercase tracking-wider text-muted">
+                  <dt className="text-xs font-semibold uppercase tracking-[0.08em] text-muted">
                     Pathway
                   </dt>
                   <dd className="mt-2 text-sm text-ink">
@@ -394,7 +394,7 @@ export function DashboardCaseDetailPage({
                   </dd>
                 </div>
                 <div>
-                  <dt className="text-xs font-semibold uppercase tracking-wider text-muted">
+                  <dt className="text-xs font-semibold uppercase tracking-[0.08em] text-muted">
                     Stage
                   </dt>
                   <dd className="mt-2 text-sm text-ink">
@@ -403,7 +403,7 @@ export function DashboardCaseDetailPage({
                 </div>
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div className="rounded-xl border border-line bg-canvas/50 px-4 py-4">
-                    <p className="text-xs font-semibold uppercase tracking-wider text-muted">
+                    <p className="text-xs font-semibold uppercase tracking-[0.08em] text-muted">
                       Score
                     </p>
                     <p className="mt-2 text-2xl font-semibold text-ink">
@@ -411,7 +411,7 @@ export function DashboardCaseDetailPage({
                     </p>
                   </div>
                   <div className="rounded-xl border border-line bg-canvas/50 px-4 py-4">
-                    <p className="text-xs font-semibold uppercase tracking-wider text-muted">
+                    <p className="text-xs font-semibold uppercase tracking-[0.08em] text-muted">
                       Risk
                     </p>
                     <p className="mt-2 text-2xl font-semibold text-ink">
@@ -420,7 +420,7 @@ export function DashboardCaseDetailPage({
                   </div>
                 </div>
                 <div>
-                  <dt className="text-xs font-semibold uppercase tracking-wider text-muted">
+                  <dt className="text-xs font-semibold uppercase tracking-[0.08em] text-muted">
                     Last updated
                   </dt>
                   <dd className="mt-2 text-sm text-ink">
@@ -431,7 +431,7 @@ export function DashboardCaseDetailPage({
             </Card>
 
             <Card className="p-6">
-              <p className="text-sm font-semibold uppercase tracking-wider text-red">
+              <p className="text-sm font-semibold uppercase tracking-[0.08em] text-red">
                 Delete case
               </p>
               <p className="mt-3 text-sm leading-7 text-muted">

@@ -15,7 +15,7 @@ export function DashboardErrorState({
 }: DashboardErrorStateProps) {
   return (
     <div className="glass-card rounded-2xl p-8">
-      <p className="text-xs font-semibold uppercase tracking-wider text-red">
+      <p className="text-xs font-semibold uppercase tracking-[0.08em] text-red">
         {eyebrow}
       </p>
       <h3 className="mt-2 text-xl font-semibold tracking-tight text-ink">

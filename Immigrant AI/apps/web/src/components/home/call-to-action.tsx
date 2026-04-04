@@ -16,12 +16,12 @@ export function CallToAction() {
 
             <div className="relative">
               <Animate animation="fade-in" delay={200} duration={600}>
-                <p className="text-sm font-semibold uppercase tracking-[0.2em] text-accent">
+                <p className="text-sm font-semibold uppercase tracking-[0.08em] text-accent">
                   Get Started
                 </p>
               </Animate>
               <Animate animation="fade-up" delay={350} duration={800}>
-                <h2 className="mx-auto mt-4 max-w-3xl text-4xl font-bold tracking-tight text-white md:text-5xl">
+                <h2 className="mx-auto mt-4 max-w-3xl text-4xl font-semibold tracking-tight text-white md:text-5xl">
                   Build your immigration profile and start comparing pathways.
                 </h2>
               </Animate>
@@ -43,7 +43,7 @@ export function CallToAction() {
                     Create free account
                   </Link>
                   <Link
-                    className="inline-flex h-12 items-center justify-center rounded-full px-7 text-[15px] font-semibold text-white/80 ring-1 ring-inset ring-white/20 transition-all hover:bg-white/5 hover:text-white"
+                    className="inline-flex h-12 items-center justify-center rounded-full px-7 text-base font-semibold text-white/80 ring-1 ring-inset ring-white/20 transition-all hover:bg-white/5 hover:text-white"
                     href="/sign-in"
                   >
                     Sign in

@@ -65,7 +65,7 @@ export function DashboardSidebar({ pathname }: DashboardSidebarProps) {
                   )}
                 >
                   <p className={cn(
-                    "text-sm font-semibold",
+                    "text-base font-semibold",
                     active ? "text-white" : "text-ink"
                   )}>
                     {item.label}

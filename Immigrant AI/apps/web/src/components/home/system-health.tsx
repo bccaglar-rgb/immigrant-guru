@@ -69,7 +69,7 @@ export async function SystemHealth() {
               className="rounded-xl border border-line bg-canvas/50 p-4"
               key={item.label}
             >
-              <p className="text-xs font-semibold uppercase tracking-wider text-muted">
+              <p className="text-xs font-semibold uppercase tracking-[0.08em] text-muted">
                 {item.label}
               </p>
               <p className="mt-2 text-sm font-medium text-ink">{item.value}</p>

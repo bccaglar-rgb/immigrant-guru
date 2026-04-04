@@ -17,8 +17,8 @@ export function PersonalStep({ formValues, onChange }: PersonalStepProps) {
     <div className="space-y-8">
       <Animate animation="fade-up" duration={600}>
         <div className="text-center">
-          <p className="text-sm font-semibold uppercase tracking-wider text-accent">Step 1 of 4</p>
-          <h2 className="mt-2 text-3xl font-bold tracking-tight text-ink">
+          <p className="text-sm font-semibold uppercase tracking-[0.08em] text-accent">Step 1 of 4</p>
+          <h2 className="mt-2 text-3xl font-semibold tracking-tight text-ink">
             Who are you?
           </h2>
           <p className="mt-2 text-muted">Tell us a bit about yourself.</p>
@@ -46,7 +46,7 @@ export function PersonalStep({ formValues, onChange }: PersonalStepProps) {
 
         <Animate animation="fade-up" delay={300} duration={500}>
           <div className="space-y-2">
-            <p className="text-sm font-medium text-ink/80">Relationship status</p>
+            <p className="text-sm font-medium text-ink">Relationship status</p>
             <PillSelector
               options={maritalStatusOptions}
               value={formValues.marital_status}

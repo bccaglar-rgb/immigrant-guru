@@ -11,7 +11,7 @@ export function AiStrategyTeaser({ overview }: AiStrategyTeaserProps) {
   return (
     <Animate animation="fade-up" delay={300} duration={700}>
       <div className="glass-card rounded-2xl p-6">
-        <p className="text-xs font-semibold uppercase tracking-wider text-accent">
+        <p className="text-xs font-semibold uppercase tracking-[0.08em] text-accent">
           AI Strategy
         </p>
         <h3 className="mt-2 text-xl font-semibold tracking-tight text-ink">

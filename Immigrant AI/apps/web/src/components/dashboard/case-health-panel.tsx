@@ -41,7 +41,7 @@ export function CaseHealthPanel({
   if (status === "error") {
     return (
       <Card className="border-red/20 bg-red/5 p-6">
-        <p className="text-sm font-semibold uppercase tracking-wider text-red">
+        <p className="text-sm font-semibold uppercase tracking-[0.08em] text-red">
           Case health unavailable
         </p>
         <p className="mt-3 text-sm leading-7 text-red">
@@ -66,10 +66,10 @@ export function CaseHealthPanel({
     <Card className="p-6 md:p-7">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div className="max-w-3xl">
-          <p className="text-sm font-semibold uppercase tracking-wider text-accent">
+          <p className="text-sm font-semibold uppercase tracking-[0.08em] text-accent">
             Case health
           </p>
-          <h3 className="mt-3 text-2xl font-bold tracking-tight text-ink">
+          <h3 className="mt-3 text-2xl font-semibold tracking-tight text-ink">
             {Math.round(health.health_score)}/100
           </h3>
           <p className="mt-3 text-sm leading-7 text-muted">
@@ -77,14 +77,14 @@ export function CaseHealthPanel({
           </p>
         </div>
         <div
-          className={`rounded-full border px-4 py-2 text-xs font-semibold uppercase tracking-wider ${getStatusClasses(health.health_status)}`}
+          className={`rounded-full border px-4 py-2 text-xs font-semibold uppercase tracking-[0.08em] ${getStatusClasses(health.health_status)}`}
         >
           {getStatusLabel(health.health_status)}
         </div>
       </div>
 
       <div className="mt-6">
-        <p className="text-xs font-semibold uppercase tracking-wider text-muted">
+        <p className="text-xs font-semibold uppercase tracking-[0.08em] text-muted">
           Main issues
         </p>
         {health.issues.length > 0 ? (

@@ -28,10 +28,10 @@ export function AuthShell({
           <div className="grid w-full gap-12 lg:grid-cols-2 lg:items-center">
             <Animate animation="slide-left" duration={800}>
               <div className="max-w-lg space-y-5">
-                <p className="text-sm font-semibold uppercase tracking-[0.2em] text-accent">
+                <p className="text-sm font-semibold uppercase tracking-[0.08em] text-accent">
                   {eyebrow}
                 </p>
-                <h1 className="text-4xl font-bold tracking-tight text-ink md:text-5xl">
+                <h1 className="text-4xl font-semibold tracking-tight text-ink md:text-5xl">
                   {title}
                 </h1>
                 <p className="text-lg leading-relaxed text-muted">{description}</p>

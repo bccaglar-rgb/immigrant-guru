@@ -55,7 +55,7 @@ export function CaseDocumentList({
     <Card className="p-6 md:p-7">
       <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
         <div>
-          <p className="text-sm font-semibold uppercase tracking-wider text-accent">
+          <p className="text-sm font-semibold uppercase tracking-[0.08em] text-accent">
             Document registry
           </p>
           <h4 className="mt-3 text-xl font-semibold tracking-tight text-ink">
@@ -69,7 +69,7 @@ export function CaseDocumentList({
 
       {errorMessage ? (
         <div className="mt-6 rounded-xl border border-red/20 bg-red/5 px-4 py-4">
-          <p className="text-sm font-semibold uppercase tracking-wider text-red">
+          <p className="text-sm font-semibold uppercase tracking-[0.08em] text-red">
             Document list unavailable
           </p>
           <p className="mt-3 text-sm leading-7 text-red">{errorMessage}</p>
@@ -89,7 +89,7 @@ export function CaseDocumentList({
 
       {!isLoading && !errorMessage && documents.length === 0 ? (
         <div className="mt-6 rounded-2xl border border-dashed border-line bg-canvas/50 px-5 py-10">
-          <p className="text-sm font-semibold uppercase tracking-wider text-accent">
+          <p className="text-sm font-semibold uppercase tracking-[0.08em] text-accent">
             No documents yet
           </p>
           <h5 className="mt-3 text-xl font-semibold tracking-tight text-ink">
@@ -112,7 +112,7 @@ export function CaseDocumentList({
             >
               <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                 <div className="min-w-0">
-                  <p className="text-xs font-semibold uppercase tracking-wider text-accent">
+                  <p className="text-xs font-semibold uppercase tracking-[0.08em] text-accent">
                     {document.document_type || "Unclassified case file"}
                   </p>
                   <h5 className="mt-3 truncate text-lg font-semibold text-ink">
@@ -125,7 +125,7 @@ export function CaseDocumentList({
 
                 <div
                   className={cn(
-                    "inline-flex rounded-full border px-3 py-2 text-xs font-semibold uppercase tracking-wider",
+                    "inline-flex rounded-full border px-3 py-2 text-xs font-semibold uppercase tracking-[0.08em]",
                     statusClasses(document.upload_status)
                   )}
                 >
@@ -135,13 +135,13 @@ export function CaseDocumentList({
 
               <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
                 <div className="rounded-xl border border-line bg-white px-4 py-4">
-                  <p className="text-xs font-semibold uppercase tracking-wider text-muted">
+                  <p className="text-xs font-semibold uppercase tracking-[0.08em] text-muted">
                     Uploaded
                   </p>
                   <p className="mt-2 text-sm text-ink">{formatDate(document.created_at)}</p>
                 </div>
                 <div className="rounded-xl border border-line bg-white px-4 py-4">
-                  <p className="text-xs font-semibold uppercase tracking-wider text-muted">
+                  <p className="text-xs font-semibold uppercase tracking-[0.08em] text-muted">
                     Processed
                   </p>
                   <p className="mt-2 truncate text-sm text-ink">
@@ -149,7 +149,7 @@ export function CaseDocumentList({
                   </p>
                 </div>
                 <div className="rounded-xl border border-line bg-white px-4 py-4">
-                  <p className="text-xs font-semibold uppercase tracking-wider text-muted">
+                  <p className="text-xs font-semibold uppercase tracking-[0.08em] text-muted">
                     Processing
                   </p>
                   <p className="mt-2 truncate text-sm text-ink">

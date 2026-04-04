@@ -156,7 +156,7 @@ function MetricCard({
 
   return (
     <Card className="p-5">
-      <p className="text-xs font-semibold uppercase tracking-wider text-muted">
+      <p className="text-xs font-semibold uppercase tracking-[0.08em] text-muted">
         {eyebrow}
       </p>
       <p className={`mt-3 text-xl font-semibold tracking-tight ${valueClassName}`}>{value}</p>
@@ -175,7 +175,7 @@ function SectionIntro({
 }>) {
   return (
     <div>
-      <p className="text-sm font-semibold uppercase tracking-wider text-accent">
+      <p className="text-sm font-semibold uppercase tracking-[0.08em] text-accent">
         {eyebrow}
       </p>
       <h3 className="mt-3 text-xl font-semibold tracking-tight text-ink">{title}</h3>
@@ -214,7 +214,7 @@ function EmptyState({
 }>) {
   return (
     <Card className="p-6">
-      <p className="text-sm font-semibold uppercase tracking-wider text-muted">
+      <p className="text-sm font-semibold uppercase tracking-[0.08em] text-muted">
         {title}
       </p>
       <p className="mt-3 text-sm leading-7 text-muted">{description}</p>
@@ -577,7 +577,7 @@ export function DashboardAdminPage() {
                 <p className="text-sm font-semibold text-ink">{user?.email ?? "Unknown session"}</p>
                 <p className="mt-2 text-sm leading-7 text-muted">{adminSummary}</p>
               </div>
-              <div className="rounded-full border border-line bg-canvas/50 px-4 py-2 text-xs font-semibold uppercase tracking-wider text-accent">
+              <div className="rounded-full border border-line bg-canvas/50 px-4 py-2 text-xs font-semibold uppercase tracking-[0.08em] text-accent">
                 {adminAccess}
               </div>
             </div>
@@ -691,7 +691,7 @@ export function DashboardAdminPage() {
 
             {searchStatus === "ready" && searchResults ? (
               <div className="mt-6 space-y-4">
-                <p className="text-sm font-semibold uppercase tracking-wider text-muted">
+                <p className="text-sm font-semibold uppercase tracking-[0.08em] text-muted">
                   {searchResults.total_results} results via {searchResults.backend}
                 </p>
                 {searchResults.results.length > 0 ? (
@@ -699,7 +699,7 @@ export function DashboardAdminPage() {
                     <Card className="p-5" key={result.chunk.id}>
                       <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
                         <div>
-                          <p className="text-sm font-semibold uppercase tracking-wider text-accent">
+                          <p className="text-sm font-semibold uppercase tracking-[0.08em] text-accent">
                             {result.source.source_name}
                           </p>
                           <h4 className="mt-2 text-lg font-semibold text-ink">
@@ -751,7 +751,7 @@ export function DashboardAdminPage() {
                                 : "Profile name not set"}
                             </p>
                           </div>
-                          <div className="rounded-full border border-line bg-canvas/50 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-accent">
+                          <div className="rounded-full border border-line bg-canvas/50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.08em] text-accent">
                             {entry.status}
                           </div>
                         </div>

@@ -27,12 +27,12 @@ export function SectionContainer({
           <Animate animation="fade-up" duration={700}>
             <div className="mb-12 max-w-3xl space-y-4 text-center mx-auto">
               {eyebrow ? (
-                <p className="text-sm font-semibold uppercase tracking-[0.2em] text-accent">
+                <p className="text-sm font-semibold uppercase tracking-[0.08em] text-accent">
                   {eyebrow}
                 </p>
               ) : null}
               {title ? (
-                <h2 className="text-4xl font-bold tracking-tight text-ink md:text-5xl">
+                <h2 className="text-4xl font-semibold tracking-tight text-ink md:text-5xl">
                   {title}
                 </h2>
               ) : null}

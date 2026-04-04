@@ -21,7 +21,7 @@ export default function ErrorPage({ error, reset }: ErrorPageProps) {
       <section className="flex flex-1 items-center justify-center py-24">
         <div className="text-center">
           <Animate animation="scale-in" duration={600}>
-            <p className="text-sm font-semibold uppercase tracking-wider text-red">
+            <p className="text-sm font-semibold uppercase tracking-[0.08em] text-red">
               Error
             </p>
             <h1 className="mt-3 text-2xl font-semibold tracking-tight text-ink">

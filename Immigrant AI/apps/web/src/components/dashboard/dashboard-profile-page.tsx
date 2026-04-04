@@ -134,7 +134,7 @@ function ProfileSection({
   return (
     <Card className="p-6 md:p-7">
       <div className="max-w-3xl">
-        <p className="text-sm font-semibold uppercase tracking-wider text-accent">
+        <p className="text-sm font-semibold uppercase tracking-[0.08em] text-accent">
           {title}
         </p>
         <p className="mt-3 text-sm leading-7 text-muted">{description}</p>
@@ -420,10 +420,10 @@ export function DashboardProfilePage() {
 
           <div className="space-y-6 xl:sticky xl:top-6 xl:self-start">
             <Card className="p-6">
-              <p className="text-sm font-semibold uppercase tracking-wider text-accent">
+              <p className="text-sm font-semibold uppercase tracking-[0.08em] text-accent">
                 Profile readiness
               </p>
-              <h3 className="mt-3 text-2xl font-bold tracking-tight text-ink">
+              <h3 className="mt-3 text-2xl font-semibold tracking-tight text-ink">
                 {completion.percent}%
               </h3>
               <p className="mt-3 text-sm leading-7 text-muted">
@@ -446,7 +446,7 @@ export function DashboardProfilePage() {
               </Button>
 
               <div className="mt-6 rounded-xl border border-line bg-canvas/50 px-4 py-4">
-                <p className="text-xs font-semibold uppercase tracking-wider text-muted">
+                <p className="text-xs font-semibold uppercase tracking-[0.08em] text-muted">
                   Last synced
                 </p>
                 <p className="mt-2 text-sm text-ink">
@@ -456,7 +456,7 @@ export function DashboardProfilePage() {
             </Card>
 
             <Card className="p-6">
-              <p className="text-sm font-semibold uppercase tracking-wider text-accent">
+              <p className="text-sm font-semibold uppercase tracking-[0.08em] text-accent">
                 Recommended next inputs
               </p>
               {completion.missing.length > 0 ? (

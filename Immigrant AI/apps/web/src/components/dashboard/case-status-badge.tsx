@@ -23,7 +23,7 @@ export function CaseStatusBadge({ status }: CaseStatusBadgeProps) {
   return (
     <span
       className={cn(
-        "inline-flex rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-wider",
+        "inline-flex rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-[0.08em]",
         statusStyles[status]
       )}
     >

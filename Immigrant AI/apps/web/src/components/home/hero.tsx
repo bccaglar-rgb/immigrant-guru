@@ -40,7 +40,7 @@ export function Hero({ config }: HeroProps) {
           </Animate>
 
           <Animate animation="fade-up" delay={150} duration={800}>
-            <h1 className="mt-6 text-5xl font-bold tracking-tight text-ink md:text-7xl lg:text-8xl">
+            <h1 className="mt-6 text-5xl font-semibold tracking-tight text-ink md:text-7xl lg:text-8xl">
               Navigate immigration
               <br />
               <span className="text-gradient">with clarity.</span>

@@ -13,8 +13,8 @@ const buttonStyles = {
 } as const;
 
 const sizeStyles = {
-  md: "h-11 px-5 text-sm",
-  lg: "h-12 px-7 text-[15px]"
+  md: "h-11 px-5 text-sm font-semibold",
+  lg: "h-12 px-7 text-base font-semibold"
 } as const;
 
 export type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
@@ -30,7 +30,7 @@ export const buttonVariants = ({
   variant = "primary"
 }: Pick<ButtonProps, "className" | "fullWidth" | "size" | "variant"> = {}) =>
   cn(
-    "inline-flex items-center justify-center rounded-full font-semibold transition-all duration-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-not-allowed",
+    "inline-flex items-center justify-center rounded-full transition-all duration-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-not-allowed",
     buttonStyles[variant],
     sizeStyles[size],
     fullWidth ? "w-full" : "",

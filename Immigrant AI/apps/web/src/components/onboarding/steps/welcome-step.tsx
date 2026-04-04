@@ -19,7 +19,7 @@ export function WelcomeStep({ firstName, onNext }: WelcomeStepProps) {
       </Animate>
 
       <Animate animation="fade-up" delay={300} duration={800}>
-        <h1 className="mt-8 text-4xl font-bold tracking-tight text-ink md:text-5xl">
+        <h1 className="mt-8 text-4xl font-semibold tracking-tight text-ink md:text-5xl">
           Hey {displayName},
           <br />
           <span className="text-gradient">welcome aboard!</span>

@@ -4,11 +4,26 @@ const config: Config = {
   content: ["./src/**/*.{js,ts,jsx,tsx,mdx}"],
   theme: {
     extend: {
+      fontSize: {
+        "xs": ["0.8125rem", { lineHeight: "1.45" }],        // 13px
+        "sm": ["0.875rem", { lineHeight: "1.5" }],           // 14px
+        "base": ["0.9375rem", { lineHeight: "1.55" }],       // 15px
+        "md": ["1rem", { lineHeight: "1.5" }],               // 16px
+        "lg": ["1.125rem", { lineHeight: "1.5" }],           // 18px
+        "xl": ["1.25rem", { lineHeight: "1.4" }],            // 20px
+        "2xl": ["1.5rem", { lineHeight: "1.35" }],           // 24px
+        "3xl": ["1.875rem", { lineHeight: "1.3" }],          // 30px
+        "4xl": ["2.25rem", { lineHeight: "1.2" }],           // 36px
+        "5xl": ["3rem", { lineHeight: "1.15" }],             // 48px
+        "6xl": ["3.75rem", { lineHeight: "1.1" }],           // 60px
+        "7xl": ["4.5rem", { lineHeight: "1.05" }],           // 72px
+        "8xl": ["6rem", { lineHeight: "1" }],                // 96px
+      },
       colors: {
         canvas: "#f5f5f7",
         surface: "#ffffff",
-        ink: "#1d1d1f",
-        muted: "#86868b",
+        ink: "#111827",
+        muted: "#6b7280",
         line: "rgba(0,0,0,0.08)",
         accent: "#0071e3",
         "accent-hover": "#0077ed",

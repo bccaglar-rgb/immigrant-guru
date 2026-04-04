@@ -35,8 +35,8 @@ export function BackgroundStep({ formValues, onChange }: BackgroundStepProps) {
     <div className="space-y-8">
       <Animate animation="fade-up" duration={600}>
         <div className="text-center">
-          <p className="text-sm font-semibold uppercase tracking-wider text-accent">Step 3 of 4</p>
-          <h2 className="mt-2 text-3xl font-bold tracking-tight text-ink">
+          <p className="text-sm font-semibold uppercase tracking-[0.08em] text-accent">Step 3 of 4</p>
+          <h2 className="mt-2 text-3xl font-semibold tracking-tight text-ink">
             Your background
           </h2>
           <p className="mt-2 text-muted">Professional experience and finances.</p>
@@ -64,7 +64,7 @@ export function BackgroundStep({ formValues, onChange }: BackgroundStepProps) {
 
         <Animate animation="fade-up" delay={300} duration={500}>
           <div className="space-y-2">
-            <p className="text-sm font-medium text-ink/80">Education level</p>
+            <p className="text-sm font-medium text-ink">Education level</p>
             <PillSelector
               options={educationDisplay}
               value={formValues.education_level}
@@ -76,7 +76,7 @@ export function BackgroundStep({ formValues, onChange }: BackgroundStepProps) {
 
         <Animate animation="fade-up" delay={400} duration={500}>
           <div className="space-y-2">
-            <p className="text-sm font-medium text-ink/80">English proficiency</p>
+            <p className="text-sm font-medium text-ink">English proficiency</p>
             <PillSelector
               options={englishDisplay}
               value={formValues.english_level}

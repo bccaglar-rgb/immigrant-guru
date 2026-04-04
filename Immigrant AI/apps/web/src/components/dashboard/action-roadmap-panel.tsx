@@ -27,7 +27,7 @@ export function ActionRoadmapPanel({
   if (status === "error") {
     return (
       <Card className="border-red/20 bg-red/5 p-6">
-        <p className="text-sm font-semibold uppercase tracking-wider text-red">
+        <p className="text-sm font-semibold uppercase tracking-[0.08em] text-red">
           Roadmap unavailable
         </p>
         <p className="mt-3 text-sm leading-7 text-red">
@@ -53,7 +53,7 @@ export function ActionRoadmapPanel({
 
   return (
     <Card className="p-6 md:p-7">
-      <p className="text-sm font-semibold uppercase tracking-wider text-accent">
+      <p className="text-sm font-semibold uppercase tracking-[0.08em] text-accent">
         Action roadmap
       </p>
       <h3 className="mt-3 text-xl font-semibold tracking-tight text-ink">
@@ -67,7 +67,7 @@ export function ActionRoadmapPanel({
         <div className="mt-6 space-y-6">
           {grouped.map((group) => (
             <div key={group.timingCategory}>
-              <p className="text-xs font-semibold uppercase tracking-wider text-muted">
+              <p className="text-xs font-semibold uppercase tracking-[0.08em] text-muted">
                 {formatLabel(group.timingCategory)}
               </p>
               <div className="mt-3 grid gap-4">
@@ -83,7 +83,7 @@ export function ActionRoadmapPanel({
                           {item.description}
                         </p>
                       </div>
-                      <div className="rounded-full border border-line bg-white px-3 py-1 text-xs font-semibold uppercase tracking-wider text-accent">
+                      <div className="rounded-full border border-line bg-white px-3 py-1 text-xs font-semibold uppercase tracking-[0.08em] text-accent">
                         {formatLabel(item.priority)}
                       </div>
                     </div>

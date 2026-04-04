@@ -41,10 +41,10 @@ export function DashboardTopbar({
       <div className="glass-card rounded-2xl p-6">
         <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
           <div>
-            <p className="text-sm font-semibold uppercase tracking-wider text-accent">
+            <p className="text-xs font-medium uppercase tracking-[0.08em] text-accent">
               {title}
             </p>
-            <h1 className="mt-2 text-3xl font-bold tracking-tight text-ink">
+            <h1 className="mt-2 text-3xl font-semibold tracking-tight text-ink">
               Welcome back, {getDisplayName(user)}
             </h1>
             <p className="mt-2 text-sm leading-relaxed text-muted">
@@ -55,7 +55,7 @@ export function DashboardTopbar({
           <div className="flex items-center gap-3">
             <div className="rounded-xl border border-line bg-canvas/60 px-4 py-2.5 text-right">
               <p className="text-xs text-muted">{user.email}</p>
-              <p className="mt-0.5 text-xs text-muted/60">
+              <p className="mt-0.5 text-xs text-muted">
                 Session: {tokenMinutes}m
               </p>
             </div>

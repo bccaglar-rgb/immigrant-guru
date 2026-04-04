@@ -30,8 +30,8 @@ export function GoalsStep({ formValues, onChange }: GoalsStepProps) {
     <div className="space-y-8">
       <Animate animation="fade-up" duration={600}>
         <div className="text-center">
-          <p className="text-sm font-semibold uppercase tracking-wider text-accent">Step 2 of 4</p>
-          <h2 className="mt-2 text-3xl font-bold tracking-tight text-ink">
+          <p className="text-sm font-semibold uppercase tracking-[0.08em] text-accent">Step 2 of 4</p>
+          <h2 className="mt-2 text-3xl font-semibold tracking-tight text-ink">
             Where do you want to go?
           </h2>
           <p className="mt-2 text-muted">Your dream destination and timeline.</p>
@@ -50,7 +50,7 @@ export function GoalsStep({ formValues, onChange }: GoalsStepProps) {
 
         <Animate animation="fade-up" delay={200} duration={500}>
           <div className="space-y-2">
-            <p className="text-sm font-medium text-ink/80">When do you want to move?</p>
+            <p className="text-sm font-medium text-ink">When do you want to move?</p>
             <PillSelector
               options={timelineDisplayOptions}
               value={formValues.relocation_timeline}
@@ -62,7 +62,7 @@ export function GoalsStep({ formValues, onChange }: GoalsStepProps) {
 
         <Animate animation="fade-up" delay={300} duration={500}>
           <div className="space-y-2">
-            <p className="text-sm font-medium text-ink/80">Have you had a visa refusal before?</p>
+            <p className="text-sm font-medium text-ink">Have you had a visa refusal before?</p>
             <PillSelector
               options={yesNoPills}
               value={formValues.prior_visa_refusal_flag}
@@ -73,7 +73,7 @@ export function GoalsStep({ formValues, onChange }: GoalsStepProps) {
 
         <Animate animation="fade-up" delay={400} duration={500}>
           <div className="space-y-2">
-            <p className="text-sm font-medium text-ink/80">Any criminal record?</p>
+            <p className="text-sm font-medium text-ink">Any criminal record?</p>
             <PillSelector
               options={yesNoPills}
               value={formValues.criminal_record_flag}

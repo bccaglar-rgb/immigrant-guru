@@ -27,7 +27,7 @@ export function CaseScorePanel({
   if (status === "error") {
     return (
       <Card className="border-red/20 bg-red/5 p-6">
-        <p className="text-sm font-semibold uppercase tracking-wider text-red">
+        <p className="text-sm font-semibold uppercase tracking-[0.08em] text-red">
           Score unavailable
         </p>
         <p className="mt-3 text-sm leading-7 text-red">
@@ -47,7 +47,7 @@ export function CaseScorePanel({
   if (!score) {
     return (
       <Card className="border-line bg-white/90 p-6">
-        <p className="text-sm font-semibold uppercase tracking-wider text-accent">
+        <p className="text-sm font-semibold uppercase tracking-[0.08em] text-accent">
           Immigration score
         </p>
         <h3 className="mt-3 text-xl font-semibold tracking-tight text-ink">
@@ -79,16 +79,16 @@ export function CaseScorePanel({
     <Card className="p-6 md:p-7">
       <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
         <div className="max-w-3xl">
-          <p className="text-sm font-semibold uppercase tracking-wider text-accent">
+          <p className="text-sm font-semibold uppercase tracking-[0.08em] text-accent">
             Immigration score
           </p>
-          <h3 className="mt-3 text-2xl font-bold tracking-tight text-ink">
+          <h3 className="mt-3 text-2xl font-semibold tracking-tight text-ink">
             {formatScore(score.overall_score)}
           </h3>
           <p className="mt-3 text-sm leading-7 text-muted">{score.disclaimer}</p>
         </div>
         <div className="rounded-xl border border-line bg-canvas/50 px-4 py-4 text-sm text-muted">
-          <p className="text-xs font-semibold uppercase tracking-wider text-accent">
+          <p className="text-xs font-semibold uppercase tracking-[0.08em] text-accent">
             Scoring version
           </p>
           <p className="mt-2 font-semibold text-ink">{score.scoring_version}</p>
@@ -101,7 +101,7 @@ export function CaseScorePanel({
             className="rounded-xl border border-line bg-canvas/50 px-4 py-4"
             key={label}
           >
-            <p className="text-xs font-semibold uppercase tracking-wider text-muted">
+            <p className="text-xs font-semibold uppercase tracking-[0.08em] text-muted">
               {label}
             </p>
             <p className="mt-2 text-2xl font-semibold text-ink">
@@ -113,7 +113,7 @@ export function CaseScorePanel({
       </div>
 
       <div className="mt-6 rounded-xl border border-line bg-canvas/50 px-5 py-5">
-        <p className="text-xs font-semibold uppercase tracking-wider text-muted">
+        <p className="text-xs font-semibold uppercase tracking-[0.08em] text-muted">
           Key reasons
         </p>
         {score.overall_reasons.length > 0 ? (

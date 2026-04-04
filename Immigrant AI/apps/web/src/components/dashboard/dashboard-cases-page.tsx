@@ -190,7 +190,7 @@ export function DashboardCasesPage() {
         <Card className="p-6 md:p-7">
           <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
             <div>
-              <p className="text-sm font-semibold uppercase tracking-wider text-accent">
+              <p className="text-sm font-semibold uppercase tracking-[0.08em] text-accent">
                 Case portfolio
               </p>
               <h3 className="mt-3 text-xl font-semibold tracking-tight text-ink">
@@ -204,7 +204,7 @@ export function DashboardCasesPage() {
 
           {cases.length === 0 ? (
             <div className="mt-6 rounded-xl border border-dashed border-line bg-canvas/50 px-5 py-10">
-              <p className="text-sm font-semibold uppercase tracking-wider text-accent">
+              <p className="text-sm font-semibold uppercase tracking-[0.08em] text-accent">
                 No strategy cases yet
               </p>
               <h4 className="mt-3 text-xl font-semibold tracking-tight text-ink">
@@ -232,7 +232,7 @@ export function DashboardCasesPage() {
                 >
                   <div className="flex items-start justify-between gap-4">
                     <div className="min-w-0">
-                      <p className="text-xs font-semibold uppercase tracking-wider text-accent">
+                      <p className="text-xs font-semibold uppercase tracking-[0.08em] text-accent">
                         {item.target_country || "Destination pending"}
                       </p>
                       <h4 className="mt-3 text-xl font-semibold text-ink">
@@ -247,7 +247,7 @@ export function DashboardCasesPage() {
 
                   <div className="mt-6 grid gap-3 sm:grid-cols-3">
                     <div className="rounded-xl border border-line bg-white px-4 py-4">
-                      <p className="text-xs font-semibold uppercase tracking-wider text-muted">
+                      <p className="text-xs font-semibold uppercase tracking-[0.08em] text-muted">
                         Stage
                       </p>
                       <p className="mt-2 text-sm text-ink">
@@ -255,7 +255,7 @@ export function DashboardCasesPage() {
                       </p>
                     </div>
                     <div className="rounded-xl border border-line bg-white px-4 py-4">
-                      <p className="text-xs font-semibold uppercase tracking-wider text-muted">
+                      <p className="text-xs font-semibold uppercase tracking-[0.08em] text-muted">
                         Score
                       </p>
                       <p className="mt-2 text-sm text-ink">
@@ -263,7 +263,7 @@ export function DashboardCasesPage() {
                       </p>
                     </div>
                     <div className="rounded-xl border border-line bg-white px-4 py-4">
-                      <p className="text-xs font-semibold uppercase tracking-wider text-muted">
+                      <p className="text-xs font-semibold uppercase tracking-[0.08em] text-muted">
                         Risk
                       </p>
                       <p className="mt-2 text-sm text-ink">
@@ -278,7 +278,7 @@ export function DashboardCasesPage() {
                   </p>
 
                   <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                    <p className="text-xs uppercase tracking-wider text-muted">
+                    <p className="text-xs uppercase tracking-[0.08em] text-muted">
                       Updated {formatDate(item.updated_at)}
                     </p>
                     <Link href={`/dashboard/cases/${item.id}`}>

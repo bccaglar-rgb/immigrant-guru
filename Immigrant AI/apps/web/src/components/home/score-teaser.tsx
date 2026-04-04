@@ -23,7 +23,7 @@ export function ScoreTeaser() {
           <div className="glass-card rounded-3xl p-8 md:p-10 h-full">
             <p className="text-sm font-semibold text-accent">Score Preview</p>
             <div className="mt-6 flex items-end gap-2">
-              <span className="text-7xl font-bold tracking-tight text-ink md:text-8xl anim-count">72</span>
+              <span className="text-7xl font-semibold tracking-tight text-ink md:text-8xl anim-count">72</span>
               <span className="mb-3 text-2xl font-medium text-muted">/100</span>
             </div>
             <p className="mt-4 text-sm leading-relaxed text-muted">
