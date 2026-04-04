@@ -1,0 +1,196 @@
+from __future__ import annotations
+
+from uuid import UUID
+
+from fastapi import APIRouter, Depends, File, Form, Response, UploadFile, status
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.core.config import get_settings
+from app.core.security import get_current_user
+from app.db.session import get_db_session
+from app.models.user import User
+from app.schemas.document import DocumentRead
+from app.schemas.immigration_case import (
+    ImmigrationCaseCreate,
+    ImmigrationCaseRead,
+    ImmigrationCaseSummary,
+    ImmigrationCaseUpdate,
+)
+from app.schemas.scoring import ImmigrationScoreRead
+from app.schemas.workspace import CaseWorkspaceRead
+from app.services.case_service import CaseService
+from app.services.case_workspace_service import CaseWorkspaceService
+from app.services.document_service import DocumentService
+from app.services.document_job_dispatcher import DocumentJobDispatcher
+from app.services.document_storage import LocalDocumentStorage
+from app.services.profile_service import ProfileService
+from app.services.scoring_service import ScoringService
+
+router = APIRouter(prefix="/cases", tags=["cases"])
+case_service = CaseService()
+profile_service = ProfileService()
+scoring_service = ScoringService()
+workspace_service = CaseWorkspaceService(scoring_service=scoring_service)
+settings = get_settings()
+document_service = DocumentService(
+    case_service=case_service,
+    dispatcher=DocumentJobDispatcher(settings),
+    storage=LocalDocumentStorage(settings),
+    max_upload_bytes=settings.document_max_upload_bytes,
+)
+
+
+@router.post(
+    "",
+    response_model=ImmigrationCaseRead,
+    status_code=status.HTTP_201_CREATED,
+    summary="Create an immigration case",
+)
+async def create_case(
+    payload: ImmigrationCaseCreate,
+    current_user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_db_session),
+) -> ImmigrationCaseRead:
+    immigration_case = await case_service.create_case(session, current_user, payload)
+    return ImmigrationCaseRead.model_validate(immigration_case)
+
+
+@router.get(
+    "",
+    response_model=list[ImmigrationCaseSummary],
+    summary="List the authenticated user's immigration cases",
+)
+async def list_cases(
+    current_user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_db_session),
+) -> list[ImmigrationCaseSummary]:
+    cases = await case_service.list_cases(session, current_user)
+    return [ImmigrationCaseSummary.model_validate(item) for item in cases]
+
+
+@router.get(
+    "/{case_id}",
+    response_model=ImmigrationCaseRead,
+    summary="Get an immigration case by ID",
+)
+async def get_case(
+    case_id: UUID,
+    current_user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_db_session),
+) -> ImmigrationCaseRead:
+    immigration_case = await case_service.get_case(session, current_user, case_id)
+    return ImmigrationCaseRead.model_validate(immigration_case)
+
+
+@router.get(
+    "/{case_id}/score",
+    response_model=ImmigrationScoreRead,
+    summary="Get a deterministic product score for an immigration case",
+)
+async def get_case_score(
+    case_id: UUID,
+    current_user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_db_session),
+) -> ImmigrationScoreRead:
+    immigration_case = await case_service.get_case(session, current_user, case_id)
+    profile = await profile_service.get_or_create_profile(session, current_user)
+    return scoring_service.score_case(profile=profile, immigration_case=immigration_case)
+
+
+@router.get(
+    "/{case_id}/workspace",
+    response_model=CaseWorkspaceRead,
+    summary="Get deterministic roadmap, checklist, health, and next-action data for a case",
+)
+async def get_case_workspace(
+    case_id: UUID,
+    current_user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_db_session),
+) -> CaseWorkspaceRead:
+    immigration_case = await case_service.get_case(session, current_user, case_id)
+    profile = await profile_service.get_or_create_profile(session, current_user)
+    documents = await document_service.list_case_documents(
+        session=session,
+        user=current_user,
+        case_id=case_id,
+    )
+    return workspace_service.build(
+        profile=profile,
+        immigration_case=immigration_case,
+        documents=documents,
+    )
+
+
+@router.post(
+    "/{case_id}/documents",
+    response_model=DocumentRead,
+    status_code=status.HTTP_201_CREATED,
+    summary="Upload a document for an immigration case",
+)
+async def upload_case_document(
+    case_id: UUID,
+    file: UploadFile = File(...),
+    document_type: str | None = Form(default=None),
+    current_user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_db_session),
+) -> DocumentRead:
+    document = await document_service.upload_case_document(
+        session=session,
+        user=current_user,
+        case_id=case_id,
+        upload_file=file,
+        document_type=document_type,
+    )
+    return DocumentRead.model_validate(document)
+
+
+@router.get(
+    "/{case_id}/documents",
+    response_model=list[DocumentRead],
+    summary="List documents attached to an immigration case",
+)
+async def list_case_documents(
+    case_id: UUID,
+    current_user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_db_session),
+) -> list[DocumentRead]:
+    documents = await document_service.list_case_documents(
+        session=session,
+        user=current_user,
+        case_id=case_id,
+    )
+    return [DocumentRead.model_validate(document) for document in documents]
+
+
+@router.put(
+    "/{case_id}",
+    response_model=ImmigrationCaseRead,
+    summary="Update an immigration case",
+)
+async def update_case(
+    case_id: UUID,
+    payload: ImmigrationCaseUpdate,
+    current_user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_db_session),
+) -> ImmigrationCaseRead:
+    immigration_case = await case_service.update_case(
+        session,
+        current_user,
+        case_id,
+        payload,
+    )
+    return ImmigrationCaseRead.model_validate(immigration_case)
+
+
+@router.delete(
+    "/{case_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="Delete an immigration case",
+)
+async def delete_case(
+    case_id: UUID,
+    current_user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_db_session),
+) -> Response:
+    await case_service.delete_case(session, current_user, case_id)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)

@@ -1,0 +1,214 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  @apply min-h-screen bg-canvas text-ink antialiased;
+  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+}
+
+h1,
+h2,
+h3,
+h4 {
+  text-wrap: balance;
+  @apply tracking-tight;
+}
+
+p {
+  text-wrap: pretty;
+}
+
+a {
+  @apply transition-colors;
+}
+
+input,
+button,
+textarea,
+select {
+  font: inherit;
+}
+
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus {
+  -webkit-text-fill-color: #1d1d1f;
+  box-shadow: 0 0 0 1000px #ffffff inset;
+}
+
+::selection {
+  background: rgba(0, 113, 227, 0.15);
+}
+
+@layer utilities {
+  .text-gradient {
+    background: linear-gradient(135deg, #0071e3, #5e5ce6, #bf5af2);
+    background-size: 200% 200%;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .glass {
+    background: rgba(255, 255, 255, 0.72);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+  }
+
+  .glass-subtle {
+    background: rgba(255, 255, 255, 0.5);
+    backdrop-filter: blur(12px) saturate(150%);
+    -webkit-backdrop-filter: blur(12px) saturate(150%);
+  }
+
+  .glass-card {
+    background: rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    border: 1px solid rgba(0, 0, 0, 0.06);
+  }
+}
+
+/* ---- Scroll-triggered animations ---- */
+
+.anim-fade-up,
+.anim-fade-in,
+.anim-scale-in,
+.anim-slide-left,
+.anim-slide-right {
+  transition-property: opacity, transform;
+  transition-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: opacity, transform;
+}
+
+.anim-fade-up {
+  opacity: 0;
+  transform: translateY(28px);
+}
+.anim-fade-up.anim-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.anim-fade-in {
+  opacity: 0;
+}
+.anim-fade-in.anim-visible {
+  opacity: 1;
+}
+
+.anim-scale-in {
+  opacity: 0;
+  transform: scale(0.94);
+}
+.anim-scale-in.anim-visible {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.anim-slide-left {
+  opacity: 0;
+  transform: translateX(-40px);
+}
+.anim-slide-left.anim-visible {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.anim-slide-right {
+  opacity: 0;
+  transform: translateX(40px);
+}
+.anim-slide-right.anim-visible {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+/* Floating animation for decorative elements */
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+.anim-float {
+  animation: float 4s ease-in-out infinite;
+}
+
+/* Pulse glow for accent elements */
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 20px rgba(0, 113, 227, 0.15); }
+  50% { box-shadow: 0 0 40px rgba(0, 113, 227, 0.3); }
+}
+.anim-pulse-glow {
+  animation: pulse-glow 3s ease-in-out infinite;
+}
+
+/* Gradient text shimmer */
+@keyframes gradient-shimmer {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+.text-gradient {
+  animation: gradient-shimmer 6s ease infinite;
+}
+
+/* Progress bar fill animation */
+@keyframes fill-bar {
+  from { width: 0%; }
+}
+.anim-fill-bar {
+  animation: fill-bar 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Shimmer loading effect */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+.anim-shimmer {
+  background: linear-gradient(90deg, transparent 25%, rgba(0,0,0,0.04) 50%, transparent 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.8s ease-in-out infinite;
+}
+
+/* Number counter spring */
+@keyframes count-spring {
+  0% { transform: scale(0.6); opacity: 0; }
+  60% { transform: scale(1.08); }
+  100% { transform: scale(1); opacity: 1; }
+}
+.anim-count {
+  animation: count-spring 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Prefers reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .anim-fade-up,
+  .anim-fade-in,
+  .anim-scale-in,
+  .anim-slide-left,
+  .anim-slide-right {
+    transition-duration: 0.01ms !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+  .anim-float,
+  .anim-pulse-glow,
+  .text-gradient,
+  .anim-shimmer {
+    animation: none !important;
+  }
+}

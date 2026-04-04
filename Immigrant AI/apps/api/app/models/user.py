@@ -1,0 +1,45 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Optional
+
+from sqlalchemy import CheckConstraint, Enum, String
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+
+from app.db.base import Base
+from app.models.enums import UserStatus
+from app.models.mixins import TimestampMixin, UUIDPrimaryKeyMixin
+
+if TYPE_CHECKING:
+    from app.models.immigration_case import ImmigrationCase
+    from app.models.user_profile import UserProfile
+
+
+class User(UUIDPrimaryKeyMixin, TimestampMixin, Base):
+    __tablename__ = "users"
+    __table_args__ = (
+        CheckConstraint("email = lower(email)", name="email_lowercase"),
+        CheckConstraint("length(trim(email)) > 0", name="email_not_blank"),
+        CheckConstraint("length(trim(password_hash)) > 0", name="password_hash_not_blank"),
+    )
+
+    email: Mapped[str] = mapped_column(String(320), unique=True, index=True, nullable=False)
+    password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
+    status: Mapped[UserStatus] = mapped_column(
+        Enum(UserStatus, name="user_status"),
+        default=UserStatus.ACTIVE,
+        nullable=False,
+    )
+
+    profile: Mapped[Optional[UserProfile]] = relationship(
+        back_populates="user",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+        single_parent=True,
+        uselist=False,
+    )
+    immigration_cases: Mapped[list[ImmigrationCase]] = relationship(
+        back_populates="user",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+        single_parent=True,
+    )

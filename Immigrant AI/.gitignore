@@ -1,0 +1,50 @@
+# Node
+node_modules/
+.next/
+out/
+dist/
+coverage/
+*.tsbuildinfo
+.local/
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.python-version
+.venv/
+venv/
+ENV/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+.coverage.*
+htmlcov/
+*.egg-info/
+
+# Environments
+.env
+.env.*
+!.env.example
+!.env.local.example
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Docker
+postgres-data/
+redis-data/
+
+# IDEs
+.idea/
+.vscode/
+*.swp
+*.swo
+
+.venv-check/
+storage/
+*.pyc
+.claude/
