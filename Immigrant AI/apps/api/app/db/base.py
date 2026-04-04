@@ -13,7 +13,12 @@ NAMING_CONVENTION = {
 class Base(DeclarativeBase):
     metadata = MetaData(naming_convention=NAMING_CONVENTION)
 
+import app.models.ai_feedback  # noqa: F401,E402
 import app.models.audit_log  # noqa: F401,E402
+import app.models.case_timeline_snapshot  # noqa: F401,E402
+import app.models.case_outcome  # noqa: F401,E402
+import app.models.copilot_message  # noqa: F401,E402
+import app.models.copilot_thread  # noqa: F401,E402
 import app.models.document  # noqa: F401,E402
 import app.models.immigration_case  # noqa: F401,E402
 import app.models.knowledge_chunk  # noqa: F401,E402

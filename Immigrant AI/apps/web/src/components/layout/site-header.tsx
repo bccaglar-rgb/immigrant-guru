@@ -13,9 +13,7 @@ export function SiteHeader() {
     <header className="sticky top-0 z-30 glass border-b border-line">
       <div className="mx-auto flex max-w-content items-center justify-between gap-6 px-6 py-3.5 md:px-10">
         <Link className="flex items-center gap-2.5" href="/">
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-accent text-sm font-bold text-white">
-            iG
-          </div>
+          <img src="/logo.png" alt="Immigrant Guru" className="h-9 w-9 object-contain" />
           <span className="text-xl font-semibold tracking-tight text-ink">
             Immigrant Guru
           </span>

@@ -98,10 +98,21 @@ def test_case_workspace_builds_checklist_health_and_actions() -> None:
         "incomplete",
         "at_risk",
     }
+    assert workspace.case_health.health_status == workspace.health.health_status
+    assert workspace.readiness_score.overall_score >= 0
+    assert workspace.probability_summary.confidence_level in {"LOW", "MEDIUM", "HIGH"}
+    assert workspace.timeline_summary.total_estimated_duration_months >= 0
+    assert workspace.document_status_summary.readiness_score == workspace.checklist_summary.readiness_score
+    assert workspace.recommended_pathway.rationale
+    assert workspace.top_risks
+    assert workspace.missing_information_grouped.critical == [
+        item.message for item in workspace.missing_information if item.severity == "critical"
+    ]
     assert workspace.checklist_summary.total_items >= 4
     assert workspace.checklist_summary.uploaded_items >= 1
     assert workspace.next_best_action.title
     assert workspace.roadmap
+    assert workspace.action_roadmap == workspace.roadmap
 
 
 def test_case_workspace_flags_incomplete_case() -> None:
@@ -121,6 +132,7 @@ def test_case_workspace_flags_incomplete_case() -> None:
     )
 
     assert workspace.health.health_status in {"incomplete", "at_risk"}
-    assert workspace.missing_information.critical
+    assert workspace.missing_information
+    assert workspace.missing_information_grouped.critical
     assert workspace.checklist_summary.missing_required_items >= 1
     assert workspace.next_best_action.priority == "immediate"

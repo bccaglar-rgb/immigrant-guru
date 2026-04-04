@@ -8,6 +8,7 @@ from uuid import UUID
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.document import Document
+from app.models.immigration_case import ImmigrationCase
 from app.models.enums import DocumentUploadStatus
 from app.queues.document_jobs import DocumentProcessingJob
 from app.services.document_pipeline import DocumentAnalysisPipeline
@@ -26,6 +27,7 @@ class DocumentProcessor:
         if document is None:
             logger.warning("document.missing", extra={"document_id": str(job.document_id)})
             return
+        immigration_case = await session.get(ImmigrationCase, job.case_id)
 
         if document.upload_status == DocumentUploadStatus.PROCESSING:
             if document.processed_at is None:
@@ -50,7 +52,7 @@ class DocumentProcessor:
         await self._mark_processing_started(session, document)
 
         try:
-            analysis_metadata = await self._pipeline.analyze(document)
+            analysis_metadata = await self._pipeline.analyze(document, immigration_case)
         except Exception as exc:
             await self._mark_processing_failed(session, document, exc)
             return

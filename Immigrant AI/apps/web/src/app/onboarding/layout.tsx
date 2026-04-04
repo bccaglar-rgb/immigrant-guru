@@ -13,9 +13,7 @@ export default function OnboardingLayout({ children }: OnboardingLayoutProps) {
 
       <header className="relative z-10 flex items-center justify-between px-6 py-4 md:px-10">
         <Link href="/" className="flex items-center gap-2.5">
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-accent text-sm font-bold text-white">
-            iG
-          </div>
+          <img src="/logo.png" alt="Immigrant Guru" className="h-9 w-9 object-contain" />
           <span className="text-xl font-semibold tracking-tight text-ink">
             Immigrant Guru
           </span>

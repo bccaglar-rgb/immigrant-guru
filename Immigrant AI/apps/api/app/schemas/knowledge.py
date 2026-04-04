@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Any
+from typing import Any, Literal
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -166,6 +166,7 @@ class KnowledgeSearchRequest(BaseModel):
     language: str | None = Field(default=None, max_length=32)
     source_types: list[KnowledgeSourceType] = Field(default_factory=list)
     authority_levels: list[KnowledgeAuthorityLevel] = Field(default_factory=list)
+    retrieval_mode: Literal["auto", "lexical", "hybrid"] = "auto"
     limit: int = Field(default=10, ge=1, le=25)
 
 
@@ -176,6 +177,8 @@ class KnowledgeSearchResult(BaseModel):
     source: KnowledgeSourceSummaryRead
     score: float = Field(ge=0)
     lexical_score: float = Field(ge=0)
+    vector_score: float = Field(default=0, ge=0)
+    hybrid_score: float = Field(default=0, ge=0)
     freshness_score: float = Field(ge=0)
     authority_score: float = Field(ge=0)
     matched_terms: list[str] = Field(default_factory=list)

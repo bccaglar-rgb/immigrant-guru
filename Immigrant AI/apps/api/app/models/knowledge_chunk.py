@@ -1,14 +1,16 @@
 from __future__ import annotations
 
+from datetime import datetime
 from typing import TYPE_CHECKING, Any, Optional
 from uuid import UUID
 
-from sqlalchemy import CheckConstraint, ForeignKey, Integer, String, Text, UniqueConstraint, text
+from sqlalchemy import CheckConstraint, DateTime, ForeignKey, Integer, String, Text, UniqueConstraint, text
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.dialects.postgresql import UUID as PGUUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
+from app.db.vector import VectorType
 from app.models.mixins import TimestampMixin, UUIDPrimaryKeyMixin
 
 if TYPE_CHECKING:
@@ -38,6 +40,17 @@ class KnowledgeChunk(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     chunk_index: Mapped[int] = mapped_column(Integer, nullable=False)
     chunk_text: Mapped[str] = mapped_column(Text, nullable=False)
     language: Mapped[Optional[str]] = mapped_column(String(32), nullable=True, index=True)
+    embedding: Mapped[Optional[list[float]]] = mapped_column(
+        VectorType(256),
+        nullable=True,
+    )
+    embedding_provider: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
+    embedding_model: Mapped[Optional[str]] = mapped_column(String(128), nullable=True)
+    embedding_dimension: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    embedding_updated_at: Mapped[Optional[datetime]] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+    )
     metadata_json: Mapped[dict[str, Any]] = mapped_column(
         "metadata",
         JSONB,

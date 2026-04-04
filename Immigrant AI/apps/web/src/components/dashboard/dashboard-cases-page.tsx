@@ -7,10 +7,12 @@ import { useRouter } from "next/navigation";
 import { CaseForm } from "@/components/dashboard/case-form";
 import { CaseStatusBadge } from "@/components/dashboard/case-status-badge";
 import { DashboardErrorState } from "@/components/dashboard/dashboard-error-state";
+import { MobileDashboardCasesPage } from "@/components/mobile/mobile-dashboard-cases-page";
 import { DashboardPageHeader } from "@/components/dashboard/dashboard-page-header";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useAuthSession } from "@/hooks/use-auth-session";
+import { useIsMobile } from "@/hooks/use-is-mobile";
 import { createImmigrationCase, listImmigrationCases } from "@/lib/case-client";
 import { emptyImmigrationCaseFormValues } from "@/types/cases";
 import type {
@@ -45,7 +47,7 @@ function CasesSkeleton() {
   );
 }
 
-export function DashboardCasesPage() {
+function DesktopDashboardCasesPage() {
   const router = useRouter();
   const { clearSession, session, status } = useAuthSession();
   const [pageStatus, setPageStatus] = useState<"loading" | "ready" | "error">(
@@ -295,4 +297,10 @@ export function DashboardCasesPage() {
       ) : null}
     </div>
   );
+}
+
+export function DashboardCasesPage() {
+  const isMobile = useIsMobile();
+
+  return isMobile ? <MobileDashboardCasesPage /> : <DesktopDashboardCasesPage />;
 }

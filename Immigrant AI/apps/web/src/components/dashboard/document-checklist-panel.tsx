@@ -1,146 +1,122 @@
 import { Card } from "@/components/ui/card";
-import type {
-  DocumentChecklistItem,
-  DocumentChecklistSummary
-} from "@/types/workspace";
+import type { CaseWorkspaceDocuments } from "@/types/case-workspace";
 
 type DocumentChecklistPanelProps = Readonly<{
-  checklist: DocumentChecklistItem[];
-  summary: DocumentChecklistSummary | null;
-  status: "loading" | "ready" | "error";
-  errorMessage?: string | null;
-  onRetry: () => void;
+  documents: CaseWorkspaceDocuments;
 }>;
 
-function formatLabel(value: string): string {
+const statusTone = {
+  flagged: "border-rose-200 bg-rose-50 text-rose-700",
+  missing: "border-amber-200 bg-amber-50 text-amber-700",
+  processing: "border-sky-200 bg-sky-50 text-sky-700",
+  uploaded: "border-emerald-200 bg-emerald-50 text-emerald-700"
+} as const;
+
+function formatLabel(value: string) {
   return value.replaceAll("_", " ");
 }
 
-function getStatusClasses(status: string): string {
-  if (status === "uploaded") {
-    return "border-green/20 bg-green/10 text-green";
-  }
-
-  if (status === "processing") {
-    return "border-amber-300/30 bg-amber-50 text-amber-800";
-  }
-
-  if (status === "failed") {
-    return "border-red/20 bg-red/5 text-red";
-  }
-
-  return "border-line bg-white text-muted";
-}
-
 export function DocumentChecklistPanel({
-  checklist,
-  errorMessage,
-  onRetry,
-  status,
-  summary
+  documents
 }: DocumentChecklistPanelProps) {
-  if (status === "loading") {
-    return <Card className="h-80 animate-pulse p-6" />;
-  }
-
-  if (status === "error") {
-    return (
-      <Card className="border-red/20 bg-red/5 p-6">
-        <p className="text-sm font-semibold uppercase tracking-[0.08em] text-red">
-          Checklist unavailable
-        </p>
-        <p className="mt-3 text-sm leading-7 text-red">
-          {errorMessage || "The document checklist could not be loaded."}
-        </p>
-        <button
-          className="mt-4 text-sm font-semibold text-red underline-offset-4 hover:underline"
-          onClick={onRetry}
-          type="button"
-        >
-          Retry checklist
-        </button>
-      </Card>
-    );
-  }
-
   return (
-    <Card className="p-6 md:p-7">
-      <p className="text-sm font-semibold uppercase tracking-[0.08em] text-accent">
-        Document checklist
-      </p>
-      <h3 className="mt-3 text-xl font-semibold tracking-tight text-ink">
-        Evidence preparation board
-      </h3>
-      <p className="mt-3 text-sm leading-7 text-muted">
-        Track likely required and recommended documents before the case moves toward filing readiness.
-      </p>
-
-      {summary ? (
-        <div className="mt-6 grid gap-4 md:grid-cols-4">
-          <div className="rounded-xl border border-line bg-canvas/50 px-4 py-4">
-            <p className="text-xs font-semibold uppercase tracking-[0.08em] text-muted">
-              Readiness
-            </p>
-            <p className="mt-2 text-2xl font-semibold text-ink">
-              {Math.round(summary.readiness_score)}/100
-            </p>
-          </div>
-          <div className="rounded-xl border border-line bg-canvas/50 px-4 py-4">
-            <p className="text-xs font-semibold uppercase tracking-[0.08em] text-muted">
-              Required
-            </p>
-            <p className="mt-2 text-2xl font-semibold text-ink">
-              {summary.required_items}
-            </p>
-          </div>
-          <div className="rounded-xl border border-line bg-canvas/50 px-4 py-4">
-            <p className="text-xs font-semibold uppercase tracking-[0.08em] text-muted">
-              Uploaded
-            </p>
-            <p className="mt-2 text-2xl font-semibold text-ink">
-              {summary.uploaded_items}
-            </p>
-          </div>
-          <div className="rounded-xl border border-line bg-canvas/50 px-4 py-4">
-            <p className="text-xs font-semibold uppercase tracking-[0.08em] text-muted">
-              Missing required
-            </p>
-            <p className="mt-2 text-2xl font-semibold text-ink">
-              {summary.missing_required_items}
-            </p>
-          </div>
-        </div>
-      ) : null}
-
-      {checklist.length > 0 ? (
-        <div className="mt-6 grid gap-4">
-          {checklist.map((item) => (
-            <div
-              className="rounded-xl border border-line bg-canvas/50 px-5 py-5"
-              key={item.id}
-            >
-              <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-                <div>
-                  <p className="text-lg font-semibold text-ink">{item.document_name}</p>
-                  <p className="mt-2 text-sm text-muted">
-                    {formatLabel(item.category)} · {formatLabel(item.requirement_level)}
-                  </p>
-                </div>
-                <div
-                  className={`rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-[0.08em] ${getStatusClasses(item.status)}`}
-                >
-                  {formatLabel(item.status)}
-                </div>
-              </div>
-              <p className="mt-4 text-sm leading-7 text-muted">{item.notes}</p>
-            </div>
-          ))}
-        </div>
-      ) : (
-        <p className="mt-6 text-sm leading-7 text-muted">
-          No checklist items are available for this case yet.
+    <div className="grid gap-6 xl:grid-cols-[1.08fr_0.92fr]">
+      <Card className="rounded-[30px] border border-white/80 bg-white/90 p-6 shadow-[0_20px_60px_rgba(15,23,42,0.06)] md:p-7">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
+          Documents
         </p>
-      )}
-    </Card>
+        <h2 className="mt-2 text-2xl font-semibold tracking-tight text-slate-950">
+          Document checklist
+        </h2>
+        <p className="mt-3 text-sm leading-7 text-slate-600">
+          {documents.summary}
+        </p>
+
+        {documents.checklist.length === 0 ? (
+          <div className="mt-6 rounded-2xl border border-dashed border-slate-200 bg-slate-50/70 px-5 py-8 text-sm leading-7 text-slate-600">
+            No checklist items are active yet.
+          </div>
+        ) : (
+          <div className="mt-6 space-y-4">
+            {documents.checklist.map((item) => (
+              <div
+                className="rounded-[24px] border border-slate-200/80 bg-slate-50/80 px-5 py-5"
+                key={item.id}
+              >
+                <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+                  <div>
+                    <p className="text-base font-semibold text-slate-950">
+                      {item.name}
+                    </p>
+                    <p className="mt-2 text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
+                      {item.category} · {item.requirementLevel}
+                    </p>
+                  </div>
+                  <span
+                    className={`inline-flex rounded-full border px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] ${statusTone[item.status]}`}
+                  >
+                    {formatLabel(item.status)}
+                  </span>
+                </div>
+                <p className="mt-4 text-sm leading-6 text-slate-600">
+                  {item.note}
+                </p>
+              </div>
+            ))}
+          </div>
+        )}
+      </Card>
+
+      <Card className="rounded-[30px] border border-white/80 bg-white/90 p-6 shadow-[0_20px_60px_rgba(15,23,42,0.06)]">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
+          Uploaded files
+        </p>
+        <h3 className="mt-2 text-xl font-semibold tracking-tight text-slate-950">
+          Case document registry
+        </h3>
+
+        {documents.uploadedDocuments.length === 0 ? (
+          <div className="mt-6 rounded-2xl border border-dashed border-slate-200 bg-slate-50/70 px-5 py-8 text-sm leading-7 text-slate-600">
+            No uploaded documents are linked to this case yet.
+          </div>
+        ) : (
+          <div className="mt-6 space-y-3">
+            {documents.uploadedDocuments.map((document) => (
+              <div
+                className="rounded-2xl border border-slate-200/80 bg-slate-50/80 px-4 py-4"
+                key={document.id}
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-sm font-semibold text-slate-950">
+                      {document.original_filename}
+                    </p>
+                    <p className="mt-1 text-xs text-slate-500">
+                      {document.document_type || "Document type pending"}
+                    </p>
+                  </div>
+                  <span
+                    className={`inline-flex rounded-full border px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] ${statusTone[document.upload_status === "failed" ? "flagged" : document.upload_status === "pending" ? "processing" : document.upload_status]}`}
+                  >
+                    {formatLabel(document.upload_status)}
+                  </span>
+                </div>
+                <p className="mt-3 text-xs text-slate-500">
+                  Added{" "}
+                  {new Intl.DateTimeFormat("en-US", {
+                    dateStyle: "medium"
+                  }).format(new Date(document.created_at))}
+                </p>
+                {document.processing_error ? (
+                  <p className="mt-2 text-sm text-rose-700">
+                    {document.processing_error}
+                  </p>
+                ) : null}
+              </div>
+            ))}
+          </div>
+        )}
+      </Card>
+    </div>
   );
 }

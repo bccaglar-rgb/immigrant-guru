@@ -18,14 +18,19 @@ class AuditEventType(StrEnum):
     USER_LOGGED_IN = "user_logged_in"
     CASE_CREATED = "case_created"
     CASE_UPDATED = "case_updated"
+    CASE_OUTCOME_RECORDED = "case_outcome_recorded"
+    CASE_OUTCOME_UPDATED = "case_outcome_updated"
     AI_STRATEGY_GENERATED = "ai_strategy_generated"
+    AI_FEEDBACK_SUBMITTED = "ai_feedback_submitted"
     DOCUMENT_UPLOADED = "document_uploaded"
 
 
 class AuditTargetEntityType(StrEnum):
     USER = "user"
     IMMIGRATION_CASE = "immigration_case"
+    CASE_OUTCOME = "case_outcome"
     DOCUMENT = "document"
+    AI_FEEDBACK = "ai_feedback"
 
 
 class ImmigrationCaseStatus(StrEnum):
@@ -35,11 +40,42 @@ class ImmigrationCaseStatus(StrEnum):
     CLOSED = "closed"
 
 
+class PathwayProbabilityConfidenceLevel(StrEnum):
+    LOW = "LOW"
+    MEDIUM = "MEDIUM"
+    HIGH = "HIGH"
+
+
 class DocumentUploadStatus(StrEnum):
     PENDING = "pending"
     UPLOADED = "uploaded"
     PROCESSING = "processing"
     FAILED = "failed"
+
+
+class CopilotMessageRole(StrEnum):
+    USER = "user"
+    ASSISTANT = "assistant"
+    SYSTEM = "system"
+
+
+class CaseOutcomeStatus(StrEnum):
+    APPROVED = "approved"
+    REJECTED = "rejected"
+    WITHDRAWN = "withdrawn"
+    PENDING = "pending"
+
+
+class AIFeature(StrEnum):
+    STRATEGY = "strategy"
+    COPILOT = "copilot"
+    DOCUMENT_ANALYSIS = "document_analysis"
+    COMPARISON = "comparison"
+
+
+class AIFeedbackRating(StrEnum):
+    POSITIVE = "positive"
+    NEGATIVE = "negative"
 
 
 class KnowledgeSourceType(StrEnum):

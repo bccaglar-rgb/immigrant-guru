@@ -83,3 +83,5 @@ that are still incomplete or only partially implemented.
   passes, API tests pass, and worker tests pass.
 - The remaining items above are not “hidden bugs”; they are prompt requests that
   are still unimplemented or only partially covered.
+- Strategic product-scale roadmap items are tracked separately in
+  `packages/docs/strategic-growth-todo.md`.

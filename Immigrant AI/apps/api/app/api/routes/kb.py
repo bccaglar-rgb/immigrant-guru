@@ -31,7 +31,7 @@ def get_knowledge_retrieval_service() -> KnowledgeRetrievalService:
 @router.post(
     "/search",
     response_model=KnowledgeSearchResponse,
-    summary="Search knowledge base chunks for internal grounding",
+    summary="Search knowledge base chunks with lexical or hybrid retrieval for internal grounding",
 )
 async def search_knowledge_base(
     payload: KnowledgeSearchRequest,

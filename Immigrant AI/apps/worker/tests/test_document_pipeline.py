@@ -34,6 +34,9 @@ async def test_pipeline_extracts_text_from_plain_text_files(tmp_path: Path) -> N
     assert result["text_extraction"]["status"] == "completed"
     assert result["text_extraction"]["text_preview"] == "Proof of funds available."
     assert result["classification"]["document_type"] == "bank_statement"
+    assert result["intelligence"]["document_classification"]["document_type"] == "bank_statement"
+    assert result["intelligence"]["completeness"]["score"] >= 0
+    assert result["intelligence"]["relevance_to_pathway"]["score"] >= 0
 
 
 @pytest.mark.asyncio
@@ -69,10 +72,15 @@ async def test_processor_resumes_processing_documents_after_retry() -> None:
             return None
 
     class FakePipeline:
-        async def analyze(self, document):
+        async def analyze(self, document, immigration_case):
+            del immigration_case
             return {
                 "classification": {"document_type": "passport"},
                 "text_extraction": {"status": "completed"},
+                "intelligence": {
+                    "document_classification": {"document_type": "passport"},
+                    "completeness": {"score": 90.0},
+                },
             }
 
     document = SimpleNamespace(

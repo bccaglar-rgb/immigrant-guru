@@ -13,9 +13,7 @@ export function WelcomeStep({ firstName, onNext }: WelcomeStepProps) {
   return (
     <div className="flex flex-col items-center justify-center text-center py-12 md:py-20">
       <Animate animation="scale-in" duration={800}>
-        <div className="flex h-20 w-20 items-center justify-center rounded-3xl bg-gradient-accent text-3xl font-bold text-white anim-pulse-glow">
-          iG
-        </div>
+        <img src="/logo.png" alt="Immigrant Guru" className="h-20 w-20 object-contain anim-pulse-glow rounded-3xl" />
       </Animate>
 
       <Animate animation="fade-up" delay={300} duration={800}>

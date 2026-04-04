@@ -6,9 +6,11 @@ import type { ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { DashboardErrorState } from "@/components/dashboard/dashboard-error-state";
+import { MobileDashboardProfilePage } from "@/components/mobile/mobile-dashboard-profile-page";
 import { DashboardPageHeader } from "@/components/dashboard/dashboard-page-header";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
+import { useIsMobile } from "@/hooks/use-is-mobile";
 import { useProfileForm } from "@/hooks/use-profile-form";
 import {
   booleanChoiceOptions,
@@ -144,7 +146,7 @@ function ProfileSection({
   );
 }
 
-export function DashboardProfilePage() {
+function DesktopDashboardProfilePage() {
   const {
     feedback,
     fieldErrors,
@@ -482,4 +484,10 @@ export function DashboardProfilePage() {
       ) : null}
     </div>
   );
+}
+
+export function DashboardProfilePage() {
+  const isMobile = useIsMobile();
+
+  return isMobile ? <MobileDashboardProfilePage /> : <DesktopDashboardProfilePage />;
 }

@@ -59,8 +59,18 @@ class Settings(BaseSettings):
     local_storage_root: str = "./storage"
     document_max_upload_bytes: int = 25 * 1024 * 1024
     document_processing_queue_name: str = "immigrant-ai:jobs:document-processing"
+    timeline_snapshot_ttl_minutes: int = 720
     knowledge_retrieval_backend: str = "lexical"
     knowledge_search_candidate_limit: int = 50
+    knowledge_vector_candidate_limit: int = 40
+    knowledge_hybrid_rrf_k: int = 50
+    knowledge_hybrid_lexical_weight: float = 0.45
+    knowledge_hybrid_vector_weight: float = 0.35
+    knowledge_hybrid_freshness_weight: float = 0.10
+    knowledge_hybrid_authority_weight: float = 0.10
+    knowledge_embedding_provider: str = "hashing"
+    knowledge_embedding_model: str = "hashing-v1"
+    knowledge_embedding_dimensions: int = 256
 
     @field_validator("admin_emails")
     @classmethod

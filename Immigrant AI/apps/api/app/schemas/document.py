@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime
+from typing import Any
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -43,5 +44,6 @@ class DocumentRead(BaseModel):
     processing_attempts: int = Field(ge=0)
     processed_at: datetime | None = None
     processing_error: str | None = None
+    analysis_metadata: dict[str, Any] = Field(default_factory=dict)
     created_at: datetime
     updated_at: datetime

@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
+import math
 from uuid import UUID
 
-from sqlalchemy import Select, or_, select
+from sqlalchemy import Select, or_, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -164,6 +165,35 @@ class KnowledgeBaseService:
         result = await session.execute(statement.limit(candidate_limit))
         return list(result.scalars().unique().all())
 
+    async def retrieve_vector_candidate_chunks(
+        self,
+        session: AsyncSession,
+        query: KnowledgeRetrievalQuery,
+        *,
+        query_embedding: list[float],
+        candidate_limit: int,
+    ) -> list[tuple[KnowledgeChunk, float]]:
+        if not query_embedding:
+            return []
+
+        if session.bind is not None and session.bind.dialect.name == "postgresql":
+            try:
+                return await self._retrieve_vector_candidate_chunks_postgres(
+                    session,
+                    query,
+                    query_embedding=query_embedding,
+                    candidate_limit=candidate_limit,
+                )
+            except Exception:
+                pass
+
+        return await self._retrieve_vector_candidate_chunks_python(
+            session,
+            query,
+            query_embedding=query_embedding,
+            candidate_limit=candidate_limit,
+        )
+
     @staticmethod
     def _build_chunk(
         *,
@@ -216,6 +246,93 @@ class KnowledgeBaseService:
 
         return statement
 
+    async def _retrieve_vector_candidate_chunks_postgres(
+        self,
+        session: AsyncSession,
+        query: KnowledgeRetrievalQuery,
+        *,
+        query_embedding: list[float],
+        candidate_limit: int,
+    ) -> list[tuple[KnowledgeChunk, float]]:
+        vector_literal = "[" + ",".join(f"{float(value):.10f}" for value in query_embedding) + "]"
+        filters = ["kc.embedding IS NOT NULL"]
+        params: dict[str, object] = {
+            "query_embedding": vector_literal,
+            "limit": candidate_limit,
+        }
+
+        if query.country:
+            filters.append("ks.country = :country")
+            params["country"] = query.country
+        if query.visa_type:
+            filters.append("ks.visa_type = :visa_type")
+            params["visa_type"] = query.visa_type
+        if query.language:
+            filters.append("kc.language = :language")
+            params["language"] = query.language
+        if query.authority_levels:
+            filters.append("ks.authority_level = ANY(:authority_levels)")
+            params["authority_levels"] = [level.value for level in query.authority_levels]
+        if query.source_types:
+            filters.append("ks.source_type = ANY(:source_types)")
+            params["source_types"] = [source_type.value for source_type in query.source_types]
+
+        sql = text(
+            f"""
+            SELECT kc.id AS chunk_id,
+                   1 - (kc.embedding <=> CAST(:query_embedding AS vector)) AS similarity
+            FROM knowledge_chunks kc
+            JOIN knowledge_sources ks ON ks.id = kc.source_id
+            WHERE {' AND '.join(filters)}
+            ORDER BY kc.embedding <=> CAST(:query_embedding AS vector)
+            LIMIT :limit
+            """
+        )
+        result = await session.execute(sql, params)
+        rows = result.all()
+        if not rows:
+            return []
+
+        score_by_id = {row.chunk_id: max(0.0, float(row.similarity)) for row in rows}
+        statement = (
+            select(KnowledgeChunk)
+            .options(selectinload(KnowledgeChunk.source))
+            .where(KnowledgeChunk.id.in_(list(score_by_id.keys())))
+        )
+        loaded = await session.execute(statement)
+        chunks = {chunk.id: chunk for chunk in loaded.scalars().unique().all()}
+        return [
+            (chunks[chunk_id], score_by_id[chunk_id])
+            for chunk_id in score_by_id
+            if chunk_id in chunks
+        ]
+
+    async def _retrieve_vector_candidate_chunks_python(
+        self,
+        session: AsyncSession,
+        query: KnowledgeRetrievalQuery,
+        *,
+        query_embedding: list[float],
+        candidate_limit: int,
+    ) -> list[tuple[KnowledgeChunk, float]]:
+        statement: Select[tuple[KnowledgeChunk]] = (
+            select(KnowledgeChunk)
+            .options(selectinload(KnowledgeChunk.source))
+            .join(KnowledgeChunk.source)
+            .where(KnowledgeChunk.embedding.is_not(None))
+        )
+        statement = self._apply_retrieval_filters(statement, query)
+        result = await session.execute(statement.limit(candidate_limit * 3))
+        chunks = list(result.scalars().unique().all())
+
+        scored = [
+            (chunk, _cosine_similarity(query_embedding, chunk.embedding))
+            for chunk in chunks
+            if chunk.embedding
+        ]
+        scored.sort(key=lambda item: item[1], reverse=True)
+        return scored[:candidate_limit]
+
 
 def _knowledge_search_terms(query_text: str) -> list[str]:
     return [
@@ -223,3 +340,16 @@ def _knowledge_search_terms(query_text: str) -> list[str]:
         for term in {token.strip().lower() for token in query_text.split()}
         if len(term) > 1
     ]
+
+
+def _cosine_similarity(left: list[float], right: list[float] | None) -> float:
+    if not right or len(left) != len(right):
+        return 0.0
+
+    numerator = sum(a * b for a, b in zip(left, right))
+    left_norm = math.sqrt(sum(value * value for value in left))
+    right_norm = math.sqrt(sum(value * value for value in right))
+    if left_norm == 0 or right_norm == 0:
+        return 0.0
+
+    return max(0.0, numerator / (left_norm * right_norm))

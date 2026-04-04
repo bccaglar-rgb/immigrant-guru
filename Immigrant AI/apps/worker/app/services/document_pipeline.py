@@ -6,6 +6,8 @@ from typing import Any
 
 from app.core.config import Settings
 from app.models.document import Document
+from app.models.immigration_case import ImmigrationCase
+from app.services.document_analysis_service import DocumentAnalysisService
 
 
 class DocumentPipelineError(RuntimeError):
@@ -17,17 +19,28 @@ class DocumentAnalysisPipeline:
 
     def __init__(self, settings: Settings) -> None:
         self._settings = settings
+        self._analysis_service = DocumentAnalysisService()
 
-    async def analyze(self, document: Document) -> dict[str, Any]:
+    async def analyze(
+        self,
+        document: Document,
+        immigration_case: ImmigrationCase | None = None,
+    ) -> dict[str, Any]:
         absolute_path = (self._settings.local_storage_root_path / document.storage_path).resolve()
         if not absolute_path.exists():
             raise DocumentPipelineError("Stored document file could not be found.")
 
         text_extraction = await self._extract_text(document, absolute_path)
         classification = self._classify_document(document)
+        intelligence = self._analysis_service.analyze(
+            document=document,
+            immigration_case=immigration_case,
+            text_extraction=text_extraction,
+            classification=classification,
+        )
 
         return {
-            "pipeline_version": "0.1.0",
+            "pipeline_version": "1.0.0",
             "generated_at": datetime.now(timezone.utc).isoformat(),
             "ocr": {
                 "status": "not_configured",
@@ -39,6 +52,7 @@ class DocumentAnalysisPipeline:
                 "status": "not_configured",
                 "fields": {},
             },
+            "intelligence": intelligence,
         }
 
     async def _extract_text(self, document: Document, absolute_path: Path) -> dict[str, Any]:

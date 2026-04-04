@@ -12,3 +12,10 @@ class DocumentUploadStatus(StrEnum):
     UPLOADED = "uploaded"
     PROCESSING = "processing"
     FAILED = "failed"
+
+
+class ImmigrationCaseStatus(StrEnum):
+    DRAFT = "draft"
+    IN_REVIEW = "in_review"
+    ACTIVE = "active"
+    CLOSED = "closed"

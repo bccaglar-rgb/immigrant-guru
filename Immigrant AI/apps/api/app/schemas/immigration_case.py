@@ -2,11 +2,12 @@ from __future__ import annotations
 
 from datetime import datetime
 from decimal import Decimal
+from typing import Any
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from app.models.enums import ImmigrationCaseStatus
+from app.models.enums import ImmigrationCaseStatus, PathwayProbabilityConfidenceLevel
 
 CASE_EXAMPLE = {
     "title": "U.S. employment-based migration plan",
@@ -76,9 +77,18 @@ class ImmigrationCaseSummary(ImmigrationCaseBase):
     model_config = ConfigDict(from_attributes=True)
 
     id: UUID
+    probability_score: Decimal | None = Field(
+        default=None,
+        ge=0,
+        le=100,
+        max_digits=5,
+        decimal_places=2,
+    )
+    probability_confidence: PathwayProbabilityConfidenceLevel | None = None
     created_at: datetime
     updated_at: datetime
 
 
 class ImmigrationCaseRead(ImmigrationCaseSummary):
     user_id: UUID
+    probability_explanation_json: dict[str, Any] = Field(default_factory=dict)

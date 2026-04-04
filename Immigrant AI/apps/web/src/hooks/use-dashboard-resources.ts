@@ -5,10 +5,14 @@ import { useCallback, useEffect, useState } from "react";
 import { getDashboardCases, getDashboardProfile } from "@/lib/dashboard-client";
 import { getCaseScore } from "@/lib/score-client";
 import { getCaseWorkspace } from "@/lib/workspace-client";
-import { createDashboardOverview } from "@/lib/dashboard-view-models";
+import {
+  createDashboardCommandCenter,
+  createDashboardOverview
+} from "@/lib/dashboard-view-models";
 import { useAuthSession } from "@/hooks/use-auth-session";
 import type {
   DashboardCase,
+  DashboardCommandCenter,
   DashboardDataState,
   DashboardOverviewCards,
   DashboardPrimaryCaseScore,
@@ -17,6 +21,7 @@ import type {
 } from "@/types/dashboard";
 
 const EMPTY_OVERVIEW = createDashboardOverview(null, [], null, null);
+const EMPTY_COMMAND_CENTER = createDashboardCommandCenter(null, [], null, null);
 
 export function useDashboardResources() {
   const { clearSession, session, status, user } = useAuthSession();
@@ -129,9 +134,16 @@ export function useDashboardResources() {
     primaryCaseScore,
     primaryCaseWorkspace
   );
+  const commandCenter: DashboardCommandCenter = createDashboardCommandCenter(
+    profile ?? user?.profile ?? null,
+    cases,
+    primaryCaseScore,
+    primaryCaseWorkspace
+  );
 
   return {
     cases,
+    commandCenter: resourceState === "ready" ? commandCenter : EMPTY_COMMAND_CENTER,
     error,
     overview: resourceState === "ready" ? overview : EMPTY_OVERVIEW,
     profile: profile ?? user?.profile ?? null,
