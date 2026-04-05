@@ -407,80 +407,40 @@ export default function PricingPage() {
                     const p = tier.pricing[key];
                     const isSelected = activePeriod === key;
                     const isCurrentPlan = isCurrentTier && currentPeriod === key;
-                    const isMonthly = key === "1m";
                     const isUpgrade = currentTierPrefix ? (TIER_RANK[tier.planIdPrefix] ?? 0) > (TIER_RANK[currentTierPrefix] ?? 0) : false;
                     const upgradeInfo = isUpgrade ? calcUpgradeCredit(p.total) : null;
                     const savings = savingsPercent(tier, key);
                     return (
-                      <div key={key}>
-                        <button
-                          type="button"
-                          onClick={() => selectPlan(tier.name, key)}
-                          className={[
-                            "flex w-full items-center justify-between rounded-xl border px-3.5 py-2.5 text-left text-sm transition-all duration-200",
-                            isCurrentPlan
-                              ? "border-[#4caf50]/50 bg-[#4caf50]/[0.07] text-white"
-                              : isSelected
-                                ? "border-[#F5C542]/60 bg-[#F5C542]/[0.06] text-white"
-                                : "border-white/[0.06] bg-white/[0.02] text-[#BFC2C7] hover:border-white/15 hover:bg-white/[0.04]",
-                          ].join(" ")}
-                        >
-                          <div className="flex items-center gap-2.5">
-                            <span className={`flex h-4 w-4 items-center justify-center rounded-full border transition-colors ${
-                              isCurrentPlan
-                                ? "border-[#4caf50] bg-[#4caf50]"
-                                : isSelected
-                                  ? "border-[#F5C542] bg-[#F5C542]"
-                                  : "border-white/25"
-                            }`}>
-                              {(isCurrentPlan || isSelected) && (
-                                <span className={`h-1.5 w-1.5 rounded-full ${isCurrentPlan ? "bg-white" : "bg-black"}`} />
-                              )}
-                            </span>
-                            <span className="font-medium">{label}</span>
-                            {isCurrentPlan && (
-                              <span className="rounded-full bg-[#4caf50]/20 px-2 py-0.5 text-[10px] font-semibold text-[#4caf50]">Active</span>
-                            )}
-                            {savings !== null && !isCurrentPlan && (
-                              <span className="rounded-full bg-[#F5C542]/10 px-2 py-0.5 text-[10px] font-semibold text-[#F5C542]">
-                                Save {savings}%
-                              </span>
-                            )}
-                          </div>
-                          <div className="text-right">
-                            {upgradeInfo && upgradeInfo.credit > 0 ? (
-                              <div className="flex flex-col items-end">
-                                <span className="text-[10px] text-[#6B6F76] line-through">{p.total} USDT</span>
-                                <span className="font-bold text-[#F5C542]">{upgradeInfo.youPay.toFixed(2)} USDT</span>
-                              </div>
-                            ) : isMonthly ? (
-                              <span className={`font-bold ${isCurrentPlan ? "text-[#4caf50]" : isSelected ? "text-[#F5C542]" : "text-white"}`}>{p.total} USDT</span>
-                            ) : (
-                              <div className="flex items-baseline gap-1.5">
-                                <span className={`font-bold ${isCurrentPlan ? "text-[#4caf50]" : isSelected ? "text-[#F5C542]" : "text-white"}`}>{p.total} USDT</span>
-                                <span className="text-[11px] text-[#6B6F76]">({p.monthly}/mo)</span>
-                              </div>
-                            )}
-                          </div>
-                        </button>
-                        {/* Upgrade credit breakdown */}
-                        {upgradeInfo && upgradeInfo.credit > 0 && (
-                          <div className="mt-1 rounded-xl border border-[#F5C542]/15 bg-[#F5C542]/[0.03] px-3.5 py-2">
-                            <div className="flex items-center justify-between text-[11px]">
-                              <span className="text-[#9ba3b4]">{tier.name} Plan</span>
-                              <span className="text-white">{p.total} USDT</span>
-                            </div>
-                            <div className="flex items-center justify-between text-[11px]">
-                              <span className="text-[#4caf50]">Credit from {currentTierPrefix ? currentTierPrefix.charAt(0).toUpperCase() + currentTierPrefix.slice(1) : "current"} plan</span>
-                              <span className="text-[#4caf50]">-{upgradeInfo.credit.toFixed(2)} USDT</span>
-                            </div>
-                            <div className="mt-1 border-t border-white/10 pt-1 flex items-center justify-between text-xs font-semibold">
-                              <span className="text-white">You pay</span>
-                              <span className="text-[#F5C542]">{upgradeInfo.youPay.toFixed(2)} USDT</span>
-                            </div>
-                          </div>
-                        )}
-                      </div>
+                      <button
+                        key={key}
+                        type="button"
+                        onClick={() => selectPlan(tier.name, key)}
+                        className={[
+                          "flex w-full items-center justify-between rounded-lg border px-3 py-1.5 text-left text-[12px] transition-all duration-200",
+                          isCurrentPlan
+                            ? "border-[#4caf50]/50 bg-[#4caf50]/[0.07] text-white"
+                            : isSelected
+                              ? "border-[#F5C542]/60 bg-[#F5C542]/[0.06] text-white"
+                              : "border-white/[0.06] bg-white/[0.02] text-[#BFC2C7] hover:border-white/15 hover:bg-white/[0.04]",
+                        ].join(" ")}
+                      >
+                        <div className="flex items-center gap-2">
+                          <span className={`h-3 w-3 rounded-full border ${
+                            isCurrentPlan ? "border-[#4caf50] bg-[#4caf50]" : isSelected ? "border-[#F5C542] bg-[#F5C542]" : "border-white/25"
+                          }`} />
+                          <span className="font-medium">{label}</span>
+                          {isCurrentPlan && <span className="text-[9px] font-semibold text-[#4caf50]">Active</span>}
+                          {savings !== null && !isCurrentPlan && <span className="text-[9px] font-semibold text-[#F5C542]">-{savings}%</span>}
+                        </div>
+                        <div className="flex items-baseline gap-1">
+                          {upgradeInfo && upgradeInfo.credit > 0 ? (
+                            <span className="font-bold font-mono text-[#F5C542]">{upgradeInfo.youPay.toFixed(0)} USDT</span>
+                          ) : (
+                            <span className={`font-bold font-mono ${isCurrentPlan ? "text-[#4caf50]" : isSelected ? "text-[#F5C542]" : "text-white"}`}>{p.total} USDT</span>
+                          )}
+                          {key !== "1m" && <span className="text-[10px] text-[#6B6F76]">({p.monthly}/mo)</span>}
+                        </div>
+                      </button>
                     );
                   })}
                 </div>
