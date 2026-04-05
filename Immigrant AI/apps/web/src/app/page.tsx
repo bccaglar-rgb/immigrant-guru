@@ -1,10 +1,13 @@
 import type { Metadata } from "next";
 
+import { AIStrategyShowcase } from "@/components/home/ai-strategy-showcase";
 import { Benefits } from "@/components/home/benefits";
 import { CallToAction } from "@/components/home/call-to-action";
+import { FeatureGrid } from "@/components/home/feature-grid";
 import { Hero } from "@/components/home/hero";
-import { PathwayTeaser } from "@/components/home/pathway-teaser";
+import { HowItWorks } from "@/components/home/how-it-works";
 import { ScoreTeaser } from "@/components/home/score-teaser";
+import { StatsBar } from "@/components/home/stats-bar";
 import { AppShell } from "@/components/layout/app-shell";
 import { getPublicEnv } from "@/lib/config";
 
@@ -34,12 +37,7 @@ function JsonLd() {
         name: "Immigrant Guru",
         description:
           "AI-powered immigration strategy platform for visa pathway comparison, readiness scoring, and personalized action plans.",
-        publisher: { "@id": "https://immigrant.guru/#organization" },
-        potentialAction: {
-          "@type": "SearchAction",
-          target: "https://immigrant.guru/sign-up",
-          "query-input": "required name=search_term_string"
-        }
+        publisher: { "@id": "https://immigrant.guru/#organization" }
       },
       {
         "@type": "Organization",
@@ -48,7 +46,7 @@ function JsonLd() {
         url: "https://immigrant.guru",
         logo: {
           "@type": "ImageObject",
-          url: "https://immigrant.guru/logo-mark.svg",
+          url: "https://immigrant.guru/logo.png",
           width: 512,
           height: 512
         },
@@ -61,27 +59,23 @@ function JsonLd() {
         operatingSystem: "Web",
         url: "https://immigrant.guru",
         description:
-          "AI-powered immigration decision platform. Build your profile, compare visa pathways, generate Plan A/B/C strategies, and track case readiness.",
+          "AI-powered immigration decision platform with 47 visa categories, Plan A/B/C strategy generation, readiness scoring, document intelligence, and AI copilot.",
         offers: {
           "@type": "Offer",
           price: "0",
           priceCurrency: "USD",
           description: "Free to start"
         },
-        aggregateRating: {
-          "@type": "AggregateRating",
-          ratingValue: "4.8",
-          ratingCount: "120",
-          bestRating: "5"
-        },
         featureList: [
           "AI-powered visa strategy generation (Plan A/B/C)",
           "Immigration readiness scoring (0-100)",
-          "Profile-aware pathway comparison",
-          "Document management and intelligence",
-          "Case health monitoring",
-          "Next best action recommendations",
-          "Knowledge-grounded AI responses"
+          "47 US visa category analysis",
+          "AI Copilot chat with source citations",
+          "Scenario simulation (what-if modeling)",
+          "Country comparison (side-by-side)",
+          "Timeline projection with milestones",
+          "Document intelligence and classification",
+          "Knowledge base with 352 curated data points"
         ]
       },
       {
@@ -92,7 +86,7 @@ function JsonLd() {
             name: "What is Immigrant Guru?",
             acceptedAnswer: {
               "@type": "Answer",
-              text: "Immigrant Guru is an AI-powered immigration strategy platform that helps users compare visa pathways, build structured immigration profiles, score readiness, and generate personalized Plan A/B/C strategies."
+              text: "Immigrant Guru is an AI-powered immigration strategy platform that analyzes your profile against 47 visa categories, generates Plan A/B/C strategies, scores your readiness, and provides document intelligence."
             }
           },
           {
@@ -100,7 +94,7 @@ function JsonLd() {
             name: "How does the immigration score work?",
             acceptedAnswer: {
               "@type": "Answer",
-              text: "The immigration score combines four components: profile completeness (30%), financial readiness (20%), professional strength (25%), and case readiness (25%) into a transparent 0-100 score."
+              text: "The score combines profile completeness (30%), professional strength (25%), case readiness (25%), and financial readiness (20%) into a transparent 0-100 score."
             }
           },
           {
@@ -108,15 +102,15 @@ function JsonLd() {
             name: "Is Immigrant Guru free?",
             acceptedAnswer: {
               "@type": "Answer",
-              text: "Yes, Immigrant Guru is free to start. Create an account, build your immigration profile, and get your first readiness score and strategy recommendations at no cost."
+              text: "Yes, you can create an account, build your profile, get your readiness score, and create your first case for free."
             }
           },
           {
             "@type": "Question",
-            name: "What visa pathways does Immigrant Guru cover?",
+            name: "How many visa types does Immigrant Guru cover?",
             acceptedAnswer: {
               "@type": "Answer",
-              text: "Immigrant Guru covers a wide range of immigration pathways including EB-2 NIW, EB-1A, H-1B, L-1, O-1, Express Entry, Startup Visa, and many more across multiple countries."
+              text: "Immigrant Guru covers 47 US visa categories including EB-1A, EB-2 NIW, H-1B, L-1, O-1, EB-5, F-1, DV Lottery, and many more family and employment-based options."
             }
           }
         ]
@@ -142,7 +136,10 @@ export default function HomePage() {
         <Hero config={config} />
         <Benefits />
         <ScoreTeaser />
-        <PathwayTeaser />
+        <AIStrategyShowcase />
+        <FeatureGrid />
+        <HowItWorks />
+        <StatsBar />
         <CallToAction />
       </AppShell>
     </>
