@@ -63,7 +63,6 @@ const TIERS: Tier[] = [
       "Super Charts",
       "Coin Universe (10 Charts)",
       "Crypto Market",
-      "AI Trader (1 Bot)",
       "1 Exchange Account",
       "Bots",
       "Portfolio",
@@ -91,7 +90,6 @@ const TIERS: Tier[] = [
       "Super Charts (20 Charts)",
       "Coin Universe",
       "Crypto Market",
-      "AI Trader (5 Bots)",
       "5 Exchange Accounts",
       "Bots",
       "Portfolio",
@@ -121,7 +119,6 @@ const TIERS: Tier[] = [
       "Super Charts (50 Charts)",
       "Coin Universe",
       "Crypto Market",
-      "AI Trader (Unlimited)",
       "Unlimited Exchange Accounts",
       "Bots",
       "Portfolio",
@@ -372,7 +369,7 @@ export default function PricingPage() {
                 {/* Features */}
                 <ul className="mt-4 flex-1 space-y-2 text-sm">
                   {tier.features.map((f) => {
-                    const isPremiumFeature = f.includes("AI Trader") || f.includes("Exchange Accounts") || f === "Master" || f === "War Room" || f === "Institutional Command" || f.includes("Bots") || f === "Portfolio" || f === "Bitrium Token" || f.includes("Charts)");
+                    const isPremiumFeature = f.includes("Exchange Accounts") || f === "Master" || f === "War Room" || f === "Institutional Command" || f.includes("Bots") || f === "Portfolio" || f === "Bitrium Token" || f.includes("Charts)");
                     // When another (lower) tier is selected: this is a higher tier → show glow on unique features
                     const isUniqueAdvantage = anotherTierSelected && isPremiumFeature && !selectedTierFeatures.includes(f);
                     // When a higher tier is selected: this is a lower tier → demote premium styling

@@ -545,7 +545,7 @@ export const Sidebar = ({
           />
         ))}
 
-        {true ? <div
+        {isAdmin ? <div
           ref={aiTraderRef}
           className="relative"
           onMouseEnter={openAiTrader}
