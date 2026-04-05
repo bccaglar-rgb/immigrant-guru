@@ -20,6 +20,13 @@ import {
   LiquidityMagnet,
 } from "../components/master/MasterPanels";
 import { useLiveMarketData } from "../hooks/useLiveMarketData";
+import {
+  MarketHeatmap, SectorRotation, BreakoutScanner,
+  SmartSignalGrid, OpportunityFeed,
+  MoneyFlowPanel, LiveTape, BuySellPressure,
+  WhaleActivityBoard, LiquidationMap, AIGlobalBias,
+  CorrelationPanel, DangerZone, MarketCondition,
+} from "../components/warroom/WarRoomPanels";
 import type { OHLCVData } from "../components/shared/LWChart";
 
 /* ── Filter data ── */
@@ -137,6 +144,31 @@ export default function MasterPage() {
           <QuickEntryPanel />
           {/* Decision Box */}
           <DecisionBox />
+          {/* War Room panels */}
+          <div className="flex-1 min-h-0 overflow-y-auto scrollbar-thin space-y-1.5">
+            <div className="grid grid-cols-3 gap-1.5">
+              <MarketHeatmap />
+              <SectorRotation />
+              <BreakoutScanner />
+            </div>
+            <SmartSignalGrid />
+            <OpportunityFeed />
+            <div className="grid grid-cols-3 gap-1.5">
+              <MoneyFlowPanel />
+              <LiveTape />
+              <BuySellPressure />
+            </div>
+            <div className="grid grid-cols-3 gap-1.5">
+              <WhaleActivityBoard />
+              <LiquidationMap />
+              <AIGlobalBias />
+            </div>
+            <div className="grid grid-cols-3 gap-1.5">
+              <CorrelationPanel />
+              <DangerZone />
+              <MarketCondition />
+            </div>
+          </div>
         </div>
 
         {/* ═══ RIGHT COLUMN (3 cols) — All panels merged ═══ */}
