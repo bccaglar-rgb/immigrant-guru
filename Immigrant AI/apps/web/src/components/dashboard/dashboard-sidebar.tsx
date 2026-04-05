@@ -46,7 +46,7 @@ export function DashboardSidebar({ pathname }: DashboardSidebarProps) {
             alt="Immigrant Guru"
             width={320}
             height={112}
-            className="h-auto w-[170px] object-contain"
+            className="h-auto w-[90px] object-contain"
             priority
           />
         </Link>
