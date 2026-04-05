@@ -78,7 +78,13 @@ export function AIAnalysisPage() {
     const res = await checkout(session.accessToken, plan);
     setUpgrading(null);
     if (res.ok) {
-      // Reload analysis with premium data
+      const data = res.data;
+      // If Stripe returned a checkout URL, redirect to it
+      if ((data as any).checkout_url) {
+        window.location.href = (data as any).checkout_url;
+        return;
+      }
+      // Demo mode: reload analysis with premium data
       void loadAnalysis();
     }
   }, [session, loadAnalysis]);

@@ -1,5 +1,7 @@
 """Email service using Resend API — premium, warm, conversion-focused."""
 
+from __future__ import annotations
+
 import logging
 import httpx
 

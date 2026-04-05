@@ -74,7 +74,15 @@ class Settings(BaseSettings):
 
     # Email (Resend)
     resend_api_key: str = ""
-    resend_from_email: str = "Immigrant Guru <onboarding@resend.dev>"
+    resend_from_email: str = "Immigrant Guru <noreply@immigrant.guru>"
+
+    # Stripe
+    stripe_secret_key: str = ""
+    stripe_publishable_key: str = ""
+    stripe_webhook_secret: str = ""
+    stripe_starter_price_id: str = ""
+    stripe_plus_price_id: str = ""
+    stripe_premium_price_id: str = ""
 
     @field_validator("admin_emails")
     @classmethod
