@@ -14,7 +14,7 @@ from app.schemas.copilot import (
     CopilotMessageExchangeRead,
     CopilotThreadRead,
 )
-from app.schemas.document import DocumentRead
+from app.schemas.document import DocumentAuditResponse, DocumentRead
 from app.schemas.immigration_case import (
     ImmigrationCaseCreate,
     ImmigrationCaseRead,
@@ -33,6 +33,7 @@ from app.services.missing_information_service import MissingInformationService
 from app.services.pathway_probability_service import PathwayProbabilityService
 from app.services.case_workspace_service import CaseWorkspaceService
 from app.services.document_service import DocumentService
+from app.services.document_audit_service import DocumentAuditService
 from app.services.document_job_dispatcher import DocumentJobDispatcher
 from app.services.document_storage import LocalDocumentStorage
 from app.services.profile_service import ProfileService
@@ -67,6 +68,9 @@ document_service = DocumentService(
     dispatcher=DocumentJobDispatcher(settings),
     storage=LocalDocumentStorage(settings),
     max_upload_bytes=settings.document_max_upload_bytes,
+)
+document_audit_service = DocumentAuditService(
+    checklist_service=DocumentChecklistService(),
 )
 workspace_service = CaseWorkspaceService(
     case_service=case_service,
@@ -310,6 +314,30 @@ async def list_case_documents(
         case_id=case_id,
     )
     return [DocumentRead.model_validate(document) for document in documents]
+
+
+@router.get(
+    "/{case_id}/document-audit",
+    response_model=DocumentAuditResponse,
+    summary="Audit uploaded case documents for compliance readiness",
+)
+async def get_case_document_audit(
+    case_id: UUID,
+    current_user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_db_session),
+) -> DocumentAuditResponse:
+    immigration_case = await case_service.get_case(session, current_user, case_id)
+    profile = await profile_service.get_or_create_profile(session, current_user)
+    documents = await document_service.list_case_documents(
+        session=session,
+        user=current_user,
+        case_id=case_id,
+    )
+    return document_audit_service.audit(
+        profile=profile,
+        immigration_case=immigration_case,
+        documents=documents,
+    )
 
 
 @router.put(

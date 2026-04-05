@@ -27,6 +27,7 @@ client = TestClient(app)
         ("post", "/api/v1/cases/00000000-0000-0000-0000-000000000001/simulation", {"profile_overrides": {"english_level": "advanced"}}),
         ("get", "/api/v1/cases/00000000-0000-0000-0000-000000000001/copilot/thread", None),
         ("get", "/api/v1/cases/00000000-0000-0000-0000-000000000001/documents", None),
+        ("get", "/api/v1/cases/00000000-0000-0000-0000-000000000001/document-audit", None),
         ("post", "/api/v1/cases/00000000-0000-0000-0000-000000000001/copilot/messages", {"content": "What should I do next?"}),
         ("put", "/api/v1/cases/00000000-0000-0000-0000-000000000001", {"title": "Updated"}),
         ("delete", "/api/v1/cases/00000000-0000-0000-0000-000000000001", None),

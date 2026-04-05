@@ -1,0 +1,93 @@
+{
+  "visa_code": "H-1B",
+  "visa_subtype": null,
+  "subtype": null,
+  "official_name": "Specialty Occupation Worker",
+  "visa_family": "nonimmigrant",
+  "category_group": "employment",
+  "jurisdiction": "United States",
+  "purpose": "Specialty occupation employment in the United States.",
+  "who_can_apply": [
+    "Foreign nationals with a qualifying specialty occupation job offer."
+  ],
+  "petitioner_required": true,
+  "sponsor_required": true,
+  "petition_form": [
+    "I-129"
+  ],
+  "labor_certification_required": false,
+  "lca_required": true,
+  "uscis_petition_required": true,
+  "sevis_required": false,
+  "sevis_program_sponsorship_required": null,
+  "treaty_required": false,
+  "treaty_nationality_required": null,
+  "treaty_nationalities": [],
+  "treaty_nationality_note": null,
+  "derivative_visas": [
+    "H-4"
+  ],
+  "derivative_categories": [
+    "H-4"
+  ],
+  "work_authorization": true,
+  "work_authorized": true,
+  "study_authorization": "limited_or_incidental",
+  "study_authorized": "limited_or_incidental",
+  "dual_intent": true,
+  "cap_quota_status": "cap_subject_for_many_cases",
+  "numerical_cap": true,
+  "lottery_based": true,
+  "lottery_notes": "Cap-subject filings generally use a registration selection process before petition filing.",
+  "visa_bulletin_applicable": false,
+  "aos_chart_behavior": null,
+  "adjustment_of_status_possible": true,
+  "consular_processing_possible": true,
+  "initial_validity": "See official source.",
+  "extension_renewal_basics": "Commonly granted in fixed increments with a total stay framework tied to petition approval and extension rules.",
+  "extension_rules": "See official source.",
+  "premium_processing_possible": true,
+  "core_eligibility_requirements": [
+    "Specialty occupation job offer",
+    "Qualified beneficiary",
+    "Approved Labor Condition Application",
+    "USCIS petition approval"
+  ],
+  "hard_disqualifiers": [
+    "Job not accepted as specialty occupation",
+    "Beneficiary does not meet qualification threshold",
+    "Cap registration not selected where cap subject"
+  ],
+  "required_documents": [
+    "Passport",
+    "Form I-129 support",
+    "Degree evidence",
+    "Job offer",
+    "LCA copy",
+    "Approval notice if applicable"
+  ],
+  "common_denial_reasons": [
+    "Job not specialty occupation",
+    "Insufficient beneficiary qualifications",
+    "Cap registration or selection not secured"
+  ],
+  "official_forms": [
+    "I-129",
+    "DS-160"
+  ],
+  "official_source_urls": [
+    "https://travel.state.gov/content/travel/en/us-visas/visa-information-resources/all-visa-categories.html",
+    "https://www.uscis.gov/working-in-the-united-states/h-1b-specialty-occupations"
+  ],
+  "source_notes": [
+    "Cap and registration rules may vary by fiscal year."
+  ],
+  "last_verified_at": "2026-04-04T00:00:00Z",
+  "subtype_notes": null,
+  "confidence": "high",
+  "confidence_level": "high",
+  "confidence_basis": "Directly stated on a category-specific official U.S. government page or an official category page plus a directly applicable USCIS/State process page.",
+  "validation_notes": [],
+  "source_version": "us_official_seed_2026-04-04_v1",
+  "requires_human_review": false
+}

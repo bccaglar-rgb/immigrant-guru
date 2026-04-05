@@ -1,0 +1,78 @@
+{
+  "visa_code": "E-3",
+  "visa_subtype": null,
+  "subtype": null,
+  "official_name": "Australian Specialty Occupation Worker",
+  "visa_family": "nonimmigrant",
+  "category_group": null,
+  "jurisdiction": "United States",
+  "purpose": "Specialty occupation employment for qualifying Australian nationals.",
+  "who_can_apply": [],
+  "petitioner_required": false,
+  "sponsor_required": true,
+  "petition_form": [],
+  "labor_certification_required": null,
+  "lca_required": null,
+  "uscis_petition_required": false,
+  "sevis_required": null,
+  "sevis_program_sponsorship_required": null,
+  "treaty_required": true,
+  "treaty_nationality_required": true,
+  "treaty_nationalities": [],
+  "treaty_nationality_note": "Available only to Australian nationals.",
+  "derivative_visas": [],
+  "derivative_categories": [],
+  "work_authorization": true,
+  "work_authorized": true,
+  "study_authorization": false,
+  "study_authorized": false,
+  "dual_intent": null,
+  "cap_quota_status": "annual_numerical_limit",
+  "numerical_cap": null,
+  "lottery_based": false,
+  "lottery_notes": null,
+  "visa_bulletin_applicable": false,
+  "aos_chart_behavior": null,
+  "adjustment_of_status_possible": true,
+  "consular_processing_possible": true,
+  "initial_validity": null,
+  "extension_renewal_basics": "Renewals depend on continuing specialty occupation eligibility.",
+  "extension_rules": "Renewals depend on continuing specialty occupation eligibility.",
+  "premium_processing_possible": null,
+  "core_eligibility_requirements": [
+    "Australian nationality",
+    "Specialty occupation position",
+    "Qualified beneficiary",
+    "Valid labor condition process where required"
+  ],
+  "hard_disqualifiers": [
+    "Not an Australian national",
+    "Position not accepted as specialty occupation"
+  ],
+  "required_documents": [
+    "Passport",
+    "DS-160",
+    "Job offer",
+    "Degree evidence",
+    "LCA or equivalent labor evidence"
+  ],
+  "common_denial_reasons": [
+    "Nationality requirement not met",
+    "Position not specialty occupation"
+  ],
+  "official_forms": [
+    "DS-160"
+  ],
+  "official_source_urls": [
+    "https://travel.state.gov/content/travel/en/us-visas/visa-information-resources/all-visa-categories.html"
+  ],
+  "source_notes": [],
+  "last_verified_at": "2026-04-04T00:00:00Z",
+  "subtype_notes": null,
+  "confidence": "medium",
+  "confidence_level": "medium",
+  "confidence_basis": "Assembled conservatively from multiple official U.S. government pages without unsupported inference.",
+  "validation_notes": [],
+  "source_version": "us_official_seed_2026-04-04_v1",
+  "requires_human_review": false
+}

@@ -5,7 +5,7 @@ import type { ApiRequestResult } from "@/types/api";
 import { documentUploadStatusValues } from "@/types/documents";
 import type { CaseDocument, UploadCaseDocumentPayload } from "@/types/documents";
 
-const caseDocumentSchema = z.object({
+export const caseDocumentSchema = z.object({
   id: z.string().uuid(),
   case_id: z.string().uuid(),
   filename: z.string().min(1),
@@ -18,6 +18,7 @@ const caseDocumentSchema = z.object({
   processing_attempts: z.number().int().nonnegative(),
   processed_at: z.string().datetime().nullable(),
   processing_error: z.string().nullable(),
+  analysis_metadata: z.record(z.unknown()).default({}),
   created_at: z.string().datetime(),
   updated_at: z.string().datetime()
 });

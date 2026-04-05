@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 
+import { LanguageSwitcher } from "@/components/layout/language-switcher";
 import { Animate } from "@/components/ui/animate";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -53,6 +54,7 @@ export function DashboardTopbar({
           </div>
 
           <div className="flex items-center gap-3">
+            <LanguageSwitcher />
             <div className="rounded-xl border border-line bg-canvas/60 px-4 py-2.5 text-right">
               <p className="text-xs text-muted">{user.email}</p>
               <p className="mt-0.5 text-xs text-muted">

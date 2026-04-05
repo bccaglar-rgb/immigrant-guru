@@ -62,14 +62,17 @@ export function useDocumentCenterMock(
   const uploadTimerRef = useRef<number | null>(null);
 
   useEffect(() => {
-    setDocuments(initialData.documents);
-    setIsLoading(true);
+    const resetTimer = window.setTimeout(() => {
+      setDocuments(initialData.documents);
+      setIsLoading(true);
+    }, 0);
 
     const timer = window.setTimeout(() => {
       setIsLoading(false);
     }, 450);
 
     return () => {
+      window.clearTimeout(resetTimer);
       window.clearTimeout(timer);
     };
   }, [initialData]);

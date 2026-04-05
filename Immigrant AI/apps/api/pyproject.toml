@@ -28,7 +28,9 @@ dependencies = [
 [project.optional-dependencies]
 dev = [
   "pytest>=8.3,<9.0",
-  "pytest-asyncio>=0.24,<1.0"
+  "pytest-asyncio>=0.24,<1.0",
+  "ruff>=0.15,<0.16",
+  "mypy>=1.19,<2.0"
 ]
 
 [tool.setuptools.packages.find]
@@ -37,3 +39,40 @@ include = ["app*"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["."]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+extend-exclude = ["alembic/versions"]
+
+[tool.ruff.lint]
+select = ["F"]
+
+[tool.mypy]
+python_version = "3.12"
+exclude = [
+  "alembic/versions/",
+  "tests/",
+  "scripts/",
+]
+ignore_missing_imports = true
+pretty = true
+show_error_codes = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+
+[[tool.mypy.overrides]]
+module = [
+  "app.db.vector",
+  "app.models.enums",
+  "app.schemas.*",
+  "app.services.ai_prompt_builder",
+  "app.services.copilot_chat_service",
+  "app.services.final_decision_service",
+  "app.services.health_service",
+  "app.services.knowledge_retrieval_service",
+  "app.services.scoring_service",
+  "app.services.timeline_calculator_service",
+  "app.services.us_visa_knowledge_extraction_service",
+]
+ignore_errors = true

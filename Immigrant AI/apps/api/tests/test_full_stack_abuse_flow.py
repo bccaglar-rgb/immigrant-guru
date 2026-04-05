@@ -320,8 +320,8 @@ class FakeProfileService:
     async def update_profile(self, session, user, payload):
         del session
         profile = self._state.users[user.id].profile
-        for field, value in payload.model_dump(exclude_unset=True).items():
-            setattr(profile, field, value)
+        for field_name, value in payload.model_dump(exclude_unset=True).items():
+            setattr(profile, field_name, value)
         profile.updated_at = _now()
         self._state.users[user.id].updated_at = profile.updated_at
         return profile
@@ -372,8 +372,8 @@ class FakeCaseService:
         del session
         immigration_case = self._state.require_case(case_id, user.id)
         updates = payload.model_dump(exclude_unset=True)
-        for field, value in updates.items():
-            setattr(immigration_case, field, value)
+        for field_name, value in updates.items():
+            setattr(immigration_case, field_name, value)
         immigration_case.updated_at = _now()
         return immigration_case
 
@@ -741,8 +741,8 @@ class FakeCaseOutcomeService:
         del session
         outcome = await self.get_case_outcome(session=None, user=user, case_id=case_id)
         updates = payload.model_dump(exclude_unset=True)
-        for field, value in updates.items():
-            setattr(outcome, field, value)
+        for field_name, value in updates.items():
+            setattr(outcome, field_name, value)
         outcome.recorded_by_user_id = user.id
         outcome.recorded_at = _now()
         outcome.updated_at = _now()
@@ -1028,6 +1028,16 @@ class FakeAlternativeStrategiesService:
                     "cost_estimate": "Medium",
                     "risks": ["Longer preparation time."],
                     "next_steps": ["Keep fallback documents organized."],
+                },
+                {
+                    "name": "Plan C",
+                    "pathway": f"{payload.target_country} long-term route",
+                    "why_it_fits": "This path becomes more realistic after stronger long-term positioning.",
+                    "probability": 52,
+                    "timeline_months": 24.0,
+                    "cost_estimate": "Medium",
+                    "risks": ["Requires longer evidence-building runway."],
+                    "next_steps": ["Strengthen profile depth for the long-term path."],
                 }
             ],
             "recommended_plan": "Plan A",

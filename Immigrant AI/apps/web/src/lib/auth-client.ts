@@ -10,13 +10,13 @@ import type {
   RequestResult
 } from "@/types/auth";
 
-const tokenResponseSchema = z.object({
+export const tokenResponseSchema = z.object({
   access_token: z.string().min(1),
   token_type: z.string().default("bearer"),
   expires_in: z.number().int().positive()
 });
 
-const authenticatedUserSchema = z.object({
+export const authenticatedUserSchema = z.object({
   id: z.string().uuid(),
   email: z.string().email(),
   status: z.string().min(1),

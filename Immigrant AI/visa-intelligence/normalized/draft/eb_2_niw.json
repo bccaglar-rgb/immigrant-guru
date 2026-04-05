@@ -1,0 +1,83 @@
+{
+  "visa_code": "EB-2 NIW",
+  "visa_subtype": null,
+  "subtype": null,
+  "official_name": "National Interest Waiver",
+  "visa_family": "immigrant",
+  "category_group": null,
+  "jurisdiction": "United States",
+  "purpose": "Employment-based second preference pathway with a national-interest waiver framework.",
+  "who_can_apply": [],
+  "petitioner_required": false,
+  "sponsor_required": false,
+  "petition_form": [],
+  "labor_certification_required": false,
+  "lca_required": null,
+  "uscis_petition_required": true,
+  "sevis_required": null,
+  "sevis_program_sponsorship_required": null,
+  "treaty_required": null,
+  "treaty_nationality_required": null,
+  "treaty_nationalities": [],
+  "treaty_nationality_note": null,
+  "derivative_visas": [],
+  "derivative_categories": [],
+  "work_authorization": true,
+  "work_authorized": true,
+  "study_authorization": true,
+  "study_authorized": true,
+  "dual_intent": null,
+  "cap_quota_status": "preference_numerical_limit",
+  "numerical_cap": null,
+  "lottery_based": false,
+  "lottery_notes": null,
+  "visa_bulletin_applicable": true,
+  "aos_chart_behavior": "USCIS designates whether Final Action Dates or Dates for Filing charts apply for AOS each month.",
+  "adjustment_of_status_possible": true,
+  "consular_processing_possible": true,
+  "initial_validity": null,
+  "extension_renewal_basics": "Immigrant classification based on approved petition and current visa availability.",
+  "extension_rules": "Immigrant classification based on approved petition and current visa availability.",
+  "premium_processing_possible": null,
+  "core_eligibility_requirements": [
+    "EB-2 threshold",
+    "National interest waiver framework met",
+    "Approved I-140",
+    "Current visa availability where required"
+  ],
+  "hard_disqualifiers": [
+    "National-interest framework not established",
+    "Petition evidence insufficient",
+    "Visa number not available where required"
+  ],
+  "required_documents": [
+    "Passport",
+    "I-140 evidence",
+    "National interest evidence",
+    "Civil documents",
+    "DS-260 or I-485 support"
+  ],
+  "common_denial_reasons": [
+    "National interest showing not persuasive",
+    "Qualification evidence insufficient"
+  ],
+  "official_forms": [
+    "I-140",
+    "DS-260",
+    "I-485"
+  ],
+  "official_source_urls": [
+    "https://travel.state.gov/content/travel/en/us-visas/immigrate/employment-based-immigrant-visas.html",
+    "https://www.uscis.gov/green-card/green-card-processes-and-procedures/visa-availability-priority-dates/adjustment-of-status-filing-charts-from-the-visa-bulletin",
+    "https://travel.state.gov/content/travel/en/legal/visa-law0/visa-bulletin/2026/visa-bulletin-for-april-2026.html"
+  ],
+  "source_notes": [],
+  "last_verified_at": "2026-04-04T00:00:00Z",
+  "subtype_notes": "Stored separately because NIW changes labor certification and sponsor assumptions compared with standard EB-2.",
+  "confidence": "high",
+  "confidence_level": "high",
+  "confidence_basis": "Directly stated on a category-specific official U.S. government page or an official category page plus a directly applicable USCIS/State process page.",
+  "validation_notes": [],
+  "source_version": "us_official_seed_2026-04-04_v1",
+  "requires_human_review": false
+}

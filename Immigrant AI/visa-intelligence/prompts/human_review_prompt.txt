@@ -1,0 +1,13 @@
+Task: Prepare a human review queue from /visa-intelligence/human_review_queue.
+
+For each flagged visa record, create a summary with:
+- visa_code
+- field_in_question
+- issue_type
+- conflicting_or_missing_sources
+- codex_extracted_value
+- recommended_manual_action
+
+Save output to:
+- /visa-intelligence/human_review_queue/review_dashboard.json
+- /visa-intelligence/human_review_queue/review_notes.md

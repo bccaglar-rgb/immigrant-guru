@@ -1,0 +1,78 @@
+{
+  "visa_code": "IR2/CR2",
+  "visa_subtype": null,
+  "subtype": null,
+  "official_name": "Immediate Relative / Conditional Resident Child of a U.S. Citizen",
+  "visa_family": "immigrant",
+  "category_group": null,
+  "jurisdiction": "United States",
+  "purpose": "Immigrant visa pathway for a qualifying child of a U.S. citizen.",
+  "who_can_apply": [],
+  "petitioner_required": true,
+  "sponsor_required": true,
+  "petition_form": [],
+  "labor_certification_required": null,
+  "lca_required": null,
+  "uscis_petition_required": true,
+  "sevis_required": null,
+  "sevis_program_sponsorship_required": null,
+  "treaty_required": null,
+  "treaty_nationality_required": null,
+  "treaty_nationalities": [],
+  "treaty_nationality_note": null,
+  "derivative_visas": [],
+  "derivative_categories": [],
+  "work_authorization": true,
+  "work_authorized": true,
+  "study_authorization": true,
+  "study_authorized": true,
+  "dual_intent": null,
+  "cap_quota_status": "not_numerically_limited",
+  "numerical_cap": null,
+  "lottery_based": false,
+  "lottery_notes": null,
+  "visa_bulletin_applicable": false,
+  "aos_chart_behavior": null,
+  "adjustment_of_status_possible": true,
+  "consular_processing_possible": true,
+  "initial_validity": null,
+  "extension_renewal_basics": "Immigrant visa path; conditional treatment depends on category facts and petition structure.",
+  "extension_rules": "Immigrant visa path; conditional treatment depends on category facts and petition structure.",
+  "premium_processing_possible": null,
+  "core_eligibility_requirements": [
+    "Qualifying U.S. citizen parent petition",
+    "Child relationship requirements",
+    "Admissibility and documentary eligibility"
+  ],
+  "hard_disqualifiers": [
+    "Relationship or age definition not met",
+    "Inadmissibility grounds not resolved"
+  ],
+  "required_documents": [
+    "Passport",
+    "I-130 evidence",
+    "Civil documents",
+    "DS-260"
+  ],
+  "common_denial_reasons": [
+    "Relationship evidence insufficient",
+    "Age/status definition issues",
+    "Documentary insufficiency"
+  ],
+  "official_forms": [
+    "I-130",
+    "DS-260"
+  ],
+  "official_source_urls": [
+    "https://travel.state.gov/content/travel/en/us-visas/immigrate/family-immigration.html"
+  ],
+  "source_notes": [],
+  "last_verified_at": "2026-04-04T00:00:00Z",
+  "subtype_notes": null,
+  "confidence": "high",
+  "confidence_level": "high",
+  "confidence_basis": "Directly stated on a category-specific official U.S. government page or an official category page plus a directly applicable USCIS/State process page.",
+  "validation_notes": [],
+  "source_version": "us_official_seed_2026-04-04_v1",
+  "requires_human_review": false
+}

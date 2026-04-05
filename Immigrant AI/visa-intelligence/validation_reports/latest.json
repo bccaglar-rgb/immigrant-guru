@@ -1,0 +1,197 @@
+{
+  "generated_at": "2026-04-05T04:39:19Z",
+  "draft_records": 27,
+  "approved_records": 27,
+  "human_review_records": 0,
+  "results": [
+    {
+      "file": "b_1.json",
+      "visa_code": "B-1",
+      "status": "approved",
+      "blocking_issues": [],
+      "warnings": []
+    },
+    {
+      "file": "b_1_b_2.json",
+      "visa_code": "B-1/B-2",
+      "status": "approved",
+      "blocking_issues": [],
+      "warnings": []
+    },
+    {
+      "file": "b_2.json",
+      "visa_code": "B-2",
+      "status": "approved",
+      "blocking_issues": [],
+      "warnings": []
+    },
+    {
+      "file": "e_1.json",
+      "visa_code": "E-1",
+      "status": "approved",
+      "blocking_issues": [],
+      "warnings": []
+    },
+    {
+      "file": "e_3.json",
+      "visa_code": "E-3",
+      "status": "approved",
+      "blocking_issues": [],
+      "warnings": []
+    },
+    {
+      "file": "eb_1.json",
+      "visa_code": "EB-1",
+      "status": "approved",
+      "blocking_issues": [],
+      "warnings": []
+    },
+    {
+      "file": "eb_2.json",
+      "visa_code": "EB-2",
+      "status": "approved",
+      "blocking_issues": [],
+      "warnings": []
+    },
+    {
+      "file": "eb_2_niw.json",
+      "visa_code": "EB-2 NIW",
+      "status": "approved",
+      "blocking_issues": [],
+      "warnings": []
+    },
+    {
+      "file": "eb_3.json",
+      "visa_code": "EB-3",
+      "status": "approved",
+      "blocking_issues": [],
+      "warnings": []
+    },
+    {
+      "file": "eb_4.json",
+      "visa_code": "EB-4",
+      "status": "approved",
+      "blocking_issues": [],
+      "warnings": []
+    },
+    {
+      "file": "eb_5.json",
+      "visa_code": "EB-5",
+      "status": "approved",
+      "blocking_issues": [],
+      "warnings": []
+    },
+    {
+      "file": "f1.json",
+      "visa_code": "F1",
+      "status": "approved",
+      "blocking_issues": [],
+      "warnings": []
+    },
+    {
+      "file": "f2a.json",
+      "visa_code": "F2A",
+      "status": "approved",
+      "blocking_issues": [],
+      "warnings": []
+    },
+    {
+      "file": "f2b.json",
+      "visa_code": "F2B",
+      "status": "approved",
+      "blocking_issues": [],
+      "warnings": []
+    },
+    {
+      "file": "f3.json",
+      "visa_code": "F3",
+      "status": "approved",
+      "blocking_issues": [],
+      "warnings": []
+    },
+    {
+      "file": "f4.json",
+      "visa_code": "F4",
+      "status": "approved",
+      "blocking_issues": [],
+      "warnings": []
+    },
+    {
+      "file": "h_1b.json",
+      "visa_code": "H-1B",
+      "status": "approved",
+      "blocking_issues": [],
+      "warnings": []
+    },
+    {
+      "file": "ir1_cr1.json",
+      "visa_code": "IR1/CR1",
+      "status": "approved",
+      "blocking_issues": [],
+      "warnings": []
+    },
+    {
+      "file": "ir2_cr2.json",
+      "visa_code": "IR2/CR2",
+      "status": "approved",
+      "blocking_issues": [],
+      "warnings": []
+    },
+    {
+      "file": "ir5.json",
+      "visa_code": "IR5",
+      "status": "approved",
+      "blocking_issues": [],
+      "warnings": []
+    },
+    {
+      "file": "k_1.json",
+      "visa_code": "K-1",
+      "status": "approved",
+      "blocking_issues": [],
+      "warnings": []
+    },
+    {
+      "file": "k_3.json",
+      "visa_code": "K-3",
+      "status": "approved",
+      "blocking_issues": [],
+      "warnings": []
+    },
+    {
+      "file": "l_1a.json",
+      "visa_code": "L-1A",
+      "status": "approved",
+      "blocking_issues": [],
+      "warnings": []
+    },
+    {
+      "file": "l_1b.json",
+      "visa_code": "L-1B",
+      "status": "approved",
+      "blocking_issues": [],
+      "warnings": []
+    },
+    {
+      "file": "o_1.json",
+      "visa_code": "O-1",
+      "status": "approved",
+      "blocking_issues": [],
+      "warnings": []
+    },
+    {
+      "file": "sb_1.json",
+      "visa_code": "SB-1",
+      "status": "approved",
+      "blocking_issues": [],
+      "warnings": []
+    },
+    {
+      "file": "tn.json",
+      "visa_code": "TN",
+      "status": "approved",
+      "blocking_issues": [],
+      "warnings": []
+    }
+  ]
+}

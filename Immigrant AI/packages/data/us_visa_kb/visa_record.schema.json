@@ -1,0 +1,353 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "USVisaCatalogRecord",
+  "type": "object",
+  "required": [
+    "visa_code",
+    "official_name",
+    "visa_family",
+    "official_source_urls",
+    "last_verified_at",
+    "confidence",
+    "source_version"
+  ],
+  "properties": {
+    "visa_code": {
+      "type": "string",
+      "minLength": 1
+    },
+    "visa_subtype": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "subtype": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "official_name": {
+      "type": "string",
+      "minLength": 1
+    },
+    "visa_family": {
+      "type": "string",
+      "enum": [
+        "nonimmigrant",
+        "immigrant"
+      ]
+    },
+    "category_group": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "jurisdiction": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "purpose": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "who_can_apply": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "petitioner_required": {
+      "type": [
+        "boolean",
+        "null"
+      ]
+    },
+    "sponsor_required": {
+      "type": [
+        "boolean",
+        "null"
+      ]
+    },
+    "petition_form": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "labor_certification_required": {
+      "type": [
+        "boolean",
+        "null"
+      ]
+    },
+    "lca_required": {
+      "type": [
+        "boolean",
+        "null"
+      ]
+    },
+    "uscis_petition_required": {
+      "type": [
+        "boolean",
+        "null"
+      ]
+    },
+    "sevis_required": {
+      "type": [
+        "boolean",
+        "null"
+      ]
+    },
+    "sevis_program_sponsorship_required": {
+      "type": [
+        "boolean",
+        "null"
+      ]
+    },
+    "treaty_required": {
+      "type": [
+        "boolean",
+        "null"
+      ]
+    },
+    "treaty_nationality_required": {
+      "type": [
+        "boolean",
+        "null"
+      ]
+    },
+    "treaty_nationalities": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "treaty_nationality_note": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "derivative_visas": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "derivative_categories": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "work_authorization": {
+      "type": [
+        "boolean",
+        "null"
+      ]
+    },
+    "work_authorized": {
+      "type": [
+        "boolean",
+        "null"
+      ]
+    },
+    "study_authorization": {
+      "type": [
+        "boolean",
+        "string",
+        "null"
+      ]
+    },
+    "study_authorized": {
+      "type": [
+        "boolean",
+        "string",
+        "null"
+      ]
+    },
+    "dual_intent": {
+      "type": [
+        "boolean",
+        "null"
+      ]
+    },
+    "cap_quota_status": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "numerical_cap": {
+      "type": [
+        "boolean",
+        "null"
+      ]
+    },
+    "lottery_based": {
+      "type": [
+        "boolean",
+        "null"
+      ]
+    },
+    "lottery_notes": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "visa_bulletin_applicable": {
+      "type": [
+        "boolean",
+        "null"
+      ]
+    },
+    "aos_chart_behavior": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "adjustment_of_status_possible": {
+      "type": [
+        "boolean",
+        "null"
+      ]
+    },
+    "consular_processing_possible": {
+      "type": [
+        "boolean",
+        "null"
+      ]
+    },
+    "initial_validity": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "extension_renewal_basics": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "extension_rules": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "premium_processing_possible": {
+      "type": [
+        "boolean",
+        "null"
+      ]
+    },
+    "core_eligibility_requirements": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "hard_disqualifiers": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "required_documents": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "common_denial_reasons": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "official_forms": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "official_source_urls": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string",
+        "pattern": "^https://"
+      }
+    },
+    "source_notes": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "last_verified_at": {
+      "type": "string",
+      "minLength": 1
+    },
+    "subtype_notes": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "confidence": {
+      "type": "string",
+      "enum": [
+        "high",
+        "medium",
+        "low"
+      ]
+    },
+    "confidence_level": {
+      "type": "string",
+      "enum": [
+        "high",
+        "medium",
+        "low"
+      ]
+    },
+    "confidence_basis": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "validation_notes": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "source_version": {
+      "type": "string",
+      "minLength": 1
+    },
+    "human_review_required": {
+      "type": [
+        "boolean",
+        "null"
+      ]
+    },
+    "requires_human_review": {
+      "type": [
+        "boolean",
+        "null"
+      ]
+    }
+  }
+}

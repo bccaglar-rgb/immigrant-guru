@@ -3,6 +3,7 @@ from __future__ import annotations
 import logging
 from typing import Any
 
+from fastapi.encoders import jsonable_encoder
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
@@ -28,7 +29,7 @@ def _error_payload(
     }
 
     if details is not None:
-        payload["error"]["details"] = details
+        payload["error"]["details"] = jsonable_encoder(details)
 
     return payload
 

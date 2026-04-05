@@ -1,0 +1,192 @@
+{
+  "generated_at": "2026-04-05T04:39:19Z",
+  "dry_run": true,
+  "approved_files": 27,
+  "imported_records": [
+    {
+      "file": "b_1.json",
+      "visa_code": "B-1",
+      "visa_subtype": null,
+      "source_version": "us_official_seed_2026-04-04_v1",
+      "mode": "dry_run"
+    },
+    {
+      "file": "b_1_b_2.json",
+      "visa_code": "B-1/B-2",
+      "visa_subtype": null,
+      "source_version": "us_official_seed_2026-04-04_v1",
+      "mode": "dry_run"
+    },
+    {
+      "file": "b_2.json",
+      "visa_code": "B-2",
+      "visa_subtype": null,
+      "source_version": "us_official_seed_2026-04-04_v1",
+      "mode": "dry_run"
+    },
+    {
+      "file": "e_1.json",
+      "visa_code": "E-1",
+      "visa_subtype": null,
+      "source_version": "us_official_seed_2026-04-04_v1",
+      "mode": "dry_run"
+    },
+    {
+      "file": "e_3.json",
+      "visa_code": "E-3",
+      "visa_subtype": null,
+      "source_version": "us_official_seed_2026-04-04_v1",
+      "mode": "dry_run"
+    },
+    {
+      "file": "eb_1.json",
+      "visa_code": "EB-1",
+      "visa_subtype": null,
+      "source_version": "us_official_seed_2026-04-04_v1",
+      "mode": "dry_run"
+    },
+    {
+      "file": "eb_2.json",
+      "visa_code": "EB-2",
+      "visa_subtype": null,
+      "source_version": "us_official_seed_2026-04-04_v1",
+      "mode": "dry_run"
+    },
+    {
+      "file": "eb_2_niw.json",
+      "visa_code": "EB-2 NIW",
+      "visa_subtype": null,
+      "source_version": "us_official_seed_2026-04-04_v1",
+      "mode": "dry_run"
+    },
+    {
+      "file": "eb_3.json",
+      "visa_code": "EB-3",
+      "visa_subtype": null,
+      "source_version": "us_official_seed_2026-04-04_v1",
+      "mode": "dry_run"
+    },
+    {
+      "file": "eb_4.json",
+      "visa_code": "EB-4",
+      "visa_subtype": null,
+      "source_version": "us_official_seed_2026-04-04_v1",
+      "mode": "dry_run"
+    },
+    {
+      "file": "eb_5.json",
+      "visa_code": "EB-5",
+      "visa_subtype": null,
+      "source_version": "us_official_seed_2026-04-04_v1",
+      "mode": "dry_run"
+    },
+    {
+      "file": "f1.json",
+      "visa_code": "F1",
+      "visa_subtype": null,
+      "source_version": "us_official_seed_2026-04-04_v1",
+      "mode": "dry_run"
+    },
+    {
+      "file": "f2a.json",
+      "visa_code": "F2A",
+      "visa_subtype": null,
+      "source_version": "us_official_seed_2026-04-04_v1",
+      "mode": "dry_run"
+    },
+    {
+      "file": "f2b.json",
+      "visa_code": "F2B",
+      "visa_subtype": null,
+      "source_version": "us_official_seed_2026-04-04_v1",
+      "mode": "dry_run"
+    },
+    {
+      "file": "f3.json",
+      "visa_code": "F3",
+      "visa_subtype": null,
+      "source_version": "us_official_seed_2026-04-04_v1",
+      "mode": "dry_run"
+    },
+    {
+      "file": "f4.json",
+      "visa_code": "F4",
+      "visa_subtype": null,
+      "source_version": "us_official_seed_2026-04-04_v1",
+      "mode": "dry_run"
+    },
+    {
+      "file": "h_1b.json",
+      "visa_code": "H-1B",
+      "visa_subtype": null,
+      "source_version": "us_official_seed_2026-04-04_v1",
+      "mode": "dry_run"
+    },
+    {
+      "file": "k_1.json",
+      "visa_code": "K-1",
+      "visa_subtype": null,
+      "source_version": "us_official_seed_2026-04-04_v1",
+      "mode": "dry_run"
+    },
+    {
+      "file": "k_3.json",
+      "visa_code": "K-3",
+      "visa_subtype": null,
+      "source_version": "us_official_seed_2026-04-04_v1",
+      "mode": "dry_run"
+    },
+    {
+      "file": "l_1a.json",
+      "visa_code": "L-1A",
+      "visa_subtype": null,
+      "source_version": "us_official_seed_2026-04-04_v1",
+      "mode": "dry_run"
+    },
+    {
+      "file": "l_1b.json",
+      "visa_code": "L-1B",
+      "visa_subtype": null,
+      "source_version": "us_official_seed_2026-04-04_v1",
+      "mode": "dry_run"
+    },
+    {
+      "file": "o_1.json",
+      "visa_code": "O-1",
+      "visa_subtype": null,
+      "source_version": "us_official_seed_2026-04-04_v1",
+      "mode": "dry_run"
+    },
+    {
+      "file": "sb_1.json",
+      "visa_code": "SB-1",
+      "visa_subtype": null,
+      "source_version": "us_official_seed_2026-04-04_v1",
+      "mode": "dry_run"
+    },
+    {
+      "file": "tn.json",
+      "visa_code": "TN",
+      "visa_subtype": null,
+      "source_version": "us_official_seed_2026-04-04_v1",
+      "mode": "dry_run"
+    }
+  ],
+  "skipped_records": [
+    {
+      "file": "ir1_cr1.json",
+      "visa_code": "IR1/CR1",
+      "reason": "runtime_validation_failed:source_content_missing_category_signal"
+    },
+    {
+      "file": "ir2_cr2.json",
+      "visa_code": "IR2/CR2",
+      "reason": "runtime_validation_failed:source_content_missing_category_signal"
+    },
+    {
+      "file": "ir5.json",
+      "visa_code": "IR5",
+      "reason": "runtime_validation_failed:source_content_missing_category_signal"
+    }
+  ]
+}

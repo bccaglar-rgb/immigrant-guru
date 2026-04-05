@@ -1,0 +1,64 @@
+Task: Build a structured inventory of all U.S. visa categories using only official U.S. government sources.
+
+Allowed domains:
+- travel.state.gov
+- uscis.gov
+- dol.gov
+- cbp.gov
+- ice.gov
+- eoir.justice.gov
+- congress.gov
+
+Do not use:
+- law firm blogs
+- forums
+- Wikipedia
+- commercial immigration sites
+
+For each visa category, create one JSON file in /visa-intelligence/normalized/draft with:
+- visa_code
+- visa_subtype
+- official_name
+- visa_family
+- category_group
+- purpose
+- who_can_apply
+- sponsor_required
+- petitioner_required
+- petition_form
+- labor_certification_required
+- lca_required
+- sevis_required
+- treaty_required
+- treaty_nationalities
+- derivative_visas
+- work_authorized
+- study_authorized
+- dual_intent
+- numerical_cap
+- lottery_based
+- lottery_notes
+- visa_bulletin_applicable
+- adjustment_of_status_possible
+- consular_processing_possible
+- initial_validity
+- extension_rules
+- premium_processing_possible
+- core_eligibility_requirements
+- hard_disqualifiers
+- required_documents
+- common_denial_reasons
+- official_forms
+- official_source_urls
+- source_notes
+- last_verified_at
+- confidence_level
+- validation_notes
+- source_version
+- jurisdiction
+
+Rules:
+- If a value is not explicitly supported by an official source, set it to null.
+- Save one file per visa code.
+- Do not write to production tables.
+- Also create /visa-intelligence/raw_sources/source_index.json with all source URLs used.

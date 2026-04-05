@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 
+import { OnboardingGuard } from "@/components/onboarding/onboarding-guard";
 import { OnboardingWizard } from "@/components/onboarding/onboarding-wizard";
 
 export const metadata: Metadata = {
@@ -13,5 +14,9 @@ export const metadata: Metadata = {
 };
 
 export default function OnboardingPage() {
-  return <OnboardingWizard />;
+  return (
+    <OnboardingGuard>
+      <OnboardingWizard />
+    </OnboardingGuard>
+  );
 }

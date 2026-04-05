@@ -1,6 +1,8 @@
+import Image from "next/image";
 import Link from "next/link";
 
 import { HeaderAuthActions } from "@/components/layout/header-auth-actions";
+import { LanguageSwitcher } from "@/components/layout/language-switcher";
 
 const navItems = [
   { href: "/#benefits", label: "Benefits" },
@@ -13,7 +15,13 @@ export function SiteHeader() {
     <header className="sticky top-0 z-30 glass border-b border-line">
       <div className="mx-auto flex max-w-content items-center justify-between gap-6 px-6 py-3.5 md:px-10">
         <Link className="flex items-center gap-2.5" href="/">
-          <img src="/logo.png" alt="Immigrant Guru" className="h-9 w-9 object-contain" />
+          <Image
+            src="/logo-mark.svg"
+            alt="Immigrant Guru"
+            width={36}
+            height={36}
+            className="h-9 w-9 object-contain"
+          />
           <span className="text-xl font-semibold tracking-tight text-ink">
             Immigrant Guru
           </span>
@@ -31,7 +39,10 @@ export function SiteHeader() {
           ))}
         </nav>
 
-        <HeaderAuthActions />
+        <div className="flex items-center gap-3">
+          <LanguageSwitcher />
+          <HeaderAuthActions />
+        </div>
       </div>
     </header>
   );

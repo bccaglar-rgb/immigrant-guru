@@ -1,0 +1,325 @@
+[
+  {
+    "visa_code": "F-1",
+    "field_in_question": "high_confidence_requires_category_specific_source",
+    "issue_type": "validation_failure",
+    "source_urls": [
+      "https://travel.state.gov/content/travel/en/us-visas/visa-information-resources/all-visa-categories.html"
+    ],
+    "codex_extracted_value": null,
+    "reason": "high_confidence_requires_category_specific_source; petition_form_without_sponsor",
+    "recommended_action": "Manual legal review before publish"
+  },
+  {
+    "visa_code": "M-1",
+    "field_in_question": "high_confidence_requires_category_specific_source",
+    "issue_type": "validation_failure",
+    "source_urls": [
+      "https://travel.state.gov/content/travel/en/us-visas/visa-information-resources/all-visa-categories.html"
+    ],
+    "codex_extracted_value": null,
+    "reason": "high_confidence_requires_category_specific_source; petition_form_without_sponsor",
+    "recommended_action": "Manual legal review before publish"
+  },
+  {
+    "visa_code": "J-1",
+    "field_in_question": "high_confidence_requires_category_specific_source",
+    "issue_type": "validation_failure",
+    "source_urls": [
+      "https://travel.state.gov/content/travel/en/us-visas/visa-information-resources/all-visa-categories.html"
+    ],
+    "codex_extracted_value": null,
+    "reason": "high_confidence_requires_category_specific_source",
+    "recommended_action": "Manual legal review before publish"
+  },
+  {
+    "visa_code": "E-2",
+    "field_in_question": "high_confidence_requires_category_specific_source",
+    "issue_type": "validation_failure",
+    "source_urls": [
+      "https://travel.state.gov/content/travel/en/us-visas/visa-information-resources/all-visa-categories.html"
+    ],
+    "codex_extracted_value": null,
+    "reason": "high_confidence_requires_category_specific_source",
+    "recommended_action": "Manual legal review before publish"
+  },
+  {
+    "visa_code": "DV",
+    "field_in_question": "petition_form_without_sponsor",
+    "issue_type": "validation_failure",
+    "source_urls": [
+      "https://travel.state.gov/content/travel/en/us-visas/immigrate/diversity-visa-program-entry/diversity-visa-submit-entry.html",
+      "https://travel.state.gov/content/travel/en/legal/visa-law0/visa-bulletin/2026/visa-bulletin-for-april-2026.html",
+      "https://www.uscis.gov/green-card/green-card-processes-and-procedures/visa-availability-priority-dates/adjustment-of-status-filing-charts-from-the-visa-bulletin"
+    ],
+    "codex_extracted_value": null,
+    "reason": "petition_form_without_sponsor",
+    "recommended_action": "Manual legal review before publish"
+  },
+  {
+    "visa_code": "A",
+    "field_in_question": "Requires subtype-specific diplomatic handling review.",
+    "issue_type": "ambiguous_or_subtype_specific",
+    "source_urls": [
+      "https://travel.state.gov/content/travel/en/us-visas/visa-information-resources/all-visa-categories.html"
+    ],
+    "codex_extracted_value": null,
+    "reason": "Requires subtype-specific diplomatic handling review.",
+    "recommended_action": "Manual legal review before publish"
+  },
+  {
+    "visa_code": "C",
+    "field_in_question": "Transit subtype handling needs deeper rule extraction.",
+    "issue_type": "ambiguous_or_subtype_specific",
+    "source_urls": [
+      "https://travel.state.gov/content/travel/en/us-visas/visa-information-resources/all-visa-categories.html"
+    ],
+    "codex_extracted_value": null,
+    "reason": "Transit subtype handling needs deeper rule extraction.",
+    "recommended_action": "Manual legal review before publish"
+  },
+  {
+    "visa_code": "D",
+    "field_in_question": "Crew-specific work and shore-leave rules need deeper extraction.",
+    "issue_type": "ambiguous_or_subtype_specific",
+    "source_urls": [
+      "https://travel.state.gov/content/travel/en/us-visas/visa-information-resources/all-visa-categories.html"
+    ],
+    "codex_extracted_value": null,
+    "reason": "Crew-specific work and shore-leave rules need deeper extraction.",
+    "recommended_action": "Manual legal review before publish"
+  },
+  {
+    "visa_code": "G",
+    "field_in_question": "Subtype-specific organization eligibility needs review.",
+    "issue_type": "ambiguous_or_subtype_specific",
+    "source_urls": [
+      "https://travel.state.gov/content/travel/en/us-visas/visa-information-resources/all-visa-categories.html"
+    ],
+    "codex_extracted_value": null,
+    "reason": "Subtype-specific organization eligibility needs review.",
+    "recommended_action": "Manual legal review before publish"
+  },
+  {
+    "visa_code": "I",
+    "field_in_question": "Media activity boundaries need category-specific extraction.",
+    "issue_type": "ambiguous_or_subtype_specific",
+    "source_urls": [
+      "https://travel.state.gov/content/travel/en/us-visas/visa-information-resources/all-visa-categories.html"
+    ],
+    "codex_extracted_value": null,
+    "reason": "Media activity boundaries need category-specific extraction.",
+    "recommended_action": "Manual legal review before publish"
+  },
+  {
+    "visa_code": "NATO",
+    "field_in_question": "Subtype-specific NATO classes need normalization.",
+    "issue_type": "ambiguous_or_subtype_specific",
+    "source_urls": [
+      "https://travel.state.gov/content/travel/en/us-visas/visa-information-resources/all-visa-categories.html"
+    ],
+    "codex_extracted_value": null,
+    "reason": "Subtype-specific NATO classes need normalization.",
+    "recommended_action": "Manual legal review before publish"
+  },
+  {
+    "visa_code": "H-1B1",
+    "field_in_question": "Needs country-specific official extraction and labor handling details.",
+    "issue_type": "ambiguous_or_subtype_specific",
+    "source_urls": [
+      "https://travel.state.gov/content/travel/en/us-visas/visa-information-resources/all-visa-categories.html"
+    ],
+    "codex_extracted_value": null,
+    "reason": "Needs country-specific official extraction and labor handling details.",
+    "recommended_action": "Manual legal review before publish"
+  },
+  {
+    "visa_code": "H-2A",
+    "field_in_question": "DOL and petition workflow should be extracted from category-specific official pages.",
+    "issue_type": "ambiguous_or_subtype_specific",
+    "source_urls": [
+      "https://travel.state.gov/content/travel/en/us-visas/visa-information-resources/all-visa-categories.html"
+    ],
+    "codex_extracted_value": null,
+    "reason": "DOL and petition workflow should be extracted from category-specific official pages.",
+    "recommended_action": "Manual legal review before publish"
+  },
+  {
+    "visa_code": "H-2B",
+    "field_in_question": "DOL and petition workflow should be extracted from category-specific official pages.",
+    "issue_type": "ambiguous_or_subtype_specific",
+    "source_urls": [
+      "https://travel.state.gov/content/travel/en/us-visas/visa-information-resources/all-visa-categories.html"
+    ],
+    "codex_extracted_value": null,
+    "reason": "DOL and petition workflow should be extracted from category-specific official pages.",
+    "recommended_action": "Manual legal review before publish"
+  },
+  {
+    "visa_code": "H-3",
+    "field_in_question": "Subtype-specific trainee restrictions need extraction.",
+    "issue_type": "ambiguous_or_subtype_specific",
+    "source_urls": [
+      "https://travel.state.gov/content/travel/en/us-visas/visa-information-resources/all-visa-categories.html"
+    ],
+    "codex_extracted_value": null,
+    "reason": "Subtype-specific trainee restrictions need extraction.",
+    "recommended_action": "Manual legal review before publish"
+  },
+  {
+    "visa_code": "O-2",
+    "field_in_question": "Dependent support role criteria need extraction.",
+    "issue_type": "ambiguous_or_subtype_specific",
+    "source_urls": [
+      "https://travel.state.gov/content/travel/en/us-visas/visa-information-resources/all-visa-categories.html"
+    ],
+    "codex_extracted_value": null,
+    "reason": "Dependent support role criteria need extraction.",
+    "recommended_action": "Manual legal review before publish"
+  },
+  {
+    "visa_code": "P-1",
+    "field_in_question": "Subtypes P-1A/P-1B should be separated after official extraction.",
+    "issue_type": "ambiguous_or_subtype_specific",
+    "source_urls": [
+      "https://travel.state.gov/content/travel/en/us-visas/visa-information-resources/all-visa-categories.html"
+    ],
+    "codex_extracted_value": null,
+    "reason": "Subtypes P-1A/P-1B should be separated after official extraction.",
+    "recommended_action": "Manual legal review before publish"
+  },
+  {
+    "visa_code": "P-2",
+    "field_in_question": "Program-specific documentation needs extraction.",
+    "issue_type": "ambiguous_or_subtype_specific",
+    "source_urls": [
+      "https://travel.state.gov/content/travel/en/us-visas/visa-information-resources/all-visa-categories.html"
+    ],
+    "codex_extracted_value": null,
+    "reason": "Program-specific documentation needs extraction.",
+    "recommended_action": "Manual legal review before publish"
+  },
+  {
+    "visa_code": "P-3",
+    "field_in_question": "Culturally unique evidence threshold needs extraction.",
+    "issue_type": "ambiguous_or_subtype_specific",
+    "source_urls": [
+      "https://travel.state.gov/content/travel/en/us-visas/visa-information-resources/all-visa-categories.html"
+    ],
+    "codex_extracted_value": null,
+    "reason": "Culturally unique evidence threshold needs extraction.",
+    "recommended_action": "Manual legal review before publish"
+  },
+  {
+    "visa_code": "Q-1",
+    "field_in_question": "Program sponsorship and duration details need extraction.",
+    "issue_type": "ambiguous_or_subtype_specific",
+    "source_urls": [
+      "https://travel.state.gov/content/travel/en/us-visas/visa-information-resources/all-visa-categories.html"
+    ],
+    "codex_extracted_value": null,
+    "reason": "Program sponsorship and duration details need extraction.",
+    "recommended_action": "Manual legal review before publish"
+  },
+  {
+    "visa_code": "R-1",
+    "field_in_question": "Category-specific petition and evidentiary rules need extraction.",
+    "issue_type": "ambiguous_or_subtype_specific",
+    "source_urls": [
+      "https://travel.state.gov/content/travel/en/us-visas/visa-information-resources/all-visa-categories.html"
+    ],
+    "codex_extracted_value": null,
+    "reason": "Category-specific petition and evidentiary rules need extraction.",
+    "recommended_action": "Manual legal review before publish"
+  },
+  {
+    "visa_code": "T",
+    "field_in_question": "Victim certification and waiver details need extraction.",
+    "issue_type": "ambiguous_or_subtype_specific",
+    "source_urls": [
+      "https://travel.state.gov/content/travel/en/us-visas/visa-information-resources/all-visa-categories.html"
+    ],
+    "codex_extracted_value": null,
+    "reason": "Victim certification and waiver details need extraction.",
+    "recommended_action": "Manual legal review before publish"
+  },
+  {
+    "visa_code": "U",
+    "field_in_question": "Law-enforcement certification and cap handling need extraction.",
+    "issue_type": "ambiguous_or_subtype_specific",
+    "source_urls": [
+      "https://travel.state.gov/content/travel/en/us-visas/visa-information-resources/all-visa-categories.html"
+    ],
+    "codex_extracted_value": null,
+    "reason": "Law-enforcement certification and cap handling need extraction.",
+    "recommended_action": "Manual legal review before publish"
+  },
+  {
+    "visa_code": "V",
+    "field_in_question": "Eligibility is legacy/limited and needs precise statutory extraction.",
+    "issue_type": "ambiguous_or_subtype_specific",
+    "source_urls": [
+      "https://travel.state.gov/content/travel/en/us-visas/visa-information-resources/all-visa-categories.html"
+    ],
+    "codex_extracted_value": null,
+    "reason": "Eligibility is legacy/limited and needs precise statutory extraction.",
+    "recommended_action": "Manual legal review before publish"
+  },
+  {
+    "visa_code": "CW-1",
+    "field_in_question": "CNMI-specific statutory limitations need extraction.",
+    "issue_type": "ambiguous_or_subtype_specific",
+    "source_urls": [
+      "https://travel.state.gov/content/travel/en/us-visas/visa-information-resources/all-visa-categories.html"
+    ],
+    "codex_extracted_value": null,
+    "reason": "CNMI-specific statutory limitations need extraction.",
+    "recommended_action": "Manual legal review before publish"
+  },
+  {
+    "visa_code": "BCC",
+    "field_in_question": "Use restrictions and derivative handling need extraction.",
+    "issue_type": "ambiguous_or_subtype_specific",
+    "source_urls": [
+      "https://travel.state.gov/content/travel/en/us-visas/visa-information-resources/all-visa-categories.html"
+    ],
+    "codex_extracted_value": null,
+    "reason": "Use restrictions and derivative handling need extraction.",
+    "recommended_action": "Manual legal review before publish"
+  },
+  {
+    "visa_code": "S",
+    "field_in_question": "Sensitive category; official extraction should be handled manually.",
+    "issue_type": "ambiguous_or_subtype_specific",
+    "source_urls": [
+      "https://travel.state.gov/content/travel/en/us-visas/visa-information-resources/all-visa-categories.html"
+    ],
+    "codex_extracted_value": null,
+    "reason": "Sensitive category; official extraction should be handled manually.",
+    "recommended_action": "Manual legal review before publish"
+  },
+  {
+    "visa_code": "TD",
+    "field_in_question": "Dependent work/study rules should be confirmed from official category-specific pages.",
+    "issue_type": "ambiguous_or_subtype_specific",
+    "source_urls": [
+      "https://travel.state.gov/content/travel/en/us-visas/visa-information-resources/all-visa-categories.html",
+      "https://www.uscis.gov/working-in-the-united-states/temporary-workers/tn-nafta-professionals"
+    ],
+    "codex_extracted_value": null,
+    "reason": "Dependent work/study rules should be confirmed from official category-specific pages.",
+    "recommended_action": "Manual legal review before publish"
+  },
+  {
+    "visa_code": "SIV",
+    "field_in_question": "Needs subtype-level separation for Iraqi/Afghan and other special immigrant classes.",
+    "issue_type": "ambiguous_or_subtype_specific",
+    "source_urls": [
+      "https://travel.state.gov/content/travel/en/us-visas/immigrate/family-immigration.html",
+      "https://travel.state.gov/content/travel/en/us-visas/immigrate/employment-based-immigrant-visas.html"
+    ],
+    "codex_extracted_value": null,
+    "reason": "Needs subtype-level separation for Iraqi/Afghan and other special immigrant classes.",
+    "recommended_action": "Manual legal review before publish"
+  }
+]

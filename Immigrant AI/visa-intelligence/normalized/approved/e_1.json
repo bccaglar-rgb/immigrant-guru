@@ -1,0 +1,76 @@
+{
+  "visa_code": "E-1",
+  "visa_subtype": null,
+  "subtype": null,
+  "official_name": "Treaty Trader",
+  "visa_family": "nonimmigrant",
+  "category_group": null,
+  "jurisdiction": "United States",
+  "purpose": "Substantial trade under a qualifying treaty relationship.",
+  "who_can_apply": [],
+  "petitioner_required": false,
+  "sponsor_required": false,
+  "petition_form": [],
+  "labor_certification_required": null,
+  "lca_required": null,
+  "uscis_petition_required": false,
+  "sevis_required": null,
+  "sevis_program_sponsorship_required": null,
+  "treaty_required": true,
+  "treaty_nationality_required": true,
+  "treaty_nationalities": [],
+  "treaty_nationality_note": "Only nationals of treaty countries qualify.",
+  "derivative_visas": [],
+  "derivative_categories": [],
+  "work_authorization": true,
+  "work_authorized": true,
+  "study_authorization": false,
+  "study_authorized": false,
+  "dual_intent": null,
+  "cap_quota_status": "none",
+  "numerical_cap": null,
+  "lottery_based": false,
+  "lottery_notes": null,
+  "visa_bulletin_applicable": false,
+  "aos_chart_behavior": null,
+  "adjustment_of_status_possible": true,
+  "consular_processing_possible": true,
+  "initial_validity": null,
+  "extension_renewal_basics": "Renewal is generally possible while treaty trader eligibility continues.",
+  "extension_rules": "Renewal is generally possible while treaty trader eligibility continues.",
+  "premium_processing_possible": null,
+  "core_eligibility_requirements": [
+    "Treaty nationality",
+    "Substantial qualifying trade",
+    "Principal trade between treaty country and the United States"
+  ],
+  "hard_disqualifiers": [
+    "No treaty nationality",
+    "Trade not substantial or qualifying"
+  ],
+  "required_documents": [
+    "Passport",
+    "DS-160",
+    "Trade evidence",
+    "Ownership and nationality evidence"
+  ],
+  "common_denial_reasons": [
+    "Trade not substantial",
+    "Treaty nationality not established"
+  ],
+  "official_forms": [
+    "DS-160"
+  ],
+  "official_source_urls": [
+    "https://travel.state.gov/content/travel/en/us-visas/visa-information-resources/all-visa-categories.html"
+  ],
+  "source_notes": [],
+  "last_verified_at": "2026-04-04T00:00:00Z",
+  "subtype_notes": null,
+  "confidence": "medium",
+  "confidence_level": "medium",
+  "confidence_basis": "Assembled conservatively from multiple official U.S. government pages without unsupported inference.",
+  "validation_notes": [],
+  "source_version": "us_official_seed_2026-04-04_v1",
+  "requires_human_review": false
+}

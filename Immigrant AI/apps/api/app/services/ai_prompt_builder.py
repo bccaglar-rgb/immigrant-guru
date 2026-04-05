@@ -688,13 +688,19 @@ class AlternativeStrategiesPromptBuilder:
 
         system_prompt = (
             "You are a senior immigration strategist. "
-            "Generate 3 alternative immigration strategies named Plan A, Plan B, and Plan C. "
-            "Each plan must be realistic and tailored to the supplied user profile and target country. "
+            "Generate exactly 3 immigration pathways named Plan A, Plan B, and Plan C. "
+            "Plan A must be the best immediate option. "
+            "Plan B must be a fallback path if Plan A does not work. "
+            "Plan C must be the long-term strategy. "
+            "Each plan must be realistic, specific, and tailored to the supplied user profile and target country. "
+            "Base every plan on the provided data only, and keep the reasoning grounded in profile strength, evidence quality, and pathway fit. "
+            "Avoid generic or filler suggestions. "
             "Do not give legal advice or imply guaranteed approval. "
             "If profile data is incomplete, reduce probability, keep timelines conservative, and mention the uncertainty in risks or next_steps. "
             "Return STRICT JSON only with the exact keys: plans, recommended_plan, confidence_score. "
             "Each plan must contain the exact keys: name, pathway, why_it_fits, probability, timeline_months, cost_estimate, risks, next_steps. "
             "Plan names must be sequentially Plan A, Plan B, Plan C. "
+            "The why_it_fits field must stay short, factual, and data-based. "
             "recommended_plan must match one of the returned plan names. "
             "confidence_score must be a 0 to 100 confidence score for the overall comparison."
         )

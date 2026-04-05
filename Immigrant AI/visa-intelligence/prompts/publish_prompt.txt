@@ -1,0 +1,8 @@
+Task: Import approved visa records into the database.
+
+Rules:
+- Read only from /visa-intelligence/normalized/approved
+- Upsert by visa_code + visa_subtype + source_version
+- Never delete older verified records
+- Save import log to /visa-intelligence/validation_reports/import_log.json
+- If a record is missing required DB fields, skip it and log the reason

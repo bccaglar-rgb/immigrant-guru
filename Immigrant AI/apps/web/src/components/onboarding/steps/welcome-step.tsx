@@ -1,5 +1,7 @@
 "use client";
 
+import Image from "next/image";
+
 import { Animate } from "@/components/ui/animate";
 
 type WelcomeStepProps = {
@@ -13,7 +15,13 @@ export function WelcomeStep({ firstName, onNext }: WelcomeStepProps) {
   return (
     <div className="flex flex-col items-center justify-center text-center py-12 md:py-20">
       <Animate animation="scale-in" duration={800}>
-        <img src="/logo.png" alt="Immigrant Guru" className="h-20 w-20 object-contain anim-pulse-glow rounded-3xl" />
+        <Image
+          src="/logo-mark.svg"
+          alt="Immigrant Guru"
+          width={80}
+          height={80}
+          className="h-20 w-20 object-contain anim-pulse-glow rounded-3xl"
+        />
       </Animate>
 
       <Animate animation="fade-up" delay={300} duration={800}>

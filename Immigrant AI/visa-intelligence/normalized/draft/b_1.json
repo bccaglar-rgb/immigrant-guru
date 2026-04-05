@@ -1,0 +1,79 @@
+{
+  "visa_code": "B-1",
+  "visa_subtype": null,
+  "subtype": null,
+  "official_name": "Temporary Business Visitor",
+  "visa_family": "nonimmigrant",
+  "category_group": null,
+  "jurisdiction": "United States",
+  "purpose": "Temporary business visits such as meetings, conferences, and consultations.",
+  "who_can_apply": [
+    "Foreign nationals seeking temporary business travel without U.S. employment."
+  ],
+  "petitioner_required": false,
+  "sponsor_required": false,
+  "petition_form": [],
+  "labor_certification_required": null,
+  "lca_required": null,
+  "uscis_petition_required": false,
+  "sevis_required": null,
+  "sevis_program_sponsorship_required": null,
+  "treaty_required": null,
+  "treaty_nationality_required": null,
+  "treaty_nationalities": [],
+  "treaty_nationality_note": null,
+  "derivative_visas": [],
+  "derivative_categories": [],
+  "work_authorization": false,
+  "work_authorized": false,
+  "study_authorization": false,
+  "study_authorized": false,
+  "dual_intent": false,
+  "cap_quota_status": "none",
+  "numerical_cap": null,
+  "lottery_based": false,
+  "lottery_notes": null,
+  "visa_bulletin_applicable": false,
+  "aos_chart_behavior": null,
+  "adjustment_of_status_possible": true,
+  "consular_processing_possible": true,
+  "initial_validity": null,
+  "extension_renewal_basics": "Extensions or change of status may be requested if the temporary purpose remains valid.",
+  "extension_rules": "Extensions or change of status may be requested if the temporary purpose remains valid.",
+  "premium_processing_possible": null,
+  "core_eligibility_requirements": [
+    "Temporary intent",
+    "Permissible B-1 activity",
+    "Sufficient funds for the trip"
+  ],
+  "hard_disqualifiers": [
+    "Intent to engage in unauthorized employment"
+  ],
+  "required_documents": [
+    "Passport",
+    "DS-160",
+    "Purpose-of-trip evidence",
+    "Financial evidence"
+  ],
+  "common_denial_reasons": [
+    "Insufficient temporary intent",
+    "Unclear business purpose",
+    "Suspected unauthorized work"
+  ],
+  "official_forms": [
+    "DS-160"
+  ],
+  "official_source_urls": [
+    "https://travel.state.gov/content/travel/en/us-visas/visa-information-resources/all-visa-categories.html",
+    "https://travel.state.gov/content/travel/en/us-visas/tourism-visit/visitor.html"
+  ],
+  "source_notes": [],
+  "last_verified_at": "2026-04-04T00:00:00Z",
+  "subtype_notes": null,
+  "confidence": "high",
+  "confidence_level": "high",
+  "confidence_basis": "Directly stated on a category-specific official U.S. government page or an official category page plus a directly applicable USCIS/State process page.",
+  "validation_notes": [],
+  "source_version": "us_official_seed_2026-04-04_v1",
+  "requires_human_review": false
+}

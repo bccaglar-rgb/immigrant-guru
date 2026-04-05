@@ -1,0 +1,78 @@
+{
+  "visa_code": "L-1A",
+  "visa_subtype": null,
+  "subtype": null,
+  "official_name": "Intracompany Transferee Executive or Manager",
+  "visa_family": "nonimmigrant",
+  "category_group": null,
+  "jurisdiction": "United States",
+  "purpose": "Temporary transfer of a qualifying executive or manager to a U.S. office.",
+  "who_can_apply": [],
+  "petitioner_required": true,
+  "sponsor_required": true,
+  "petition_form": [],
+  "labor_certification_required": null,
+  "lca_required": null,
+  "uscis_petition_required": true,
+  "sevis_required": null,
+  "sevis_program_sponsorship_required": null,
+  "treaty_required": null,
+  "treaty_nationality_required": null,
+  "treaty_nationalities": [],
+  "treaty_nationality_note": null,
+  "derivative_visas": [],
+  "derivative_categories": [],
+  "work_authorization": true,
+  "work_authorized": true,
+  "study_authorization": false,
+  "study_authorized": false,
+  "dual_intent": true,
+  "cap_quota_status": "none",
+  "numerical_cap": null,
+  "lottery_based": false,
+  "lottery_notes": null,
+  "visa_bulletin_applicable": false,
+  "aos_chart_behavior": null,
+  "adjustment_of_status_possible": true,
+  "consular_processing_possible": true,
+  "initial_validity": null,
+  "extension_renewal_basics": "Initial stay varies by office type; extensions may continue up to the maximum L-1A limit.",
+  "extension_rules": "Initial stay varies by office type; extensions may continue up to the maximum L-1A limit.",
+  "premium_processing_possible": null,
+  "core_eligibility_requirements": [
+    "Qualifying corporate relationship",
+    "One year of qualifying employment abroad",
+    "Executive or managerial role in the United States"
+  ],
+  "hard_disqualifiers": [
+    "No qualifying relationship",
+    "Insufficient managerial or executive evidence"
+  ],
+  "required_documents": [
+    "Passport",
+    "Form I-129 support",
+    "Corporate relationship evidence",
+    "Employment history evidence"
+  ],
+  "common_denial_reasons": [
+    "Insufficient manager/executive evidence",
+    "Corporate relationship not established"
+  ],
+  "official_forms": [
+    "I-129",
+    "DS-160"
+  ],
+  "official_source_urls": [
+    "https://travel.state.gov/content/travel/en/us-visas/visa-information-resources/all-visa-categories.html",
+    "https://www.uscis.gov/working-in-the-united-states/temporary-workers/l-1a-intracompany-transferee-executive-or-manager"
+  ],
+  "source_notes": [],
+  "last_verified_at": "2026-04-04T00:00:00Z",
+  "subtype_notes": null,
+  "confidence": "high",
+  "confidence_level": "high",
+  "confidence_basis": "Directly stated on a category-specific official U.S. government page or an official category page plus a directly applicable USCIS/State process page.",
+  "validation_notes": [],
+  "source_version": "us_official_seed_2026-04-04_v1",
+  "requires_human_review": false
+}

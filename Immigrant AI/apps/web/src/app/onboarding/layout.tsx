@@ -1,6 +1,9 @@
 import type { ReactNode } from "react";
 
+import Image from "next/image";
 import Link from "next/link";
+
+import { LanguageSwitcher } from "@/components/layout/language-switcher";
 
 type OnboardingLayoutProps = Readonly<{
   children: ReactNode;
@@ -13,18 +16,27 @@ export default function OnboardingLayout({ children }: OnboardingLayoutProps) {
 
       <header className="relative z-10 flex items-center justify-between px-6 py-4 md:px-10">
         <Link href="/" className="flex items-center gap-2.5">
-          <img src="/logo.png" alt="Immigrant Guru" className="h-9 w-9 object-contain" />
+          <Image
+            src="/logo-mark.svg"
+            alt="Immigrant Guru"
+            width={36}
+            height={36}
+            className="h-9 w-9 object-contain"
+          />
           <span className="text-xl font-semibold tracking-tight text-ink">
             Immigrant Guru
           </span>
         </Link>
 
-        <Link
-          href="/dashboard"
-          className="text-sm font-medium text-muted transition-colors hover:text-ink"
-        >
-          Skip to dashboard
-        </Link>
+        <div className="flex items-center gap-3">
+          <LanguageSwitcher />
+          <Link
+            href="/dashboard"
+            className="text-sm font-medium text-muted transition-colors hover:text-ink"
+          >
+            Skip to dashboard
+          </Link>
+        </div>
       </header>
 
       <main className="relative z-10">{children}</main>

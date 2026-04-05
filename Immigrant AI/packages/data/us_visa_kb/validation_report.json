@@ -1,0 +1,474 @@
+{
+  "source_version": "us_official_seed_2026-04-04_v1",
+  "generated_at": "2026-04-04T00:00:00Z",
+  "discovered_records": 56,
+  "catalog_records": 27,
+  "human_review_records": 29,
+  "passed_records": 27,
+  "results": [
+    {
+      "visa_code": "B-1",
+      "confidence": "high",
+      "status": "passed",
+      "errors": [],
+      "validation_notes": []
+    },
+    {
+      "visa_code": "B-2",
+      "confidence": "high",
+      "status": "passed",
+      "errors": [],
+      "validation_notes": []
+    },
+    {
+      "visa_code": "B-1/B-2",
+      "confidence": "high",
+      "status": "passed",
+      "errors": [],
+      "validation_notes": []
+    },
+    {
+      "visa_code": "F-1",
+      "confidence": "high",
+      "status": "human_review",
+      "errors": [
+        "petition_form_without_sponsor",
+        "high_confidence_requires_category_specific_source"
+      ],
+      "validation_notes": [
+        "high_confidence_requires_category_specific_source",
+        "petition_form_without_sponsor"
+      ]
+    },
+    {
+      "visa_code": "M-1",
+      "confidence": "high",
+      "status": "human_review",
+      "errors": [
+        "petition_form_without_sponsor",
+        "high_confidence_requires_category_specific_source"
+      ],
+      "validation_notes": [
+        "high_confidence_requires_category_specific_source",
+        "petition_form_without_sponsor"
+      ]
+    },
+    {
+      "visa_code": "J-1",
+      "confidence": "high",
+      "status": "human_review",
+      "errors": [
+        "high_confidence_requires_category_specific_source"
+      ],
+      "validation_notes": [
+        "high_confidence_requires_category_specific_source"
+      ]
+    },
+    {
+      "visa_code": "H-1B",
+      "confidence": "high",
+      "status": "passed",
+      "errors": [],
+      "validation_notes": []
+    },
+    {
+      "visa_code": "L-1A",
+      "confidence": "high",
+      "status": "passed",
+      "errors": [],
+      "validation_notes": []
+    },
+    {
+      "visa_code": "L-1B",
+      "confidence": "medium",
+      "status": "passed",
+      "errors": [],
+      "validation_notes": []
+    },
+    {
+      "visa_code": "O-1",
+      "confidence": "medium",
+      "status": "passed",
+      "errors": [],
+      "validation_notes": []
+    },
+    {
+      "visa_code": "E-1",
+      "confidence": "medium",
+      "status": "passed",
+      "errors": [],
+      "validation_notes": []
+    },
+    {
+      "visa_code": "E-2",
+      "confidence": "high",
+      "status": "human_review",
+      "errors": [
+        "high_confidence_requires_category_specific_source"
+      ],
+      "validation_notes": [
+        "high_confidence_requires_category_specific_source"
+      ]
+    },
+    {
+      "visa_code": "E-3",
+      "confidence": "medium",
+      "status": "passed",
+      "errors": [],
+      "validation_notes": []
+    },
+    {
+      "visa_code": "TN",
+      "confidence": "high",
+      "status": "passed",
+      "errors": [],
+      "validation_notes": []
+    },
+    {
+      "visa_code": "K-1",
+      "confidence": "medium",
+      "status": "passed",
+      "errors": [],
+      "validation_notes": []
+    },
+    {
+      "visa_code": "K-3",
+      "confidence": "high",
+      "status": "passed",
+      "errors": [],
+      "validation_notes": []
+    },
+    {
+      "visa_code": "IR1/CR1",
+      "confidence": "high",
+      "status": "passed",
+      "errors": [],
+      "validation_notes": []
+    },
+    {
+      "visa_code": "IR2/CR2",
+      "confidence": "high",
+      "status": "passed",
+      "errors": [],
+      "validation_notes": []
+    },
+    {
+      "visa_code": "IR5",
+      "confidence": "high",
+      "status": "passed",
+      "errors": [],
+      "validation_notes": []
+    },
+    {
+      "visa_code": "F1",
+      "confidence": "high",
+      "status": "passed",
+      "errors": [],
+      "validation_notes": []
+    },
+    {
+      "visa_code": "F2A",
+      "confidence": "high",
+      "status": "passed",
+      "errors": [],
+      "validation_notes": []
+    },
+    {
+      "visa_code": "F2B",
+      "confidence": "high",
+      "status": "passed",
+      "errors": [],
+      "validation_notes": []
+    },
+    {
+      "visa_code": "F3",
+      "confidence": "high",
+      "status": "passed",
+      "errors": [],
+      "validation_notes": []
+    },
+    {
+      "visa_code": "F4",
+      "confidence": "high",
+      "status": "passed",
+      "errors": [],
+      "validation_notes": []
+    },
+    {
+      "visa_code": "EB-1",
+      "confidence": "high",
+      "status": "passed",
+      "errors": [],
+      "validation_notes": []
+    },
+    {
+      "visa_code": "EB-2",
+      "confidence": "high",
+      "status": "passed",
+      "errors": [],
+      "validation_notes": []
+    },
+    {
+      "visa_code": "EB-2 NIW",
+      "confidence": "high",
+      "status": "passed",
+      "errors": [],
+      "validation_notes": []
+    },
+    {
+      "visa_code": "EB-3",
+      "confidence": "high",
+      "status": "passed",
+      "errors": [],
+      "validation_notes": []
+    },
+    {
+      "visa_code": "EB-4",
+      "confidence": "high",
+      "status": "passed",
+      "errors": [],
+      "validation_notes": []
+    },
+    {
+      "visa_code": "EB-5",
+      "confidence": "high",
+      "status": "passed",
+      "errors": [],
+      "validation_notes": []
+    },
+    {
+      "visa_code": "DV",
+      "confidence": "high",
+      "status": "human_review",
+      "errors": [
+        "petition_form_without_sponsor"
+      ],
+      "validation_notes": [
+        "petition_form_without_sponsor"
+      ]
+    },
+    {
+      "visa_code": "SB-1",
+      "confidence": "medium",
+      "status": "passed",
+      "errors": [],
+      "validation_notes": []
+    },
+    {
+      "visa_code": "A",
+      "confidence": "low",
+      "status": "human_review",
+      "errors": [],
+      "validation_notes": [
+        "Requires subtype-specific diplomatic handling review."
+      ]
+    },
+    {
+      "visa_code": "C",
+      "confidence": "low",
+      "status": "human_review",
+      "errors": [],
+      "validation_notes": [
+        "Transit subtype handling needs deeper rule extraction."
+      ]
+    },
+    {
+      "visa_code": "D",
+      "confidence": "low",
+      "status": "human_review",
+      "errors": [],
+      "validation_notes": [
+        "Crew-specific work and shore-leave rules need deeper extraction."
+      ]
+    },
+    {
+      "visa_code": "G",
+      "confidence": "low",
+      "status": "human_review",
+      "errors": [],
+      "validation_notes": [
+        "Subtype-specific organization eligibility needs review."
+      ]
+    },
+    {
+      "visa_code": "I",
+      "confidence": "low",
+      "status": "human_review",
+      "errors": [],
+      "validation_notes": [
+        "Media activity boundaries need category-specific extraction."
+      ]
+    },
+    {
+      "visa_code": "NATO",
+      "confidence": "low",
+      "status": "human_review",
+      "errors": [],
+      "validation_notes": [
+        "Subtype-specific NATO classes need normalization."
+      ]
+    },
+    {
+      "visa_code": "H-1B1",
+      "confidence": "low",
+      "status": "human_review",
+      "errors": [],
+      "validation_notes": [
+        "Needs country-specific official extraction and labor handling details."
+      ]
+    },
+    {
+      "visa_code": "H-2A",
+      "confidence": "low",
+      "status": "human_review",
+      "errors": [],
+      "validation_notes": [
+        "DOL and petition workflow should be extracted from category-specific official pages."
+      ]
+    },
+    {
+      "visa_code": "H-2B",
+      "confidence": "low",
+      "status": "human_review",
+      "errors": [],
+      "validation_notes": [
+        "DOL and petition workflow should be extracted from category-specific official pages."
+      ]
+    },
+    {
+      "visa_code": "H-3",
+      "confidence": "low",
+      "status": "human_review",
+      "errors": [],
+      "validation_notes": [
+        "Subtype-specific trainee restrictions need extraction."
+      ]
+    },
+    {
+      "visa_code": "O-2",
+      "confidence": "low",
+      "status": "human_review",
+      "errors": [],
+      "validation_notes": [
+        "Dependent support role criteria need extraction."
+      ]
+    },
+    {
+      "visa_code": "P-1",
+      "confidence": "low",
+      "status": "human_review",
+      "errors": [],
+      "validation_notes": [
+        "Subtypes P-1A/P-1B should be separated after official extraction."
+      ]
+    },
+    {
+      "visa_code": "P-2",
+      "confidence": "low",
+      "status": "human_review",
+      "errors": [],
+      "validation_notes": [
+        "Program-specific documentation needs extraction."
+      ]
+    },
+    {
+      "visa_code": "P-3",
+      "confidence": "low",
+      "status": "human_review",
+      "errors": [],
+      "validation_notes": [
+        "Culturally unique evidence threshold needs extraction."
+      ]
+    },
+    {
+      "visa_code": "Q-1",
+      "confidence": "low",
+      "status": "human_review",
+      "errors": [],
+      "validation_notes": [
+        "Program sponsorship and duration details need extraction."
+      ]
+    },
+    {
+      "visa_code": "R-1",
+      "confidence": "low",
+      "status": "human_review",
+      "errors": [],
+      "validation_notes": [
+        "Category-specific petition and evidentiary rules need extraction."
+      ]
+    },
+    {
+      "visa_code": "T",
+      "confidence": "low",
+      "status": "human_review",
+      "errors": [],
+      "validation_notes": [
+        "Victim certification and waiver details need extraction."
+      ]
+    },
+    {
+      "visa_code": "U",
+      "confidence": "low",
+      "status": "human_review",
+      "errors": [],
+      "validation_notes": [
+        "Law-enforcement certification and cap handling need extraction."
+      ]
+    },
+    {
+      "visa_code": "V",
+      "confidence": "low",
+      "status": "human_review",
+      "errors": [],
+      "validation_notes": [
+        "Eligibility is legacy/limited and needs precise statutory extraction."
+      ]
+    },
+    {
+      "visa_code": "CW-1",
+      "confidence": "low",
+      "status": "human_review",
+      "errors": [],
+      "validation_notes": [
+        "CNMI-specific statutory limitations need extraction."
+      ]
+    },
+    {
+      "visa_code": "BCC",
+      "confidence": "low",
+      "status": "human_review",
+      "errors": [],
+      "validation_notes": [
+        "Use restrictions and derivative handling need extraction."
+      ]
+    },
+    {
+      "visa_code": "S",
+      "confidence": "low",
+      "status": "human_review",
+      "errors": [],
+      "validation_notes": [
+        "Sensitive category; official extraction should be handled manually."
+      ]
+    },
+    {
+      "visa_code": "TD",
+      "confidence": "low",
+      "status": "human_review",
+      "errors": [],
+      "validation_notes": [
+        "Dependent work/study rules should be confirmed from official category-specific pages."
+      ]
+    },
+    {
+      "visa_code": "SIV",
+      "confidence": "low",
+      "status": "human_review",
+      "errors": [],
+      "validation_notes": [
+        "Needs subtype-level separation for Iraqi/Afghan and other special immigrant classes."
+      ]
+    }
+  ]
+}

@@ -191,3 +191,73 @@ class KnowledgeSearchResponse(BaseModel):
     backend: str
     total_results: int = Field(ge=0)
     results: list[KnowledgeSearchResult]
+
+
+class KnowledgeStructuringRequest(BaseModel):
+    model_config = ConfigDict(
+        extra="forbid",
+        json_schema_extra={
+            "example": {
+                "text": "H-1B specialty occupation petitions generally require a qualifying role and degree alignment. Cap-exempt employers are not subject to the annual quota."
+            }
+        },
+    )
+
+    text: str = Field(min_length=20, max_length=50000)
+
+
+class KnowledgeStructuringResponse(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    topic: str = Field(min_length=1, max_length=160)
+    summary: str = Field(min_length=1, max_length=400)
+    key_rules: list[str] = Field(default_factory=list, max_length=10)
+    exceptions: list[str] = Field(default_factory=list, max_length=10)
+    related_visas: list[str] = Field(default_factory=list, max_length=10)
+
+
+class USVisaKnowledgeExtractionRequest(BaseModel):
+    model_config = ConfigDict(
+        extra="forbid",
+        json_schema_extra={
+            "example": {
+                "text": "H-1B Specialty Occupations require a specialty occupation job offer, employer sponsorship, and an approved Labor Condition Application before petition adjudication. H-1B is generally cap subject and selected cases proceed through a registration process.",
+                "official_source_urls": [
+                    "https://www.uscis.gov/working-in-the-united-states/h-1b-specialty-occupations",
+                    "https://travel.state.gov/content/travel/en/us-visas/visa-information-resources/all-visa-categories.html",
+                ],
+                "last_verified_at": "2026-04-04T00:00:00Z",
+            }
+        },
+    )
+
+    text: str = Field(min_length=40, max_length=50000)
+    official_source_urls: list[str] = Field(default_factory=list, max_length=10)
+    last_verified_at: datetime | None = None
+
+
+class USVisaKnowledgeExtractionResponse(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    visa_code: str = Field(min_length=1, max_length=32)
+    official_name: str = Field(min_length=1, max_length=200)
+    visa_family: str = Field(pattern="^(nonimmigrant|immigrant)$")
+    purpose: str = Field(min_length=1, max_length=300)
+    petitioner_required: bool
+    pre_step_required: list[str] = Field(default_factory=list, max_length=8)
+    forms: list[str] = Field(default_factory=list, max_length=10)
+    eligibility_requirements: list[str] = Field(default_factory=list, max_length=12)
+    disqualifiers: list[str] = Field(default_factory=list, max_length=12)
+    derivative_beneficiaries: list[str] = Field(default_factory=list, max_length=8)
+    work_authorization: bool
+    study_authorization: bool
+    dual_intent: bool | None = None
+    numerical_cap: bool | None = None
+    lottery_based: bool | None = None
+    visa_bulletin_applicable: bool
+    adjustment_of_status_possible: bool
+    consular_processing_possible: bool
+    required_documents: list[str] = Field(default_factory=list, max_length=15)
+    common_denial_reasons: list[str] = Field(default_factory=list, max_length=12)
+    official_source_urls: list[str] = Field(default_factory=list, max_length=10)
+    last_verified_at: datetime | None = None

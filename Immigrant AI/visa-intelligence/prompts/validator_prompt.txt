@@ -1,0 +1,22 @@
+Task: Validate all JSON files in /visa-intelligence/normalized/draft against /visa-intelligence/schemas/visa_schema.json.
+
+For each file:
+- check required fields
+- check domain allowlist compliance
+- check logical consistency
+- detect contradictions
+- assign confidence level: high / medium / low
+
+Output:
+- valid records -> /visa-intelligence/normalized/approved
+- invalid or ambiguous records -> /visa-intelligence/human_review_queue
+- report -> /visa-intelligence/validation_reports/latest.json
+
+Validation rules:
+- No non-official domains in source URLs
+- visa_code, official_name, visa_family are required
+- If lottery_based = true, source must explicitly support it
+- If visa_bulletin_applicable = true, category must be immigrant or immigrant-linked
+- If treaty_required = true, include treaty notes or source support
+- If dual_intent is not explicitly confirmed, set to null
+- Never invent fixes

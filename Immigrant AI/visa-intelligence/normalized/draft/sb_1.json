@@ -1,0 +1,74 @@
+{
+  "visa_code": "SB-1",
+  "visa_subtype": null,
+  "subtype": null,
+  "official_name": "Returning Resident",
+  "visa_family": "immigrant",
+  "category_group": null,
+  "jurisdiction": "United States",
+  "purpose": "Returning resident classification for certain lawful permanent residents seeking reentry after an extended absence.",
+  "who_can_apply": [],
+  "petitioner_required": false,
+  "sponsor_required": false,
+  "petition_form": [],
+  "labor_certification_required": null,
+  "lca_required": null,
+  "uscis_petition_required": false,
+  "sevis_required": null,
+  "sevis_program_sponsorship_required": null,
+  "treaty_required": null,
+  "treaty_nationality_required": null,
+  "treaty_nationalities": [],
+  "treaty_nationality_note": null,
+  "derivative_visas": [],
+  "derivative_categories": [],
+  "work_authorization": true,
+  "work_authorized": true,
+  "study_authorization": true,
+  "study_authorized": true,
+  "dual_intent": null,
+  "cap_quota_status": "none",
+  "numerical_cap": null,
+  "lottery_based": false,
+  "lottery_notes": null,
+  "visa_bulletin_applicable": false,
+  "aos_chart_behavior": null,
+  "adjustment_of_status_possible": false,
+  "consular_processing_possible": true,
+  "initial_validity": null,
+  "extension_renewal_basics": "Consular returning-resident framework rather than a standard renewable visa category.",
+  "extension_rules": "Consular returning-resident framework rather than a standard renewable visa category.",
+  "premium_processing_possible": null,
+  "core_eligibility_requirements": [
+    "Prior LPR status",
+    "Qualifying returning resident criteria",
+    "Consular documentation"
+  ],
+  "hard_disqualifiers": [
+    "Returning-resident criteria not met"
+  ],
+  "required_documents": [
+    "Passport",
+    "Returning resident application evidence",
+    "Prior residence evidence"
+  ],
+  "common_denial_reasons": [
+    "Unable to establish returning resident eligibility"
+  ],
+  "official_forms": [
+    "DS-117",
+    "DS-260"
+  ],
+  "official_source_urls": [
+    "https://travel.state.gov/content/travel/en/us-visas/visa-information-resources/all-visa-categories.html"
+  ],
+  "source_notes": [],
+  "last_verified_at": "2026-04-04T00:00:00Z",
+  "subtype_notes": null,
+  "confidence": "medium",
+  "confidence_level": "medium",
+  "confidence_basis": "Assembled conservatively from multiple official U.S. government pages without unsupported inference.",
+  "validation_notes": [],
+  "source_version": "us_official_seed_2026-04-04_v1",
+  "requires_human_review": false
+}

@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Optional
 from uuid import UUID
 
-from sqlalchemy import CheckConstraint, Enum, ForeignKey, String, Text
+from sqlalchemy import CheckConstraint, Enum, ForeignKey, Text
 from sqlalchemy.dialects.postgresql import UUID as PGUUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 

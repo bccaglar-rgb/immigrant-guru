@@ -1,0 +1,91 @@
+{
+  "source_version": "us_official_seed_2026-04-04_v1",
+  "generated_at": "2026-04-04T00:00:00Z",
+  "allowed_domains": [
+    "travel.state.gov",
+    "uscis.gov",
+    "dol.gov",
+    "cbp.gov",
+    "ice.gov",
+    "eoir.justice.gov",
+    "congress.gov"
+  ],
+  "confidence_policy": {
+    "high": "Directly stated on a category-specific official U.S. government page or an official category page plus a directly applicable USCIS/State process page.",
+    "medium": "Assembled conservatively from multiple official U.S. government pages without unsupported inference.",
+    "low": "Incomplete, umbrella-level, or ambiguous; do not write to production catalog."
+  },
+  "validation_rules": [
+    "Every record must have at least one official source URL.",
+    "Every record must have official_name, visa_code, and visa_family.",
+    "If visa_bulletin_applicable is true, the record must be immigrant-family or immigrant-linked.",
+    "If lottery_based is true, the record must include lottery notes.",
+    "If treaty_nationality_required is true, the record must include a treaty nationality note.",
+    "If sponsor_required is false and USCIS petition is not required, petition forms should usually be absent unless explicitly supported by an official source.",
+    "If dual_intent is unknown, the field must be null.",
+    "Subtype-specific rules must be stored in subtype_notes instead of being inferred into the base category.",
+    "High-confidence production records must include at least one official source beyond the umbrella visa directory unless the directory page itself is the explicit official category page used for that category."
+  ],
+  "sources": {
+    "directory_of_visa_categories": {
+      "url": "https://travel.state.gov/content/travel/en/us-visas/visa-information-resources/all-visa-categories.html",
+      "domain": "travel.state.gov",
+      "label": "Directory of Visa Categories"
+    },
+    "visitor_visa": {
+      "url": "https://travel.state.gov/content/travel/en/us-visas/tourism-visit/visitor.html",
+      "domain": "travel.state.gov",
+      "label": "Visitor Visa"
+    },
+    "family_immigration": {
+      "url": "https://travel.state.gov/content/travel/en/us-visas/immigrate/family-immigration.html",
+      "domain": "travel.state.gov",
+      "label": "Family Immigration"
+    },
+    "employment_based_immigrant_visas": {
+      "url": "https://travel.state.gov/content/travel/en/us-visas/immigrate/employment-based-immigrant-visas.html",
+      "domain": "travel.state.gov",
+      "label": "Employment-Based Immigrant Visas"
+    },
+    "immigrant_investor_visas": {
+      "url": "https://travel.state.gov/content/travel/en/us-visas/immigrate/immigrant-investor-visas.html",
+      "domain": "travel.state.gov",
+      "label": "Immigrant Investor Visas"
+    },
+    "diversity_visa_program": {
+      "url": "https://travel.state.gov/content/travel/en/us-visas/immigrate/diversity-visa-program-entry/diversity-visa-submit-entry.html",
+      "domain": "travel.state.gov",
+      "label": "Diversity Visa Program"
+    },
+    "uscis_h1b": {
+      "url": "https://www.uscis.gov/working-in-the-united-states/h-1b-specialty-occupations",
+      "domain": "uscis.gov",
+      "label": "H-1B Specialty Occupations"
+    },
+    "uscis_l1a": {
+      "url": "https://www.uscis.gov/working-in-the-united-states/temporary-workers/l-1a-intracompany-transferee-executive-or-manager",
+      "domain": "uscis.gov",
+      "label": "L-1A Intracompany Transferee Executive or Manager"
+    },
+    "uscis_tn": {
+      "url": "https://www.uscis.gov/working-in-the-united-states/temporary-workers/tn-nafta-professionals",
+      "domain": "uscis.gov",
+      "label": "TN USMCA Professionals"
+    },
+    "uscis_aos_charts": {
+      "url": "https://www.uscis.gov/green-card/green-card-processes-and-procedures/visa-availability-priority-dates/adjustment-of-status-filing-charts-from-the-visa-bulletin",
+      "domain": "uscis.gov",
+      "label": "Adjustment of Status Filing Charts from the Visa Bulletin"
+    },
+    "k3_state": {
+      "url": "https://travel.state.gov/content/travel/en/us-visas/immigrate/family-immigration/nonimmigrant-visa-for-a-spouse-k-3.html",
+      "domain": "travel.state.gov",
+      "label": "Nonimmigrant Visa for a Spouse (K-3)"
+    },
+    "visa_bulletin_april_2026": {
+      "url": "https://travel.state.gov/content/travel/en/legal/visa-law0/visa-bulletin/2026/visa-bulletin-for-april-2026.html",
+      "domain": "travel.state.gov",
+      "label": "Visa Bulletin for April 2026"
+    }
+  }
+}

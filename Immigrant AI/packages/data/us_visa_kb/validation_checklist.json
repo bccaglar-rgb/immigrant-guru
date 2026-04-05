@@ -1,0 +1,31 @@
+{
+  "source_version": "us_official_seed_2026-04-04_v1",
+  "generated_at": "2026-04-04T00:00:00Z",
+  "confidence_policy": {
+    "high": "Directly stated on a category-specific official U.S. government page or an official category page plus a directly applicable USCIS/State process page.",
+    "medium": "Assembled conservatively from multiple official U.S. government pages without unsupported inference.",
+    "low": "Incomplete, umbrella-level, or ambiguous; do not write to production catalog."
+  },
+  "validation_rules": [
+    "Every record must have at least one official source URL.",
+    "Every record must have official_name, visa_code, and visa_family.",
+    "If visa_bulletin_applicable is true, the record must be immigrant-family or immigrant-linked.",
+    "If lottery_based is true, the record must include lottery notes.",
+    "If treaty_nationality_required is true, the record must include a treaty nationality note.",
+    "If sponsor_required is false and USCIS petition is not required, petition forms should usually be absent unless explicitly supported by an official source.",
+    "If dual_intent is unknown, the field must be null.",
+    "Subtype-specific rules must be stored in subtype_notes instead of being inferred into the base category.",
+    "High-confidence production records must include at least one official source beyond the umbrella visa directory unless the directory page itself is the explicit official category page used for that category."
+  ],
+  "persistence_policy": {
+    "upsert_key": [
+      "visa_code",
+      "subtype",
+      "source_version"
+    ],
+    "production_write_threshold": "high_or_medium_with_validation_pass",
+    "low_confidence_destination": "human_review_queue",
+    "verified_record_protection": "never overwrite a verified field with lower-confidence data",
+    "bulletin_data_policy": "archive bulletin-driven data separately rather than replacing historical records"
+  }
+}

@@ -9,6 +9,7 @@ except ImportError:  # pragma: no cover - Python < 3.11 fallback for local tooli
     class StrEnum(str, Enum):
         pass
 from uuid import UUID
+from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
@@ -299,6 +300,40 @@ class TimelineSimulationResponse(BaseModel):
     acceleration_tips: list[str] = Field(default_factory=list, max_length=8)
 
 
+class TimelineCalculatorRiskLevel(StrEnum):
+    LOW = "low"
+    MEDIUM = "medium"
+    HIGH = "high"
+
+
+class TimelineCalculatorRequest(BaseModel):
+    model_config = ConfigDict(
+        extra="forbid",
+        json_schema_extra={
+            "example": {
+                "visa_category": "EB-2",
+                "country": "India",
+                "backlog_data": {
+                    "status": "delayed",
+                    "backlog_months": 18,
+                },
+            }
+        },
+    )
+
+    visa_category: str = Field(min_length=2, max_length=32)
+    country: str = Field(min_length=2, max_length=100)
+    backlog_data: dict[str, Any] = Field(default_factory=dict)
+
+
+class TimelineCalculatorResponse(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    estimated_wait_time: float = Field(ge=0, le=240)
+    risk_level: TimelineCalculatorRiskLevel
+    explanation: str = Field(min_length=1, max_length=500)
+
+
 class AlternativeStrategyPlan(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -352,7 +387,7 @@ class AlternativeStrategiesResponse(BaseModel):
         },
     )
 
-    plans: list[AlternativeStrategyPlan] = Field(default_factory=list, min_length=1, max_length=3)
+    plans: list[AlternativeStrategyPlan] = Field(default_factory=list, min_length=3, max_length=3)
     recommended_plan: str = Field(min_length=1, max_length=32)
     confidence_score: int = Field(ge=0, le=100)
 
@@ -361,7 +396,7 @@ class AlternativeStrategiesResponse(BaseModel):
         expected_names = ["Plan A", "Plan B", "Plan C"]
         actual_names = [plan.name for plan in self.plans]
 
-        if actual_names != expected_names[: len(actual_names)]:
+        if actual_names != expected_names:
             raise ValueError("Plans must be sequentially named Plan A, Plan B, then Plan C.")
 
         if self.recommended_plan not in actual_names:
@@ -517,6 +552,102 @@ class ProfileWeaknessResponse(BaseModel):
     priority_focus: str = Field(min_length=1, max_length=500)
 
 
+class RiskDetectionSeverity(StrEnum):
+    LOW = "low"
+    MEDIUM = "medium"
+    HIGH = "high"
+
+
+class RiskDetectionItem(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    red_flag: str = Field(min_length=1, max_length=160)
+    severity: RiskDetectionSeverity
+    reason: str = Field(min_length=1, max_length=1000)
+    fix_suggestion: str = Field(min_length=1, max_length=1000)
+
+
+class RiskDetectionRequest(BaseModel):
+    model_config = ConfigDict(
+        extra="forbid",
+        json_schema_extra={
+            "example": {
+                "user_profile": {
+                    "available_capital": "12000",
+                    "years_of_experience": 1,
+                    "target_country": "Canada",
+                    "profession": "Designer"
+                }
+            }
+        },
+    )
+
+    user_profile: dict[str, Any] = Field(default_factory=dict)
+
+
+class RiskDetectionResponse(BaseModel):
+    model_config = ConfigDict(
+        extra="forbid",
+        json_schema_extra={
+            "example": {
+                "red_flags": [
+                    {
+                        "red_flag": "Insufficient funds",
+                        "severity": "high",
+                        "reason": "Available capital appears low for a pathway that may require stronger settlement or preparation funds.",
+                        "fix_suggestion": "Document more available funds or pivot to a pathway with lower capital pressure."
+                    }
+                ]
+            }
+        },
+    )
+
+    red_flags: list[RiskDetectionItem] = Field(default_factory=list, max_length=10)
+
+
+class FinalDecisionRequest(BaseModel):
+    model_config = ConfigDict(
+        extra="forbid",
+        json_schema_extra={
+            "example": {
+                "eligibility_result": {
+                    "eligible": True,
+                    "missing_requirements": [],
+                    "disqualifiers_triggered": [],
+                    "strength_score": 74,
+                },
+                "match_score": 68,
+                "backlog_data": {
+                    "status": "delayed",
+                    "backlog_months": 12,
+                },
+                "red_flags": [
+                    {
+                        "red_flag": "Insufficient funds",
+                        "severity": "high",
+                        "reason": "Available capital appears too low.",
+                        "fix_suggestion": "Document stronger available funds.",
+                    }
+                ],
+            }
+        },
+    )
+
+    eligibility_result: dict[str, Any]
+    match_score: float = Field(ge=0, le=100)
+    backlog_data: dict[str, Any] = Field(default_factory=dict)
+    red_flags: list[RiskDetectionItem] = Field(default_factory=list, max_length=12)
+
+
+class FinalDecisionResponse(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    final_recommendation: str = Field(pattern="^(Plan A|Plan B|Plan C)$")
+    risk_level: RiskDetectionSeverity
+    success_probability: float = Field(ge=0, le=100)
+    next_actions: list[str] = Field(default_factory=list, min_length=1, max_length=8)
+
+
 class DocumentAnalysisRequest(BaseModel):
     model_config = ConfigDict(
         extra="forbid",
@@ -560,6 +691,49 @@ class DocumentAnalysisResponse(BaseModel):
     issues_detected: list[str] = Field(default_factory=list, max_length=8)
     missing_information: list[str] = Field(default_factory=list, max_length=8)
     improvement_suggestions: list[str] = Field(default_factory=list, max_length=8)
+
+
+class VisaBulletinBacklogStatus(StrEnum):
+    CURRENT = "current"
+    DELAYED = "delayed"
+
+
+class VisaBulletinExtractionRequest(BaseModel):
+    model_config = ConfigDict(
+        extra="forbid",
+        json_schema_extra={
+            "example": {
+                "text": "Employment-Based Preferences\\nEB-2\\nIndia 15FEB13 01JAN13\\nAll Chargeability Areas Except Those Listed C C"
+            }
+        },
+    )
+
+    text: str = Field(min_length=10, max_length=50000)
+    category_hint: str | None = Field(default=None, max_length=32)
+    country_hint: str | None = Field(default=None, max_length=100)
+
+
+class VisaBulletinExtractionResponse(BaseModel):
+    model_config = ConfigDict(
+        extra="forbid",
+        json_schema_extra={
+            "example": {
+                "category": "EB-2",
+                "country": "India",
+                "final_action_date": "15FEB13",
+                "filing_date": "01JAN13",
+                "backlog_status": "delayed",
+                "notes": [],
+            }
+        },
+    )
+
+    category: str = Field(min_length=1, max_length=32)
+    country: str = Field(min_length=1, max_length=100)
+    final_action_date: str = Field(min_length=1, max_length=32)
+    filing_date: str = Field(min_length=1, max_length=32)
+    backlog_status: VisaBulletinBacklogStatus
+    notes: list[str] = Field(default_factory=list, max_length=8)
 
 
 class CopilotMessage(BaseModel):

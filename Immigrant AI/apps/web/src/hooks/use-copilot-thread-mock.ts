@@ -30,10 +30,16 @@ export function useCopilotThreadMock(
   const timeoutRef = useRef<number | null>(null);
 
   useEffect(() => {
-    setMessages(copilot.messages);
-    setDraft("");
-    setIsSending(false);
-    setSelectedPrompt(null);
+    const resetTimer = window.setTimeout(() => {
+      setMessages(copilot.messages);
+      setDraft("");
+      setIsSending(false);
+      setSelectedPrompt(null);
+    }, 0);
+
+    return () => {
+      window.clearTimeout(resetTimer);
+    };
   }, [copilot]);
 
   useEffect(() => {

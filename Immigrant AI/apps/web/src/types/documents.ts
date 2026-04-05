@@ -20,6 +20,7 @@ export type CaseDocument = {
   processing_attempts: number;
   processed_at: string | null;
   processing_error: string | null;
+  analysis_metadata: Record<string, unknown>;
   created_at: string;
   updated_at: string;
 };

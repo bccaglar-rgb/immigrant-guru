@@ -20,13 +20,32 @@ from app.schemas.ai import (
     CountryComparisonResponse,
     DocumentAnalysisRequest,
     DocumentAnalysisResponse,
+    FinalDecisionRequest,
+    FinalDecisionResponse,
     PathwayProbabilityRequest,
     PathwayProbabilityResponse,
     ProfileWeaknessRequest,
     ProfileWeaknessResponse,
+    RiskDetectionRequest,
+    RiskDetectionResponse,
+    TimelineCalculatorRequest,
+    TimelineCalculatorResponse,
     TimelineSimulationRequest,
     TimelineSimulationResponse,
+    VisaBulletinExtractionRequest,
+    VisaBulletinExtractionResponse,
 )
+from app.schemas.eligibility import (
+    DeterministicEligibilityRequest,
+    DeterministicEligibilityResponse,
+)
+from app.schemas.knowledge import (
+    KnowledgeStructuringRequest,
+    KnowledgeStructuringResponse,
+    USVisaKnowledgeExtractionRequest,
+    USVisaKnowledgeExtractionResponse,
+)
+from app.schemas.visa_match import VisaMatchRequest, VisaMatchResponse
 from app.services.ai_client import build_ai_client
 from app.services.ai_pathway_probability_service import AIPathwayProbabilityService
 from app.services.action_prioritization_service import ActionPrioritizationService
@@ -49,13 +68,25 @@ from app.services.case_service import CaseService
 from app.services.country_comparison_service import CountryComparisonService
 from app.services.copilot_service import CopilotService
 from app.services.document_analysis_service import DocumentAnalysisService
+from app.services.eligibility_engine_service import EligibilityEngineService
+from app.services.final_decision_service import FinalDecisionService
 from app.services.knowledge_base_service import KnowledgeBaseService
+from app.services.knowledge_structuring_service import KnowledgeStructuringService
 from app.services.knowledge_retrieval_service import build_knowledge_retrieval_service
 from app.services.missing_information_service import MissingInformationService
 from app.services.profile_service import ProfileService
 from app.services.profile_weakness_service import ProfileWeaknessService
+from app.services.risk_detection_service import RiskDetectionService
 from app.services.strategy_confidence_service import StrategyConfidenceService
+from app.services.timeline_calculator_service import TimelineCalculatorService
 from app.services.ai_timeline_simulation_service import AITimelineSimulationService
+from app.services.visa_bulletin_extraction_service import (
+    VisaBulletinExtractionService,
+)
+from app.services.us_visa_knowledge_extraction_service import (
+    USVisaKnowledgeExtractionService,
+)
+from app.services.visa_matching_service import VisaMatchingService
 
 router = APIRouter(prefix="/ai", tags=["ai"])
 logger = logging.getLogger("immigrant-ai-api.ai_route")
@@ -158,6 +189,54 @@ def get_copilot_service() -> CopilotService:
     )
 
 
+def get_eligibility_engine_service() -> EligibilityEngineService:
+    return EligibilityEngineService()
+
+
+def get_risk_detection_service() -> RiskDetectionService:
+    return RiskDetectionService()
+
+
+def get_visa_matching_service() -> VisaMatchingService:
+    return VisaMatchingService(eligibility_engine=EligibilityEngineService())
+
+
+def get_final_decision_service() -> FinalDecisionService:
+    return FinalDecisionService()
+
+
+def get_visa_bulletin_extraction_service() -> VisaBulletinExtractionService:
+    return VisaBulletinExtractionService()
+
+
+def get_timeline_calculator_service() -> TimelineCalculatorService:
+    return TimelineCalculatorService()
+
+
+def get_knowledge_structuring_service() -> KnowledgeStructuringService:
+    return KnowledgeStructuringService()
+
+
+def get_us_visa_knowledge_extraction_service() -> USVisaKnowledgeExtractionService:
+    return USVisaKnowledgeExtractionService()
+
+
+@router.post(
+    "/eligibility",
+    response_model=DeterministicEligibilityResponse,
+    summary="Evaluate deterministic immigration eligibility against explicit visa rules",
+)
+async def evaluate_deterministic_eligibility(
+    payload: DeterministicEligibilityRequest,
+    current_user: User = Depends(get_current_user),
+    eligibility_engine_service: EligibilityEngineService = Depends(
+        get_eligibility_engine_service
+    ),
+) -> DeterministicEligibilityResponse:
+    del current_user
+    return eligibility_engine_service.evaluate(payload=payload)
+
+
 @router.post(
     "/strategy",
     response_model=AIStrategyResponse,
@@ -214,6 +293,22 @@ async def generate_timeline_simulation(
         user=current_user,
         payload=payload,
     )
+
+
+@router.post(
+    "/timeline-calculator",
+    response_model=TimelineCalculatorResponse,
+    summary="Calculate a deterministic visa wait timeline from category, country, and backlog data",
+)
+async def calculate_timeline(
+    payload: TimelineCalculatorRequest,
+    current_user: User = Depends(get_current_user),
+    timeline_calculator_service: TimelineCalculatorService = Depends(
+        get_timeline_calculator_service
+    ),
+) -> TimelineCalculatorResponse:
+    del current_user
+    return timeline_calculator_service.calculate(payload=payload)
 
 
 @router.post(
@@ -288,12 +383,104 @@ async def generate_profile_weaknesses(
     profile_weakness_service: ProfileWeaknessService = Depends(
         get_profile_weakness_service
     ),
-) -> ProfileWeaknessResponse:
+    ) -> ProfileWeaknessResponse:
     return await profile_weakness_service.analyze(
         session=session,
         user=current_user,
         payload=payload,
     )
+
+
+@router.post(
+    "/risk-detection",
+    response_model=RiskDetectionResponse,
+    summary="Detect deterministic rejection risks from a provided immigration profile",
+)
+async def detect_profile_risks(
+    payload: RiskDetectionRequest,
+    current_user: User = Depends(get_current_user),
+    risk_detection_service: RiskDetectionService = Depends(
+        get_risk_detection_service
+    ),
+) -> RiskDetectionResponse:
+    del current_user
+    return risk_detection_service.detect(payload=payload)
+
+
+@router.post(
+    "/visa-match",
+    response_model=VisaMatchResponse,
+    summary="Generate a deterministic visa match score from eligibility, profile strength, and market realities",
+)
+async def generate_visa_match(
+    payload: VisaMatchRequest,
+    current_user: User = Depends(get_current_user),
+    visa_matching_service: VisaMatchingService = Depends(get_visa_matching_service),
+) -> VisaMatchResponse:
+    del current_user
+    return visa_matching_service.evaluate(payload=payload)
+
+
+@router.post(
+    "/final-decision",
+    response_model=FinalDecisionResponse,
+    summary="Generate a conservative final recommendation from eligibility, match score, backlog, and red flags",
+)
+async def generate_final_decision(
+    payload: FinalDecisionRequest,
+    current_user: User = Depends(get_current_user),
+    final_decision_service: FinalDecisionService = Depends(get_final_decision_service),
+) -> FinalDecisionResponse:
+    del current_user
+    return final_decision_service.decide(payload=payload)
+
+
+@router.post(
+    "/visa-bulletin-extract",
+    response_model=VisaBulletinExtractionResponse,
+    summary="Extract structured visa bulletin fields from provided text",
+)
+async def extract_visa_bulletin(
+    payload: VisaBulletinExtractionRequest,
+    current_user: User = Depends(get_current_user),
+    visa_bulletin_extraction_service: VisaBulletinExtractionService = Depends(
+        get_visa_bulletin_extraction_service
+    ),
+) -> VisaBulletinExtractionResponse:
+    del current_user
+    return visa_bulletin_extraction_service.extract(payload=payload)
+
+
+@router.post(
+    "/knowledge-structure",
+    response_model=KnowledgeStructuringResponse,
+    summary="Convert raw immigration information into structured searchable knowledge",
+)
+async def structure_knowledge(
+    payload: KnowledgeStructuringRequest,
+    current_user: User = Depends(get_current_user),
+    knowledge_structuring_service: KnowledgeStructuringService = Depends(
+        get_knowledge_structuring_service
+    ),
+) -> KnowledgeStructuringResponse:
+    del current_user
+    return knowledge_structuring_service.structure(payload=payload)
+
+
+@router.post(
+    "/us-visa-knowledge-extract",
+    response_model=USVisaKnowledgeExtractionResponse,
+    summary="Extract a structured U.S. visa catalog record from official-source text",
+)
+async def extract_us_visa_knowledge(
+    payload: USVisaKnowledgeExtractionRequest,
+    current_user: User = Depends(get_current_user),
+    us_visa_knowledge_extraction_service: USVisaKnowledgeExtractionService = Depends(
+        get_us_visa_knowledge_extraction_service
+    ),
+) -> USVisaKnowledgeExtractionResponse:
+    del current_user
+    return us_visa_knowledge_extraction_service.extract(payload=payload)
 
 
 @router.post(

@@ -395,12 +395,18 @@ def test_alternative_strategies_prompt_builder_uses_strict_json_contract() -> No
 
     assert "senior immigration strategist" in prompt_bundle.system_prompt
     assert "STRICT JSON only" in prompt_bundle.system_prompt
+    assert "exactly 3 immigration pathways named Plan A, Plan B, and Plan C" in prompt_bundle.system_prompt
+    assert "Plan A must be the best immediate option." in prompt_bundle.system_prompt
+    assert "Plan B must be a fallback path if Plan A does not work." in prompt_bundle.system_prompt
+    assert "Plan C must be the long-term strategy." in prompt_bundle.system_prompt
+    assert "Avoid generic or filler suggestions." in prompt_bundle.system_prompt
     assert '"recommended_plan": "..."' in prompt_bundle.user_prompt
     assert '"confidence_score": 0-100' in prompt_bundle.user_prompt
+    assert '"name": "Plan A"' in prompt_bundle.user_prompt
     assert "Target Country: Canada" in prompt_bundle.user_prompt
 
 
-def test_alternative_strategies_schema_requires_sequential_plan_names() -> None:
+def test_alternative_strategies_schema_requires_exact_three_sequential_plan_names() -> None:
     with pytest.raises(ValidationError):
         AlternativeStrategiesResponse(
             plans=[
@@ -416,6 +422,24 @@ def test_alternative_strategies_schema_requires_sequential_plan_names() -> None:
                 }
             ],
             recommended_plan="Plan B",
+            confidence_score=72,
+        )
+
+    with pytest.raises(ValidationError):
+        AlternativeStrategiesResponse(
+            plans=[
+                {
+                    "name": "Plan A",
+                    "pathway": "Express Entry",
+                    "why_it_fits": "Strong structured route.",
+                    "probability": 70,
+                    "timeline_months": 12,
+                    "cost_estimate": "Medium",
+                    "risks": ["Language score variance."],
+                    "next_steps": ["Confirm credential path."],
+                }
+            ],
+            recommended_plan="Plan A",
             confidence_score=72,
         )
 

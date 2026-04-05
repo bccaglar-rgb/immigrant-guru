@@ -48,7 +48,7 @@ function JsonLd() {
         url: "https://immigrant.guru",
         logo: {
           "@type": "ImageObject",
-          url: "https://immigrant.guru/logo.png",
+          url: "https://immigrant.guru/logo-mark.svg",
           width: 512,
           height: 512
         },

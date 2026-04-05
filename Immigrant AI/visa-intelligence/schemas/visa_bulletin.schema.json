@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "VisaBulletinRecord",
+  "type": "object",
+  "required": [
+    "bulletin_month",
+    "category_type",
+    "visa_category",
+    "chargeability_area",
+    "chart_type",
+    "cutoff_date",
+    "is_current",
+    "is_unavailable",
+    "source_url",
+    "verified_at"
+  ],
+  "properties": {
+    "bulletin_month": { "type": ["string", "null"] },
+    "category_type": { "type": ["string", "null"], "enum": ["family", "employment", "diversity", null] },
+    "visa_category": { "type": ["string", "null"] },
+    "chargeability_area": { "type": ["string", "null"] },
+    "chart_type": { "type": ["string", "null"], "enum": ["final_action", "dates_for_filing", null] },
+    "cutoff_date": { "type": ["string", "null"] },
+    "is_current": { "type": ["boolean", "null"] },
+    "is_unavailable": { "type": ["boolean", "null"] },
+    "source_url": { "type": ["string", "null"], "pattern": "^https://" },
+    "verified_at": { "type": ["string", "null"] },
+    "family_chart_in_use": { "type": ["string", "null"] },
+    "employment_chart_in_use": { "type": ["string", "null"] }
+  }
+}

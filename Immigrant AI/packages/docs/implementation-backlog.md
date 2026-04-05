@@ -31,6 +31,8 @@ that are still incomplete or only partially implemented.
 ### Product UX and Workflow
 
 - Multi-step onboarding wizard tied to profile completion.
+  - Basic guarded flow implemented
+  - Still missing persistence-focused completion metrics and richer final value reveal
 - Dashboard command-center upgrade with stronger readiness and action framing.
 - Case detail workspace upgrade with clearer operational sections and sticky actions.
 - Premium empty/loading/error state standardization beyond current baseline.
@@ -71,6 +73,7 @@ that are still incomplete or only partially implemented.
 
 ### Reliability and Broader Product Validation
 
+- Real backend wiring for case workspace, copilot, comparison, and premium document-center panels.
 - Dedicated full-stack API contract audit automation beyond current manual passes.
 - Broader frontend test foundation.
 - Broader end-to-end flow automation.

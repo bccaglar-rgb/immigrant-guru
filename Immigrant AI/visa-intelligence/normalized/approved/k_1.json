@@ -1,0 +1,77 @@
+{
+  "visa_code": "K-1",
+  "visa_subtype": null,
+  "subtype": null,
+  "official_name": "Fianc\u00e9(e) of a U.S. Citizen",
+  "visa_family": "nonimmigrant",
+  "category_group": null,
+  "jurisdiction": "United States",
+  "purpose": "Entry for a foreign-citizen fianc\u00e9(e) to marry a U.S. citizen and proceed under the K framework.",
+  "who_can_apply": [],
+  "petitioner_required": true,
+  "sponsor_required": true,
+  "petition_form": [],
+  "labor_certification_required": null,
+  "lca_required": null,
+  "uscis_petition_required": true,
+  "sevis_required": null,
+  "sevis_program_sponsorship_required": null,
+  "treaty_required": null,
+  "treaty_nationality_required": null,
+  "treaty_nationalities": [],
+  "treaty_nationality_note": null,
+  "derivative_visas": [],
+  "derivative_categories": [],
+  "work_authorization": true,
+  "work_authorized": true,
+  "study_authorization": false,
+  "study_authorized": false,
+  "dual_intent": null,
+  "cap_quota_status": "none",
+  "numerical_cap": null,
+  "lottery_based": false,
+  "lottery_notes": null,
+  "visa_bulletin_applicable": false,
+  "aos_chart_behavior": null,
+  "adjustment_of_status_possible": true,
+  "consular_processing_possible": true,
+  "initial_validity": null,
+  "extension_renewal_basics": "K-1 is a narrowly purpose-bound entry classification rather than a general renewable temporary category.",
+  "extension_rules": "K-1 is a narrowly purpose-bound entry classification rather than a general renewable temporary category.",
+  "premium_processing_possible": null,
+  "core_eligibility_requirements": [
+    "Qualifying U.S. citizen petitioner",
+    "Valid fianc\u00e9(e) relationship under official rules",
+    "USCIS petition process"
+  ],
+  "hard_disqualifiers": [
+    "Petitioner eligibility not established",
+    "Relationship requirements not established"
+  ],
+  "required_documents": [
+    "Passport",
+    "DS-160",
+    "Approved petition evidence",
+    "Civil documents"
+  ],
+  "common_denial_reasons": [
+    "Relationship evidence insufficient",
+    "Petition defects"
+  ],
+  "official_forms": [
+    "I-129F",
+    "DS-160"
+  ],
+  "official_source_urls": [
+    "https://travel.state.gov/content/travel/en/us-visas/visa-information-resources/all-visa-categories.html"
+  ],
+  "source_notes": [],
+  "last_verified_at": "2026-04-04T00:00:00Z",
+  "subtype_notes": null,
+  "confidence": "medium",
+  "confidence_level": "medium",
+  "confidence_basis": "Assembled conservatively from multiple official U.S. government pages without unsupported inference.",
+  "validation_notes": [],
+  "source_version": "us_official_seed_2026-04-04_v1",
+  "requires_human_review": false
+}

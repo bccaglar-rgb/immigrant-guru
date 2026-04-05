@@ -11,10 +11,21 @@ export function useCaseWorkspaceMock(caseId: string) {
   const [data, setData] = useState<CaseWorkspaceData | null>(null);
   const [error, setError] = useState("");
   const [status, setStatus] = useState<WorkspaceLoadStatus>("loading");
+  const [reloadToken, setReloadToken] = useState(0);
 
   const load = useCallback(() => {
+    setData(null);
     setStatus("loading");
     setError("");
+    setReloadToken((current) => current + 1);
+  }, []);
+
+  useEffect(() => {
+    const resetTimer = window.setTimeout(() => {
+      setData(null);
+      setStatus("loading");
+      setError("");
+    }, 0);
 
     const timer = window.setTimeout(() => {
       if (caseId.toLowerCase().includes("error")) {
@@ -30,14 +41,10 @@ export function useCaseWorkspaceMock(caseId: string) {
     }, 450);
 
     return () => {
+      window.clearTimeout(resetTimer);
       window.clearTimeout(timer);
     };
-  }, [caseId]);
-
-  useEffect(() => {
-    const cleanup = load();
-    return cleanup;
-  }, [load]);
+  }, [caseId, reloadToken]);
 
   return {
     data,

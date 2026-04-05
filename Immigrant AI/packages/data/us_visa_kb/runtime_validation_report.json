@@ -1,0 +1,293 @@
+{
+  "generated_at": "2026-04-05T04:39:19Z",
+  "validated_records": 27,
+  "passed_records": 24,
+  "failed_records": 3,
+  "url_checks": {
+    "checked_urls": 11,
+    "ok_urls": 11,
+    "failed_urls": 0
+  },
+  "results": [
+    {
+      "visa_code": "B-1",
+      "official_name": "Temporary Business Visitor",
+      "status": "passed",
+      "issues": [],
+      "source_urls_checked": [
+        "https://travel.state.gov/content/travel/en/us-visas/visa-information-resources/all-visa-categories.html",
+        "https://travel.state.gov/content/travel/en/us-visas/tourism-visit/visitor.html"
+      ]
+    },
+    {
+      "visa_code": "B-2",
+      "official_name": "Temporary Visitor for Tourism or Medical Treatment",
+      "status": "passed",
+      "issues": [],
+      "source_urls_checked": [
+        "https://travel.state.gov/content/travel/en/us-visas/visa-information-resources/all-visa-categories.html",
+        "https://travel.state.gov/content/travel/en/us-visas/tourism-visit/visitor.html"
+      ]
+    },
+    {
+      "visa_code": "B-1/B-2",
+      "official_name": "Combined Business and Tourist Visitor",
+      "status": "passed",
+      "issues": [],
+      "source_urls_checked": [
+        "https://travel.state.gov/content/travel/en/us-visas/visa-information-resources/all-visa-categories.html",
+        "https://travel.state.gov/content/travel/en/us-visas/tourism-visit/visitor.html"
+      ]
+    },
+    {
+      "visa_code": "H-1B",
+      "official_name": "Specialty Occupation Worker",
+      "status": "passed",
+      "issues": [],
+      "source_urls_checked": [
+        "https://travel.state.gov/content/travel/en/us-visas/visa-information-resources/all-visa-categories.html",
+        "https://www.uscis.gov/working-in-the-united-states/h-1b-specialty-occupations"
+      ]
+    },
+    {
+      "visa_code": "L-1A",
+      "official_name": "Intracompany Transferee Executive or Manager",
+      "status": "passed",
+      "issues": [],
+      "source_urls_checked": [
+        "https://travel.state.gov/content/travel/en/us-visas/visa-information-resources/all-visa-categories.html",
+        "https://www.uscis.gov/working-in-the-united-states/temporary-workers/l-1a-intracompany-transferee-executive-or-manager"
+      ]
+    },
+    {
+      "visa_code": "L-1B",
+      "official_name": "Intracompany Transferee Specialized Knowledge Worker",
+      "status": "passed",
+      "issues": [],
+      "source_urls_checked": [
+        "https://travel.state.gov/content/travel/en/us-visas/visa-information-resources/all-visa-categories.html",
+        "https://www.uscis.gov/working-in-the-united-states/temporary-workers/l-1a-intracompany-transferee-executive-or-manager"
+      ]
+    },
+    {
+      "visa_code": "O-1",
+      "official_name": "Individual with Extraordinary Ability or Achievement",
+      "status": "passed",
+      "issues": [],
+      "source_urls_checked": [
+        "https://travel.state.gov/content/travel/en/us-visas/visa-information-resources/all-visa-categories.html"
+      ]
+    },
+    {
+      "visa_code": "E-1",
+      "official_name": "Treaty Trader",
+      "status": "passed",
+      "issues": [],
+      "source_urls_checked": [
+        "https://travel.state.gov/content/travel/en/us-visas/visa-information-resources/all-visa-categories.html"
+      ]
+    },
+    {
+      "visa_code": "E-3",
+      "official_name": "Australian Specialty Occupation Worker",
+      "status": "passed",
+      "issues": [],
+      "source_urls_checked": [
+        "https://travel.state.gov/content/travel/en/us-visas/visa-information-resources/all-visa-categories.html"
+      ]
+    },
+    {
+      "visa_code": "TN",
+      "official_name": "USMCA Professional",
+      "status": "passed",
+      "issues": [],
+      "source_urls_checked": [
+        "https://travel.state.gov/content/travel/en/us-visas/visa-information-resources/all-visa-categories.html",
+        "https://www.uscis.gov/working-in-the-united-states/temporary-workers/tn-nafta-professionals"
+      ]
+    },
+    {
+      "visa_code": "K-1",
+      "official_name": "Fianc\u00e9(e) of a U.S. Citizen",
+      "status": "passed",
+      "issues": [],
+      "source_urls_checked": [
+        "https://travel.state.gov/content/travel/en/us-visas/visa-information-resources/all-visa-categories.html"
+      ]
+    },
+    {
+      "visa_code": "K-3",
+      "official_name": "Nonimmigrant Visa for a Spouse of a U.S. Citizen",
+      "status": "passed",
+      "issues": [],
+      "source_urls_checked": [
+        "https://travel.state.gov/content/travel/en/us-visas/visa-information-resources/all-visa-categories.html",
+        "https://travel.state.gov/content/travel/en/us-visas/immigrate/family-immigration/nonimmigrant-visa-for-a-spouse-k-3.html"
+      ]
+    },
+    {
+      "visa_code": "IR1/CR1",
+      "official_name": "Immediate Relative / Conditional Resident Spouse of a U.S. Citizen",
+      "status": "human_review",
+      "issues": [
+        "source_content_missing_category_signal"
+      ],
+      "source_urls_checked": [
+        "https://travel.state.gov/content/travel/en/us-visas/immigrate/family-immigration.html"
+      ]
+    },
+    {
+      "visa_code": "IR2/CR2",
+      "official_name": "Immediate Relative / Conditional Resident Child of a U.S. Citizen",
+      "status": "human_review",
+      "issues": [
+        "source_content_missing_category_signal"
+      ],
+      "source_urls_checked": [
+        "https://travel.state.gov/content/travel/en/us-visas/immigrate/family-immigration.html"
+      ]
+    },
+    {
+      "visa_code": "IR5",
+      "official_name": "Parent of a U.S. Citizen",
+      "status": "human_review",
+      "issues": [
+        "source_content_missing_category_signal"
+      ],
+      "source_urls_checked": [
+        "https://travel.state.gov/content/travel/en/us-visas/immigrate/family-immigration.html"
+      ]
+    },
+    {
+      "visa_code": "F1",
+      "official_name": "Unmarried Sons and Daughters of U.S. Citizens",
+      "status": "passed",
+      "issues": [],
+      "source_urls_checked": [
+        "https://travel.state.gov/content/travel/en/us-visas/immigrate/family-immigration.html",
+        "https://www.uscis.gov/green-card/green-card-processes-and-procedures/visa-availability-priority-dates/adjustment-of-status-filing-charts-from-the-visa-bulletin",
+        "https://travel.state.gov/content/travel/en/legal/visa-law0/visa-bulletin/2026/visa-bulletin-for-april-2026.html"
+      ]
+    },
+    {
+      "visa_code": "F2A",
+      "official_name": "Spouses and Children of Permanent Residents",
+      "status": "passed",
+      "issues": [],
+      "source_urls_checked": [
+        "https://travel.state.gov/content/travel/en/us-visas/immigrate/family-immigration.html",
+        "https://www.uscis.gov/green-card/green-card-processes-and-procedures/visa-availability-priority-dates/adjustment-of-status-filing-charts-from-the-visa-bulletin",
+        "https://travel.state.gov/content/travel/en/legal/visa-law0/visa-bulletin/2026/visa-bulletin-for-april-2026.html"
+      ]
+    },
+    {
+      "visa_code": "F2B",
+      "official_name": "Unmarried Sons and Daughters (21 and over) of Permanent Residents",
+      "status": "passed",
+      "issues": [],
+      "source_urls_checked": [
+        "https://travel.state.gov/content/travel/en/us-visas/immigrate/family-immigration.html",
+        "https://www.uscis.gov/green-card/green-card-processes-and-procedures/visa-availability-priority-dates/adjustment-of-status-filing-charts-from-the-visa-bulletin",
+        "https://travel.state.gov/content/travel/en/legal/visa-law0/visa-bulletin/2026/visa-bulletin-for-april-2026.html"
+      ]
+    },
+    {
+      "visa_code": "F3",
+      "official_name": "Married Sons and Daughters of U.S. Citizens",
+      "status": "passed",
+      "issues": [],
+      "source_urls_checked": [
+        "https://travel.state.gov/content/travel/en/us-visas/immigrate/family-immigration.html",
+        "https://www.uscis.gov/green-card/green-card-processes-and-procedures/visa-availability-priority-dates/adjustment-of-status-filing-charts-from-the-visa-bulletin",
+        "https://travel.state.gov/content/travel/en/legal/visa-law0/visa-bulletin/2026/visa-bulletin-for-april-2026.html"
+      ]
+    },
+    {
+      "visa_code": "F4",
+      "official_name": "Brothers and Sisters of Adult U.S. Citizens",
+      "status": "passed",
+      "issues": [],
+      "source_urls_checked": [
+        "https://travel.state.gov/content/travel/en/us-visas/immigrate/family-immigration.html",
+        "https://www.uscis.gov/green-card/green-card-processes-and-procedures/visa-availability-priority-dates/adjustment-of-status-filing-charts-from-the-visa-bulletin",
+        "https://travel.state.gov/content/travel/en/legal/visa-law0/visa-bulletin/2026/visa-bulletin-for-april-2026.html"
+      ]
+    },
+    {
+      "visa_code": "EB-1",
+      "official_name": "Priority Workers",
+      "status": "passed",
+      "issues": [],
+      "source_urls_checked": [
+        "https://travel.state.gov/content/travel/en/us-visas/immigrate/employment-based-immigrant-visas.html",
+        "https://www.uscis.gov/green-card/green-card-processes-and-procedures/visa-availability-priority-dates/adjustment-of-status-filing-charts-from-the-visa-bulletin",
+        "https://travel.state.gov/content/travel/en/legal/visa-law0/visa-bulletin/2026/visa-bulletin-for-april-2026.html"
+      ]
+    },
+    {
+      "visa_code": "EB-2",
+      "official_name": "Advanced Degree or Exceptional Ability",
+      "status": "passed",
+      "issues": [],
+      "source_urls_checked": [
+        "https://travel.state.gov/content/travel/en/us-visas/immigrate/employment-based-immigrant-visas.html",
+        "https://www.uscis.gov/green-card/green-card-processes-and-procedures/visa-availability-priority-dates/adjustment-of-status-filing-charts-from-the-visa-bulletin",
+        "https://travel.state.gov/content/travel/en/legal/visa-law0/visa-bulletin/2026/visa-bulletin-for-april-2026.html"
+      ]
+    },
+    {
+      "visa_code": "EB-2 NIW",
+      "official_name": "National Interest Waiver",
+      "status": "passed",
+      "issues": [],
+      "source_urls_checked": [
+        "https://travel.state.gov/content/travel/en/us-visas/immigrate/employment-based-immigrant-visas.html",
+        "https://www.uscis.gov/green-card/green-card-processes-and-procedures/visa-availability-priority-dates/adjustment-of-status-filing-charts-from-the-visa-bulletin",
+        "https://travel.state.gov/content/travel/en/legal/visa-law0/visa-bulletin/2026/visa-bulletin-for-april-2026.html"
+      ]
+    },
+    {
+      "visa_code": "EB-3",
+      "official_name": "Skilled Workers, Professionals, and Other Workers",
+      "status": "passed",
+      "issues": [],
+      "source_urls_checked": [
+        "https://travel.state.gov/content/travel/en/us-visas/immigrate/employment-based-immigrant-visas.html",
+        "https://www.uscis.gov/green-card/green-card-processes-and-procedures/visa-availability-priority-dates/adjustment-of-status-filing-charts-from-the-visa-bulletin",
+        "https://travel.state.gov/content/travel/en/legal/visa-law0/visa-bulletin/2026/visa-bulletin-for-april-2026.html"
+      ]
+    },
+    {
+      "visa_code": "EB-4",
+      "official_name": "Certain Special Immigrants",
+      "status": "passed",
+      "issues": [],
+      "source_urls_checked": [
+        "https://travel.state.gov/content/travel/en/us-visas/immigrate/employment-based-immigrant-visas.html",
+        "https://www.uscis.gov/green-card/green-card-processes-and-procedures/visa-availability-priority-dates/adjustment-of-status-filing-charts-from-the-visa-bulletin",
+        "https://travel.state.gov/content/travel/en/legal/visa-law0/visa-bulletin/2026/visa-bulletin-for-april-2026.html"
+      ]
+    },
+    {
+      "visa_code": "EB-5",
+      "official_name": "Immigrant Investor",
+      "status": "passed",
+      "issues": [],
+      "source_urls_checked": [
+        "https://travel.state.gov/content/travel/en/us-visas/immigrate/employment-based-immigrant-visas.html",
+        "https://travel.state.gov/content/travel/en/us-visas/immigrate/immigrant-investor-visas.html",
+        "https://www.uscis.gov/green-card/green-card-processes-and-procedures/visa-availability-priority-dates/adjustment-of-status-filing-charts-from-the-visa-bulletin",
+        "https://travel.state.gov/content/travel/en/legal/visa-law0/visa-bulletin/2026/visa-bulletin-for-april-2026.html"
+      ]
+    },
+    {
+      "visa_code": "SB-1",
+      "official_name": "Returning Resident",
+      "status": "passed",
+      "issues": [],
+      "source_urls_checked": [
+        "https://travel.state.gov/content/travel/en/us-visas/visa-information-resources/all-visa-categories.html"
+      ]
+    }
+  ]
+}

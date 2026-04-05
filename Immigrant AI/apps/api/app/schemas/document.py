@@ -47,3 +47,19 @@ class DocumentRead(BaseModel):
     analysis_metadata: dict[str, Any] = Field(default_factory=dict)
     created_at: datetime
     updated_at: datetime
+
+
+class DocumentAuditRiskLevel(str):
+    LOW = "low"
+    MEDIUM = "medium"
+    HIGH = "high"
+
+
+class DocumentAuditResponse(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    detected_documents: list[str] = Field(default_factory=list, max_length=20)
+    missing_documents: list[str] = Field(default_factory=list, max_length=20)
+    issues_found: list[str] = Field(default_factory=list, max_length=20)
+    risk_level: str = Field(pattern="^(low|medium|high)$")
+    recommendations: list[str] = Field(default_factory=list, max_length=12)
