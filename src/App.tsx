@@ -88,6 +88,21 @@ const RequirePlan = ({ children }: { children: React.ReactNode }) => {
   return <>{children}</>;
 };
 
+/** Redirect to /pricing if user tier is below required tier (ADMIN bypasses) */
+const TIER_RANK: Record<string, number> = { explorer: 0, trader: 1, titan: 2 };
+const RequireTier = ({ tier, children }: { tier: string; children: React.ReactNode }) => {
+  const user = useAuthStore((s) => s.user);
+  const loading = useAuthStore((s) => s.loading);
+  if (loading) return <PageLoader />;
+  if (!user) return <Navigate to="/login" replace />;
+  if (user.role === "ADMIN") return <>{children}</>;
+  if (!user.hasActivePlan) return <Navigate to="/pricing" replace />;
+  const userRank = TIER_RANK[user.activePlanTier ?? ""] ?? -1;
+  const requiredRank = TIER_RANK[tier] ?? 0;
+  if (userRank < requiredRank) return <Navigate to="/pricing" replace />;
+  return <>{children}</>;
+};
+
 /** Redirect to /login if not authenticated, to / if not admin */
 const RequireAdmin = ({ children }: { children: React.ReactNode }) => {
   const user = useAuthStore((s) => s.user);
@@ -122,9 +137,9 @@ function App() {
         {/* Preview pages — auth required, no plan needed (page opens but data won't load without plan) */}
         <Route path="/quant-engine" element={<RequireAuth><Suspense fallback={<PageLoader />}><MarketDashboardPage /></Suspense></RequireAuth>} />
         <Route path="/dashboard" element={<Navigate to="/quant-engine" replace />} />
-        <Route path="/exchange-terminal" element={<RequireAuth><Suspense fallback={<PageLoader />}><ExchangeTerminalPage /></Suspense></RequireAuth>} />
+        <Route path="/exchange-terminal" element={<RequirePlan><Suspense fallback={<PageLoader />}><ExchangeTerminalPage /></Suspense></RequirePlan>} />
         <Route path="/exchanges" element={<Navigate to="/exchange-terminal" replace />} />
-        <Route path="/portfolio" element={<RequireAuth><Suspense fallback={<PageLoader />}><PortfolioPage /></Suspense></RequireAuth>} />
+        <Route path="/portfolio" element={<RequirePlan><Suspense fallback={<PageLoader />}><PortfolioPage /></Suspense></RequirePlan>} />
         <Route path="/crypto-market" element={<RequireAuth><Suspense fallback={<PageLoader />}><CryptoMarketPage /></Suspense></RequireAuth>} />
 
         {/* Plan-gated pages — redirect to /pricing if no active subscription */}
@@ -174,9 +189,9 @@ function App() {
         <Route path="/system-monitor" element={<RequireAdmin><Suspense fallback={<PageLoader />}><SystemMonitorPage /></Suspense></RequireAdmin>} />
         <Route path="/mission-control" element={<RequireAdmin><Suspense fallback={<PageLoader />}><MissionControlPage /></Suspense></RequireAdmin>} />
         <Route path="/ml-explorer" element={<RequireAdmin><Suspense fallback={<PageLoader />}><MLExplorerPage /></Suspense></RequireAdmin>} />
-        <Route path="/master" element={<RequireAuth><Suspense fallback={<PageLoader />}><MasterPage /></Suspense></RequireAuth>} />
-        <Route path="/alpha-war-room" element={<RequireAuth><Suspense fallback={<PageLoader />}><AlphaWarRoomPage /></Suspense></RequireAuth>} />
-        <Route path="/institutional" element={<RequireAuth><Suspense fallback={<PageLoader />}><InstitutionalCommandPage /></Suspense></RequireAuth>} />
+        <Route path="/master" element={<RequireTier tier="titan"><Suspense fallback={<PageLoader />}><MasterPage /></Suspense></RequireTier>} />
+        <Route path="/alpha-war-room" element={<RequireTier tier="titan"><Suspense fallback={<PageLoader />}><AlphaWarRoomPage /></Suspense></RequireTier>} />
+        <Route path="/institutional" element={<RequireTier tier="titan"><Suspense fallback={<PageLoader />}><InstitutionalCommandPage /></Suspense></RequireTier>} />
 
         <Route path="*" element={<Navigate to="/" replace />} />
       </Route>
