@@ -85,13 +85,6 @@ const IndicatorIcon = () => <Icon>
   <path d="M6.5 8.5L8 7l1.5 1.5" stroke="url(#iconGold)" strokeWidth="1" fill="none" />
   <circle cx="17" cy="13" r="1.5" fill="url(#iconGold)" />
 </Icon>;
-const BitriumTokenIcon = () => <Icon>
-  <circle cx="12" cy="12" r="8.5" fill="url(#iconGoldLight)" stroke="url(#iconGold)" strokeWidth="1.3" />
-  <circle cx="12" cy="12" r="6" stroke="url(#iconGold)" strokeWidth="0.7" fill="none" opacity="0.4" />
-  <path d="M12 5.5l4.5 2.6v5.3L12 16l-4.5-2.6V7.9z" stroke="url(#iconGold)" strokeWidth="1.2" fill="none" />
-  <path d="M7.5 7.9l4.5 2.6 4.5-2.6" stroke="url(#iconGold)" strokeWidth="0.8" opacity="0.5" />
-  <path d="M12 10.5V16" stroke="url(#iconGold)" strokeWidth="0.8" opacity="0.5" />
-</Icon>;
 const CreatorIcon = () => <Icon>
   <path d="M12 3l2.5 5 5.5.8-4 3.9.9 5.5L12 15.7l-4.9 2.5.9-5.5-4-3.9L9.5 8z" fill="url(#iconGoldLight)" stroke="url(#iconGold)" strokeWidth="1.2" />
   <circle cx="12" cy="11" r="2" stroke="url(#iconGold)" strokeWidth="1" fill="none" />
@@ -170,7 +163,6 @@ const PortfolioIcon = () => <Icon>
   <path d="M14 16.5h3" stroke="url(#iconGold)" strokeWidth="1" strokeLinecap="round" />
 </Icon>;
 const InstitutionalIcon = () => <Icon><rect x="3" y="4" width="18" height="16" rx="2" stroke="url(#iconGold)" strokeWidth="1.2" fill="none" /><path d="M3 9h18" stroke="url(#iconGold)" strokeWidth="1" /><path d="M8 4V2M16 4V2" stroke="url(#iconGold)" strokeWidth="1.2" /><circle cx="8" cy="14" r="1.5" fill="url(#iconGold)" /><path d="M12 13v4" stroke="url(#iconGold)" strokeWidth="1.2" /><path d="M15 12l2 2-2 2" stroke="url(#iconGold)" strokeWidth="1.2" fill="none" /></Icon>;
-const MasterIcon = () => <Icon><rect x="3" y="3" width="8" height="8" rx="1.5" stroke="url(#iconGold)" strokeWidth="1.2" fill="none" /><rect x="13" y="3" width="8" height="8" rx="1.5" stroke="url(#iconGold)" strokeWidth="1.2" fill="none" /><rect x="3" y="13" width="8" height="8" rx="1.5" stroke="url(#iconGold)" strokeWidth="1.2" fill="none" /><rect x="13" y="13" width="8" height="8" rx="1.5" stroke="url(#iconGold)" strokeWidth="1.2" fill="none" /><circle cx="7" cy="7" r="1.5" fill="url(#iconGold)" /><circle cx="17" cy="7" r="1.5" fill="url(#iconGold)" /><path d="M5 17l4-4" stroke="url(#iconGold)" strokeWidth="1.2" /><path d="M15 15h4v4" stroke="url(#iconGold)" strokeWidth="1.2" fill="none" /></Icon>;
 const SuperChartIcon = () => <Icon><path d="M3 3v18h18" stroke="url(#iconGold)" strokeWidth="1.4" /><path d="M5 18l4.5-5.5 3.5 2.5 7-9" stroke="url(#iconGold)" strokeWidth="1.6" fill="none" /><path d="M17 6h3.5v3.5" stroke="url(#iconGold)" strokeWidth="1.4" /><circle cx="9.5" cy="12.5" r="1" fill="url(#iconGold)" stroke="none" /><circle cx="13" cy="15" r="1" fill="url(#iconGold)" stroke="none" /></Icon>;
 const SignInIcon = () => <Icon>
   <rect x="5" y="3" width="14" height="18" rx="2.5" fill="url(#iconGoldLight)" stroke="url(#iconGold)" strokeWidth="1.2" />
@@ -182,7 +174,6 @@ const menuItems = [
   { label: "Bitrium Quant Engine", to: "/quant-engine", accent: "var(--menu-accent-1)", icon: () => <DashboardIcon /> },
   { label: "Sniper", to: "/sniper", accent: "#f6465d", icon: () => <SniperIcon /> },
   { label: "Coin Insight", to: "/coin-insight", accent: "#00e0ff", icon: () => <CoinInsightIcon /> },
-  { label: "Master", to: "/master", accent: "#F5C542", icon: () => <MasterIcon /> },
 { label: "Institutional", to: "/institutional", accent: "#5B8DEF", icon: () => <InstitutionalIcon /> },
   { label: "Super Charts", to: "/super-charts", accent: "var(--menu-accent-5)", icon: () => <SuperChartIcon /> },
   { label: "Coin Universe", to: "/coin-universe", accent: "var(--menu-accent-8)", icon: () => <UniverseIcon /> },
@@ -193,7 +184,6 @@ const menuItems = [
   { label: "Portfolio", to: "/portfolio", accent: "#4ecdc4", icon: () => <PortfolioIcon /> },
   { label: "Indicators", to: "/indicators", accent: "var(--menu-accent-6)", icon: () => <IndicatorIcon /> },
   // Tools submenu inserted here in render
-  { label: "Bitrium Token", to: "/bitrium-token", accent: "var(--menu-accent-11)", icon: () => <BitriumTokenIcon /> },
   { label: "Pricing", to: "/pricing", accent: "var(--menu-accent-13)", icon: () => <PricingIcon /> },
 ] as const;
 

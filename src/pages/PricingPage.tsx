@@ -87,7 +87,6 @@ const TIERS: Tier[] = [
       "Bitrium Quant Engine (50+ Signals)",
       "Sniper",
       "Coin Insight",
-      "Master",
       "Institutional Command",
       "Super Charts (50 Charts)",
       "Coin Universe",
@@ -115,7 +114,7 @@ const BILLING_OPTIONS: { key: BillingPeriod; label: string }[] = [
 
 
 const PREMIUM_FEATURES = new Set([
-  "Master", "Institutional Command", "Bots", "Portfolio", "Bitrium Token",
+  "Institutional Command", "Bots", "Portfolio", "Bitrium Token",
 ]);
 
 const isPremium = (f: string) =>
