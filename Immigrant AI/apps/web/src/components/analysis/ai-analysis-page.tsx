@@ -55,7 +55,7 @@ const PLANS = [
 export function AIAnalysisPage() {
   const { session } = useAuthSession();
   const [status, setStatus] = useState<Status>("loading");
-  const [result, setResult] = useState<(ProfileAnalysisResult & { is_premium?: boolean; user_plan?: string; ai_upsell_message?: string | null; premium_roadmap?: any[]; premium_costs?: any; premium_documents?: any[] }) | null>(null);
+  const [result, setResult] = useState<ProfileAnalysisResult | null>(null);
   const [error, setError] = useState("");
   const [upgrading, setUpgrading] = useState<string | null>(null);
 
@@ -64,7 +64,7 @@ export function AIAnalysisPage() {
     setStatus("loading");
     const res = await getProfileAnalysis(session.accessToken);
     if (!res.ok) { setError(res.errorMessage); setStatus("error"); return; }
-    setResult(res.data as any);
+    setResult(res.data);
     setStatus("ready");
   }, [session]);
 
@@ -224,7 +224,7 @@ export function AIAnalysisPage() {
           <div className="mt-10">
             <h2 className="text-xl font-semibold tracking-tight text-ink">Your step-by-step roadmap</h2>
             <div className="mt-4 space-y-3">
-              {result.premium_roadmap.map((step: any) => (
+              {result.premium_roadmap.map((step) => (
                 <div key={step.step} className="flex gap-4 rounded-xl border border-line bg-white/60 p-4">
                   <div className={cn("flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-sm font-semibold text-white", step.status === "done" ? "bg-green" : "bg-accent")}>
                     {step.step}
@@ -267,7 +267,7 @@ export function AIAnalysisPage() {
           <div className="mt-8">
             <h2 className="text-xl font-semibold tracking-tight text-ink">Document checklist</h2>
             <div className="mt-4 space-y-2">
-              {result.premium_documents.map((doc: any) => (
+              {result.premium_documents.map((doc) => (
                 <div key={doc.document} className="flex items-start gap-3 rounded-xl border border-line bg-white/60 p-3.5">
                   <span className={cn("mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-xs", doc.required ? "bg-accent/10 text-accent" : "bg-ink/5 text-muted")}>
                     {doc.required ? "!" : "?"}

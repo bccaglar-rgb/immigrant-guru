@@ -15,7 +15,7 @@ export type VisaMatch = {
   category: string;
   match_score: number;
   match_level: "high" | "medium" | "low";
-  description: string;
+  description?: string;
   requires_employer: boolean;
 };
 
@@ -32,10 +32,40 @@ export type Challenge = {
   severity: "high" | "medium" | "low";
 };
 
+export type RoadmapStep = {
+  step: number;
+  title: string;
+  description: string;
+  status: "done" | "pending";
+};
+
+export type CostEstimate = {
+  filing: number;
+  legal: number;
+  medical: number;
+  other: number;
+  total_low: number;
+  total_high: number;
+};
+
+export type DocumentItem = {
+  document: string;
+  required: boolean;
+  notes: string;
+};
+
 export type ProfileAnalysisResult = {
   profile_summary: ProfileSummary;
   visa_matches: VisaMatch[];
   recommendation: Recommendation | null;
   challenges: Challenge[];
   next_step: string;
+  // Plan-aware fields
+  user_plan: string;
+  is_premium: boolean;
+  ai_upsell_message: string | null;
+  // Premium-only fields (null for free users)
+  premium_roadmap: RoadmapStep[] | null;
+  premium_costs: CostEstimate | null;
+  premium_documents: DocumentItem[] | null;
 };
