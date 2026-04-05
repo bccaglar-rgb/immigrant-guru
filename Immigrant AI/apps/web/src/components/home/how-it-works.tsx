@@ -1,76 +1,60 @@
 "use client";
 
 import { Animate, Stagger } from "@/components/ui/animate";
-import { SectionContainer } from "@/components/ui/section-container";
 
 const steps = [
   {
-    num: "01",
-    title: "Build your profile",
-    description: "Answer fun questions about your nationality, education, profession, and goals. Takes 2 minutes.",
-    highlight: false
+    num: "1",
+    title: "Tell us about you",
+    description: "Your background, education, experience, and goals. Takes 2 minutes."
   },
   {
-    num: "02",
-    title: "Create a case",
-    description: "Pick your target country and visa program. Upload your documents. Your case workspace is ready.",
-    highlight: false
+    num: "2",
+    title: "We analyze your options",
+    description: "AI checks 47 visa categories and finds your best match."
   },
   {
-    num: "03",
-    title: "Get AI strategy",
-    description: "AI analyzes your profile against 47 visa categories and generates Plan A, B, and C with confidence scores.",
-    highlight: true
-  },
-  {
-    num: "04",
-    title: "Take action",
-    description: "Follow your next best action, complete your document checklist, and track your timeline to approval.",
-    highlight: false
+    num: "3",
+    title: "Get your plan",
+    description: "Visa, timeline, documents, cost — everything in one clear view."
   }
 ];
 
 export function HowItWorks() {
   return (
-    <SectionContainer
-      eyebrow="How It Works"
-      title="From uncertainty to a plan in 4 steps"
-      description="No lawyers needed to get started. Build clarity before you spend."
-    >
-      <Stagger
-        className="grid grid-cols-1 gap-5 md:grid-cols-4 items-stretch"
-        childClassName="h-full"
-        animation="fade-up"
-        staggerDelay={120}
-        duration={600}
-      >
-        {steps.map((step) => (
-          <div
-            key={step.num}
-            className={`group flex h-full flex-col rounded-2xl p-8 transition-all duration-300 hover:-translate-y-1 ${
-              step.highlight
-                ? "bg-accent text-white shadow-glow"
-                : "border border-line bg-white hover:shadow-soft"
-            }`}
-          >
-            <span className={`text-4xl font-semibold tracking-tight ${
-              step.highlight ? "text-white/30" : "text-accent/20"
-            }`}>
-              {step.num}
-            </span>
-            <h3 className={`mt-4 text-lg font-semibold tracking-tight ${
-              step.highlight ? "text-white" : "text-ink"
-            }`}>
-              {step.title}
-            </h3>
-            <p className={`mt-2 flex-1 text-sm leading-relaxed ${
-              step.highlight ? "text-white/70" : "text-ink/55"
-            }`}>
-              {step.description}
-            </p>
+    <section className="scroll-mt-24 py-16 md:py-24" id="how">
+      <div className="mx-auto max-w-content px-6 md:px-10">
+        <Animate animation="fade-up" duration={700}>
+          <div className="mx-auto max-w-2xl text-center">
+            <p className="text-sm font-medium text-accent">How it works</p>
+            <h2 className="mt-2 text-3xl font-semibold tracking-tight text-ink md:text-4xl">
+              Three steps. No confusion.
+            </h2>
           </div>
-        ))}
-      </Stagger>
-    </SectionContainer>
+        </Animate>
+
+        <Stagger
+          className="mt-12 grid grid-cols-1 gap-6 md:grid-cols-3"
+          childClassName="h-full"
+          animation="fade-up"
+          staggerDelay={150}
+          duration={600}
+        >
+          {steps.map((step) => (
+            <div key={step.num} className="flex h-full flex-col items-center text-center">
+              <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-accent text-xl font-semibold text-white">
+                {step.num}
+              </div>
+              <h3 className="mt-5 text-lg font-semibold tracking-tight text-ink">
+                {step.title}
+              </h3>
+              <p className="mt-2 text-sm leading-relaxed text-muted">
+                {step.description}
+              </p>
+            </div>
+          ))}
+        </Stagger>
+      </div>
+    </section>
   );
 }
