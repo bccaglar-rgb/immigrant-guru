@@ -9,6 +9,13 @@ import {
   WhaleActivityBoard, LiquidationMap, AIGlobalBias,
   CorrelationPanel, DangerZone, MarketCondition,
 } from "../components/warroom/WarRoomPanels";
+import {
+  CapitalFlowPanel, InstitutionalFlowPanel, SectorDominance,
+  RiskEngine, StrategyMode, TopAssets,
+  TimeframeControl, MarketStructure, AutoModeSwitch,
+  MicroSignalBar, QuickEntryPanel, DecisionBox,
+  LiveOrderFlowMini, MomentumGauge, LiquidityMagnet,
+} from "../components/master/MasterPanels";
 import { getCoinData, session } from "../components/institutional/mockData";
 import { useLiveMarketData } from "../hooks/useLiveMarketData";
 import { useState, useRef, useEffect, useMemo } from "react";
@@ -168,6 +175,9 @@ export default function InstitutionalCommandPage() {
           <div style={{ height: "50%" }} className="min-h-0 flex-shrink-0">
             <HeroExecutionChart data={live.candles1m as OHLCVData[]} symbol={selectedCoin} aiOverlay={{ bias: coinBiasLabel, confidence: aiDecision.confidence, setup: aiDecision.strategy }} />
           </div>
+          <MicroSignalBar />
+          <QuickEntryPanel />
+          <DecisionBox />
           <QuickStatsPanel horizontal coinData={coinData} />
           <div className="flex-1 min-h-0 overflow-y-auto scrollbar-thin pr-0.5 space-y-1.5">
             <SignalFeedPanels />
@@ -202,7 +212,23 @@ export default function InstitutionalCommandPage() {
           <BTCChart data={btcLive.candles1m as OHLCVData[]} />
           <MarketIntelFeed intel={coinData.marketIntel as any} />
           <StructureLevelsPanel data={coinData.levels as any} />
+          <CapitalFlowPanel />
+          <InstitutionalFlowPanel />
+          <SectorDominance />
+          <RiskEngine />
+          <StrategyMode />
+          <TopAssets />
+          <LiveOrderFlowMini />
+          <MomentumGauge />
+          <LiquidityMagnet />
         </div>
+      </div>
+
+      {/* BOTTOM STRIP */}
+      <div className="flex-shrink-0 grid grid-cols-3 gap-1.5">
+        <TimeframeControl />
+        <MarketStructure />
+        <AutoModeSwitch />
       </div>
 
       {/* AI DECISION bottom bar */}
