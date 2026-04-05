@@ -42,7 +42,7 @@ const TIERS: Tier[] = [
       "Bitrium Quant Engine",
       "Sniper",
       "Coin Insight",
-      "Super Charts",
+      "Super Charts (5 Charts)",
       "Crypto Market",
       "Indicators",
     ],
