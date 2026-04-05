@@ -120,7 +120,7 @@ const PREMIUM_FEATURES = new Set([
 ]);
 
 const isPremium = (f: string) =>
-  PREMIUM_FEATURES.has(f) || f.includes("Exchange Accounts") || f.includes("Charts)");
+  PREMIUM_FEATURES.has(f) || f.includes("Exchange Account") || f.includes("Super Charts (50") || f.includes("Super Charts (20") || f.includes("Super Charts (10");
 
 const savingsPercent = (tier: Tier, period: BillingPeriod): number | null => {
   if (period === "1m") return null;
@@ -312,7 +312,7 @@ export default function PricingPage() {
         </section>
 
         {/* Tier cards */}
-        <section className="grid gap-6 md:grid-cols-3">
+        <section className="grid items-stretch gap-6 md:grid-cols-3">
           {TIERS.map((tier) => {
             const isCurrentTier = currentTierPrefix === tier.planIdPrefix;
             const tierSelected = selection?.tierName === tier.name;
@@ -334,7 +334,7 @@ export default function PricingPage() {
                   "bg-gradient-to-b from-white/[0.04] to-white/[0.01]",
                   "hover:scale-[1.02] transition-all duration-300",
                   tier.highlight
-                    ? "border-[#F5C542]/50 shadow-[0_0_30px_rgba(245,197,66,0.12)] md:-mt-3 md:mb-[-0.75rem]"
+                    ? "border-[#F5C542]/50 shadow-[0_0_30px_rgba(245,197,66,0.12)]"
                     : "border-white/[0.08]",
                 ].join(" ")}
               >
