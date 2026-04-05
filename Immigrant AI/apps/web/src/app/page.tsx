@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 
 import { CallToAction } from "@/components/home/call-to-action";
+import { GlobalCoverage } from "@/components/home/global-coverage";
 import { Hero } from "@/components/home/hero";
 import { HowItWorks } from "@/components/home/how-it-works";
 import { InputStrip } from "@/components/home/input-strip";
@@ -101,6 +102,7 @@ export default function HomePage() {
         <ResultsPreview />
         <PainSolution />
         <UseCases />
+        <GlobalCoverage />
         <SocialProof />
         <CallToAction />
       </AppShell>
