@@ -14,17 +14,15 @@ export function SiteHeader() {
   return (
     <header className="sticky top-0 z-30 glass border-b border-line">
       <div className="mx-auto flex max-w-content items-center justify-between gap-6 px-6 py-3.5 md:px-10">
-        <Link className="flex items-center gap-2.5" href="/">
+        <Link className="flex items-center" href="/">
           <Image
-            src="/logo-mark.svg"
+            src="/logo.png"
             alt="Immigrant Guru"
-            width={36}
-            height={36}
-            className="h-9 w-9 object-contain"
+            width={320}
+            height={112}
+            className="h-auto w-[168px] object-contain md:w-[196px]"
+            priority
           />
-          <span className="text-xl font-semibold tracking-tight text-ink">
-            Immigrant Guru
-          </span>
         </Link>
 
         <nav className="hidden items-center gap-7 lg:flex">

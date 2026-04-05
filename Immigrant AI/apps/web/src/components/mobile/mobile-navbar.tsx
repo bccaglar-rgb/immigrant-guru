@@ -26,7 +26,7 @@ export function MobileNavbar({
   return (
     <header className="sticky top-0 z-30 border-b border-line/70 bg-white/90 backdrop-blur-xl">
       <div
-        className="mx-auto flex w-full max-w-md items-center justify-between gap-3 px-4 pb-3 pt-4"
+        className="mx-auto flex w-full max-w-md flex-col gap-3 px-4 pb-3 pt-4 sm:flex-row sm:items-center sm:justify-between"
         style={{ paddingTop: "calc(1rem + env(safe-area-inset-top))" }}
       >
         <div className="flex min-w-0 items-start gap-3">
@@ -50,7 +50,7 @@ export function MobileNavbar({
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex w-full flex-wrap items-center justify-end gap-2 sm:w-auto">
           <LanguageSwitcher compact />
           <Link
             className={cn(

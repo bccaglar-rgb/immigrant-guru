@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
 
 const STORAGE_KEY = "immigrant-guru-language";
 
-const languages = [
+export const LANGUAGE_OPTIONS = [
   { code: "en", flag: "🇺🇸", label: "English" },
   { code: "tr", flag: "🇹🇷", label: "Türkçe" },
   { code: "de", flag: "🇩🇪", label: "Deutsch" },
@@ -21,29 +21,44 @@ const languages = [
   { code: "hi", flag: "🇮🇳", label: "हिंदी" }
 ] as const;
 
-type LanguageCode = (typeof languages)[number]["code"];
+export type LanguageCode = (typeof LANGUAGE_OPTIONS)[number]["code"];
 
 type LanguageSwitcherProps = Readonly<{
   align?: "left" | "right";
   compact?: boolean;
 }>;
 
+export function resolvePreferredLanguage(
+  storedLanguage: string | null | undefined,
+  browserLanguage: string | null | undefined
+): LanguageCode {
+  if (
+    storedLanguage &&
+    LANGUAGE_OPTIONS.some((language) => language.code === storedLanguage)
+  ) {
+    return storedLanguage as LanguageCode;
+  }
+
+  const normalizedBrowserLanguage = browserLanguage?.toLowerCase().split("-")[0];
+  if (
+    normalizedBrowserLanguage &&
+    LANGUAGE_OPTIONS.some((language) => language.code === normalizedBrowserLanguage)
+  ) {
+    return normalizedBrowserLanguage as LanguageCode;
+  }
+
+  return "en";
+}
+
 function getInitialLanguage(): LanguageCode {
   if (typeof window === "undefined") {
     return "en";
   }
 
-  const stored = window.localStorage.getItem(STORAGE_KEY);
-  if (stored && languages.some((language) => language.code === stored)) {
-    return stored as LanguageCode;
-  }
-
-  const browserLanguage = window.navigator.language.toLowerCase().split("-")[0];
-  if (languages.some((language) => language.code === browserLanguage)) {
-    return browserLanguage as LanguageCode;
-  }
-
-  return "en";
+  return resolvePreferredLanguage(
+    window.localStorage.getItem(STORAGE_KEY),
+    window.navigator.language
+  );
 }
 
 export function LanguageSwitcher({
@@ -56,9 +71,22 @@ export function LanguageSwitcher({
 
   useEffect(() => {
     const nextLanguage = getInitialLanguage();
-    setSelectedCode(nextLanguage);
-    document.documentElement.lang = nextLanguage;
-  }, []);
+    if (nextLanguage === selectedCode) {
+      return;
+    }
+
+    const frame = window.requestAnimationFrame(() => {
+      setSelectedCode(nextLanguage);
+    });
+
+    return () => {
+      window.cancelAnimationFrame(frame);
+    };
+  }, [selectedCode]);
+
+  useEffect(() => {
+    document.documentElement.lang = selectedCode;
+  }, [selectedCode]);
 
   useEffect(() => {
     function handlePointerDown(event: MouseEvent) {
@@ -71,18 +99,26 @@ export function LanguageSwitcher({
       }
     }
 
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        setIsOpen(false);
+      }
+    }
+
     document.addEventListener("mousedown", handlePointerDown);
+    document.addEventListener("keydown", handleKeyDown);
     return () => {
       document.removeEventListener("mousedown", handlePointerDown);
+      document.removeEventListener("keydown", handleKeyDown);
     };
   }, []);
 
   const selectedLanguage =
-    languages.find((language) => language.code === selectedCode) ?? languages[0];
+    LANGUAGE_OPTIONS.find((language) => language.code === selectedCode) ??
+    LANGUAGE_OPTIONS[0];
 
   function handleSelect(code: LanguageCode) {
     setSelectedCode(code);
-    document.documentElement.lang = code;
     window.localStorage.setItem(STORAGE_KEY, code);
     setIsOpen(false);
   }
@@ -118,7 +154,7 @@ export function LanguageSwitcher({
           </div>
 
           <div className="pb-3">
-            {languages.map((language) => {
+            {LANGUAGE_OPTIONS.map((language) => {
               const active = language.code === selectedCode;
 
               return (

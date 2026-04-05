@@ -40,17 +40,15 @@ export function DashboardSidebar({ pathname }: DashboardSidebarProps) {
   return (
     <aside className="border-b border-line px-4 py-4 lg:min-h-screen lg:w-[260px] lg:border-b-0 lg:border-r lg:px-5 lg:py-6">
       <div className="lg:sticky lg:top-6">
-        <Link className="flex items-center gap-2.5 px-2" href="/">
+        <Link className="flex items-center px-2" href="/">
           <Image
-            src="/logo-mark.svg"
+            src="/logo.png"
             alt="Immigrant Guru"
-            width={36}
-            height={36}
-            className="h-9 w-9 object-contain"
+            width={320}
+            height={112}
+            className="h-auto w-[170px] object-contain"
+            priority
           />
-          <span className="text-lg font-semibold tracking-tight text-ink">
-            Immigrant Guru
-          </span>
         </Link>
 
         <nav className="mt-6 flex gap-2 overflow-x-auto lg:flex-col lg:overflow-visible">
