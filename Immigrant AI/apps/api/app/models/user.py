@@ -34,6 +34,11 @@ class User(UUIDPrimaryKeyMixin, TimestampMixin, Base):
         nullable=False,
     )
 
+    # Billing / Plan
+    plan: Mapped[str] = mapped_column(String(32), default="free", server_default="free", nullable=False)
+    stripe_customer_id: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    stripe_session_id: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+
     profile: Mapped[Optional[UserProfile]] = relationship(
         back_populates="user",
         cascade="all, delete-orphan",
