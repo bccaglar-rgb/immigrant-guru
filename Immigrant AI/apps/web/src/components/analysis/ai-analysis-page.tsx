@@ -83,6 +83,20 @@ export function AIAnalysisPage() {
     }
   }, [session, loadAnalysis]);
 
+  // Not logged in — redirect to sign-up
+  if (!session && status !== "loading") {
+    return (
+      <div className="flex min-h-[60vh] flex-col items-center justify-center text-center px-6">
+        <h2 className="text-2xl font-semibold tracking-tight text-ink">Sign in to see your analysis</h2>
+        <p className="mt-3 text-base text-muted">Create a free account to get your personalized immigration analysis.</p>
+        <div className="mt-6 flex gap-3">
+          <a href="/sign-up" className="inline-flex h-11 items-center rounded-full bg-accent px-6 text-sm font-semibold text-white hover:bg-accent-hover">Start your plan</a>
+          <a href="/sign-in" className="inline-flex h-11 items-center rounded-full px-6 text-sm font-semibold text-accent ring-1 ring-accent/30 hover:bg-accent/5">Log in</a>
+        </div>
+      </div>
+    );
+  }
+
   // Loading
   if (status === "loading") {
     return (

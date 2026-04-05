@@ -32,6 +32,7 @@ class AuthenticatedUserResponse(BaseModel):
     id: UUID
     email: EmailStr
     status: UserStatus
+    plan: str = "free"
     created_at: datetime
     updated_at: datetime
     profile: UserProfileRead | None = None
