@@ -39,7 +39,7 @@ const TIERS: Tier[] = [
     description: "Essential tools to explore the crypto market",
     planIdPrefix: "explorer",
     features: [
-      "Bitrium Quant Engine",
+      "Bitrium Quant Engine (50+ Signals)",
       "Sniper",
       "Coin Insight",
       "Super Charts (5 Charts)",
@@ -58,7 +58,7 @@ const TIERS: Tier[] = [
     description: "AI-powered trading with automated bots",
     planIdPrefix: "trader",
     features: [
-      "Bitrium Quant Engine",
+      "Bitrium Quant Engine (50+ Signals)",
       "Sniper",
       "Coin Insight",
       "Super Charts (10 Charts)",
@@ -84,7 +84,7 @@ const TIERS: Tier[] = [
     planIdPrefix: "titan",
     badge: "Best Value",
     features: [
-      "Bitrium Quant Engine",
+      "Bitrium Quant Engine (50+ Signals)",
       "Sniper",
       "Coin Insight",
       "Master",
@@ -115,9 +115,18 @@ const BILLING_OPTIONS: { key: BillingPeriod; label: string }[] = [
 ];
 
 
-const tierBorder = (highlight?: boolean) => {
-  if (highlight) return "border-[#F5C542]/50 shadow-[0_0_24px_rgba(245,197,66,0.08)]";
-  return "border-white/10";
+const PREMIUM_FEATURES = new Set([
+  "Master", "War Room", "Institutional Command", "Bots", "Portfolio", "Bitrium Token",
+]);
+
+const isPremium = (f: string) =>
+  PREMIUM_FEATURES.has(f) || f.includes("Exchange Accounts") || f.includes("Charts)");
+
+const savingsPercent = (tier: Tier, period: BillingPeriod): number | null => {
+  if (period === "1m") return null;
+  const base = tier.pricing["1m"].monthly;
+  const cur = tier.pricing[period].monthly;
+  return Math.round(((base - cur) / base) * 100);
 };
 
 /** Parse "explorer-3m" → { prefix: "explorer", period: "3m" } */
