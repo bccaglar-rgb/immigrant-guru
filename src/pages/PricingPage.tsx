@@ -47,10 +47,10 @@ const TIERS: Tier[] = [
       "Indicators",
     ],
     pricing: {
-      "1m": { total: 9, monthly: 9 },
-      "3m": { total: 24, monthly: 8 },
-      "6m": { total: 42, monthly: 7 },
-      "12m": { total: 72, monthly: 6 },
+      "1m": { total: 10, monthly: 10 },
+      "3m": { total: 27, monthly: 9 },
+      "6m": { total: 48, monthly: 8 },
+      "12m": { total: 84, monthly: 7 },
     },
   },
   {
@@ -70,10 +70,10 @@ const TIERS: Tier[] = [
       "Indicators",
     ],
     pricing: {
-      "1m": { total: 19, monthly: 19 },
-      "3m": { total: 51, monthly: 17 },
-      "6m": { total: 90, monthly: 15 },
-      "12m": { total: 156, monthly: 13 },
+      "1m": { total: 20, monthly: 20 },
+      "3m": { total: 54, monthly: 18 },
+      "6m": { total: 96, monthly: 16 },
+      "12m": { total: 168, monthly: 14 },
     },
     highlight: true,
     badge: "Most Popular",
@@ -97,19 +97,19 @@ const TIERS: Tier[] = [
       "Indicators",
     ],
     pricing: {
-      "1m": { total: 49, monthly: 49 },
-      "3m": { total: 129, monthly: 43 },
-      "6m": { total: 234, monthly: 39 },
-      "12m": { total: 396, monthly: 33 },
+      "1m": { total: 30, monthly: 30 },
+      "3m": { total: 81, monthly: 27 },
+      "6m": { total: 144, monthly: 24 },
+      "12m": { total: 252, monthly: 21 },
     },
   },
 ];
 
 const BILLING_OPTIONS: { key: BillingPeriod; label: string }[] = [
-  { key: "1m", label: "1 Month" },
-  { key: "3m", label: "3 Months" },
-  { key: "6m", label: "6 Months" },
-  { key: "12m", label: "12 Months" },
+  { key: "1m", label: "1 Mo" },
+  { key: "3m", label: "3 Mo" },
+  { key: "6m", label: "6 Mo" },
+  { key: "12m", label: "12 Mo" },
 ];
 
 
@@ -416,7 +416,7 @@ export default function PricingPage() {
                         type="button"
                         onClick={() => selectPlan(tier.name, key)}
                         className={[
-                          "flex w-full items-center justify-between rounded-lg border px-3 py-1.5 text-left text-[12px] transition-all duration-200",
+                          "flex w-full items-center justify-between rounded-lg border px-3 py-1.5 text-left text-[12px] whitespace-nowrap transition-all duration-200",
                           isCurrentPlan
                             ? "border-[#4caf50]/50 bg-[#4caf50]/[0.07] text-white"
                             : isSelected
