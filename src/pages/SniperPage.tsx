@@ -932,6 +932,9 @@ export default function SniperPage() {
                         <td className="px-2 py-2.5 text-center">
                           <DotBar value={cl.pass} max={cl.total} size="xs" />
                         </td>
+                        <td className="px-1 py-2.5 text-center">
+                          <span className="text-[12px] text-[#555] group-hover:text-[#F5C542] transition-colors">{isExpanded ? "\u25BC" : "\u25B6"}</span>
+                        </td>
                       </tr>
 
                       {/* Expanded Detail Panel - inline below the row */}
