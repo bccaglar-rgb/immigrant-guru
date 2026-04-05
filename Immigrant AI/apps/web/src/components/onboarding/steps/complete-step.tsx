@@ -107,15 +107,15 @@ export function CompleteStep({ formValues }: CompleteStepProps) {
         <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
           <Link
             className={cn(buttonVariants({ size: "lg", variant: "primary" }), "px-8 shadow-glow")}
-            href="/dashboard"
+            href="/analysis"
           >
-            Go to Dashboard
+            See your AI analysis
           </Link>
           <Link
             className={cn(buttonVariants({ size: "lg", variant: "secondary" }))}
-            href="/dashboard/profile"
+            href="/dashboard"
           >
-            View My Profile
+            Go to Dashboard
           </Link>
         </div>
       </Animate>

@@ -11,6 +11,7 @@ from app.api.routes.database import router as database_router
 from app.api.routes.health import router as health_router
 from app.api.routes.kb import router as kb_router
 from app.api.routes.profile import router as profile_router
+from app.api.routes.profile_analysis import router as profile_analysis_router
 from app.api.routes.users import router as users_router
 from app.api.routes.version import router as version_router
 
@@ -26,5 +27,6 @@ api_router.include_router(database_router)
 api_router.include_router(health_router)
 api_router.include_router(kb_router)
 api_router.include_router(profile_router)
+api_router.include_router(profile_analysis_router)
 api_router.include_router(users_router)
 api_router.include_router(version_router)

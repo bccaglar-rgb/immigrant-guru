@@ -1,10 +1,18 @@
 "use client";
 
 import { Animate } from "@/components/ui/animate";
-import { Input } from "@/components/ui/input";
 import { PillSelector } from "@/components/onboarding/pill-selector";
 import { relocationTimelineOptions } from "@/types/profile";
 import type { ProfileFormField, ProfileFormValues } from "@/types/profile";
+
+const countryOptions = [
+  { label: "United States", value: "United States" },
+  { label: "Canada", value: "Canada" },
+  { label: "United Kingdom", value: "United Kingdom" },
+  { label: "Germany", value: "Germany" },
+  { label: "Australia", value: "Australia" },
+  { label: "Netherlands", value: "Netherlands" },
+] as const;
 
 const timelineDisplayOptions = [
   { label: "ASAP", value: "immediately" },
@@ -40,12 +48,15 @@ export function GoalsStep({ formValues, onChange }: GoalsStepProps) {
 
       <div className="mx-auto max-w-lg space-y-6">
         <Animate animation="fade-up" delay={100} duration={500}>
-          <Input
-            label="Target country"
-            placeholder="e.g. United States, Canada, Germany..."
-            value={formValues.target_country}
-            onChange={(e) => onChange("target_country", e.target.value)}
-          />
+          <div className="space-y-2">
+            <p className="text-sm font-medium text-ink">Where do you want to go?</p>
+            <PillSelector
+              options={countryOptions}
+              value={formValues.target_country}
+              onChange={(v) => onChange("target_country", v)}
+              columns={3}
+            />
+          </div>
         </Animate>
 
         <Animate animation="fade-up" delay={200} duration={500}>
