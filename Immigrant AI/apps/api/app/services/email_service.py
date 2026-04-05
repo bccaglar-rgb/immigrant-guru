@@ -33,6 +33,10 @@ async def send_email(to: str, subject: str, html: str) -> dict | None:
                     "to": to,
                     "subject": subject,
                     "html": html,
+                    "reply_to": "noreply@immigrant.guru",
+                    "headers": {
+                        "X-Auto-Response-Suppress": "All",
+                    },
                 },
             )
             data = response.json()
