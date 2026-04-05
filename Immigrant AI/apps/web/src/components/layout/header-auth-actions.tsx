@@ -6,48 +6,43 @@ import { useAuthSession } from "@/hooks/use-auth-session";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
-function getUserLabel(email: string): string {
-  return email.split("@")[0] || "Account";
-}
-
 export function HeaderAuthActions() {
   const { clearSession, retrySession, status, user } = useAuthSession();
 
   if (status === "loading") {
-    return <div className="h-9 w-32 animate-pulse rounded-full bg-ink/5" />;
+    return <div className="h-9 w-24 animate-pulse rounded-full bg-ink/5" />;
   }
 
+  // Logged in
   if (status === "authenticated" && user) {
     return (
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2">
+        <Link
+          className={cn(buttonVariants({ size: "md", variant: "primary" }))}
+          href="/analysis"
+        >
+          My plan
+        </Link>
         <Link
           className="hidden text-sm font-medium text-muted transition-colors hover:text-ink md:inline-flex"
           href="/dashboard"
         >
-          {getUserLabel(user.email)}
+          Dashboard
         </Link>
-        <button
-          className={cn(buttonVariants({ size: "md", variant: "secondary" }))}
-          onClick={clearSession}
-          type="button"
-        >
-          Log out
-        </button>
       </div>
     );
   }
 
+  // Error
   if (status === "error") {
     return (
       <div className="flex items-center gap-3">
         <button
           className={cn(buttonVariants({ size: "md", variant: "secondary" }))}
-          onClick={() => {
-            void retrySession();
-          }}
+          onClick={() => void retrySession()}
           type="button"
         >
-          Retry session
+          Retry
         </button>
         <button
           className="text-sm font-medium text-muted transition-colors hover:text-ink"
@@ -60,19 +55,20 @@ export function HeaderAuthActions() {
     );
   }
 
+  // Not logged in
   return (
     <div className="flex items-center gap-3">
       <Link
         className="hidden text-sm font-medium text-muted transition-colors hover:text-ink md:inline-flex"
         href="/sign-in"
       >
-        Sign in
+        Log in
       </Link>
       <Link
         className={cn(buttonVariants({ size: "md", variant: "primary" }))}
         href="/sign-up"
       >
-        Get started
+        Start your plan
       </Link>
     </div>
   );

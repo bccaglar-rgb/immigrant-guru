@@ -7,36 +7,23 @@ import { getPublicEnv } from "@/lib/config";
 import { cn } from "@/lib/utils";
 
 const navItems = [
-  {
-    href: "/dashboard",
-    label: "Overview",
-    description: "Platform summary"
-  },
-  {
-    href: "/dashboard/profile",
-    label: "Profile",
-    description: "Immigration profile"
-  },
-  {
-    href: "/dashboard/cases",
-    label: "Cases",
-    description: "Migration goals"
-  }
+  { href: "/dashboard", label: "Overview", description: "Dashboard home" },
+  { href: "/analysis", label: "My Analysis", description: "AI recommendations" },
+  { href: "/dashboard/profile", label: "Profile", description: "Immigration profile" },
+  { href: "/dashboard/cases", label: "My Cases", description: "Your immigration cases" },
 ];
 
-if (getPublicEnv().appEnv !== "production") {
-  navItems.push({
-    href: "/dashboard/admin",
-    label: "Internal",
-    description: "Ops and knowledge tools"
-  });
-}
+const bottomItems = [
+  { href: "/dashboard/admin", label: "Internal", description: "Ops tools", devOnly: true },
+];
 
 type DashboardSidebarProps = Readonly<{
   pathname: string;
 }>;
 
 export function DashboardSidebar({ pathname }: DashboardSidebarProps) {
+  const appEnv = getPublicEnv().appEnv;
+
   return (
     <aside className="border-b border-line px-4 py-4 lg:min-h-screen lg:w-[260px] lg:border-b-0 lg:border-r lg:px-5 lg:py-6">
       <div className="lg:sticky lg:top-6">
@@ -55,7 +42,7 @@ export function DashboardSidebar({ pathname }: DashboardSidebarProps) {
           {navItems.map((item) => {
             const active =
               pathname === item.href ||
-              (item.href !== "/dashboard" && pathname.startsWith(`${item.href}/`));
+              (item.href !== "/dashboard" && item.href !== "/analysis" && pathname.startsWith(`${item.href}/`));
 
             return (
               <Link href={item.href} key={item.href}>
@@ -67,18 +54,28 @@ export function DashboardSidebar({ pathname }: DashboardSidebarProps) {
                       : "text-ink hover:bg-ink/5"
                   )}
                 >
-                  <p className={cn(
-                    "text-base font-semibold",
-                    active ? "text-white" : "text-ink"
-                  )}>
+                  <p className={cn("text-base font-semibold", active ? "text-white" : "text-ink")}>
                     {item.label}
                   </p>
-                  <p className={cn(
-                    "mt-0.5 text-xs",
-                    active ? "text-white/70" : "text-muted"
-                  )}>
+                  <p className={cn("mt-0.5 text-xs", active ? "text-white/70" : "text-muted")}>
                     {item.description}
                   </p>
+                </div>
+              </Link>
+            );
+          })}
+
+          {/* Dev-only items */}
+          {appEnv !== "production" && bottomItems.map((item) => {
+            const active = pathname === item.href;
+            return (
+              <Link href={item.href} key={item.href}>
+                <div className={cn(
+                  "rounded-xl px-4 py-3 transition-all duration-200",
+                  active ? "bg-accent text-white shadow-glow" : "text-ink hover:bg-ink/5"
+                )}>
+                  <p className={cn("text-base font-semibold", active ? "text-white" : "text-ink")}>{item.label}</p>
+                  <p className={cn("mt-0.5 text-xs", active ? "text-white/70" : "text-muted")}>{item.description}</p>
                 </div>
               </Link>
             );

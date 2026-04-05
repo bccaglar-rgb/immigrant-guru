@@ -1,16 +1,20 @@
+"use client";
+
 import Image from "next/image";
 import Link from "next/link";
+import { useState } from "react";
 
 import { HeaderAuthActions } from "@/components/layout/header-auth-actions";
-import { LanguageSwitcher } from "@/components/layout/language-switcher";
 
 const navItems = [
-  { href: "/#benefits", label: "Benefits" },
-  { href: "/#score", label: "Score" },
-  { href: "/#plans", label: "Strategy" }
+  { href: "/#how", label: "How it works" },
+  { href: "/analysis", label: "Find your path" },
+  { href: "/#pricing", label: "Pricing" },
 ];
 
 export function SiteHeader() {
+  const [mobileOpen, setMobileOpen] = useState(false);
+
   return (
     <header className="sticky top-0 z-30 glass border-b border-line">
       <div className="mx-auto flex max-w-content items-center justify-between gap-6 px-6 py-3.5 md:px-10">
@@ -25,6 +29,7 @@ export function SiteHeader() {
           />
         </Link>
 
+        {/* Desktop nav */}
         <nav className="hidden items-center gap-7 lg:flex">
           {navItems.map((item) => (
             <Link
@@ -38,10 +43,43 @@ export function SiteHeader() {
         </nav>
 
         <div className="flex items-center gap-3">
-          <LanguageSwitcher />
           <HeaderAuthActions />
+
+          {/* Mobile hamburger */}
+          <button
+            className="flex h-9 w-9 items-center justify-center rounded-lg text-muted hover:bg-ink/5 lg:hidden"
+            onClick={() => setMobileOpen(!mobileOpen)}
+            type="button"
+            aria-label="Toggle menu"
+          >
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5">
+              {mobileOpen ? (
+                <path d="M5 5l10 10M15 5L5 15" />
+              ) : (
+                <path d="M3 6h14M3 10h14M3 14h14" />
+              )}
+            </svg>
+          </button>
         </div>
       </div>
+
+      {/* Mobile dropdown */}
+      {mobileOpen && (
+        <div className="border-t border-line bg-white/95 px-6 py-4 lg:hidden">
+          <nav className="flex flex-col gap-3">
+            {navItems.map((item) => (
+              <Link
+                className="text-base font-medium text-ink transition-colors hover:text-accent"
+                href={item.href}
+                key={item.href}
+                onClick={() => setMobileOpen(false)}
+              >
+                {item.label}
+              </Link>
+            ))}
+          </nav>
+        </div>
+      )}
     </header>
   );
 }
