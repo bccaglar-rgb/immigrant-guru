@@ -12,7 +12,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.security import get_password_hash
 from app.db.session import get_db_session
 from app.models.user import User
-from app.services.email_service import send_email
+from app.services.email_service import send_password_reset_email
 
 logger = logging.getLogger(__name__)
 
@@ -61,25 +61,7 @@ async def forgot_password(
             "attempts": 0,
         }
 
-        await send_email(
-            to=email,
-            subject="Your password reset code",
-            html=f"""
-            <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 40px 20px;">
-                <img src="https://immigrant.guru/logo.png" alt="Immigrant Guru" style="width: 80px; margin-bottom: 24px;" />
-                <h1 style="font-size: 24px; color: #111827; margin: 0 0 16px 0;">Reset your password</h1>
-                <p style="font-size: 16px; color: #6b7280; line-height: 1.6; margin: 0 0 24px 0;">
-                    Use this code to reset your password:
-                </p>
-                <div style="background: #f0f9ff; border: 2px solid #0071e3; border-radius: 12px; padding: 24px; text-align: center; margin: 0 0 24px 0;">
-                    <p style="font-size: 36px; font-weight: 700; color: #0071e3; margin: 0; letter-spacing: 8px;">{code}</p>
-                </div>
-                <p style="font-size: 14px; color: #9ca3af; margin: 0;">
-                    This code expires in 15 minutes. If you didn't request this, ignore this email.
-                </p>
-            </div>
-            """,
-        )
+        await send_password_reset_email(email, code)
         logger.info("password_reset.code_sent email=%s", email)
 
     return {"message": "If an account exists with this email, a reset code has been sent."}
