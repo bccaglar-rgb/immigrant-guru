@@ -73,11 +73,8 @@ input:-webkit-autofill:focus {
   }
 
   .text-gradient {
-    background: linear-gradient(135deg, #4a90d9, #7b8ec9, #a78bba);
-    background-size: 200% 200%;
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+    color: #0071e3;
+    -webkit-text-fill-color: #0071e3;
   }
 
   .glass {
@@ -179,9 +176,7 @@ input:-webkit-autofill:focus {
   50% { background-position: 100% 50%; }
   100% { background-position: 0% 50%; }
 }
-.text-gradient {
-  animation: gradient-shimmer 6s ease infinite;
-}
+/* text-gradient is now solid color, no animation needed */
 
 /* Progress bar fill animation */
 @keyframes fill-bar {
