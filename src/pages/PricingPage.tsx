@@ -298,80 +298,113 @@ export default function PricingPage() {
   };
 
   return (
-    <>
-    <style>{`
-      @keyframes glow {
-        0%, 100% { opacity: 1; }
-        50% { opacity: 0.6; text-shadow: 0 0 8px rgba(245,197,66,0.4); }
-      }
-    `}</style>
-    <main className="min-h-screen bg-[#0B0B0C] p-3 text-[#BFC2C7] md:p-6">
-      <div className="mx-auto max-w-[1400px] space-y-5">
+    <main className="min-h-screen bg-[#0B0B0C] px-4 py-10 text-[#BFC2C7] md:px-6 md:py-16">
+      <div className="mx-auto max-w-5xl space-y-10">
         {/* Header */}
-        <section className="rounded-xl border border-white/10 bg-[#121316] p-5 text-center md:p-6">
-          <h1 className="text-2xl font-bold text-white md:text-3xl">Unlock the Full Power of Bitrium</h1>
-          <p className="mt-2 text-sm text-[#9ba3b4]">
+        <section className="text-center">
+          <h1 className="text-3xl font-bold tracking-tight text-white md:text-4xl">
+            Unlock the Full Power of Bitrium
+          </h1>
+          <p className="mx-auto mt-3 max-w-xl text-sm leading-relaxed text-[#9ba3b4]">
             Professional-grade crypto analytics, AI-powered trading bots, and real-time quant signals — all in one platform.
           </p>
-          <p className="mt-1 text-xs text-[#6B6F76]">Prices in USDT. Cancel anytime.</p>
+          <p className="mt-2 text-xs text-[#6B6F76]">Prices in USDT. Cancel anytime.</p>
         </section>
 
         {/* Tier cards */}
-        <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <section className="grid gap-6 md:grid-cols-3">
           {TIERS.map((tier) => {
             const isCurrentTier = currentTierPrefix === tier.planIdPrefix;
             const tierSelected = selection?.tierName === tier.name;
             const activePeriod = tierSelected ? selection.period : undefined;
-            // Find features of the selected tier to compare
+            const selectedTierFeatures = selection ? TIERS.find((t) => t.name === selection.tierName)?.features ?? [] : [];
             const selectedTierIdx = selection ? TIERS.findIndex((t) => t.name === selection.tierName) : -1;
             const thisTierIdx = TIERS.findIndex((t) => t.name === tier.name);
-            const selectedTierFeatures = selection ? TIERS.find((t) => t.name === selection.tierName)?.features ?? [] : [];
-            // Only glow on HIGHER tiers (not lower)
             const anotherTierSelected = selection !== null && selection.tierName !== tier.name && thisTierIdx > selectedTierIdx;
+
+            // Price to show prominently (selected period or 1m default)
+            const displayPeriod = activePeriod ?? "1m";
+            const displayPrice = tier.pricing[displayPeriod];
 
             return (
               <article
                 key={tier.name}
-                className={`relative flex flex-col rounded-xl border bg-[#121316] p-5 ${tierBorder(tier.highlight)}`}
+                className={[
+                  "relative flex flex-col rounded-2xl border p-6",
+                  "bg-gradient-to-b from-white/[0.04] to-white/[0.01]",
+                  "hover:scale-[1.02] transition-all duration-300",
+                  tier.highlight
+                    ? "border-[#F5C542]/50 shadow-[0_0_30px_rgba(245,197,66,0.12)] md:-mt-3 md:mb-[-0.75rem]"
+                    : "border-white/[0.08]",
+                ].join(" ")}
               >
-                {/* Badges */}
-                {tier.badge ? (
-                  <span className="absolute right-3 top-0 -translate-y-1/2 rounded-md bg-[#F5C542] px-2.5 py-0.5 text-[10px] font-bold uppercase text-black">
+                {/* Badge */}
+                {tier.badge && (
+                  <span
+                    className={[
+                      "absolute left-1/2 top-0 -translate-x-1/2 -translate-y-1/2 rounded-full px-4 py-1 text-[10px] font-bold uppercase tracking-wider",
+                      tier.highlight
+                        ? "bg-gradient-to-r from-[#F5C542] to-[#E8A817] text-black shadow-[0_2px_12px_rgba(245,197,66,0.35)]"
+                        : "bg-gradient-to-r from-[#5B8DEF] to-[#7C6FEF] text-white shadow-[0_2px_12px_rgba(91,141,239,0.3)]",
+                    ].join(" ")}
+                  >
                     {tier.badge}
                   </span>
-                ) : null}
+                )}
 
-                <div className="flex items-center gap-2">
-                  <h2 className="text-xl font-bold text-white">{tier.name}</h2>
-                  {isCurrentTier ? (
-                    <span className="rounded bg-[#4caf50]/20 px-2 py-0.5 text-[10px] font-bold text-[#4caf50]">Your Plan</span>
-                  ) : null}
+                {/* Plan name + Your Plan badge */}
+                <div className="flex items-center gap-2.5 mt-1">
+                  <h2 className="text-2xl font-bold text-white">{tier.name}</h2>
+                  {isCurrentTier && (
+                    <span className="rounded-full bg-[#4caf50]/15 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-[#4caf50] ring-1 ring-[#4caf50]/30">
+                      Your Plan
+                    </span>
+                  )}
                 </div>
-                <p className="mt-1 text-xs text-[#6B6F76]">{tier.description}</p>
+                <p className="mt-1 text-sm text-[#6B6F76]">{tier.description}</p>
+
+                {/* Price display */}
+                <div className="mt-5 mb-1">
+                  <div className="flex items-baseline gap-1">
+                    <span className="text-4xl font-mono font-bold text-white">
+                      {displayPrice.monthly}
+                    </span>
+                    <span className="text-sm font-medium text-[#6B6F76]">USDT /mo</span>
+                  </div>
+                  {displayPeriod !== "1m" && (
+                    <p className="mt-0.5 text-xs text-[#6B6F76]">
+                      billed as {displayPrice.total} USDT
+                    </p>
+                  )}
+                </div>
 
                 {/* Features */}
-                <ul className="mt-4 flex-1 space-y-2 text-sm">
+                <ul className="mt-4 flex-1 space-y-2.5 text-sm">
                   {tier.features.map((f) => {
-                    const isPremiumFeature = f.includes("Exchange Accounts") || f === "Master" || f === "War Room" || f === "Institutional Command" || f.includes("Bots") || f === "Portfolio" || f === "Bitrium Token" || f.includes("Charts)");
-                    // When another (lower) tier is selected: this is a higher tier → show glow on unique features
-                    const isUniqueAdvantage = anotherTierSelected && isPremiumFeature && !selectedTierFeatures.includes(f);
-                    // When a higher tier is selected: this is a lower tier → demote premium styling
-                    const isDemoted = selection !== null && !tierSelected && thisTierIdx < selectedTierIdx && isPremiumFeature;
-                    // Show highlight only if not demoted
-                    const showHighlight = isPremiumFeature && !isDemoted;
+                    const prem = isPremium(f);
+                    const isUniqueAdvantage = anotherTierSelected && prem && !selectedTierFeatures.includes(f);
+                    const isDemoted = selection !== null && !tierSelected && thisTierIdx < selectedTierIdx && prem;
+                    const showHighlight = prem && !isDemoted;
                     return (
-                      <li key={f} className={`flex items-start gap-2 ${isUniqueAdvantage ? "animate-[glow_2s_ease-in-out_infinite]" : ""}`}>
-                        <span className={`mt-0.5 text-xs ${showHighlight ? "text-[#F5C542]" : "text-[#4caf50]"}`}>
+                      <li
+                        key={f}
+                        className={[
+                          "flex items-start gap-2.5",
+                          isUniqueAdvantage ? "animate-[glow_2s_ease-in-out_infinite]" : "",
+                        ].join(" ")}
+                      >
+                        <span className={`mt-0.5 text-xs flex-shrink-0 ${showHighlight ? "text-[#F5C542]" : "text-[#4caf50]"}`}>
                           {showHighlight ? "\u2605" : "\u2713"}
                         </span>
-                        <span className={showHighlight ? "font-bold text-white" : ""}>{f}</span>
+                        <span className={showHighlight ? "font-semibold text-white" : "text-[#BFC2C7]"}>{f}</span>
                       </li>
                     );
                   })}
                 </ul>
 
-                {/* Pricing options */}
-                <div className="mt-5 space-y-1.5">
+                {/* Billing period selector */}
+                <div className="mt-6 space-y-1.5">
+                  <p className="mb-2 text-[11px] font-medium uppercase tracking-wider text-[#6B6F76]">Billing period</p>
                   {BILLING_OPTIONS.map(({ key, label }) => {
                     const p = tier.pricing[key];
                     const isSelected = activePeriod === key;
@@ -379,33 +412,42 @@ export default function PricingPage() {
                     const isMonthly = key === "1m";
                     const isUpgrade = currentTierPrefix ? (TIER_RANK[tier.planIdPrefix] ?? 0) > (TIER_RANK[currentTierPrefix] ?? 0) : false;
                     const upgradeInfo = isUpgrade ? calcUpgradeCredit(p.total) : null;
+                    const savings = savingsPercent(tier, key);
                     return (
                       <div key={key}>
                         <button
                           type="button"
                           onClick={() => selectPlan(tier.name, key)}
-                          className={`flex w-full items-center justify-between rounded-lg border px-3 py-2.5 text-left text-sm transition ${
+                          className={[
+                            "flex w-full items-center justify-between rounded-xl border px-3.5 py-2.5 text-left text-sm transition-all duration-200",
                             isCurrentPlan
-                              ? "border-[#4caf50]/50 bg-[#162016] text-white"
+                              ? "border-[#4caf50]/50 bg-[#4caf50]/[0.07] text-white"
                               : isSelected
-                                ? "border-[#F5C542]/70 bg-[#2b2417] text-white"
-                                : "border-white/10 bg-[#0F1012] text-[#BFC2C7] hover:border-white/20 hover:bg-[#17191d]"
-                          }`}
+                                ? "border-[#F5C542]/60 bg-[#F5C542]/[0.06] text-white"
+                                : "border-white/[0.06] bg-white/[0.02] text-[#BFC2C7] hover:border-white/15 hover:bg-white/[0.04]",
+                          ].join(" ")}
                         >
-                          <div className="flex items-center gap-2">
-                            <span className={`flex h-4 w-4 items-center justify-center rounded-full border ${
+                          <div className="flex items-center gap-2.5">
+                            <span className={`flex h-4 w-4 items-center justify-center rounded-full border transition-colors ${
                               isCurrentPlan
                                 ? "border-[#4caf50] bg-[#4caf50]"
                                 : isSelected
                                   ? "border-[#F5C542] bg-[#F5C542]"
-                                  : "border-white/30"
+                                  : "border-white/25"
                             }`}>
-                              {isCurrentPlan || isSelected ? <span className={`h-1.5 w-1.5 rounded-full ${isCurrentPlan ? "bg-white" : "bg-black"}`} /> : null}
+                              {(isCurrentPlan || isSelected) && (
+                                <span className={`h-1.5 w-1.5 rounded-full ${isCurrentPlan ? "bg-white" : "bg-black"}`} />
+                              )}
                             </span>
                             <span className="font-medium">{label}</span>
-                            {isCurrentPlan ? (
-                              <span className="rounded bg-[#4caf50]/20 px-1.5 py-0.5 text-[10px] font-semibold text-[#4caf50]">Active</span>
-                            ) : null}
+                            {isCurrentPlan && (
+                              <span className="rounded-full bg-[#4caf50]/20 px-2 py-0.5 text-[10px] font-semibold text-[#4caf50]">Active</span>
+                            )}
+                            {savings !== null && !isCurrentPlan && (
+                              <span className="rounded-full bg-[#F5C542]/10 px-2 py-0.5 text-[10px] font-semibold text-[#F5C542]">
+                                Save {savings}%
+                              </span>
+                            )}
                           </div>
                           <div className="text-right">
                             {upgradeInfo && upgradeInfo.credit > 0 ? (
@@ -418,14 +460,14 @@ export default function PricingPage() {
                             ) : (
                               <div className="flex items-baseline gap-1.5">
                                 <span className={`font-bold ${isCurrentPlan ? "text-[#4caf50]" : isSelected ? "text-[#F5C542]" : "text-white"}`}>{p.total} USDT</span>
-                                <span className="text-[11px] text-[#6B6F76]">({p.monthly} USDT/mo)</span>
+                                <span className="text-[11px] text-[#6B6F76]">({p.monthly}/mo)</span>
                               </div>
                             )}
                           </div>
                         </button>
                         {/* Upgrade credit breakdown */}
                         {upgradeInfo && upgradeInfo.credit > 0 && (
-                          <div className="mt-1 rounded-md border border-[#F5C542]/20 bg-[#1f1c14] px-3 py-2">
+                          <div className="mt-1 rounded-xl border border-[#F5C542]/15 bg-[#F5C542]/[0.03] px-3.5 py-2">
                             <div className="flex items-center justify-between text-[11px]">
                               <span className="text-[#9ba3b4]">{tier.name} Plan</span>
                               <span className="text-white">{p.total} USDT</span>
@@ -445,7 +487,7 @@ export default function PricingPage() {
                   })}
                 </div>
 
-                {/* Subscribe button */}
+                {/* CTA button */}
                 {(() => {
                   const isHigherTier = currentTierPrefix ? (TIER_RANK[tier.planIdPrefix] ?? 0) > (TIER_RANK[currentTierPrefix] ?? 0) : false;
                   const isLowerTier = currentTierPrefix ? (TIER_RANK[tier.planIdPrefix] ?? 0) < (TIER_RANK[currentTierPrefix] ?? 0) : false;
@@ -459,36 +501,39 @@ export default function PricingPage() {
                         : isHigherTier && !tierSelected
                           ? "Upgrade Subscription"
                           : isHigherTier && tierSelected && selectedUpgrade && selectedUpgrade.credit > 0
-                            ? `Upgrade Subscription \u2014 ${selectedUpgrade.youPay.toFixed(2)} USDT`
+                            ? `Upgrade \u2014 ${selectedUpgrade.youPay.toFixed(2)} USDT`
                             : isHigherTier && tierSelected
                               ? "Upgrade Subscription"
                               : !tierSelected
                                 ? "Select a plan"
                                 : "Subscribe Now";
+
+                  const isDisabled = (isCurrentTier && !tierSelected) || isLowerTier || (!tierSelected && !isHigherTier && !isCurrentTier) || busyTier === tier.name;
+
                   return (
                     <>
                       <button
                         type="button"
                         onClick={() => void handleSubscribe(tier)}
-                        disabled={(isCurrentTier && !tierSelected) || isLowerTier || (!tierSelected && !isHigherTier && !isCurrentTier) || busyTier === tier.name}
-                        className={`group mt-4 w-full rounded-lg px-4 py-2.5 text-sm font-semibold transition-all duration-300 ${
+                        disabled={isDisabled}
+                        className={[
+                          "mt-5 w-full rounded-xl py-3 text-sm font-semibold transition-all duration-300",
                           isCurrentTier && !tierSelected
-                            ? "cursor-default border border-[#4caf50]/40 bg-[#162016] text-[#4caf50]"
+                            ? "cursor-default border border-[#4caf50]/30 bg-transparent text-[#4caf50]/70"
                             : isCurrentTier && tierSelected
-                              ? "border border-[#4caf50] bg-[#1a2f1a] text-[#4caf50] hover:bg-[#243d24] hover:scale-[1.02] active:scale-[0.97]"
+                              ? "border border-[#4caf50] bg-[#4caf50]/10 text-[#4caf50] hover:bg-[#4caf50]/20 hover:scale-[1.02] active:scale-[0.97]"
                               : isHigherTier && !tierSelected
-                                ? "border border-[#F5C542]/60 bg-[#2b2417] text-[#F5C542] hover:bg-[#3a3020] hover:scale-[1.02]"
-                                : !tierSelected
-                                  ? "cursor-not-allowed border border-white/10 bg-[#17191d] text-[#6B6F76]"
-                                  : tier.highlight
-                                    ? "bg-[#F5C542] text-black hover:bg-[#e5b632] hover:shadow-[0_0_24px_rgba(245,197,66,0.4)] hover:scale-[1.02] active:scale-[0.97]"
-                                    : "border border-[#7a6840] bg-[#2b2417] text-[#F5C542] hover:bg-[#3a3020] hover:scale-[1.02] active:scale-[0.97]"
-                        } disabled:opacity-50 disabled:hover:scale-100 disabled:hover:shadow-none`}
+                                ? "bg-gradient-to-r from-[#F5C542] to-[#E8A817] text-black shadow-[0_2px_16px_rgba(245,197,66,0.25)] hover:shadow-[0_4px_24px_rgba(245,197,66,0.35)] hover:scale-[1.02]"
+                                : isDisabled
+                                  ? "cursor-not-allowed border border-white/[0.06] bg-white/[0.02] text-[#6B6F76]"
+                                  : "bg-gradient-to-r from-[#F5C542] to-[#E8A817] text-black shadow-[0_2px_16px_rgba(245,197,66,0.25)] hover:shadow-[0_4px_24px_rgba(245,197,66,0.35)] hover:scale-[1.02] active:scale-[0.97]",
+                          "disabled:opacity-50 disabled:hover:scale-100 disabled:hover:shadow-none",
+                        ].join(" ")}
                       >
                         {btnLabel}
                       </button>
                       {isHigherTier && !tierSelected && hasMembership && (
-                        <p className="mt-1 text-center text-[10px] text-[#6B6F76]">Only pay the difference. Unused balance credited.</p>
+                        <p className="mt-1.5 text-center text-[10px] text-[#6B6F76]">Only pay the difference. Unused balance credited.</p>
                       )}
                     </>
                   );
@@ -498,51 +543,50 @@ export default function PricingPage() {
           })}
         </section>
 
-        {err ? (
+        {err && (
           <section className="mx-auto max-w-2xl rounded-xl border border-[#704844] bg-[#271a19] p-3 text-sm text-[#d6b3af]">
             {err}
           </section>
-        ) : null}
+        )}
 
         {/* Upgrade Policy */}
         {hasMembership && (
-          <section className="mx-auto max-w-2xl rounded-xl border border-[#F5C542]/10 bg-[#121316] p-4 text-center">
-            <p className="text-xs font-semibold text-[#F5C542]">Instant Upgrade Guarantee</p>
-            <p className="mt-1 text-[11px] text-[#9ba3b4]">
+          <section className="mx-auto max-w-2xl rounded-2xl border border-[#F5C542]/10 bg-gradient-to-b from-white/[0.03] to-transparent p-5 text-center">
+            <p className="text-xs font-semibold uppercase tracking-wider text-[#F5C542]">Instant Upgrade Guarantee</p>
+            <p className="mt-1.5 text-[11px] leading-relaxed text-[#9ba3b4]">
               Upgrade anytime. The unused portion of your current plan is automatically credited toward your new plan. You only pay the difference. Your new plan starts fresh with a full billing cycle.
             </p>
           </section>
         )}
 
         {/* Referral */}
-        <section className="mx-auto max-w-2xl rounded-xl border border-white/10 bg-[#121316] p-4">
-          <p className="mb-2 text-center text-xs font-semibold uppercase tracking-wider text-[#6B6F76]">Have a referral code?</p>
-          <div className="grid gap-2.5 md:grid-cols-[1fr_180px]">
+        <section className="mx-auto max-w-lg rounded-2xl border border-white/[0.08] bg-gradient-to-b from-white/[0.03] to-transparent p-5">
+          <p className="mb-3 text-center text-xs font-semibold uppercase tracking-wider text-[#6B6F76]">Have a referral code?</p>
+          <div className="flex gap-2.5">
             <input
               id="referral-input"
               type="text"
               placeholder="Enter referral code"
               value={referralCode}
               onChange={(e) => setReferralCode(e.target.value.toUpperCase())}
-              className="rounded-lg border border-white/15 bg-[#0F1012] px-3 py-2 text-sm text-white outline-none placeholder:text-[#6B6F76] focus:border-[#F5C542]/50"
+              className="flex-1 rounded-xl border border-white/[0.08] bg-white/[0.02] px-4 py-2.5 text-sm text-white outline-none placeholder:text-[#6B6F76] focus:border-[#F5C542]/40 transition-colors"
             />
             <button
               type="button"
               disabled={!referralCode.trim() || referralLoading}
               onClick={handleRedeem}
-              className="rounded-lg bg-[#F5C542] px-3 py-2 text-sm font-semibold text-black hover:bg-[#e5b632] disabled:opacity-50"
+              className="rounded-xl bg-gradient-to-r from-[#F5C542] to-[#E8A817] px-5 py-2.5 text-sm font-semibold text-black hover:shadow-[0_2px_12px_rgba(245,197,66,0.3)] transition-all disabled:opacity-50"
             >
-              {referralLoading ? "Redeeming..." : "Redeem Code"}
+              {referralLoading ? "Redeeming..." : "Redeem"}
             </button>
           </div>
           {referralMsg && (
-            <p className={`mt-2 text-center text-xs ${referralMsgType === "success" ? "text-[#4caf50]" : "text-[#d6b3af]"}`}>
+            <p className={`mt-2.5 text-center text-xs ${referralMsgType === "success" ? "text-[#4caf50]" : "text-[#d6b3af]"}`}>
               {referralMsg}
             </p>
           )}
         </section>
       </div>
     </main>
-    </>
   );
 }
