@@ -102,6 +102,14 @@ async def create_checkout(
     await session.commit()
     await session.refresh(current_user)
 
+    # Send upgrade confirmation email
+    try:
+        from app.services.email_service import send_upgrade_email
+        first_name = current_user.profile.first_name if current_user.profile else None
+        await send_upgrade_email(current_user.email, plan_info["name"], first_name)
+    except Exception:
+        pass  # Email failure should never block upgrade
+
     logger.info("user.plan_upgraded user_id=%s plan=%s", current_user.id, body.plan)
 
     return {

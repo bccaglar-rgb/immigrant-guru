@@ -72,6 +72,10 @@ class Settings(BaseSettings):
     knowledge_embedding_model: str = "hashing-v1"
     knowledge_embedding_dimensions: int = 256
 
+    # Email (Resend)
+    resend_api_key: str = ""
+    resend_from_email: str = "Immigrant Guru <onboarding@resend.dev>"
+
     @field_validator("admin_emails")
     @classmethod
     def normalize_admin_emails(cls, value: list[str]) -> list[str]:

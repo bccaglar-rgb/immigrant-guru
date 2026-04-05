@@ -70,6 +70,15 @@ class AuthService:
             target_entity_id=created_user.id,
             metadata={"email": created_user.email},
         )
+
+        # Send welcome email (fire-and-forget, don't block registration)
+        try:
+            from app.services.email_service import send_welcome_email
+            first_name = created_user.profile.first_name if created_user.profile else None
+            await send_welcome_email(created_user.email, first_name)
+        except Exception:
+            pass  # Email failure should never block registration
+
         return created_user
 
     async def login(
