@@ -131,13 +131,6 @@ export default function MasterPage() {
               className="h-full"
             />
           </div>
-          {/* Multi-TF strip */}
-          <div className="grid grid-cols-4 gap-1" style={{ height: "60px" }}>
-            <ChartCard symbol={selectedSymbol.replace("USDT", "")} timeframe="15m" data={mainLive.candles15m as OHLCVData[]} compact className="h-full" />
-            <ChartCard symbol={selectedSymbol.replace("USDT", "")} timeframe="1H" data={mainLive.candles1h as OHLCVData[]} compact className="h-full" />
-            <ChartCard symbol={selectedSymbol.replace("USDT", "")} timeframe="4H" data={mainLive.candles4h as OHLCVData[]} compact className="h-full" />
-            <ChartCard symbol={selectedSymbol.replace("USDT", "")} timeframe="1D" data={mainLive.candles1d as OHLCVData[]} compact className="h-full" />
-          </div>
           {/* Micro Signal Bar */}
           <MicroSignalBar />
           {/* Quick Entry Panel */}
