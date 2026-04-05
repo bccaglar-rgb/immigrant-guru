@@ -2,6 +2,13 @@ import { MultiTimeframePanel } from "../components/institutional/MultiTimeframeP
 import { HeroExecutionChart } from "../components/institutional/HeroExecutionChart";
 import { BTCChart, MarketIntelFeed, StructureLevelsPanel, AlertMatrixPanel } from "../components/institutional/RightPanels";
 import { SignalFeedPanels } from "../components/institutional/SignalFeedPanels";
+import {
+  MarketHeatmap, SectorRotation, BreakoutScanner,
+  SmartSignalGrid, OpportunityFeed,
+  MoneyFlowPanel, LiveTape, BuySellPressure,
+  WhaleActivityBoard, LiquidationMap, AIGlobalBias,
+  CorrelationPanel, DangerZone, MarketCondition,
+} from "../components/warroom/WarRoomPanels";
 import { getCoinData, session } from "../components/institutional/mockData";
 import { useLiveMarketData } from "../hooks/useLiveMarketData";
 import { useState, useRef, useEffect, useMemo } from "react";
@@ -162,8 +169,31 @@ export default function InstitutionalCommandPage() {
             <HeroExecutionChart data={live.candles1m as OHLCVData[]} symbol={selectedCoin} aiOverlay={{ bias: coinBiasLabel, confidence: aiDecision.confidence, setup: aiDecision.strategy }} />
           </div>
           <QuickStatsPanel horizontal coinData={coinData} />
-          <div className="flex-1 min-h-0 overflow-y-auto scrollbar-thin pr-0.5">
+          <div className="flex-1 min-h-0 overflow-y-auto scrollbar-thin pr-0.5 space-y-1.5">
             <SignalFeedPanels />
+            {/* War Room panels */}
+            <div className="grid grid-cols-3 gap-1.5">
+              <MarketHeatmap />
+              <SectorRotation />
+              <BreakoutScanner />
+            </div>
+            <SmartSignalGrid />
+            <OpportunityFeed />
+            <div className="grid grid-cols-3 gap-1.5">
+              <MoneyFlowPanel />
+              <LiveTape />
+              <BuySellPressure />
+            </div>
+            <div className="grid grid-cols-3 gap-1.5">
+              <WhaleActivityBoard />
+              <LiquidationMap />
+              <AIGlobalBias />
+            </div>
+            <div className="grid grid-cols-3 gap-1.5">
+              <CorrelationPanel />
+              <DangerZone />
+              <MarketCondition />
+            </div>
           </div>
         </div>
 
