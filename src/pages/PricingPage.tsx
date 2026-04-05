@@ -88,7 +88,6 @@ const TIERS: Tier[] = [
       "Sniper",
       "Coin Insight",
       "Master",
-      "War Room",
       "Institutional Command",
       "Super Charts (50 Charts)",
       "Coin Universe",
@@ -116,7 +115,7 @@ const BILLING_OPTIONS: { key: BillingPeriod; label: string }[] = [
 
 
 const PREMIUM_FEATURES = new Set([
-  "Master", "War Room", "Institutional Command", "Bots", "Portfolio", "Bitrium Token",
+  "Master", "Institutional Command", "Bots", "Portfolio", "Bitrium Token",
 ]);
 
 const isPremium = (f: string) =>
