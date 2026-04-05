@@ -114,7 +114,7 @@ const BILLING_OPTIONS: { key: BillingPeriod; label: string }[] = [
 
 
 const PREMIUM_FEATURES = new Set([
-  "Institutional Command", "Bots", "Portfolio", "Bitrium Token", "AI Coin Insights", "Bitrium Quant Engine (50+ Signals)",
+  "Institutional Command", "Bots", "Portfolio", "Bitrium Token", "AI Coin Insights", "Bitrium Quant Engine (50+ Signals)", "Sniper",
 ]);
 
 const isPremium = (f: string) =>
