@@ -227,6 +227,14 @@ export function AuthForm({ mode }: AuthFormProps) {
               ? "Create account"
               : "Sign in"}
         </Button>
+
+        {!isSignUp && (
+          <div className="text-center">
+            <Link href="/forgot-password" className="text-sm text-muted hover:text-accent transition-colors">
+              Forgot your password?
+            </Link>
+          </div>
+        )}
       </form>
 
       <p className="text-sm text-muted">
