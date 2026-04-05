@@ -60,8 +60,9 @@ const TIERS: Tier[] = [
     features: [
       "Bitrium Quant Engine",
       "Sniper",
-      "Super Charts",
-      "Coin Universe (10 Charts)",
+      "Coin Insight",
+      "Super Charts (10 Charts)",
+      "Coin Universe",
       "Crypto Market",
       "1 Exchange Account",
       "Bots",
