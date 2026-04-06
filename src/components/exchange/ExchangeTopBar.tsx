@@ -31,13 +31,6 @@ interface ExchangeTopBarProps {
 
 export const ExchangeTopBar = ({
   onAddExchange,
-  indicatorsState,
-  indicatorsEnabledCount = 0,
-  setMasterIndicators,
-  setIndicatorGroup,
-  setIndicatorEnabled,
-  setIndicatorSetting,
-  resetIndicator,
 }: ExchangeTopBarProps) => {
   const {
     selectedExchange,
