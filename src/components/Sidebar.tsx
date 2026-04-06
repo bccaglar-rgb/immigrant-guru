@@ -208,8 +208,7 @@ const menuItems = [
   { label: "Crypto Market", to: "/crypto-market", accent: "var(--menu-accent-4)", icon: () => <MarketIcon /> },
   // AI Trader submenu inserted here in render
   { label: "Exchanges", to: "/exchanges", accent: "var(--menu-accent-3)", icon: () => <ExchangeIcon /> },
-  { label: "Spread Terminal", to: "/spread-terminal", accent: "#F5C542", icon: () => <SpreadIcon /> },
-  // Bots submenu inserted here in render
+  // Bots submenu inserted here in render (Spread Terminal moved into Bots submenu)
   { label: "Portfolio", to: "/portfolio", accent: "#4ecdc4", icon: () => <PortfolioIcon /> },
   { label: "Indicators", to: "/indicators", accent: "var(--menu-accent-6)", icon: () => <IndicatorIcon /> },
   // Tools submenu inserted here in render
@@ -222,6 +221,7 @@ const botsSubItems = [
   { label: "Bot Dashboard", to: "/bot", accent: "var(--menu-accent-10)", icon: <BotIcon /> },
   { label: "Spot Arbitrage", to: "/bot/spot-arbitrage", accent: "#2bc48a", icon: <ArbitrageIcon /> },
   { label: "Futures Hedge", to: "/bot/futures-hedge", accent: "#5B8DEF", icon: <HedgeIcon /> },
+  { label: "Spread Terminal", to: "/spread-terminal", accent: "#F5C542", icon: <SpreadIcon /> },
 ] as const;
 const toolsItem = { label: "Tools", accent: "var(--menu-accent-12)", icon: <ToolsIcon /> } as const;
 const toolsSubItems = [
