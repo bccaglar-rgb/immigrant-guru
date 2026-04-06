@@ -1,10 +1,15 @@
 import type { Express } from "express";
+import crypto from "crypto";
 import { AuditLogService } from "../services/auditLog.ts";
 import type { ConnectionService } from "../services/connectionService.ts";
 import type { ExchangeCoreService } from "../services/exchangeCore/exchangeCoreService.ts";
 import type { CoreVenue, CoreTpSlSpec } from "../services/exchangeCore/types.ts";
 import type { AuthService } from "../payments/authService.ts";
 import { requireAuth } from "../middleware/authMiddleware.ts";
+
+const VALID_SIDES = ["BUY", "SELL"] as const;
+const VALID_ORDER_TYPES = ["MARKET", "LIMIT", "STOP_LIMIT"] as const;
+const LIMIT_LIKE_TYPES = new Set(["LIMIT", "STOP_LIMIT"]);
 
 const normalizeExchangeId = (raw: string): string | null => {
   const value = String(raw ?? "").trim().toLowerCase();
@@ -39,6 +44,67 @@ export const registerTradeRoutes = (
     if (!exchangeId) {
       return res.status(400).json({ ok: false, error: "unsupported_exchange" });
     }
+
+    // --- Required fields validation ---
+    const missingFields: string[] = [];
+    if (!payload.exchange) missingFields.push("exchange");
+    if (!payload.symbol) missingFields.push("symbol");
+    if (!payload.side) missingFields.push("side");
+    if (!payload.orderType) missingFields.push("orderType");
+    if (payload.qty == null && payload.notionalUsdt == null) missingFields.push("qty or notionalUsdt");
+    if (missingFields.length > 0) {
+      return res.status(400).json({ ok: false, error: "MISSING_FIELDS", fields: missingFields });
+    }
+
+    // --- Side validation ---
+    const side = String(payload.side).toUpperCase();
+    if (!VALID_SIDES.includes(side as any)) {
+      return res.status(400).json({ ok: false, error: "INVALID_SIDE", message: `side must be one of: ${VALID_SIDES.join(", ")}` });
+    }
+
+    // --- Order type validation ---
+    const orderType = String(payload.orderType).toUpperCase().replace(/[\s-]+/g, "_");
+    if (!VALID_ORDER_TYPES.includes(orderType as any)) {
+      return res.status(400).json({ ok: false, error: "INVALID_ORDER_TYPE", message: `orderType must be one of: ${VALID_ORDER_TYPES.join(", ")}` });
+    }
+
+    // --- Amount validation ---
+    const amount = payload.qty != null ? Number(payload.qty) : Number(payload.notionalUsdt);
+    if (!Number.isFinite(amount) || amount <= 0) {
+      return res.status(400).json({ ok: false, error: "INVALID_AMOUNT", message: "qty/notionalUsdt must be a positive number" });
+    }
+
+    // --- Price validation (required for Limit-like orders) ---
+    if (LIMIT_LIKE_TYPES.has(orderType)) {
+      const price = payload.price != null ? Number(payload.price) : NaN;
+      if (!Number.isFinite(price) || price <= 0) {
+        return res.status(400).json({ ok: false, error: "INVALID_PRICE", message: "price is required and must be positive for Limit / Stop Limit orders" });
+      }
+    }
+
+    // --- Generate client_order_id for idempotency ---
+    const clientOrderId = payload.clientOrderId
+      ? String(payload.clientOrderId)
+      : `bit_${Date.now()}_${crypto.randomBytes(4).toString("hex")}`;
+
+    // --- Structured logging ---
+    console.log(JSON.stringify({
+      level: "info",
+      event: "order_attempt",
+      userId,
+      exchange: exchangeId,
+      symbol: String(payload.symbol),
+      side,
+      orderType,
+      qty: payload.qty ?? null,
+      notionalUsdt: payload.notionalUsdt ?? null,
+      price: payload.price ?? null,
+      leverage: payload.leverage ?? null,
+      reduceOnly: Boolean(payload.reduceOnly),
+      clientOrderId,
+      ip: req.ip,
+      ts: new Date().toISOString(),
+    }));
 
     const venue = toVenueCode(exchangeId);
     if (!venue || !exchangeCore) {
@@ -108,7 +174,7 @@ export const registerTradeRoutes = (
         reduceOnly: Boolean(payload.reduceOnly),
         tp: parseTpSl(payload.tp),
         sl: parseTpSl(payload.sl),
-        clientOrderId: payload.clientOrderId ? String(payload.clientOrderId) : undefined,
+        clientOrderId,
       });
 
       const response = {
