@@ -203,20 +203,7 @@ export const ExchangeTopBar = ({
 
         </div>
 
-        {/* ── Indicators dropdown (right side) ── */}
-        {indicatorsState && setMasterIndicators && setIndicatorGroup && setIndicatorEnabled && setIndicatorSetting && resetIndicator && (
-          <div className="ml-auto flex items-center">
-            <IndicatorsDropdown
-              state={indicatorsState}
-              enabledCount={indicatorsEnabledCount}
-              setMaster={setMasterIndicators}
-              setGroup={setIndicatorGroup}
-              setIndicatorEnabled={setIndicatorEnabled}
-              setIndicatorSetting={setIndicatorSetting}
-              resetIndicator={resetIndicator}
-            />
-          </div>
-        )}
+        {/* Indicators dropdown removed from exchange top bar */}
       </div>
     </section>
   );
