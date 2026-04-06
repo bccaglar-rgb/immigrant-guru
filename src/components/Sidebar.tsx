@@ -547,11 +547,11 @@ export const Sidebar = ({
   };
 
 
-  const topMenu = menuItems.slice(0, 10);
-  // Items between AI Trader and Tools: Portfolio..Pricing (index 10-13)
-  const midMenu = menuItems.slice(10, 14);
-  // Items after Tools (index 14+)
-  const bottomMenu = menuItems.slice(14);
+  const topMenu = menuItems.slice(0, 8);
+  // Items between Bots and Tools: Portfolio, Indicators (index 8-9)
+  const midMenu = menuItems.slice(8, 10);
+  // Items after Tools: Pricing (index 10+)
+  const bottomMenu = menuItems.slice(10);
 
   return (
     <aside
@@ -581,42 +581,7 @@ export const Sidebar = ({
           />
         ))}
 
-        {isAdmin ? <div
-          ref={aiTraderRef}
-          className="relative"
-          onMouseEnter={openAiTrader}
-          onMouseLeave={closeAiTraderWithDelay}
-        >
-          <button
-            type="button"
-            title={aiTraderItem.label}
-            onClick={() => { navigate("/ai-trader/strategy"); onNavigate?.(); }}
-            className="group block w-full"
-          >
-            <span
-              className={`relative flex w-full items-center rounded-lg border border-transparent px-2 py-2 text-sm transition-all hover:border-[var(--borderSoft)] hover:bg-[var(--panelAlt)] ${
-                aiTraderActive ? "bg-[var(--panelAlt3)] text-white" : "text-[var(--textMuted)]"
-              }`}
-              style={{
-                boxShadow: aiTraderActive ? `inset 2px 0 0 0 ${aiTraderItem.accent}` : undefined,
-              }}
-            >
-              <span
-                className={`inline-grid h-[37px] w-[37px] place-items-center transition-all duration-[180ms] ease-[cubic-bezier(0.215,0.61,0.355,1)] ${showText ? "mr-2" : "mx-auto"}`}
-                style={{ color: aiTraderItem.accent }}
-              >
-                {aiTraderItem.icon}
-              </span>
-              <span className={`truncate transition-all duration-[180ms] ease-[cubic-bezier(0.215,0.61,0.355,1)] ${showText ? "translate-x-0 opacity-100" : "w-0 -translate-x-1 opacity-0"}`}>
-                {aiTraderItem.label}
-              </span>
-            </span>
-          </button>
-
-          {/* Submenu removed — AI Trader navigates directly to /ai-trader/strategy */}
-        </div> : null}
-
-        {/* Bots submenu */}
+        {/* Bots submenu (directly after Exchanges) */}
         <div
           ref={botsRef}
           className="relative"
@@ -672,6 +637,18 @@ export const Sidebar = ({
             ))}
           </div>
         </div>
+
+        {/* AI Trader (admin only, after Bots) */}
+        {isAdmin ? (
+          <div ref={aiTraderRef} className="relative" onMouseEnter={openAiTrader} onMouseLeave={closeAiTraderWithDelay}>
+            <button type="button" title={aiTraderItem.label} onClick={() => { navigate("/ai-trader/strategy"); onNavigate?.(); }} className="group block w-full">
+              <span className={`relative flex w-full items-center rounded-lg border border-transparent px-2 py-2 text-sm transition-all hover:border-[var(--borderSoft)] hover:bg-[var(--panelAlt)] ${aiTraderActive ? "bg-[var(--panelAlt3)] text-white" : "text-[var(--textMuted)]"}`} style={{ boxShadow: aiTraderActive ? `inset 2px 0 0 0 ${aiTraderItem.accent}` : undefined }}>
+                <span className={`inline-grid h-[37px] w-[37px] place-items-center transition-all duration-[180ms] ease-[cubic-bezier(0.215,0.61,0.355,1)] ${showText ? "mr-2" : "mx-auto"}`} style={{ color: aiTraderItem.accent }}>{aiTraderItem.icon}</span>
+                <span className={`truncate transition-all duration-[180ms] ease-[cubic-bezier(0.215,0.61,0.355,1)] ${showText ? "translate-x-0 opacity-100" : "w-0 -translate-x-1 opacity-0"}`}>{aiTraderItem.label}</span>
+              </span>
+            </button>
+          </div>
+        ) : null}
 
         {midMenu.filter(() => true).map((item) => (
           <NavItem
