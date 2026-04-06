@@ -3,9 +3,7 @@ import { useDataSourceManager, type ExchangeSourceId } from "../../data/DataSour
 import { useExchangeConfigs, persistTerminalExchange, readStoredTerminalExchange } from "../../hooks/useExchangeConfigs";
 import { useExchangeTerminalStore } from "../../hooks/useExchangeTerminalStore";
 import type { ExchangeName } from "../../types/exchange";
-import type { IndicatorGroupKey, IndicatorKey, IndicatorsState } from "../../types";
 import { getExchangeBranding } from "../../data/branding";
-import { IndicatorsDropdown } from "./IndicatorsDropdown";
 
 const mapExchangeToSource = (exchange: string): ExchangeSourceId | null => {
   const lower = exchange.toLowerCase();

@@ -745,15 +745,6 @@ export default function ExchangeTerminalPage() {
               }`}>{dataHealthStatus}</span>
             )}
           </div>
-        ) : dataHealthStatus && dataHealthStatus !== "healthy" ? (
-          <div className="mt-2 rounded-lg border border-[#7a6840] bg-[#2a2418] px-3 py-2 text-xs text-[#e7d9b3] flex items-center gap-2">
-            <span>Data quality: {dataHealthStatus}</span>
-            <span className={`ml-auto shrink-0 rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase ${
-              dataHealthStatus === "degraded" ? "bg-yellow-900/60 text-yellow-300" :
-              dataHealthStatus === "stale" ? "bg-orange-900/60 text-orange-300" :
-              "bg-red-900/60 text-red-300"
-            }`}>{dataHealthStatus}</span>
-          </div>
         ) : null}
 
         {accountMode === "Futures" ? (
