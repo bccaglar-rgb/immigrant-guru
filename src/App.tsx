@@ -1,6 +1,7 @@
 import { lazy, Suspense, useEffect, type ComponentType } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 import { AppShell } from "./components/AppShell";
+import { ErrorBoundary } from "./components/shared/ErrorBoundary";
 import { useAuthStore } from "./hooks/useAuthStore";
 
 /**
@@ -89,7 +90,7 @@ const RequirePlan = ({ children }: { children: React.ReactNode }) => {
 };
 
 /** Redirect to /pricing if user tier is below required tier (ADMIN bypasses) */
-const TIER_RANK: Record<string, number> = { explorer: 0, trader: 1, titan: 2 };
+const TIER_RANK: Record<string, number> = { explorer: 0, trader: 1, strategist: 2, titan: 2 };
 const RequireTier = ({ tier, children }: { tier: string; children: React.ReactNode }) => {
   const user = useAuthStore((s) => s.user);
   const loading = useAuthStore((s) => s.loading);
@@ -121,6 +122,7 @@ function App() {
   }, [init]);
 
   return (
+    <ErrorBoundary module="App">
     <Routes>
       {/* Auth pages — NO sidebar */}
       <Route path="/login" element={<Suspense fallback={<PageLoader />}><LoginPage /></Suspense>} />
@@ -196,6 +198,7 @@ function App() {
         <Route path="*" element={<Navigate to="/" replace />} />
       </Route>
     </Routes>
+    </ErrorBoundary>
   );
 }
 

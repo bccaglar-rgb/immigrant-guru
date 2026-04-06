@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { CryptoMarketTable } from "../components/CryptoMarketTable";
+import { ErrorBoundary } from "../components/shared/ErrorBoundary";
 import { SectorRotation, BuySellPressure, AIGlobalBias, MarketCondition } from "../components/warroom/WarRoomPanels";
 import { MarketDataRouter } from "../data/MarketDataRouter";
 import { useMarketListStore, useMarketListReady } from "../hooks/useMarketListStore";
@@ -107,12 +108,14 @@ export default function CryptoMarketPage() {
     <main className="min-h-screen bg-[#0B0B0C] p-4 text-[#BFC2C7] md:p-6">
       <div className="mx-auto max-w-[1560px] space-y-4">
         {/* Market Intelligence Strip */}
+        <ErrorBoundary module="MarketIntelligence">
         <div className="grid grid-cols-4 gap-1.5 mb-2">
-          <SectorRotation />
-          <BuySellPressure />
-          <AIGlobalBias />
-          <MarketCondition />
+          <ErrorBoundary module="SectorRotation"><SectorRotation /></ErrorBoundary>
+          <ErrorBoundary module="BuySellPressure"><BuySellPressure /></ErrorBoundary>
+          <ErrorBoundary module="AIGlobalBias"><AIGlobalBias /></ErrorBoundary>
+          <ErrorBoundary module="MarketCondition"><MarketCondition /></ErrorBoundary>
         </div>
+        </ErrorBoundary>
 
         <section className="rounded-2xl border border-white/10 bg-[#121316] p-4">
           <div className="flex flex-wrap items-start justify-between gap-3">
