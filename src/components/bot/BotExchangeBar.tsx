@@ -1,97 +1,24 @@
-import { useState, useEffect, useMemo } from "react";
-
-/* ── Types ── */
-interface ExchangeAccount {
-  id: string;
-  exchangeId: string;
-  exchangeDisplayName: string;
-  accountName: string;
-  status: "READY" | "PARTIAL" | "FAILED";
-  enabled: boolean;
-  iconUrl: string;
-}
+import { useBotContext } from "./BotContext";
 
 interface BotExchangeBarProps {
   botName: string;
   accentColor?: string;
 }
 
-/* ── Read exchange accounts from localStorage + backend ── */
-function useExchangeAccounts(): ExchangeAccount[] {
-  const [accounts, setAccounts] = useState<ExchangeAccount[]>([]);
+const HEALTH_CONFIG = {
+  loading:      { label: "Checking...", color: "text-white/40", dot: "bg-white/30 animate-pulse" },
+  connected:    { label: "Connected",   color: "text-[#2bc48a]", dot: "bg-[#2bc48a]" },
+  degraded:     { label: "Degraded",    color: "text-[#F5C542]", dot: "bg-[#F5C542]" },
+  disconnected: { label: "Disconnected",color: "text-[#f6465d]", dot: "bg-[#f6465d] animate-pulse" },
+} as const;
 
-  useEffect(() => {
-    const load = () => {
-      try {
-        const raw = window.localStorage.getItem("exchange-accounts-v1");
-        if (!raw) return;
-        const parsed = JSON.parse(raw) as Array<{
-          exchangeId: string; exchangeDisplayName: string;
-          accountName?: string; status?: string; enabled?: boolean;
-        }>;
-        if (!Array.isArray(parsed)) return;
-        setAccounts(parsed.filter(r => r.enabled !== false && r.status !== "FAILED").map(r => ({
-          id: `${r.exchangeId}::${r.accountName ?? "Main"}`,
-          exchangeId: r.exchangeId,
-          exchangeDisplayName: r.exchangeDisplayName,
-          accountName: r.accountName ?? "Main",
-          status: (r.status as "READY" | "PARTIAL" | "FAILED") ?? "READY",
-          enabled: r.enabled ?? true,
-          iconUrl: "",
-        })));
-      } catch { /* noop */ }
-    };
-    load();
-
-    // Also fetch from API
-    const headers: Record<string, string> = {};
-    try {
-      const raw = window.localStorage.getItem("auth-token");
-      if (raw) headers["Authorization"] = `Bearer ${raw}`;
-    } catch { /* noop */ }
-
-    fetch("/api/exchanges", { headers }).then(r => r.ok ? r.json() : null).then(body => {
-      if (!body?.exchanges) return;
-      const rows = (body.exchanges as Array<{
-        exchangeId: string; exchangeDisplayName: string;
-        accountName?: string; status?: string; enabled?: boolean;
-      }>).filter(r => r.enabled !== false && r.status !== "FAILED").map(r => ({
-        id: `${r.exchangeId}::${r.accountName ?? "Main"}`,
-        exchangeId: r.exchangeId,
-        exchangeDisplayName: r.exchangeDisplayName,
-        accountName: r.accountName ?? "Main",
-        status: (r.status as "READY" | "PARTIAL" | "FAILED") ?? "READY",
-        enabled: true,
-        iconUrl: "",
-      }));
-      setAccounts(rows);
-      try { window.localStorage.setItem("exchange-accounts-v1", JSON.stringify(rows)); } catch { /* noop */ }
-    }).catch(() => { /* keep local */ });
-
-    window.addEventListener("exchange-manager-updated", load);
-    return () => window.removeEventListener("exchange-manager-updated", load);
-  }, []);
-
-  return accounts;
-}
-
-/* ── Component ── */
 export default function BotExchangeBar({ botName, accentColor = "#2bc48a" }: BotExchangeBarProps) {
-  const accounts = useExchangeAccounts();
-  const [selectedId, setSelectedId] = useState("");
-  const [mode, setMode] = useState<"paper" | "live">("paper");
-  const [killSwitch, setKillSwitch] = useState(true);
-
-  // Auto-select first account
-  useEffect(() => {
-    if (!selectedId && accounts.length > 0) setSelectedId(accounts[0].id);
-  }, [accounts, selectedId]);
-
-  const selectedAccount = useMemo(() => accounts.find(a => a.id === selectedId), [accounts, selectedId]);
+  const ctx = useBotContext();
+  const health = HEALTH_CONFIG[ctx.dataHealth];
 
   return (
     <div className="flex flex-wrap items-center gap-3 rounded-lg border border-white/[0.06] bg-white/[0.02] px-4 py-2.5">
-      {/* Live indicator */}
+      {/* Bot name */}
       <div className="flex items-center gap-2">
         <span className="h-2 w-2 rounded-full shadow-[0_0_6px]" style={{ background: accentColor, boxShadow: `0 0 6px ${accentColor}` }} />
         <span className="text-[12px] font-bold text-white">{botName}</span>
@@ -100,17 +27,17 @@ export default function BotExchangeBar({ botName, accentColor = "#2bc48a" }: Bot
       {/* Exchange selector */}
       <div className="flex items-center gap-1.5">
         <span className="text-[10px] text-white/40">Exchange:</span>
-        {accounts.length === 0 ? (
+        {!ctx.hasAccounts ? (
           <a href="/settings" className="flex items-center gap-1 rounded-md border border-[#F5C542]/30 bg-[#F5C542]/10 px-2 py-0.5 text-[10px] font-medium text-[#F5C542] transition hover:bg-[#F5C542]/20">
-            <span>&#9888;</span> Connect Exchange
+            &#9888; Connect Exchange
           </a>
         ) : (
           <select
-            value={selectedId}
-            onChange={e => setSelectedId(e.target.value)}
+            value={ctx.selectedExchangeId}
+            onChange={e => ctx.setSelectedExchangeId(e.target.value)}
             className="rounded-md border border-white/10 bg-[#0F1012] px-2 py-0.5 text-[11px] text-white outline-none"
           >
-            {accounts.map(acc => (
+            {ctx.accounts.map(acc => (
               <option key={acc.id} value={acc.id}>
                 {acc.exchangeDisplayName} · {acc.accountName}
                 {acc.status === "PARTIAL" ? " (Partial)" : ""}
@@ -118,11 +45,10 @@ export default function BotExchangeBar({ botName, accentColor = "#2bc48a" }: Bot
             ))}
           </select>
         )}
-        {selectedAccount?.status === "READY" && <span className="h-1.5 w-1.5 rounded-full bg-[#2bc48a]" title="Connected" />}
-        {selectedAccount?.status === "PARTIAL" && <span className="h-1.5 w-1.5 rounded-full bg-[#F5C542]" title="Partial" />}
+        {ctx.selectedAccount?.status === "READY" && <span className="h-1.5 w-1.5 rounded-full bg-[#2bc48a]" title="Connected" />}
+        {ctx.selectedAccount?.status === "PARTIAL" && <span className="h-1.5 w-1.5 rounded-full bg-[#F5C542]" title="Partial" />}
       </div>
 
-      {/* Spacer */}
       <div className="flex-1" />
 
       {/* Mode toggle */}
@@ -130,12 +56,12 @@ export default function BotExchangeBar({ botName, accentColor = "#2bc48a" }: Bot
         <span className="text-[10px] text-white/40">Mode:</span>
         <div className="flex rounded-md border border-white/10 bg-[#0F1012] p-0.5">
           <button
-            onClick={() => setMode("paper")}
-            className={`rounded px-2 py-0.5 text-[10px] font-semibold transition ${mode === "paper" ? "bg-[#2bc48a]/20 text-[#2bc48a]" : "text-white/40 hover:text-white/60"}`}
+            onClick={() => ctx.setMode("paper")}
+            className={`rounded px-2 py-0.5 text-[10px] font-semibold transition ${ctx.mode === "paper" ? "bg-[#2bc48a]/20 text-[#2bc48a]" : "text-white/40 hover:text-white/60"}`}
           >Paper</button>
           <button
-            onClick={() => setMode("live")}
-            className={`rounded px-2 py-0.5 text-[10px] font-semibold transition ${mode === "live" ? "bg-[#f6465d]/20 text-[#f6465d]" : "text-white/40 hover:text-white/60"}`}
+            onClick={() => ctx.setMode("live")}
+            className={`rounded px-2 py-0.5 text-[10px] font-semibold transition ${ctx.mode === "live" ? "bg-[#f6465d]/20 text-[#f6465d]" : "text-white/40 hover:text-white/60"}`}
           >Live</button>
         </div>
       </div>
@@ -144,19 +70,30 @@ export default function BotExchangeBar({ botName, accentColor = "#2bc48a" }: Bot
       <div className="flex items-center gap-1.5">
         <span className="text-[10px] text-white/40">Kill Switch:</span>
         <button
-          onClick={() => setKillSwitch(k => !k)}
-          className={`text-[10px] font-semibold ${killSwitch ? "text-[#2bc48a]" : "text-[#f6465d]"}`}
-        >{killSwitch ? "Armed" : "Disarmed"}</button>
+          onClick={() => ctx.setKillSwitch(!ctx.killSwitch)}
+          className={`text-[10px] font-semibold ${ctx.killSwitch ? "text-[#2bc48a]" : "text-[#f6465d]"}`}
+        >{ctx.killSwitch ? "Armed" : "Disarmed"}</button>
       </div>
 
-      {/* Data status */}
+      {/* Data health (REAL check, not hardcoded) */}
       <div className="flex items-center gap-1.5">
         <span className="text-[10px] text-white/40">Data:</span>
-        <span className="text-[10px] font-semibold text-[#2bc48a]">Connected</span>
+        <span className={`h-1.5 w-1.5 rounded-full ${health.dot}`} />
+        <span className={`text-[10px] font-semibold ${health.color}`}>{health.label}</span>
+        {ctx.latencyMs !== null && ctx.dataHealth !== "disconnected" && (
+          <span className="text-[9px] text-white/20">{ctx.latencyMs}ms</span>
+        )}
       </div>
 
-      {/* Live mode warning */}
-      {mode === "live" && accounts.length === 0 && (
+      {/* Mock data warning */}
+      {ctx.isMockFallback && (
+        <div className="w-full mt-1 rounded-md border border-[#F5C542]/30 bg-[#F5C542]/5 px-3 py-1.5 text-[10px] text-[#F5C542]">
+          &#9888; Showing simulated data — live market data unavailable. Do not make trading decisions based on this view.
+        </div>
+      )}
+
+      {/* Live mode + no exchange warning */}
+      {ctx.mode === "live" && !ctx.hasAccounts && (
         <div className="w-full mt-1 rounded-md border border-[#f6465d]/30 bg-[#f6465d]/5 px-3 py-1.5 text-[10px] text-[#f6465d]">
           &#9888; Live mode requires a connected exchange. Go to Settings to connect your exchange API.
         </div>

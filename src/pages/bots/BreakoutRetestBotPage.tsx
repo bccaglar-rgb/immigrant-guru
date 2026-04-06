@@ -1,5 +1,6 @@
 import { useState } from "react";
 import BotExchangeBar from "../../components/bot/BotExchangeBar";
+import { BotProvider } from "../../components/bot/BotContext";
 import BotExecutionLog from "../../components/bot/BotExecutionLog";
 import BotStrategyChart from "../../components/bot/BotStrategyChart";
 import BotBacktestPanel from "../../components/bot/BotBacktestPanel";
@@ -79,6 +80,7 @@ export default function BreakoutRetestBotPage() {
   const accent = "#F5C542";
 
   return (
+    <BotProvider>
     <div className="mx-auto max-w-[1400px] space-y-4 p-4">
       {/* ── 1. Exchange Bar ── */}
       <BotExchangeBar botName="Breakout Retest Engine" accentColor={accent} />
@@ -566,5 +568,6 @@ export default function BreakoutRetestBotPage() {
         <BotExecutionLog accentColor={accent} />
       </div>
     </div>
+    </BotProvider>
   );
 }

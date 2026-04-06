@@ -124,10 +124,24 @@ export default function BotSetupForm({
     if (!exchangeId && accounts.length > 0) setExchangeId(accounts[0].id);
   }, [accounts, exchangeId]);
 
-  const canLaunch = mode === "paper" || accounts.length > 0;
+  /* ── Validation ── */
+  const validationErrors: string[] = [];
+  if (leverage < 1 || leverage > 125) validationErrors.push("Leverage must be 1-125");
+  if (risk < 0.1 || risk > 10) validationErrors.push("Risk must be 0.1-10%");
+  if (tp <= 0) validationErrors.push("Take Profit must be > 0");
+  if (sl <= 0) validationErrors.push("Stop Loss must be > 0");
+  if (size <= 0) validationErrors.push("Trade size must be > 0");
+  if (size > 100000) validationErrors.push("Trade size exceeds $100,000 limit");
+  if (maxTrades < 1 || maxTrades > 100) validationErrors.push("Max trades must be 1-100");
+  if (cooldown < 0) validationErrors.push("Cooldown cannot be negative");
+  if (mode === "live" && accounts.length === 0) validationErrors.push("Live mode requires connected exchange");
+
+  const isValid = validationErrors.length === 0;
+  const canLaunch = isValid && (mode === "paper" || accounts.length > 0) && !!onLaunch;
 
   const handleLaunch = useCallback(() => {
     if (!canLaunch) return;
+    console.info("[BotSetupForm] Launch:", { botName, exchangeId, mode, pair, tf, size, risk, leverage, tp, sl });
     onLaunch?.({
       botName, exchangeId, mode, pair, tf, size, risk, leverage, tp, sl,
       maxTrades, cooldown, riskProfile,
@@ -255,6 +269,15 @@ export default function BotSetupForm({
         )}
       </div>
 
+      {/* Validation errors */}
+      {validationErrors.length > 0 && (
+        <div className="rounded-lg border border-[#f6465d]/20 bg-[#f6465d]/5 p-3 space-y-1">
+          {validationErrors.map((err, i) => (
+            <p key={i} className="text-[10px] text-[#f6465d]">&#9888; {err}</p>
+          ))}
+        </div>
+      )}
+
       {/* Launch */}
       <button
         onClick={handleLaunch}
@@ -262,7 +285,7 @@ export default function BotSetupForm({
         className="w-full rounded-lg py-2.5 text-[13px] font-bold tracking-wide text-white transition disabled:cursor-not-allowed disabled:opacity-30"
         style={{ background: canLaunch ? accentColor : undefined, backgroundColor: canLaunch ? accentColor : "rgba(255,255,255,0.06)" }}
       >
-        Start Bot
+        {!onLaunch ? "Coming Soon" : "Start Bot"}
       </button>
     </div>
   );

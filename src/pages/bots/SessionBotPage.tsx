@@ -1,5 +1,6 @@
 import { useState } from "react";
 import BotExchangeBar from "../../components/bot/BotExchangeBar";
+import { BotProvider } from "../../components/bot/BotContext";
 import BotExecutionLog from "../../components/bot/BotExecutionLog";
 
 /* ── Helpers ── */
@@ -241,6 +242,7 @@ export default function SessionBotPage() {
   );
 
   return (
+    <BotProvider>
     <div className="mx-auto max-w-6xl space-y-4 p-4">
       {/* Exchange Bar */}
       <BotExchangeBar botName="Session Trading Engine" accentColor="#ef4444" />
@@ -616,5 +618,6 @@ export default function SessionBotPage() {
         </Card>
       )}
     </div>
+    </BotProvider>
   );
 }

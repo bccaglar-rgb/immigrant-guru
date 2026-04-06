@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { BotProvider } from "./BotContext";
 import BotExchangeBar from "./BotExchangeBar";
 import BotStrategyChart from "./BotStrategyChart";
 import BotThinkingPanel from "./BotThinkingPanel";
@@ -77,27 +78,27 @@ export default function BotPageTemplate({ config }: { config: BotPageConfig }) {
   ];
 
   return (
+    <BotProvider defaultPair={config.defaultPair} defaultTf={config.defaultTf}>
     <div className="flex h-full flex-col overflow-auto bg-[#0B0B0C] text-white">
       {/* ── EXCHANGE BAR ── */}
       <div className="shrink-0 p-4 pb-0">
         <BotExchangeBar botName={`${config.name} Engine`} accentColor={config.accentColor} />
       </div>
 
-      {/* ── TRUST BAR ── */}
+      {/* ── TRUST BAR (Backtest — clearly labeled) ── */}
       <div className="shrink-0 px-4 pt-3">
         <div className="flex flex-wrap items-center gap-4 rounded-lg border border-white/[0.04] bg-white/[0.015] px-5 py-2.5">
-          <TrustStat label="Live Performance" value="+12.4%" color="text-[#2bc48a]" />
+          <TrustStat label="Backtest Return" value="+12.4%" color="text-[#2bc48a]" />
           <TrustDivider />
-          <TrustStat label="Win Rate (30d)" value="61.2%" color="text-[#2bc48a]" />
+          <TrustStat label="Win Rate (sim)" value="61.2%" color="text-[#2bc48a]" />
           <TrustDivider />
           <TrustStat label="Avg R:R" value="1:1.8" color="text-white" />
           <TrustDivider />
           <TrustStat label="Max Drawdown" value="-6.2%" color="text-[#f6465d]" />
           <TrustDivider />
           <TrustStat label="Trades" value="184" color="text-white/70" />
-          <div className="ml-auto flex items-center gap-1.5 rounded-full border border-[#2bc48a]/20 bg-[#2bc48a]/5 px-3 py-1">
-            <span className="h-1.5 w-1.5 rounded-full bg-[#2bc48a]" />
-            <span className="text-[10px] font-semibold text-[#2bc48a]">Profitable</span>
+          <div className="ml-auto flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.03] px-3 py-1">
+            <span className="text-[10px] font-semibold text-white/40">Backtest</span>
           </div>
         </div>
       </div>
@@ -126,6 +127,7 @@ export default function BotPageTemplate({ config }: { config: BotPageConfig }) {
         {activeSection === "logs" && <LogsSection config={config} />}
       </div>
     </div>
+    </BotProvider>
   );
 }
 
@@ -151,8 +153,8 @@ const OverviewSection = ({ config }: { config: BotPageConfig }) => (
       {/* PRIMARY: Chart */}
       <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4">
         <div className="mb-2 flex items-center justify-between">
-          <h2 className="text-[13px] font-bold text-white">Live Strategy Preview</h2>
-          <span className="rounded-full border border-white/10 bg-white/[0.03] px-2 py-0.5 text-[9px] text-white/40">REAL-TIME</span>
+          <h2 className="text-[13px] font-bold text-white">Strategy Preview</h2>
+          <span className="rounded-full border border-white/10 bg-white/[0.03] px-2 py-0.5 text-[9px] text-white/40">PREVIEW</span>
         </div>
         <BotStrategyChart
           defaultPair={config.defaultPair || "BTCUSDT"}

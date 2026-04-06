@@ -117,30 +117,6 @@ function generateMockCandles(pair: string, tf: string, count = 200) {
   return candles;
 }
 
-function generateMockSignals(
-  candles: Array<{ time: number; open: number; high: number; low: number; close: number }>,
-): SignalMarker[] {
-  const signals: SignalMarker[] = [];
-  const count = 5 + Math.floor(Math.random() * 4); // 5-8 signals
-  const step = Math.floor(candles.length / (count + 1));
-
-  for (let i = 0; i < count; i++) {
-    const idx = step * (i + 1) + Math.floor(Math.random() * Math.max(1, step / 2));
-    if (idx >= candles.length) continue;
-    const c = candles[idx];
-    const types: SignalMarker["type"][] = ["entry_long", "entry_short", "tp", "sl"];
-    const type = types[Math.floor(Math.random() * types.length)];
-    const price =
-      type === "entry_long" || type === "sl"
-        ? c.low - (c.high - c.low) * 0.1
-        : c.high + (c.high - c.low) * 0.1;
-
-    signals.push({ time: c.time, type, price });
-  }
-
-  return signals;
-}
-
 /* ── Component ── */
 
 export const BotStrategyChart = ({
@@ -161,6 +137,8 @@ export const BotStrategyChart = ({
   const [tf, setTf] = useState(defaultTf);
   const [showSignals, setShowSignals] = useState(true);
   const [pairOpen, setPairOpen] = useState(false);
+  const [dataSource, setDataSource] = useState<"live" | "mock" | "loading">("loading");
+  const [fetchError, setFetchError] = useState<string | null>(null);
 
   /* ── Fetch or generate candle data ── */
   const fetchData = useCallback(async () => {
@@ -175,7 +153,7 @@ export const BotStrategyChart = ({
 
     try {
       const res = await fetch(`/api/market/live?symbol=${pair}&interval=${tf}`);
-      if (!res.ok) throw new Error("API error");
+      if (!res.ok) throw new Error(`API ${res.status}`);
       const json = await res.json();
       if (!Array.isArray(json) || json.length < 20) throw new Error("Insufficient data");
       candles = json.map((d: number[]) => ({
@@ -186,13 +164,19 @@ export const BotStrategyChart = ({
         close: d[4],
         volume: d[5],
       }));
-    } catch {
+      setDataSource("live");
+      setFetchError(null);
+    } catch (err) {
       candles = generateMockCandles(pair, tf);
+      setDataSource("mock");
+      setFetchError(err instanceof Error ? err.message : "Data unavailable");
+      console.warn(`[BotStrategyChart] Falling back to mock data: ${err}`);
     }
 
-    const signals = externalSignals ?? generateMockSignals(candles);
+    // Only show real signals if we have live data, otherwise show none
+    const signals = dataSource === "live" && externalSignals ? externalSignals : [];
     return { candles, signals };
-  }, [pair, tf, externalSignals]);
+  }, [pair, tf, externalSignals, dataSource]);
 
   /* ── Create chart instance ── */
   useEffect(() => {
@@ -370,6 +354,19 @@ export const BotStrategyChart = ({
   /* ── Render ── */
   return (
     <div className={`relative min-h-[400px] w-full ${className}`} style={{ background: "#0B0B0C" }}>
+      {/* Data source indicator */}
+      {dataSource === "mock" && (
+        <div className="absolute left-3 top-3 z-10 flex items-center gap-1.5 rounded-md border border-[#F5C542]/30 bg-[#F5C542]/10 px-2 py-1">
+          <span className="text-[10px] font-semibold text-[#F5C542]">SIMULATED DATA</span>
+          {fetchError && <span className="text-[9px] text-[#F5C542]/60">({fetchError})</span>}
+        </div>
+      )}
+      {dataSource === "loading" && (
+        <div className="absolute inset-0 z-10 flex items-center justify-center bg-[#0B0B0C]/80">
+          <div className="h-5 w-5 animate-spin rounded-full border-2 border-[#F5C542] border-t-transparent" />
+        </div>
+      )}
+
       {/* Controls overlay */}
       <div className="absolute right-3 top-3 z-10 flex items-center gap-2">
         {/* Pair selector */}

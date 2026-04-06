@@ -1,5 +1,6 @@
 import { useState, useMemo } from "react";
 import BotExchangeBar from "../../components/bot/BotExchangeBar";
+import { BotProvider } from "../../components/bot/BotContext";
 import BotExecutionLog from "../../components/bot/BotExecutionLog";
 import BotStrategyChart from "../../components/bot/BotStrategyChart";
 import BotBacktestPanel from "../../components/bot/BotBacktestPanel";
@@ -88,6 +89,7 @@ export default function CustomRuleBotPage() {
   }, [rules, threshold]);
 
   return (
+    <BotProvider>
     <div className="min-h-screen bg-[#0B0B0C] text-white">
       <div className="mx-auto max-w-7xl space-y-4 px-4 py-6">
         {/* Exchange Bar */}
@@ -357,6 +359,7 @@ export default function CustomRuleBotPage() {
         <BotExecutionLog accentColor={ACCENT} />
       </div>
     </div>
+    </BotProvider>
   );
 }
 

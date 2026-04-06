@@ -1,5 +1,6 @@
 import { useState } from "react";
 import BotExchangeBar from "../../components/bot/BotExchangeBar";
+import { BotProvider } from "../../components/bot/BotContext";
 import BotExecutionLog from "../../components/bot/BotExecutionLog";
 
 /* ── Helpers ── */
@@ -125,6 +126,7 @@ export default function GridBotPage() {
   const L = "text-[11px] text-white/40";
 
   return (
+    <BotProvider>
     <div className="flex h-full flex-col overflow-auto bg-[#0B0B0C] text-white">
       <div className="shrink-0 p-4 pb-0">
         <BotExchangeBar botName="Grid Trading Engine" accentColor="#9f8bff" />
@@ -398,5 +400,6 @@ export default function GridBotPage() {
         <BotExecutionLog accentColor="#9f8bff" />
       </div>
     </div>
+    </BotProvider>
   );
 }

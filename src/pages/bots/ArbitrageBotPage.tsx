@@ -1,5 +1,6 @@
 import { useState } from "react";
 import BotExchangeBar from "../../components/bot/BotExchangeBar";
+import { BotProvider } from "../../components/bot/BotContext";
 import BotExecutionLog from "../../components/bot/BotExecutionLog";
 
 /* ── Mock: Opportunity Scanner Data ── */
@@ -65,6 +66,7 @@ export default function ArbitrageBotPage() {
   const [zThreshold, setZThreshold] = useState("2.0");
 
   return (
+    <BotProvider>
     <div className="min-h-screen bg-[#0B0B0C] text-white">
       <div className="mx-auto max-w-7xl space-y-5 px-4 py-6 sm:px-6">
 
@@ -304,5 +306,6 @@ export default function ArbitrageBotPage() {
 
       </div>
     </div>
+    </BotProvider>
   );
 }

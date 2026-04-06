@@ -1,5 +1,6 @@
 import { useState } from "react";
 import BotExchangeBar from "../../components/bot/BotExchangeBar";
+import { BotProvider } from "../../components/bot/BotContext";
 import BotExecutionLog from "../../components/bot/BotExecutionLog";
 import BotStrategyChart from "../../components/bot/BotStrategyChart";
 import BotBacktestPanel from "../../components/bot/BotBacktestPanel";
@@ -299,6 +300,7 @@ const TradesTable = () => (
 /* ── Main Page ── */
 export default function ScalpingBotPage() {
   return (
+    <BotProvider>
     <div className="mx-auto max-w-6xl space-y-4 p-4">
       {/* 1. Exchange Bar */}
       <BotExchangeBar botName="Scalping Engine" accentColor="#2bc48a" />
@@ -343,5 +345,6 @@ export default function ScalpingBotPage() {
       {/* 8. Execution Log */}
       <BotExecutionLog accentColor="#2bc48a" />
     </div>
+    </BotProvider>
   );
 }

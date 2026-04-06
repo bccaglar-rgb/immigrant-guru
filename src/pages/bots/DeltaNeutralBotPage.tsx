@@ -1,5 +1,6 @@
 import { useState } from "react";
 import BotExchangeBar from "../../components/bot/BotExchangeBar";
+import { BotProvider } from "../../components/bot/BotContext";
 import BotExecutionLog from "../../components/bot/BotExecutionLog";
 
 /* ── Shared helpers ── */
@@ -47,6 +48,7 @@ export default function DeltaNeutralBotPage() {
   };
 
   return (
+    <BotProvider>
     <div className="min-h-screen bg-[#0B0B0C] text-white">
       <div className="mx-auto max-w-6xl space-y-5 p-6">
         {/* 1 ── Exchange bar */}
@@ -235,5 +237,6 @@ export default function DeltaNeutralBotPage() {
         <BotExecutionLog accentColor="#ef4444" />
       </div>
     </div>
+    </BotProvider>
   );
 }

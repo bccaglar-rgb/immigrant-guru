@@ -1,5 +1,6 @@
 import { useState } from "react";
 import BotExchangeBar from "../../components/bot/BotExchangeBar";
+import { BotProvider } from "../../components/bot/BotContext";
 import BotExecutionLog from "../../components/bot/BotExecutionLog";
 
 /* ═══════════════════════════════════════════════════════════
@@ -102,6 +103,7 @@ export default function SmartDcaBotPage() {
   const totalCapitalNeeded = previewOrders.reduce((a, b) => a + b, 0);
 
   return (
+    <BotProvider>
     <div className="min-h-screen bg-[#0a0a0b] px-4 py-6 text-white sm:px-6 lg:px-8">
       <div className="mx-auto max-w-6xl space-y-5">
 
@@ -461,5 +463,6 @@ export default function SmartDcaBotPage() {
         <BotExecutionLog accentColor="#6ec4ff" />
       </div>
     </div>
+    </BotProvider>
   );
 }

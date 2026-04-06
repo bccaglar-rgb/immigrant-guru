@@ -1,5 +1,6 @@
 import { useState } from "react";
 import BotExchangeBar from "../../components/bot/BotExchangeBar";
+import { BotProvider } from "../../components/bot/BotContext";
 import BotExecutionLog from "../../components/bot/BotExecutionLog";
 import BotStrategyChart from "../../components/bot/BotStrategyChart";
 import BotBacktestPanel from "../../components/bot/BotBacktestPanel";
@@ -91,6 +92,7 @@ export default function SupportResistanceBotPage() {
   const strongest = KEY_LEVELS.reduce((a, b) => (b.strength > a.strength ? b : a));
 
   return (
+    <BotProvider>
     <div className="mx-auto max-w-[1400px] space-y-4 p-4">
       {/* ── 1. Exchange Bar ── */}
       <BotExchangeBar botName="S/R Engine" accentColor={accent} />
@@ -579,5 +581,6 @@ export default function SupportResistanceBotPage() {
         <BotExecutionLog accentColor={accent} />
       </div>
     </div>
+    </BotProvider>
   );
 }

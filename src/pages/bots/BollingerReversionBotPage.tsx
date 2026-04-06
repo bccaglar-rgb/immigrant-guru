@@ -1,5 +1,6 @@
 import { useState } from "react";
 import BotExchangeBar from "../../components/bot/BotExchangeBar";
+import { BotProvider } from "../../components/bot/BotContext";
 import BotExecutionLog from "../../components/bot/BotExecutionLog";
 import BotStrategyChart from "../../components/bot/BotStrategyChart";
 import BotBacktestPanel from "../../components/bot/BotBacktestPanel";
@@ -125,6 +126,7 @@ export default function BollingerReversionBotPage() {
   const L = "text-[11px] text-white/40";
 
   return (
+    <BotProvider>
     <div className="flex h-full flex-col overflow-auto bg-[#0B0B0C] text-white">
       {/* 1. EXCHANGE BAR */}
       <div className="shrink-0 p-4 pb-0">
@@ -352,5 +354,6 @@ export default function BollingerReversionBotPage() {
 
       </div>
     </div>
+    </BotProvider>
   );
 }

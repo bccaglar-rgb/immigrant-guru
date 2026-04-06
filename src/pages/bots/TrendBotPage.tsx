@@ -1,5 +1,6 @@
 import { useState } from "react";
 import BotExchangeBar from "../../components/bot/BotExchangeBar";
+import { BotProvider } from "../../components/bot/BotContext";
 import BotExecutionLog from "../../components/bot/BotExecutionLog";
 import BotStrategyChart from "../../components/bot/BotStrategyChart";
 import BotBacktestPanel from "../../components/bot/BotBacktestPanel";
@@ -65,6 +66,7 @@ export default function TrendBotPage() {
   const accent = "#6ec4ff";
 
   return (
+    <BotProvider>
     <div className="mx-auto max-w-[1400px] space-y-4 p-4">
       {/* ── 1. Exchange Bar ── */}
       <BotExchangeBar botName="Trend Following Engine" accentColor={accent} />
@@ -454,5 +456,6 @@ export default function TrendBotPage() {
         <BotExecutionLog accentColor={accent} />
       </div>
     </div>
+    </BotProvider>
   );
 }
