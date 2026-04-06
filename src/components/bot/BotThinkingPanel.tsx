@@ -90,7 +90,7 @@ export const BotThinkingPanel = ({
   const metCount = useMemo(() => conditions.filter((c) => c.met).length, [conditions]);
 
   return (
-    <div className="w-[320px] max-w-full rounded-xl border border-white/[0.06] bg-white/[0.02]">
+    <div className="w-[320px] max-w-full rounded-xl border border-white/[0.04] bg-white/[0.015]">
       {/* Header */}
       <div className="flex items-center justify-between border-b border-white/[0.06] px-4 py-3">
         <div className="flex items-center gap-2 text-white">

@@ -64,8 +64,8 @@ export default function BotExecutionLog({ maxHeight = 240 }: BotExecutionLogProp
       >
         <div className="space-y-1">
           {MOCK_LOGS.map((entry, i) => (
-            <div key={i} className="flex gap-2 text-[11px] leading-relaxed">
-              <span className="shrink-0 font-mono text-white/25">[{entry.time}]</span>
+            <div key={i} className="flex gap-2 text-[10px] leading-relaxed">
+              <span className="shrink-0 font-mono text-white/20 tabular-nums">{entry.time}</span>
               <span className={TYPE_COLOR[entry.type]}>{entry.message}</span>
             </div>
           ))}

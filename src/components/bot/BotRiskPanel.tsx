@@ -106,11 +106,11 @@ export default function BotRiskPanel({
       </div>
 
       {/* Metrics Grid */}
-      <div className="mb-4 grid grid-cols-2 gap-2.5">
+      <div className="mb-4 grid grid-cols-2 gap-2">
         {metrics.map((m) => (
-          <div key={m.label} className="rounded-lg bg-white/[0.03] px-3 py-2">
-            <p className="text-[10px] text-white/30">{m.label}</p>
-            <p className={`text-sm font-semibold ${m.color}`}>{m.value}</p>
+          <div key={m.label} className="rounded-md bg-white/[0.02] px-2.5 py-1.5">
+            <p className="text-[9px] uppercase tracking-wider text-white/20">{m.label}</p>
+            <p className={`mt-0.5 text-[13px] font-semibold font-mono ${m.color}`}>{m.value}</p>
           </div>
         ))}
       </div>

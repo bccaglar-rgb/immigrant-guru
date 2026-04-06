@@ -189,11 +189,11 @@ export default function BotBacktestPanel({
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-4 gap-3">
+      <div className="grid grid-cols-4 gap-2">
         {STATS.map((stat) => (
-          <div key={stat.label} className="rounded-lg bg-white/[0.03] px-3 py-2">
-            <p className="text-[10px] text-white/30">{stat.label}</p>
-            <p className={`text-sm font-semibold ${stat.color}`}>{stat.value}</p>
+          <div key={stat.label} className="rounded-md bg-white/[0.02] px-2.5 py-1.5">
+            <p className="text-[9px] uppercase tracking-wider text-white/25">{stat.label}</p>
+            <p className={`mt-0.5 text-[13px] font-semibold font-mono ${stat.color}`}>{stat.value}</p>
           </div>
         ))}
       </div>

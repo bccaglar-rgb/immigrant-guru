@@ -99,7 +99,7 @@ export default function SignalsOverview({ overrides, compact }: SignalsOverviewP
       </div>
 
       {/* Signal Matrix */}
-      <div className={`grid gap-1.5 ${compact ? "grid-cols-2 sm:grid-cols-3 lg:grid-cols-4" : "grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5"}`}>
+      <div className={`grid gap-1 ${compact ? "grid-cols-2 sm:grid-cols-3 lg:grid-cols-4" : "grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5"}`}>
         {SIGNALS.map((signal) => {
           const status = getStatus(signal);
           const cfg = STATUS_CONFIG[status];

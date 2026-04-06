@@ -137,12 +137,12 @@ export default function BotPageTemplate({ config }: { config: BotPageConfig }) {
 
 const TrustStat = ({ label, value, color }: { label: string; value: string; color: string }) => (
   <div className="text-center">
-    <p className="text-[9px] uppercase tracking-wider text-white/30">{label}</p>
-    <p className={cn("text-[14px] font-bold", color)}>{value}</p>
+    <p className="text-[8px] uppercase tracking-[0.08em] text-white/20">{label}</p>
+    <p className={cn("text-[13px] font-bold font-mono", color)}>{value}</p>
   </div>
 );
 
-const TrustDivider = () => <div className="h-6 w-px bg-white/[0.06]" />;
+const TrustDivider = () => <div className="h-5 w-px bg-white/[0.04]" />;
 
 /* ══════════════════════════════════════════════════════════════
    OVERVIEW SECTION — Chart + Thinking + Backtest

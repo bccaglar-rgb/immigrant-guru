@@ -17,7 +17,7 @@ export default function BotExchangeBar({ botName, accentColor = "#2bc48a" }: Bot
   const health = HEALTH_CONFIG[ctx.dataHealth];
 
   return (
-    <div className="flex flex-wrap items-center gap-3 rounded-lg border border-white/[0.06] bg-white/[0.02] px-4 py-2.5">
+    <div className="flex flex-wrap items-center gap-3 rounded-lg border border-white/[0.04] bg-white/[0.015] px-4 py-2">
       {/* Bot name */}
       <div className="flex items-center gap-2">
         <span className="h-2 w-2 rounded-full shadow-[0_0_6px]" style={{ background: accentColor, boxShadow: `0 0 6px ${accentColor}` }} />
