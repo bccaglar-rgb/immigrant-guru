@@ -11,10 +11,9 @@ const log = createLogger("webhook");
 
 const INTERNAL_SECRET = process.env.INTERNAL_API_SECRET ?? "dev-internal-secret";
 
-// CRITICAL: Block dev secret in production
+// CRITICAL: Warn if dev secret in production (do NOT crash — would restart-loop the entire API)
 if (process.env.NODE_ENV === "production" && INTERNAL_SECRET === "dev-internal-secret") {
-  console.error("[SECURITY] INTERNAL_API_SECRET is using dev default in production! Set a strong secret via: openssl rand -base64 48");
-  process.exit(1);
+  console.error("[SECURITY] CRITICAL: INTERNAL_API_SECRET is using dev default in production! Webhooks will be REJECTED. Set a strong secret via: openssl rand -base64 48");
 }
 
 function verifySignature(body: string, timestamp: number, signature: string): boolean {

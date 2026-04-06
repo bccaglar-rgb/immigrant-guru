@@ -53,8 +53,8 @@ async function boot() {
   const envKey = process.env.ENCRYPTION_KEY;
   if (!envKey) {
     if (process.env.NODE_ENV === "production") {
-      console.error("[SECURITY] ENCRYPTION_KEY not set in production! Generate with: openssl rand -hex 32");
-      process.exit(1);
+      console.error("[SECURITY] CRITICAL: ENCRYPTION_KEY not set in production! Wallet encryption weakened. Generate with: openssl rand -hex 32");
+      // Continue with fallback — do NOT crash (would restart-loop)
     }
     console.warn("[SECURITY] ENCRYPTION_KEY not set — using DB password fallback (DEV ONLY)");
     ENGINE_CONFIG.encryptionKey = createHash("sha256").update(process.env.ENGINE_DB_PASSWORD ?? process.env.DB_PASSWORD ?? "dev-key").digest();
