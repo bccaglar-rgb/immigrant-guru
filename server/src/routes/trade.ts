@@ -6,6 +6,7 @@ import type { ExchangeCoreService } from "../services/exchangeCore/exchangeCoreS
 import type { CoreVenue, CoreTpSlSpec } from "../services/exchangeCore/types.ts";
 import type { AuthService } from "../payments/authService.ts";
 import { requireAuth } from "../middleware/authMiddleware.ts";
+import { requireTradingTier } from "../middleware/tierEnforcement.ts";
 
 const VALID_SIDES = ["BUY", "SELL"] as const;
 const VALID_ORDER_TYPES = ["MARKET", "LIMIT", "STOP_LIMIT"] as const;
@@ -36,8 +37,9 @@ export const registerTradeRoutes = (
   auth?: AuthService,
 ) => {
   const authMw = auth ? requireAuth(auth) : (_req: any, _res: any, next: any) => { _req.userId = _req.headers["x-user-id"] ?? "demo-user"; next(); };
+  const tradingTierMw = auth ? requireTradingTier() : (_req: any, _res: any, next: any) => next();
 
-  app.post("/api/trade/place", authMw, async (req, res) => {
+  app.post("/api/trade/place", authMw, tradingTierMw, async (req, res) => {
     const userId = req.userId!;
     const payload = req.body;
     const exchangeId = normalizeExchangeId(String(payload.exchange ?? ""));

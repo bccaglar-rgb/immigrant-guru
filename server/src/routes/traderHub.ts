@@ -2,6 +2,7 @@ import type { Express, Request } from "express";
 import { TraderHubEngine } from "../services/traderHub/traderHubEngine.ts";
 import type { CoinPoolConfig, CoinPoolSourceType, TraderAiModule, TraderExchange, TraderRunStatus } from "../services/traderHub/types.ts";
 import { botCreate } from "../middleware/rateLimit.ts";
+import { requireBotTier } from "../middleware/tierEnforcement.ts";
 
 const readUserId = (req: Request): string => {
   const raw = req.headers["x-user-id"];
@@ -87,7 +88,7 @@ export const registerTraderHubRoutes = (app: Express, traderHub: TraderHubEngine
     });
   });
 
-  app.post("/api/trader-hub/traders", botCreate, async (req, res) => {
+  app.post("/api/trader-hub/traders", botCreate, requireBotTier(), async (req, res) => {
     const userId = readUserId(req);
     const name = String(req.body?.name ?? "").trim();
     if (!name) return res.status(400).json({ ok: false, error: "name_required" });

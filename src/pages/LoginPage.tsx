@@ -159,9 +159,9 @@ export default function LoginPage() {
               <div>
                 <div className="mb-1.5 flex items-center justify-between">
                   <label htmlFor="login-password" className="text-xs font-medium text-[var(--textMuted)]">Password</label>
-                  <button type="button" onClick={() => { setView("forgot"); setErr(""); setResetEmail(email); }} className="text-xs font-medium text-[var(--accent)] transition-colors hover:text-[#e5b632]">
+                  <Link to="/forgot-password" className="text-xs font-medium text-[var(--accent)] transition-colors hover:text-[#e5b632]">
                     Forgot Password?
-                  </button>
+                  </Link>
                 </div>
                 <div className="relative">
                   <input id="login-password" type={showPassword ? "text" : "password"} value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Enter your password" autoComplete="current-password" className={`${inputCls} pr-10`} />

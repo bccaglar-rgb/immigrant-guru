@@ -2,11 +2,13 @@ import type { Express } from "express";
 import { ExchangeManager } from "../exchangeManager/ExchangeManager.ts";
 import type { AuthService } from "../payments/authService.ts";
 import { requireAuth } from "../middleware/authMiddleware.ts";
+import { requireExchangeSlot } from "../middleware/tierEnforcement.ts";
 
 export const registerExchangeRoutes = (app: Express, manager: ExchangeManager, auth?: AuthService) => {
   const authMw = auth ? requireAuth(auth) : (_req: any, _res: any, next: any) => { _req.userId = _req.headers["x-user-id"] ?? "demo-user"; next(); };
+  const exchangeSlotMw = auth ? requireExchangeSlot() : (_req: any, _res: any, next: any) => next();
 
-  app.post("/api/exchanges/connect", authMw, async (req, res) => {
+  app.post("/api/exchanges/connect", authMw, exchangeSlotMw, async (req, res) => {
     try {
       const userId = req.userId!;
       const { exchangeId, credentials, options } = req.body ?? {};
