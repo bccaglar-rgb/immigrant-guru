@@ -3,6 +3,15 @@ import { useExchangeTerminalStore } from "../../hooks/useExchangeTerminalStore";
 import { BalancesSummary } from "./BalancesSummary";
 import { placeExchangeOrder } from "../../services/exchangeApi";
 
+// CSS animation for price flash on orderbook click
+const PRICE_FLASH_STYLE = `
+@keyframes priceFlash {
+  0% { border-color: #2bc48a; }
+  100% { border-color: rgba(255,255,255,0.15); }
+}
+.price-flash { animation: priceFlash 200ms ease-out; }
+`;
+
 // ── Precision helpers — prevents exchange rejects before request leaves client ──
 const roundToStep = (value: number, step: number): number => {
   if (step <= 0 || !Number.isFinite(step)) return value;
@@ -43,6 +52,18 @@ export const OrderEntryPanel = ({ showBalances = true, className = "" }: Props) 
   const [submitInfo, setSubmitInfo] = useState<string>("");
   const [submitting, setSubmitting] = useState(false);
   const lastSubmitRef = useRef<string>("");
+  const [priceFlash, setPriceFlash] = useState(false);
+  const prevPriceRef = useRef(price);
+
+  // ── Price flash animation on external price change (orderbook click) ──
+  useEffect(() => {
+    if (price !== prevPriceRef.current && prevPriceRef.current !== "0.00") {
+      setPriceFlash(true);
+      const t = setTimeout(() => setPriceFlash(false), 200);
+      return () => clearTimeout(t);
+    }
+  }, [price]);
+  useEffect(() => { prevPriceRef.current = price; }, [price]);
 
   // ── Symbol precision info (loaded from backend cache) ──
   const [symbolInfo, setSymbolInfo] = useState(DEFAULT_SYMBOL_INFO);
@@ -272,6 +293,8 @@ export const OrderEntryPanel = ({ showBalances = true, className = "" }: Props) 
   if (accountMode === "Futures") {
     return (
       <section className={`${className} rounded-xl border border-white/10 bg-[#121316] p-3`}>
+        <style dangerouslySetInnerHTML={{ __html: PRICE_FLASH_STYLE }} />
+        {/* ── 1. HEADER — Cross / Leverage / Mode (single row) ── */}
         <div className="mb-2 flex items-center gap-2">
           <div className="relative">
             <button
@@ -281,7 +304,7 @@ export const OrderEntryPanel = ({ showBalances = true, className = "" }: Props) 
                 setLeverageOpen(false);
                 setTifOpen(false);
               }}
-              className={`min-w-14 rounded-md px-2 py-1 text-xs ${marginMode === "Cross" ? "bg-[#2d3645] text-white" : "bg-[#1A1B1F] text-[#BFC2C7]"}`}
+              className={`min-w-14 rounded-md px-2 py-1 text-xs font-semibold ${marginMode === "Cross" ? "bg-[#2d3645] text-white" : "bg-[#1A1B1F] text-[#BFC2C7]"}`}
             >
               {marginMode}
             </button>
@@ -311,10 +334,10 @@ export const OrderEntryPanel = ({ showBalances = true, className = "" }: Props) 
                 setMarginModeOpen(false);
                 setTifOpen(false);
               }}
-              className="min-w-12 rounded-md bg-[#2d3645] px-2 py-1 text-xs text-white"
-              title="Higher leverage increases both potential profit and liquidation risk"
+              className="min-w-12 rounded-md bg-[#2d3645] px-2 py-1 text-xs font-semibold text-white"
+              title="Higher leverage increases liquidation risk"
             >
-              {leverage}x
+              {leverage}x ▼
             </button>
             {leverageOpen ? (
               <div className="absolute left-0 top-8 z-20 w-48 rounded-md border border-white/10 bg-[#121316] p-2">
@@ -340,16 +363,14 @@ export const OrderEntryPanel = ({ showBalances = true, className = "" }: Props) 
               </div>
             ) : null}
           </div>
+          <span className="rounded-md bg-[#1A1B1F] px-2 py-1 text-xs font-semibold text-[#BFC2C7]">USDT-M</span>
           <button
             type="button"
             onClick={() => setPositionMode((v) => (v === "One-way" ? "Hedge" : "One-way"))}
-            className="min-w-10 rounded-md bg-[#1A1B1F] px-2 py-1 text-xs text-white"
+            className="ml-auto min-w-10 rounded-md bg-[#1A1B1F] px-2 py-1 text-xs text-[#6B6F76]"
             title="Position mode"
           >
             {positionMode === "One-way" ? "O" : "H"}
-          </button>
-          <button type="button" className="ml-auto rounded-md bg-[#1A1B1F] px-2 py-1 text-xs text-[#6B6F76]">
-            •••
           </button>
         </div>
 
@@ -384,36 +405,38 @@ export const OrderEntryPanel = ({ showBalances = true, className = "" }: Props) 
           <span className="ml-auto text-xs text-[#6B6F76]">ⓘ</span>
         </div>
 
+        {/* ── 2. BALANCE BLOCK — clearer hierarchy ── */}
         <div className="mb-2 space-y-0.5 text-[11px]">
           <div className="flex justify-between text-[#6B6F76]">
             <span>Wallet</span>
-            <span className="font-mono text-[#6B6F76]">{balanceMetrics.walletBalance.toLocaleString(undefined, { maximumFractionDigits: 2 })} USDT</span>
+            <span className="font-mono">{balanceMetrics.walletBalance.toLocaleString(undefined, { maximumFractionDigits: 2 })} USDT</span>
           </div>
           {accountMode === "Futures" && (
             <div className="flex justify-between text-[#6B6F76]">
-              <span>Margin</span>
-              <span className="font-mono text-[#6B6F76]">{balanceMetrics.marginBalance.toLocaleString(undefined, { maximumFractionDigits: 2 })} USDT</span>
+              <span>Used Margin</span>
+              <span className="font-mono">{balanceMetrics.marginBalance.toLocaleString(undefined, { maximumFractionDigits: 2 })} USDT</span>
             </div>
           )}
           <div className="flex justify-between">
-            <span className="text-[#6B6F76]">Available to Trade</span>
+            <span className="text-[#6B6F76]">Available</span>
             <span className="font-mono text-[13px] font-bold text-[#2bc48a]">{availableToTrade.toLocaleString(undefined, { maximumFractionDigits: 2 })} USDT</span>
           </div>
-          <div className="mt-1.5 border-t border-white/10" />
+          <div className="mt-1.5 border-b border-white/[0.06]" />
         </div>
 
+        {/* ── 3. PRICE INPUT — dominant ── */}
         <div className="mb-2">
           <label className="mb-1 block text-xs text-[#8A8F98]">Price</label>
           <div className="flex items-center gap-2">
-            <div className="flex-1 rounded-lg border border-white/15 bg-[#111418] px-2 py-2">
+            <div className={`flex-1 rounded-lg border border-white/15 bg-[#111418] px-2 py-2${priceFlash ? " price-flash" : ""}`}>
               <input
                 disabled={orderType === "Market"}
                 value={price}
                 onChange={(e) => setPrice(e.target.value)}
-                className="w-full bg-transparent text-lg font-mono font-bold text-white outline-none disabled:opacity-50"
+                className="w-full bg-transparent text-xl font-mono font-bold text-white outline-none disabled:opacity-50"
               />
             </div>
-            <button type="button" className="rounded-lg border border-white/15 bg-[#111418] px-3 py-2 text-sm text-white">
+            <button type="button" className="rounded-lg border border-white/15 bg-[#111418] px-3 py-2 text-sm font-mono text-white">
               USDT
             </button>
             <button type="button" onClick={applyBbo} className="rounded-lg border border-white/15 bg-[#111418] px-3 py-2 text-sm text-white" title="Best Bid/Offer — auto-fill current market price">
@@ -443,20 +466,24 @@ export const OrderEntryPanel = ({ showBalances = true, className = "" }: Props) 
               onChange={(e) => setAmount(e.target.value)}
               className="w-full bg-transparent font-mono text-sm text-white outline-none"
             />
-            <span className="text-sm text-white">USDT ▾</span>
+            <span className="text-sm font-mono text-white">USDT ▾</span>
           </div>
         </div>
+        {/* ── 4. SIZE % BUTTONS — better styling ── */}
         <div className="mb-2 grid grid-cols-4 gap-1">
-          {[25, 50, 75, 100].map((pct) => (
-            <button
-              key={pct}
-              type="button"
-              onClick={() => applySizePreset(pct)}
-              className="rounded border border-white/10 bg-[#111418] px-3 py-1.5 text-[11px] text-[#BFC2C7] transition-colors duration-150 hover:border-[#F5C542]/50 hover:bg-white/10 active:bg-white/20"
-            >
-              {pct}%
-            </button>
-          ))}
+          {[25, 50, 75, 100].map((pct) => {
+            const isActive = Number(amount) > 0 && Math.abs(Number(amount) - ((availableToTrade * Math.max(leverage, 1) * (pct / 100)) / Math.max(Number(price) || 1, 1))) < 0.01;
+            return (
+              <button
+                key={pct}
+                type="button"
+                onClick={() => applySizePreset(pct)}
+                className={`rounded-lg px-4 py-2 text-sm font-semibold font-mono transition-all duration-150 ${isActive ? "border border-[#F5C542]/30 bg-[#F5C542]/15 text-[#F5C542]" : "border border-white/10 bg-[#111418] text-[#BFC2C7] hover:bg-[#F5C542]/20 active:bg-[#F5C542]/30"}`}
+              >
+                {pct}%
+              </button>
+            );
+          })}
         </div>
 
         <div className="mb-2 px-1">
@@ -471,7 +498,8 @@ export const OrderEntryPanel = ({ showBalances = true, className = "" }: Props) 
           </div>
         </div>
 
-        <div className="mb-2 flex items-center gap-4 text-xs text-[#BFC2C7]">
+        {/* ── 5. ADVANCED OPTIONS — more spacing + tooltips ── */}
+        <div className="mb-2 flex items-center gap-5 text-xs text-[#BFC2C7]">
           <label className="inline-flex items-center gap-1" title="Set Take Profit and Stop Loss levels">
             <input type="checkbox" checked={tpsl} onChange={(e) => setTpsl(e.target.checked)} className="h-3.5 w-3.5 accent-[#F5C542]" />
             TP/SL
@@ -521,6 +549,7 @@ export const OrderEntryPanel = ({ showBalances = true, className = "" }: Props) 
               setMarginModeOpen(false);
             }}
             className="inline-flex items-center gap-1"
+            title="Time in Force — how long the order stays active"
           >
             TIF <span className="text-[#BFC2C7]">{tif} ▾</span>
           </button>
@@ -543,13 +572,14 @@ export const OrderEntryPanel = ({ showBalances = true, className = "" }: Props) 
           ) : null}
         </div>
 
+        {/* ── 6. ACTION BUTTONS — more prominent ── */}
         <div className="mb-2 grid grid-cols-2 gap-2">
           <button
             type="button"
             onClick={() => void place("BUY")}
             disabled={isBitriumOnly || submitting}
             title={isBitriumOnly ? "Connect an exchange to trade. Using Bitrium Labs public data." : undefined}
-            className="rounded-md bg-[#2bc48a] px-3 py-3 text-base font-semibold text-black transition-all duration-200 hover:shadow-[0_0_12px_rgba(43,196,138,0.3)] disabled:cursor-not-allowed disabled:opacity-50"
+            className="rounded-xl bg-[#2bc48a] px-3 py-3.5 text-base font-bold text-black transition-all duration-200 hover:shadow-[0_0_20px_rgba(43,196,138,0.4)] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
           >
             {submitting ? "Sending..." : "Open Long"}
           </button>
@@ -558,7 +588,7 @@ export const OrderEntryPanel = ({ showBalances = true, className = "" }: Props) 
             onClick={() => void place("SELL")}
             disabled={isBitriumOnly || submitting}
             title={isBitriumOnly ? "Connect an exchange to trade. Using Bitrium Labs public data." : undefined}
-            className="rounded-md bg-[#f6465d] px-3 py-3 text-base font-semibold text-white transition-all duration-200 hover:shadow-[0_0_12px_rgba(246,70,93,0.3)] disabled:cursor-not-allowed disabled:opacity-50"
+            className="rounded-xl bg-[#f6465d] px-3 py-3.5 text-base font-bold text-white transition-all duration-200 hover:shadow-[0_0_20px_rgba(246,70,93,0.4)] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
           >
             {submitting ? "Sending..." : "Open Short"}
           </button>
@@ -567,15 +597,18 @@ export const OrderEntryPanel = ({ showBalances = true, className = "" }: Props) 
           <p className="mb-2 text-xs text-[#8A8F98]">Connect an exchange to trade. Using Bitrium Labs public data.</p>
         ) : null}
 
-        <div className="mb-2 rounded-lg border border-white/5 bg-[#0d0f12] p-2 text-[11px]">
-          <div className="mb-1.5 text-[9px] uppercase tracking-widest text-[#6B6F76]">Trade Summary</div>
-          <div className="grid grid-cols-2 gap-x-3 gap-y-0.5 text-[#8A8F98]">
-            <div>Init Margin <span className="font-mono text-white">{(total / Math.max(leverage, 1)).toFixed(2)} USDT</span></div>
-            <div className="text-right">Cost <span className="font-mono text-white">{((total / Math.max(leverage, 1)) + total * 0.0004).toFixed(2)} USDT</span></div>
-            <div>Est. Fee <span className="font-mono text-white">{(total * 0.0004).toFixed(2)} USDT</span> <span className="text-[#6B6F76]">(0.04%)</span></div>
-            <div className="text-right">Max Qty <span className="font-mono text-white">{((availableToTrade * Math.max(leverage, 1)) / Math.max(Number(price) || 1, 1)).toFixed(symbolInfo.qtyPrecision)} {base}</span></div>
-            <div>Liq. Price <span className={`font-mono ${leverage > 10 ? "text-[#f6465d]" : "text-[#F5C542]"}`}>~{Number(price) > 0 ? (Number(price) * (1 - 1 / Math.max(leverage, 1) * 0.9)).toFixed(2) : "-"}</span></div>
-            <div className="text-right">Max <span className="font-mono text-white">{(availableToTrade * Math.max(leverage, 1)).toLocaleString(undefined, { maximumFractionDigits: 0 })} USDT</span></div>
+        {/* ── 7. TRADE SUMMARY — professional look ── */}
+        <div className="mb-2 border-t border-white/[0.06] pt-2 mt-2">
+          <div className="rounded-lg border border-white/5 bg-[#0d0f12] p-2">
+            <div className="mb-1.5 text-[9px] uppercase tracking-[0.15em] text-[#6B6F76] font-semibold">Trade Summary</div>
+            <div className="grid grid-cols-2 gap-x-3 gap-y-0.5 text-[#8A8F98]">
+              <div>Init Margin <span className="font-mono text-[12px] text-white">{(total / Math.max(leverage, 1)).toFixed(2)} USDT</span></div>
+              <div className="text-right">Cost <span className="font-mono text-[12px] text-white">{((total / Math.max(leverage, 1)) + total * 0.0004).toFixed(2)} USDT</span></div>
+              <div>Est. Fee <span className="font-mono text-[12px] text-white">{(total * 0.0004).toFixed(2)} USDT</span> <span className="text-[#6B6F76]">(0.04%)</span></div>
+              <div className="text-right">Max Qty <span className="font-mono text-[12px] text-white">{((availableToTrade * Math.max(leverage, 1)) / Math.max(Number(price) || 1, 1)).toFixed(symbolInfo.qtyPrecision)} {base}</span></div>
+              <div>Liq. Price <span className="font-mono text-[12px] text-[#F5C542]">~{Number(price) > 0 ? (Number(price) * (1 - 1 / Math.max(leverage, 1) * 0.9)).toFixed(2) : "-"}</span></div>
+              <div className="text-right">Max <span className="font-mono text-[12px] text-white">{(availableToTrade * Math.max(leverage, 1)).toLocaleString(undefined, { maximumFractionDigits: 0 })} USDT</span></div>
+            </div>
           </div>
         </div>
 
