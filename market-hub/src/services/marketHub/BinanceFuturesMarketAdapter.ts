@@ -60,15 +60,16 @@ const TRADE_STORE_MAX = 500;
 // RECOVERY STATE MACHINE — prevents fail→retry→fail snapshot loops
 // that burn REST weight and trigger 418 IP bans.
 // ═══════════════════════════════════════════════════════════════════
-enum DepthSymbolState {
-  INIT = "INIT",                       // Never had a snapshot
-  SYNCING = "SYNCING",                 // Initial snapshot in-flight
-  READY = "READY",                     // Book healthy, WS flowing
-  DESYNC_SUSPECTED = "DESYNC_SUSPECTED", // Might need recovery (WS stale 60s)
-  RECOVERING = "RECOVERING",           // Recovery snapshot in-flight
-  COOLDOWN = "COOLDOWN",               // Failed, waiting before retry
-  BLOCKED = "BLOCKED",                 // Too many failures, long block
-}
+const DepthSymbolState = {
+  INIT: "INIT",
+  SYNCING: "SYNCING",
+  READY: "READY",
+  DESYNC_SUSPECTED: "DESYNC_SUSPECTED",
+  RECOVERING: "RECOVERING",
+  COOLDOWN: "COOLDOWN",
+  BLOCKED: "BLOCKED",
+} as const;
+type DepthSymbolState = (typeof DepthSymbolState)[keyof typeof DepthSymbolState];
 
 // Exponential backoff schedule for COOLDOWN state
 const RECOVERY_COOLDOWN_MS: Record<number, number> = {
