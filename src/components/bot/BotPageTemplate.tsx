@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { BotProvider } from "./BotContext";
+import "./bot-refinements.css";
 import BotExchangeBar from "./BotExchangeBar";
 import BotStrategyChart from "./BotStrategyChart";
 import BotThinkingPanel from "./BotThinkingPanel";

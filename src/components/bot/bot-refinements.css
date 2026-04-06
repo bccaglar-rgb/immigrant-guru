@@ -1,0 +1,60 @@
+/*
+ * Bot Page Premium Refinements
+ * Institutional-grade micro-polish for all bot components.
+ * Import once in BotPageTemplate or App.
+ */
+
+/* Softer card hover transitions */
+.bot-card {
+  transition: border-color 150ms ease, box-shadow 150ms ease;
+}
+.bot-card:hover {
+  border-color: rgba(255, 255, 255, 0.08);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.02);
+}
+
+/* Refined scrollbar for bot panels */
+.bot-scroll::-webkit-scrollbar {
+  width: 3px;
+}
+.bot-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+.bot-scroll::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 2px;
+}
+.bot-scroll::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+/* Mono number alignment for tables */
+.bot-mono {
+  font-feature-settings: "tnum" 1, "lnum" 1;
+  font-variant-numeric: tabular-nums lining-nums;
+}
+
+/* Status pulse for running bots */
+@keyframes bot-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+.bot-pulse-soft {
+  animation: bot-pulse 2s ease-in-out infinite;
+}
+
+/* Premium focus ring for inputs */
+.bot-input:focus {
+  outline: none;
+  border-color: rgba(245, 197, 66, 0.3);
+  box-shadow: 0 0 0 2px rgba(245, 197, 66, 0.08);
+}
+
+/* Subtle fade-in for lazy loaded sections */
+@keyframes bot-fadein {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.bot-fadein {
+  animation: bot-fadein 200ms ease-out;
+}
