@@ -391,6 +391,7 @@ const BOT_PLAN_MAP: Record<string, PlanLevel> = {
   "arbitrage": "titan", "cross-exchange-arb": "titan", "delta-neutral": "titan",
   "hedging": "titan", "funding-rate": "titan", "basis": "titan",
   "volatility-adaptive": "titan", "session": "titan",
+  "spot-arbitrage": "titan", "futures-hedge": "titan", "spread-terminal": "titan",
 };
 
 const PLAN_RANK: Record<PlanLevel, number> = { explorer: 0, trader: 1, strategist: 2, titan: 3 };

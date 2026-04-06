@@ -195,8 +195,8 @@ function App() {
         <Route path="/ai-trader/arena" element={<RequireAdmin><Suspense fallback={<PageLoader />}><AiTraderComingSoonPage title="AI Trader · AI Arena" note="AI Arena module is coming soon." /></Suspense></RequireAdmin>} />
         <Route path="/ai-trader/backtest" element={<RequireAdmin><Suspense fallback={<PageLoader />}><AiTraderComingSoonPage title="AI Trader · Backtest" note="Backtest module is coming soon." /></Suspense></RequireAdmin>} />
         <Route path="/bot" element={<RequirePlan><Suspense fallback={<PageLoader />}><BotPage /></Suspense></RequirePlan>} />
-        <Route path="/bot/spot-arbitrage" element={<RequirePlan><Suspense fallback={<PageLoader />}><SpotArbitrageBotPage /></Suspense></RequirePlan>} />
-        <Route path="/bot/futures-hedge" element={<RequirePlan><Suspense fallback={<PageLoader />}><FuturesHedgeBotPage /></Suspense></RequirePlan>} />
+        <Route path="/bot/spot-arbitrage" element={<RequireTier tier="titan"><Suspense fallback={<PageLoader />}><SpotArbitrageBotPage /></Suspense></RequireTier>} />
+        <Route path="/bot/futures-hedge" element={<RequireTier tier="titan"><Suspense fallback={<PageLoader />}><FuturesHedgeBotPage /></Suspense></RequireTier>} />
         {/* Featured */}
         <Route path="/bot/trend-pullback" element={<RequirePlan><Suspense fallback={<PageLoader />}><TrendPullbackBotPage /></Suspense></RequirePlan>} />
         <Route path="/bot/breakout-retest" element={<RequirePlan><Suspense fallback={<PageLoader />}><BreakoutRetestBotPage /></Suspense></RequirePlan>} />
@@ -266,7 +266,7 @@ function App() {
         <Route path="/master" element={<RequireTier tier="titan"><Suspense fallback={<PageLoader />}><MasterPage /></Suspense></RequireTier>} />
         <Route path="/alpha-war-room" element={<RequireTier tier="titan"><Suspense fallback={<PageLoader />}><AlphaWarRoomPage /></Suspense></RequireTier>} />
         <Route path="/institutional" element={<RequireTier tier="titan"><Suspense fallback={<PageLoader />}><InstitutionalCommandPage /></Suspense></RequireTier>} />
-        <Route path="/spread-terminal" element={<RequirePlan><Suspense fallback={<PageLoader />}><SpreadTerminalPage /></Suspense></RequirePlan>} />
+        <Route path="/spread-terminal" element={<RequireTier tier="titan"><Suspense fallback={<PageLoader />}><SpreadTerminalPage /></Suspense></RequireTier>} />
 
         <Route path="*" element={<Navigate to="/" replace />} />
       </Route>
