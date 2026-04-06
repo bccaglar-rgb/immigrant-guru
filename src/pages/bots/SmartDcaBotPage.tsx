@@ -2,6 +2,7 @@ import { useState } from "react";
 import BotExchangeBar from "../../components/bot/BotExchangeBar";
 import { BotProvider } from "../../components/bot/BotContext";
 import BotExecutionLog from "../../components/bot/BotExecutionLog";
+import BotStrategyChart from "../../components/bot/BotStrategyChart";
 
 /* ═══════════════════════════════════════════════════════════
    MOCK DATA
@@ -248,6 +249,15 @@ export default function SmartDcaBotPage() {
           <StatCell label="Volume Scale" value={`${volumeScale}x`} />
           <StatCell label="TP Target" value={`$${fmt(TP_TARGET, 0)}`} sub="BB Middle" color="#2bc48a" />
           <StatCell label="Max Drawdown Cap" value={`-${slPct}%`} color="#f6465d" />
+        </div>
+
+        {/* ── CHART PREVIEW ── */}
+        <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4">
+          <div className="mb-2 flex items-center justify-between">
+            <h2 className="text-[13px] font-bold text-white">Strategy Preview</h2>
+            <span className="rounded-full border border-white/10 bg-white/[0.03] px-2 py-0.5 text-[9px] text-white/40">PREVIEW</span>
+          </div>
+          <BotStrategyChart defaultPair="BTCUSDT" defaultTf="15m" accentColor="#6ec4ff" />
         </div>
 
         {/* ── 5. DCA SETUP ── */}

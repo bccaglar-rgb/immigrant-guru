@@ -2,6 +2,7 @@ import { useState } from "react";
 import BotExchangeBar from "../../components/bot/BotExchangeBar";
 import { BotProvider } from "../../components/bot/BotContext";
 import BotExecutionLog from "../../components/bot/BotExecutionLog";
+import BotStrategyChart from "../../components/bot/BotStrategyChart";
 
 /* ── Helpers ── */
 const cn = (...cls: (string | false | undefined)[]) => cls.filter(Boolean).join(" ");
@@ -187,6 +188,15 @@ export default function GridBotPage() {
           <StatBox label="Spacing" value={fmtUsd(gridSpacing)} color="text-white/70" />
           <StatBox label="Investment" value={fmtUsd(investment)} color="text-[#5B8DEF]" />
           <StatBox label="Per Grid" value={fmtUsd(perGrid)} color="text-white/70" />
+        </div>
+
+        {/* ── CHART PREVIEW ── */}
+        <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4">
+          <div className="mb-2 flex items-center justify-between">
+            <h2 className="text-[13px] font-bold text-white">Strategy Preview</h2>
+            <span className="rounded-full border border-white/10 bg-white/[0.03] px-2 py-0.5 text-[9px] text-white/40">PREVIEW</span>
+          </div>
+          <BotStrategyChart defaultPair="BTCUSDT" defaultTf="15m" accentColor="#9f8bff" />
         </div>
 
         {/* ── 3. GRID SETUP + PROFIT CHART ── */}

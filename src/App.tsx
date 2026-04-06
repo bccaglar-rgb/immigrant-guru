@@ -119,6 +119,7 @@ const RequirePlan = ({ children }: { children: React.ReactNode }) => {
   const loading = useAuthStore((s) => s.loading);
   if (loading) return <PageLoader />;
   if (!user) return <Navigate to="/login" replace />;
+  if (user.role === "ADMIN") return <>{children}</>;
   if (!user.hasActivePlan) return <Navigate to="/pricing" replace />;
   return <>{children}</>;
 };
