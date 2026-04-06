@@ -104,8 +104,19 @@ export class AddressPoolService {
       await client.query("COMMIT");
 
       if (!rows[0]) {
-        console.error(`[AddressPool] No available addresses! Pool exhausted.`);
+        console.error(`[AddressPool] CRITICAL: No available addresses! Pool exhausted. Generate more addresses immediately.`);
         return null;
+      }
+
+      // Pool low warning — check remaining addresses
+      const { rows: countRows } = await pool.query(
+        `SELECT COUNT(*)::int AS cnt FROM wallet_addresses WHERE status = 'available'`,
+      );
+      const remaining = countRows[0]?.cnt ?? 0;
+      if (remaining < 100) {
+        console.error(`[AddressPool] WARNING: Only ${remaining} addresses remaining! Replenish pool urgently.`);
+      } else if (remaining < 500) {
+        console.warn(`[AddressPool] Pool getting low: ${remaining} addresses available. Consider replenishing.`);
       }
 
       const r = rows[0];

@@ -38,9 +38,29 @@ export const registerPaymentsRoutes = (app: Express, auth: AuthService, payments
     res.json({ ok: true, plans: await payments.listPlans() });
   });
 
+  // Rate limit: max 5 invoices per hour per user (in-memory, simple)
+  const invoiceRateMap = new Map<string, { count: number; resetAt: number }>();
+  const INVOICE_RATE_LIMIT = 5;
+  const INVOICE_RATE_WINDOW = 60 * 60 * 1000; // 1 hour
+
   app.post("/api/payments/invoices", async (req, res) => {
     const ctx = await requireAuth(auth, req, res);
     if (!ctx) return;
+
+    // Rate limiting
+    const userId = ctx.user.id;
+    const now = Date.now();
+    const entry = invoiceRateMap.get(userId);
+    if (entry && entry.resetAt > now) {
+      if (entry.count >= INVOICE_RATE_LIMIT) {
+        log.warn("invoice_rate_limited", { userId, count: entry.count });
+        return res.status(429).json({ ok: false, error: "Too many invoices. Max 5 per hour. Try again later." });
+      }
+      entry.count++;
+    } else {
+      invoiceRateMap.set(userId, { count: 1, resetAt: now + INVOICE_RATE_WINDOW });
+    }
+
     try {
       const { planId } = req.body ?? {};
       const invoice = await payments.createInvoice(ctx.user, String(planId ?? ""));

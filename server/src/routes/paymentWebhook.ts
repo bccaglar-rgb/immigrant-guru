@@ -11,10 +11,16 @@ const log = createLogger("webhook");
 
 const INTERNAL_SECRET = process.env.INTERNAL_API_SECRET ?? "dev-internal-secret";
 
+// CRITICAL: Block dev secret in production
+if (process.env.NODE_ENV === "production" && INTERNAL_SECRET === "dev-internal-secret") {
+  console.error("[SECURITY] INTERNAL_API_SECRET is using dev default in production! Set a strong secret via: openssl rand -base64 48");
+  process.exit(1);
+}
+
 function verifySignature(body: string, timestamp: number, signature: string): boolean {
   const expected = createHmac("sha256", INTERNAL_SECRET).update(`${timestamp}:${body}`).digest("hex");
   if (expected !== signature) return false;
-  if (Math.abs(Date.now() - timestamp) > 5 * 60 * 1000) return false;
+  if (Math.abs(Date.now() - timestamp) > 60 * 1000) return false; // 60s window (tighter replay protection)
   return true;
 }
 

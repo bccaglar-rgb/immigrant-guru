@@ -85,23 +85,26 @@ const seedTickers: TickerItem[] = [
   { symbol: "AAVE/USDT", lastPrice: 112.62, change24hPct: -1.5, volume24h: 14193027.47, markPrice: 112.58, indexPrice: 112.61, fundingRate8h: -0.00031, openInterestUsd: 183991245.2 },
 ];
 
+// Seeded PRNG for deterministic initial data (replaced Math.random)
+const _srng = (() => { let s = 12345; return () => { s = (s * 16807) % 2147483647; return (s - 1) / 2147483646; }; })();
+
 const seedBids: OrderbookLevel[] = Array.from({ length: 20 }, (_, i) => ({
   price: Number((112.62 - i * 0.01).toFixed(2)),
-  amount: Number((Math.random() * 50).toFixed(3)),
-  total: Number((Math.random() * 9000).toFixed(2)),
+  amount: Number((_srng() * 50).toFixed(3)),
+  total: Number((_srng() * 9000).toFixed(2)),
 }));
 
 const seedAsks: OrderbookLevel[] = Array.from({ length: 20 }, (_, i) => ({
   price: Number((112.63 + i * 0.01).toFixed(2)),
-  amount: Number((Math.random() * 50).toFixed(3)),
-  total: Number((Math.random() * 9000).toFixed(2)),
+  amount: Number((_srng() * 50).toFixed(3)),
+  total: Number((_srng() * 9000).toFixed(2)),
 }));
 
 const seedTrades: TradeTick[] = Array.from({ length: 24 }, (_, i) => ({
   id: `t-${i}`,
-  price: Number((112.55 + Math.random() * 0.2).toFixed(2)),
-  amount: Number((Math.random() * 2).toFixed(3)),
-  side: Math.random() > 0.5 ? "BUY" : "SELL",
+  price: Number((112.55 + _srng() * 0.2).toFixed(2)),
+  amount: Number((_srng() * 2).toFixed(3)),
+  side: _srng() > 0.5 ? "BUY" : "SELL",
   time: new Date(Date.now() - i * 1000).toLocaleTimeString(),
 }));
 

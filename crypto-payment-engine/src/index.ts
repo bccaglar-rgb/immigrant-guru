@@ -51,9 +51,16 @@ async function boot() {
   // Initialize encryption key
   const { createHash } = await import("node:crypto");
   const envKey = process.env.ENCRYPTION_KEY;
-  ENGINE_CONFIG.encryptionKey = envKey
-    ? Buffer.from(envKey, "hex")
-    : createHash("sha256").update(process.env.ENGINE_DB_PASSWORD ?? process.env.DB_PASSWORD ?? "dev-key").digest();
+  if (!envKey) {
+    if (process.env.NODE_ENV === "production") {
+      console.error("[SECURITY] ENCRYPTION_KEY not set in production! Generate with: openssl rand -hex 32");
+      process.exit(1);
+    }
+    console.warn("[SECURITY] ENCRYPTION_KEY not set — using DB password fallback (DEV ONLY)");
+    ENGINE_CONFIG.encryptionKey = createHash("sha256").update(process.env.ENGINE_DB_PASSWORD ?? process.env.DB_PASSWORD ?? "dev-key").digest();
+  } else {
+    ENGINE_CONFIG.encryptionKey = Buffer.from(envKey, "hex");
+  }
 
   await ensureConnection();
 
