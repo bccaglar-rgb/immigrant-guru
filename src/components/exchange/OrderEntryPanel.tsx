@@ -312,6 +312,7 @@ export const OrderEntryPanel = ({ showBalances = true, className = "" }: Props) 
                 setTifOpen(false);
               }}
               className="min-w-12 rounded-md bg-[#2d3645] px-2 py-1 text-xs text-white"
+              title="Higher leverage increases both potential profit and liquidation risk"
             >
               {leverage}x
             </button>
@@ -386,18 +387,19 @@ export const OrderEntryPanel = ({ showBalances = true, className = "" }: Props) 
         <div className="mb-2 space-y-0.5 text-[11px]">
           <div className="flex justify-between text-[#6B6F76]">
             <span>Wallet</span>
-            <span className="text-[#BFC2C7]">{balanceMetrics.walletBalance.toLocaleString(undefined, { maximumFractionDigits: 2 })} USDT</span>
+            <span className="font-mono text-[#6B6F76]">{balanceMetrics.walletBalance.toLocaleString(undefined, { maximumFractionDigits: 2 })} USDT</span>
           </div>
           {accountMode === "Futures" && (
             <div className="flex justify-between text-[#6B6F76]">
               <span>Margin</span>
-              <span className="text-[#BFC2C7]">{balanceMetrics.marginBalance.toLocaleString(undefined, { maximumFractionDigits: 2 })} USDT</span>
+              <span className="font-mono text-[#6B6F76]">{balanceMetrics.marginBalance.toLocaleString(undefined, { maximumFractionDigits: 2 })} USDT</span>
             </div>
           )}
-          <div className="flex justify-between text-[#F5C542]">
-            <span>Available to Trade</span>
-            <span>{availableToTrade.toLocaleString(undefined, { maximumFractionDigits: 2 })} USDT</span>
+          <div className="flex justify-between">
+            <span className="text-[#6B6F76]">Available to Trade</span>
+            <span className="font-mono text-[13px] font-bold text-[#2bc48a]">{availableToTrade.toLocaleString(undefined, { maximumFractionDigits: 2 })} USDT</span>
           </div>
+          <div className="mt-1.5 border-t border-white/10" />
         </div>
 
         <div className="mb-2">
@@ -408,13 +410,13 @@ export const OrderEntryPanel = ({ showBalances = true, className = "" }: Props) 
                 disabled={orderType === "Market"}
                 value={price}
                 onChange={(e) => setPrice(e.target.value)}
-                className="w-full bg-transparent text-lg text-white outline-none disabled:opacity-50"
+                className="w-full bg-transparent text-lg font-mono font-bold text-white outline-none disabled:opacity-50"
               />
             </div>
             <button type="button" className="rounded-lg border border-white/15 bg-[#111418] px-3 py-2 text-sm text-white">
               USDT
             </button>
-            <button type="button" onClick={applyBbo} className="rounded-lg border border-white/15 bg-[#111418] px-3 py-2 text-sm text-white">
+            <button type="button" onClick={applyBbo} className="rounded-lg border border-white/15 bg-[#111418] px-3 py-2 text-sm text-white" title="Best Bid/Offer — auto-fill current market price">
               BBO
             </button>
           </div>
@@ -427,7 +429,7 @@ export const OrderEntryPanel = ({ showBalances = true, className = "" }: Props) 
               <input
                 value={stopPrice}
                 onChange={(e) => setStopPrice(e.target.value)}
-                className="w-full bg-transparent text-sm text-white outline-none"
+                className="w-full bg-transparent font-mono text-sm text-white outline-none"
               />
             </div>
           </div>
@@ -439,7 +441,7 @@ export const OrderEntryPanel = ({ showBalances = true, className = "" }: Props) 
             <input
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
-              className="w-full bg-transparent text-sm text-white outline-none"
+              className="w-full bg-transparent font-mono text-sm text-white outline-none"
             />
             <span className="text-sm text-white">USDT ▾</span>
           </div>
@@ -450,7 +452,7 @@ export const OrderEntryPanel = ({ showBalances = true, className = "" }: Props) 
               key={pct}
               type="button"
               onClick={() => applySizePreset(pct)}
-              className="rounded border border-white/10 bg-[#111418] px-2 py-1 text-[11px] text-[#BFC2C7] hover:border-[#F5C542]/50"
+              className="rounded border border-white/10 bg-[#111418] px-3 py-1.5 text-[11px] text-[#BFC2C7] transition-colors duration-150 hover:border-[#F5C542]/50 hover:bg-white/10 active:bg-white/20"
             >
               {pct}%
             </button>
@@ -470,15 +472,15 @@ export const OrderEntryPanel = ({ showBalances = true, className = "" }: Props) 
         </div>
 
         <div className="mb-2 flex items-center gap-4 text-xs text-[#BFC2C7]">
-          <label className="inline-flex items-center gap-1">
+          <label className="inline-flex items-center gap-1" title="Set Take Profit and Stop Loss levels">
             <input type="checkbox" checked={tpsl} onChange={(e) => setTpsl(e.target.checked)} className="h-3.5 w-3.5 accent-[#F5C542]" />
             TP/SL
           </label>
-          <label className="inline-flex items-center gap-1">
+          <label className="inline-flex items-center gap-1" title="Only reduces existing position size">
             <input type="checkbox" checked={reduceOnly} onChange={(e) => setReduceOnly(e.target.checked)} className="h-3.5 w-3.5 accent-[#F5C542]" />
             Reduce-only
           </label>
-          <label className="inline-flex items-center gap-1">
+          <label className="inline-flex items-center gap-1" title="Order will only be placed as a maker order">
             <input type="checkbox" checked={postOnly} onChange={(e) => setPostOnly(e.target.checked)} className="h-3.5 w-3.5 accent-[#F5C542]" />
             Post-only
           </label>
@@ -494,7 +496,7 @@ export const OrderEntryPanel = ({ showBalances = true, className = "" }: Props) 
                   value={tpPrice}
                   onChange={(e) => setTpPrice(e.target.value)}
                   placeholder="Optional"
-                  className="w-full rounded border border-white/15 bg-[#0F1012] px-2 py-1.5 text-xs text-white outline-none"
+                  className="w-full rounded border border-white/15 bg-[#0F1012] px-2 py-1.5 font-mono text-xs text-white outline-none"
                 />
               </div>
               <div>
@@ -503,7 +505,7 @@ export const OrderEntryPanel = ({ showBalances = true, className = "" }: Props) 
                   value={slPrice}
                   onChange={(e) => setSlPrice(e.target.value)}
                   placeholder="Optional"
-                  className="w-full rounded border border-white/15 bg-[#0F1012] px-2 py-1.5 text-xs text-white outline-none"
+                  className="w-full rounded border border-white/15 bg-[#0F1012] px-2 py-1.5 font-mono text-xs text-white outline-none"
                 />
               </div>
             </div>
@@ -547,7 +549,7 @@ export const OrderEntryPanel = ({ showBalances = true, className = "" }: Props) 
             onClick={() => void place("BUY")}
             disabled={isBitriumOnly || submitting}
             title={isBitriumOnly ? "Connect an exchange to trade. Using Bitrium Labs public data." : undefined}
-            className="rounded-md bg-[#2bc48a] px-3 py-2 text-base font-semibold text-black disabled:cursor-not-allowed disabled:opacity-50"
+            className="rounded-md bg-[#2bc48a] px-3 py-3 text-base font-semibold text-black transition-all duration-200 hover:shadow-[0_0_12px_rgba(43,196,138,0.3)] disabled:cursor-not-allowed disabled:opacity-50"
           >
             {submitting ? "Sending..." : "Open Long"}
           </button>
@@ -556,7 +558,7 @@ export const OrderEntryPanel = ({ showBalances = true, className = "" }: Props) 
             onClick={() => void place("SELL")}
             disabled={isBitriumOnly || submitting}
             title={isBitriumOnly ? "Connect an exchange to trade. Using Bitrium Labs public data." : undefined}
-            className="rounded-md bg-[#f6465d] px-3 py-2 text-base font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
+            className="rounded-md bg-[#f6465d] px-3 py-3 text-base font-semibold text-white transition-all duration-200 hover:shadow-[0_0_12px_rgba(246,70,93,0.3)] disabled:cursor-not-allowed disabled:opacity-50"
           >
             {submitting ? "Sending..." : "Open Short"}
           </button>
@@ -566,13 +568,14 @@ export const OrderEntryPanel = ({ showBalances = true, className = "" }: Props) 
         ) : null}
 
         <div className="mb-2 rounded-lg border border-white/5 bg-[#0d0f12] p-2 text-[11px]">
+          <div className="mb-1.5 text-[9px] uppercase tracking-widest text-[#6B6F76]">Trade Summary</div>
           <div className="grid grid-cols-2 gap-x-3 gap-y-0.5 text-[#8A8F98]">
-            <div>Init Margin <span className="text-white">{(total / Math.max(leverage, 1)).toFixed(2)} USDT</span></div>
-            <div className="text-right">Cost <span className="text-white">{((total / Math.max(leverage, 1)) + total * 0.0004).toFixed(2)} USDT</span></div>
-            <div>Est. Fee <span className="text-white">{(total * 0.0004).toFixed(2)} USDT</span> <span className="text-[#6B6F76]">(0.04%)</span></div>
-            <div className="text-right">Max Qty <span className="text-white">{((availableToTrade * Math.max(leverage, 1)) / Math.max(Number(price) || 1, 1)).toFixed(symbolInfo.qtyPrecision)} {base}</span></div>
-            <div>Liq. Price <span className={leverage > 10 ? "text-[#f6465d]" : "text-[#F5C542]"}>~{Number(price) > 0 ? (Number(price) * (1 - 1 / Math.max(leverage, 1) * 0.9)).toFixed(2) : "-"}</span></div>
-            <div className="text-right">Max <span className="text-white">{(availableToTrade * Math.max(leverage, 1)).toLocaleString(undefined, { maximumFractionDigits: 0 })} USDT</span></div>
+            <div>Init Margin <span className="font-mono text-white">{(total / Math.max(leverage, 1)).toFixed(2)} USDT</span></div>
+            <div className="text-right">Cost <span className="font-mono text-white">{((total / Math.max(leverage, 1)) + total * 0.0004).toFixed(2)} USDT</span></div>
+            <div>Est. Fee <span className="font-mono text-white">{(total * 0.0004).toFixed(2)} USDT</span> <span className="text-[#6B6F76]">(0.04%)</span></div>
+            <div className="text-right">Max Qty <span className="font-mono text-white">{((availableToTrade * Math.max(leverage, 1)) / Math.max(Number(price) || 1, 1)).toFixed(symbolInfo.qtyPrecision)} {base}</span></div>
+            <div>Liq. Price <span className={`font-mono ${leverage > 10 ? "text-[#f6465d]" : "text-[#F5C542]"}`}>~{Number(price) > 0 ? (Number(price) * (1 - 1 / Math.max(leverage, 1) * 0.9)).toFixed(2) : "-"}</span></div>
+            <div className="text-right">Max <span className="font-mono text-white">{(availableToTrade * Math.max(leverage, 1)).toLocaleString(undefined, { maximumFractionDigits: 0 })} USDT</span></div>
           </div>
         </div>
 
@@ -607,23 +610,23 @@ export const OrderEntryPanel = ({ showBalances = true, className = "" }: Props) 
       <div className="grid gap-2 lg:grid-cols-2">
         <div className="space-y-2 rounded-lg border border-white/10 bg-[#0F1012] p-2">
           <label className="block text-xs text-[#BFC2C7]">Price
-            <input disabled={orderType === "Market"} value={price} onChange={(e) => setPrice(e.target.value)} className="mt-1 w-full rounded border border-white/15 bg-[#111418] px-2 py-1 text-sm text-white disabled:opacity-50" />
+            <input disabled={orderType === "Market"} value={price} onChange={(e) => setPrice(e.target.value)} className="mt-1 w-full rounded border border-white/15 bg-[#111418] px-2 py-1 font-mono text-sm text-white disabled:opacity-50" />
           </label>
           <label className="block text-xs text-[#BFC2C7]">Amount
-            <input value={amount} onChange={(e) => setAmount(e.target.value)} className="mt-1 w-full rounded border border-white/15 bg-[#111418] px-2 py-1 text-sm text-white" />
+            <input value={amount} onChange={(e) => setAmount(e.target.value)} className="mt-1 w-full rounded border border-white/15 bg-[#111418] px-2 py-1 font-mono text-sm text-white" />
           </label>
-          <div className="text-xs text-[#6B6F76]">Total: {total.toFixed(2)} USDT</div>
-          <div className="flex flex-wrap gap-2 text-xs text-[#BFC2C7]">
-            <label className="inline-flex items-center gap-1"><input type="checkbox" checked={tpsl} onChange={(e) => setTpsl(e.target.checked)} className="h-3.5 w-3.5 accent-[#F5C542]" />TP/SL</label>
-            <label className="inline-flex items-center gap-1"><input type="checkbox" checked={reduceOnly} onChange={(e) => setReduceOnly(e.target.checked)} className="h-3.5 w-3.5 accent-[#F5C542]" />Reduce-only</label>
-            <label className="inline-flex items-center gap-1"><input type="checkbox" checked={postOnly} onChange={(e) => setPostOnly(e.target.checked)} className="h-3.5 w-3.5 accent-[#F5C542]" />Post-only</label>
+          <div className="text-xs text-[#6B6F76]">Total: <span className="font-mono">{total.toFixed(2)}</span> USDT</div>
+          <div className="flex flex-wrap gap-4 text-xs text-[#BFC2C7]">
+            <label className="inline-flex items-center gap-1" title="Set Take Profit and Stop Loss levels"><input type="checkbox" checked={tpsl} onChange={(e) => setTpsl(e.target.checked)} className="h-3.5 w-3.5 accent-[#F5C542]" />TP/SL</label>
+            <label className="inline-flex items-center gap-1" title="Only reduces existing position size"><input type="checkbox" checked={reduceOnly} onChange={(e) => setReduceOnly(e.target.checked)} className="h-3.5 w-3.5 accent-[#F5C542]" />Reduce-only</label>
+            <label className="inline-flex items-center gap-1" title="Order will only be placed as a maker order"><input type="checkbox" checked={postOnly} onChange={(e) => setPostOnly(e.target.checked)} className="h-3.5 w-3.5 accent-[#F5C542]" />Post-only</label>
           </div>
           <button
             type="button"
             onClick={() => void place("BUY")}
             disabled={isBitriumOnly || submitting}
             title={isBitriumOnly ? "Connect an exchange to trade. Using Bitrium Labs public data." : undefined}
-            className="w-full rounded bg-[#2bc48a] px-3 py-2 text-sm font-semibold text-black disabled:cursor-not-allowed disabled:opacity-50"
+            className="w-full rounded bg-[#2bc48a] px-3 py-3 text-sm font-semibold text-black transition-all duration-200 hover:shadow-[0_0_12px_rgba(43,196,138,0.3)] disabled:cursor-not-allowed disabled:opacity-50"
           >
             {submitting ? "Sending..." : `Buy ${base}`}
           </button>
@@ -631,19 +634,19 @@ export const OrderEntryPanel = ({ showBalances = true, className = "" }: Props) 
 
         <div className="space-y-2 rounded-lg border border-white/10 bg-[#0F1012] p-2">
           <label className="block text-xs text-[#BFC2C7]">Price
-            <input disabled={orderType === "Market"} value={price} onChange={(e) => setPrice(e.target.value)} className="mt-1 w-full rounded border border-white/15 bg-[#111418] px-2 py-1 text-sm text-white disabled:opacity-50" />
+            <input disabled={orderType === "Market"} value={price} onChange={(e) => setPrice(e.target.value)} className="mt-1 w-full rounded border border-white/15 bg-[#111418] px-2 py-1 font-mono text-sm text-white disabled:opacity-50" />
           </label>
           <label className="block text-xs text-[#BFC2C7]">Amount
-            <input value={amount} onChange={(e) => setAmount(e.target.value)} className="mt-1 w-full rounded border border-white/15 bg-[#111418] px-2 py-1 text-sm text-white" />
+            <input value={amount} onChange={(e) => setAmount(e.target.value)} className="mt-1 w-full rounded border border-white/15 bg-[#111418] px-2 py-1 font-mono text-sm text-white" />
           </label>
-          <div className="text-xs text-[#6B6F76]">Estimated fee: {(total * 0.0004).toFixed(4)} USDT</div>
-          <div className="text-xs text-[#6B6F76]">Margin required: {(total / leverage).toFixed(2)} USDT</div>
+          <div className="text-xs text-[#6B6F76]">Estimated fee: <span className="font-mono">{(total * 0.0004).toFixed(4)}</span> USDT</div>
+          <div className="text-xs text-[#6B6F76]">Margin required: <span className="font-mono">{(total / leverage).toFixed(2)}</span> USDT</div>
           <button
             type="button"
             onClick={() => void place("SELL")}
             disabled={isBitriumOnly}
             title={isBitriumOnly ? "Connect an exchange to trade. Using Bitrium Labs public data." : undefined}
-            className="w-full rounded bg-[#f6465d] px-3 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
+            className="w-full rounded bg-[#f6465d] px-3 py-3 text-sm font-semibold text-white transition-all duration-200 hover:shadow-[0_0_12px_rgba(246,70,93,0.3)] disabled:cursor-not-allowed disabled:opacity-50"
           >
             {submitting ? "Sending..." : `Sell ${base}`}
           </button>
