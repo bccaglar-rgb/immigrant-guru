@@ -9,6 +9,7 @@ import BotStatePanel from "./BotStatePanel";
 import BotExecutionLog from "./BotExecutionLog";
 import BotSignalSources from "./BotSignalSources";
 import BotSetupForm from "./BotSetupForm";
+import BotLivePanel from "./BotLivePanel";
 
 /* ── Types ── */
 
@@ -74,7 +75,7 @@ export default function BotPageTemplate({ config }: { config: BotPageConfig }) {
   const sections = [
     { key: "overview" as const, label: "Overview" },
     { key: "setup" as const, label: "Setup & Launch" },
-    { key: "logs" as const, label: "Logs & State" },
+    { key: "logs" as const, label: "Trading & Logs" },
   ];
 
   return (
@@ -272,6 +273,14 @@ const SetupSection = ({ config }: { config: BotPageConfig }) => (
 
 const LogsSection = ({ config }: { config: BotPageConfig }) => (
   <div className="space-y-4">
+    {/* Live Trading Panel — real bot controls + positions + PNL */}
+    <BotLivePanel
+      botSlug={config.slug}
+      botName={config.name}
+      strategyId={config.slug}
+      strategyName={config.strategy}
+      accentColor={config.accentColor}
+    />
     <div className="grid gap-4 md:grid-cols-2">
       <BotStatePanel accentColor={config.accentColor} />
       <BotExecutionLog accentColor={config.accentColor} />
