@@ -718,7 +718,7 @@ export default function ExchangeTerminalPage() {
 
   return (
   <>
-    <main className="h-screen overflow-hidden bg-[#0B0B0C] p-3 text-[#BFC2C7] md:p-4">
+    <main className="h-screen overflow-x-auto overflow-y-hidden bg-[#0B0B0C] p-3 text-[#BFC2C7] md:p-4">
       <div className="mx-auto flex h-full max-w-[1850px] min-h-0 flex-col">
         <ExchangeTopBar
           onAddExchange={() => setConnectModalOpen(true)}
@@ -741,7 +741,7 @@ export default function ExchangeTerminalPage() {
         ) : null}
 
         {accountMode === "Futures" ? (
-          <section className="mt-2 flex min-h-0 flex-1 gap-2">
+          <section className="mt-2 flex min-h-0 flex-1 flex-col gap-2 xl:flex-row">
             <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-2">
               <section className="grid min-h-0 flex-1 gap-2 xl:grid-cols-[minmax(0,1fr)_230px]">
                 <div className="flex min-h-0 flex-col gap-2">
@@ -785,7 +785,7 @@ export default function ExchangeTerminalPage() {
                 <FuturesTradeIdeasPanel className="h-[clamp(300px,32vh,420px)]" />
               </section>
             </div>
-            <aside className="flex w-[300px] min-h-0 flex-col gap-2">
+            <aside className="flex w-full xl:w-[300px] min-h-0 flex-col gap-2">
               <div className="min-h-0 flex-1">
                 <OrderEntryPanel showBalances={false} className="h-full" />
               </div>

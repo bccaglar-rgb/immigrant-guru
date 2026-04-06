@@ -657,7 +657,7 @@ export default function PortfolioPage() {
           </div>
 
           {/* ── Spot vs Futures Side by Side ── */}
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
             {/* Spot Balances */}
             <div className="rounded-2xl border border-white/10 bg-[#121316] overflow-hidden">
               <div className="border-b border-white/10 px-4 py-2.5 flex items-center justify-between">

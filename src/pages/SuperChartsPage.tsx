@@ -6,6 +6,7 @@ import { useTradeIdeasStream } from "../hooks/useTradeIdeasStream";
 import { useAdminConfig } from "../hooks/useAdminConfig";
 import { useExchangeTerminalStore } from "../hooks/useExchangeTerminalStore";
 import { useIndicatorsStore } from "../hooks/useIndicatorsStore";
+import { useAuthStore } from "../hooks/useAuthStore";
 import { FallbackApiAdapter, type FallbackLivePayload } from "../data/FallbackApiAdapter";
 import { ChartMetricsPanel } from "../components/ChartMetricsPanel";
 import { MiniChartEnhanced } from "../components/supercharts/MiniChartEnhanced";
@@ -344,12 +345,17 @@ const CoinChartRow = ({
 
 /* ── Page ── */
 
+const CHART_LIMITS: Record<string, number> = { explorer: 5, trader: 10, strategist: 20, titan: 50 };
+
 export default function SuperChartsPage() {
   const navigate = useNavigate();
   const { config } = useAdminConfig();
   const { messages } = useTradeIdeasStream(config.tradeIdeas.minConfidence, "Bitrium Labs");
   const setSelectedSymbol = useExchangeTerminalStore((state) => state.setSelectedSymbol);
   const setActiveSignal = useExchangeTerminalStore((state) => state.setActiveSignal);
+  const authUser = useAuthStore((s) => s.user);
+  const maxCharts = CHART_LIMITS[authUser?.activePlanTier ?? "explorer"] ?? 5;
+  const [chartLimitMsg, setChartLimitMsg] = useState("");
 
   /* Shared indicators state */
   const {
@@ -394,15 +400,22 @@ export default function SuperChartsPage() {
 
   const activeGroup = useMemo(() => groups.find((g) => g.id === activeGroupId) ?? groups[0], [groups, activeGroupId]);
 
-  /* Base rows from active group */
+  /* Base rows from active group (capped by plan tier) */
   const baseRows = useMemo(() => {
     const list = activeGroup.coins;
-    if (list.length >= 10) return list.slice(0, 10);
+    const cap = maxCharts;
+    if (list.length >= cap) return list.slice(0, cap);
     const filler = DEFAULT_GROUPS[0].coins.filter((s) => !list.includes(s));
-    return [...list, ...filler].slice(0, 10);
-  }, [activeGroup]);
+    return [...list, ...filler].slice(0, cap);
+  }, [activeGroup, maxCharts]);
 
   const addGroup = () => {
+    const totalCoins = groups.reduce((sum, g) => sum + g.coins.length, 0);
+    if (totalCoins >= maxCharts) {
+      setChartLimitMsg("Chart limit reached. Upgrade your plan for more charts.");
+      setTimeout(() => setChartLimitMsg(""), 4000);
+      return;
+    }
     const id = `custom-${Date.now()}`;
     const newGroup: ChartGroup = { id, label: "New Group", coins: ["BTC/USDT", "ETH/USDT", "SOL/USDT"] };
     setGroups((prev) => [...prev, newGroup]);
@@ -545,6 +558,12 @@ export default function SuperChartsPage() {
             </button>
           </div>
         </header>
+
+        {chartLimitMsg && (
+          <div className="rounded-lg border border-[#7a6840] bg-[#2a2418] px-4 py-2.5 text-sm text-[#e7d9b3]">
+            {chartLimitMsg}
+          </div>
+        )}
 
         <section className="space-y-2">
           {effectiveRows.map((row) => (
