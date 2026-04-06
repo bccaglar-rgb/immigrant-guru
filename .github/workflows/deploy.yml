@@ -103,8 +103,14 @@ jobs:
             pm2 start ecosystem.config.cjs --only market-hub
             sleep 5
             pm2 list
-            echo "=== Market-hub logs ==="
-            pm2 logs market-hub --lines 5 --nostream 2>/dev/null || true
+            echo "=== Market-hub status ==="
+            pm2 show market-hub 2>/dev/null | head -20 || true
+            echo "=== Market-hub OUT logs ==="
+            pm2 logs market-hub --lines 20 --nostream 2>/dev/null || true
+            echo "=== Market-hub ERROR logs ==="
+            cat /root/.pm2/logs/market-hub-error.log 2>/dev/null | tail -30 || true
+            echo "=== Market-hub restart count ==="
+            pm2 jlist 2>/dev/null | python3 -c "import sys,json; [print(f'{p[\"name\"]}: status={p[\"pm2_env\"][\"status\"]}, restarts={p[\"pm2_env\"][\"restart_time\"]}') for p in json.load(sys.stdin) if p['name']=='market-hub']" 2>/dev/null || true
 
             pm2 save
 
