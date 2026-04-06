@@ -656,6 +656,75 @@ export default function PortfolioPage() {
             </div>
           </div>
 
+          {/* ── Spot vs Futures Side by Side ── */}
+          <div className="grid grid-cols-2 gap-3">
+            {/* Spot Balances */}
+            <div className="rounded-2xl border border-white/10 bg-[#121316] overflow-hidden">
+              <div className="border-b border-white/10 px-4 py-2.5 flex items-center justify-between">
+                <h2 className="text-sm font-semibold text-white">Spot Balances</h2>
+                <span className="text-[10px] text-[#6B6F76] font-mono">{fmtFull(accounts.reduce((s, a) => s + (a.spotBalances ?? []).reduce((ss, b) => ss + estimateUsdValue(b.asset, b.total), 0), 0))}</span>
+              </div>
+              <div className="overflow-y-auto max-h-64">
+                <table className="w-full text-sm">
+                  <thead className="sticky top-0 bg-[#0F1012]">
+                    <tr className="border-b border-white/10 text-[9px] uppercase tracking-wide text-[#6B6F76]">
+                      <th className="px-3 py-2 text-left">Asset</th>
+                      <th className="px-3 py-2 text-left">Exchange</th>
+                      <th className="px-3 py-2 text-right">Amount</th>
+                      <th className="px-3 py-2 text-right">Value</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {accounts.flatMap((a) => (a.spotBalances ?? []).filter((b) => b.total > 0).map((b) => ({ ...b, exchange: a.exchangeDisplayName, account: a.accountName }))).sort((a, b) => estimateUsdValue(b.asset, b.total) - estimateUsdValue(a.asset, a.total)).map((b, i) => (
+                      <tr key={`spot-${i}`} className="border-b border-white/5 hover:bg-[#17191d]">
+                        <td className="px-3 py-2 font-medium text-white">{b.asset}</td>
+                        <td className="px-3 py-2 text-[#6B6F76] text-[11px]">{b.exchange} · {b.account}</td>
+                        <td className="px-3 py-2 text-right font-mono text-[11px]">{b.total.toLocaleString(undefined, { maximumFractionDigits: 4 })}</td>
+                        <td className="px-3 py-2 text-right font-mono text-[11px]">{fmtFull(estimateUsdValue(b.asset, b.total))}</td>
+                      </tr>
+                    ))}
+                    {accounts.every((a) => !(a.spotBalances ?? []).some((b) => b.total > 0)) && (
+                      <tr><td colSpan={4} className="px-3 py-6 text-center text-[#6B6F76] text-xs">No spot balances</td></tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* Futures Balances */}
+            <div className="rounded-2xl border border-white/10 bg-[#121316] overflow-hidden">
+              <div className="border-b border-white/10 px-4 py-2.5 flex items-center justify-between">
+                <h2 className="text-sm font-semibold text-white">Futures Balances</h2>
+                <span className="text-[10px] text-[#6B6F76] font-mono">{fmtFull(accounts.reduce((s, a) => s + a.balances.reduce((ss, b) => ss + estimateUsdValue(b.asset, b.total), 0), 0))}</span>
+              </div>
+              <div className="overflow-y-auto max-h-64">
+                <table className="w-full text-sm">
+                  <thead className="sticky top-0 bg-[#0F1012]">
+                    <tr className="border-b border-white/10 text-[9px] uppercase tracking-wide text-[#6B6F76]">
+                      <th className="px-3 py-2 text-left">Asset</th>
+                      <th className="px-3 py-2 text-left">Exchange</th>
+                      <th className="px-3 py-2 text-right">Amount</th>
+                      <th className="px-3 py-2 text-right">Value</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {accounts.flatMap((a) => a.balances.filter((b) => b.total > 0).map((b) => ({ ...b, exchange: a.exchangeDisplayName, account: a.accountName }))).sort((a, b) => estimateUsdValue(b.asset, b.total) - estimateUsdValue(a.asset, a.total)).map((b, i) => (
+                      <tr key={`fut-${i}`} className="border-b border-white/5 hover:bg-[#17191d]">
+                        <td className="px-3 py-2 font-medium text-white">{b.asset}</td>
+                        <td className="px-3 py-2 text-[#6B6F76] text-[11px]">{b.exchange} · {b.account}</td>
+                        <td className="px-3 py-2 text-right font-mono text-[11px]">{b.total.toLocaleString(undefined, { maximumFractionDigits: 4 })}</td>
+                        <td className="px-3 py-2 text-right font-mono text-[11px]">{fmtFull(estimateUsdValue(b.asset, b.total))}</td>
+                      </tr>
+                    ))}
+                    {accounts.every((a) => !a.balances.some((b) => b.total > 0)) && (
+                      <tr><td colSpan={4} className="px-3 py-6 text-center text-[#6B6F76] text-xs">No futures balances</td></tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
           {/* ── H. Activity Feed ── */}
           <div className="rounded-2xl border border-white/10 bg-[#121316] p-4">
             <h2 className="mb-3 text-sm font-semibold text-white">Recent Activity</h2>
