@@ -1222,6 +1222,10 @@ export class BinanceFuturesMarketAdapter implements IExchangeMarketAdapter {
       if (!this.pendingSnapshotSymbols.has(symbol)) {
         this.enqueueSnapshot(symbol);
       }
+      // ── Incremental depth cache: emit partial book from buffered deltas ──
+      // Even without REST snapshot, build a partial book from WS deltas
+      // so depth cache is never empty
+      this.emitIncrementalDepth(symbol, bids, asks, ts);
       return;
     }
 
@@ -1246,6 +1250,54 @@ export class BinanceFuturesMarketAdapter implements IExchangeMarketAdapter {
       // ── Emit periodic book_snapshot from live orderbook for depth cache ──
       this.emitThrottledBookSnapshot(symbol, ts);
     }
+  }
+
+  // ── Incremental depth: build partial book from WS deltas even without REST snapshot ──
+  private incrementalBooks = new Map<string, Map<number, number>>(); // symbol → bids map
+  private incrementalAsks = new Map<string, Map<number, number>>(); // symbol → asks map
+  private incrementalLastEmit = new Map<string, number>();
+
+  private emitIncrementalDepth(symbol: string, bids: Array<[number, number]>, asks: Array<[number, number]>, ts: number): void {
+    const now = Date.now();
+    const last = this.incrementalLastEmit.get(symbol) ?? 0;
+    if (now - last < 3000) return; // throttle: max 1 per 3s
+
+    // Initialize maps if needed
+    if (!this.incrementalBooks.has(symbol)) this.incrementalBooks.set(symbol, new Map());
+    if (!this.incrementalAsks.has(symbol)) this.incrementalAsks.set(symbol, new Map());
+
+    const bidsMap = this.incrementalBooks.get(symbol)!;
+    const asksMap = this.incrementalAsks.get(symbol)!;
+
+    // Apply delta to incremental book
+    for (const [p, q] of bids) {
+      if (q <= 0) bidsMap.delete(p);
+      else bidsMap.set(p, q);
+    }
+    for (const [p, q] of asks) {
+      if (q <= 0) asksMap.delete(p);
+      else asksMap.set(p, q);
+    }
+
+    // Need at least 3 levels each side to emit
+    if (bidsMap.size < 3 || asksMap.size < 3) return;
+
+    this.incrementalLastEmit.set(symbol, now);
+
+    // Sort and take top 20
+    const sortedBids = Array.from(bidsMap.entries()).sort((a, b) => b[0] - a[0]).slice(0, 20);
+    const sortedAsks = Array.from(asksMap.entries()).sort((a, b) => a[0] - b[0]).slice(0, 20);
+
+    this.emit({
+      type: "book_snapshot",
+      exchange: this.exchange,
+      symbol,
+      ts,
+      recvTs: now,
+      seq: 0,
+      bids: sortedBids,
+      asks: sortedAsks,
+    } as any);
   }
 
   private bookSnapshotLastEmit = new Map<string, number>();
