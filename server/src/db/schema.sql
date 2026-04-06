@@ -61,6 +61,7 @@ CREATE TABLE IF NOT EXISTS invoices (
 );
 CREATE INDEX IF NOT EXISTS idx_invoices_user   ON invoices (user_id);
 CREATE INDEX IF NOT EXISTS idx_invoices_status ON invoices (status);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_invoices_deposit_address ON invoices (deposit_address);
 
 CREATE TABLE IF NOT EXISTS payment_events (
   id               TEXT PRIMARY KEY,
@@ -336,3 +337,28 @@ CREATE TABLE IF NOT EXISTS scan_counts (
   counts JSONB NOT NULL DEFAULT '{}'
 );
 CREATE INDEX IF NOT EXISTS idx_scan_counts_ts ON scan_counts (ts);
+
+-- ── Payment Webhook Events (idempotency tracking) ──────────
+
+CREATE TABLE IF NOT EXISTS payment_webhook_events (
+  id           SERIAL PRIMARY KEY,
+  event_id     TEXT NOT NULL UNIQUE,
+  event_type   TEXT NOT NULL,
+  payload      JSONB NOT NULL DEFAULT '{}',
+  processed_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS idx_webhook_events_event_id ON payment_webhook_events (event_id);
+
+-- ── Payment Admin Actions (audit trail) ─────────────────────
+
+CREATE TABLE IF NOT EXISTS payment_admin_actions (
+  id             TEXT PRIMARY KEY,
+  admin_user_id  TEXT NOT NULL,
+  action         TEXT NOT NULL,
+  invoice_id     TEXT,
+  old_status     TEXT,
+  new_status     TEXT,
+  reason         TEXT,
+  metadata       JSONB,
+  created_at     TIMESTAMPTZ NOT NULL DEFAULT now()
+);

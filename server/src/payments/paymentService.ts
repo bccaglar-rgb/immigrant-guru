@@ -2,6 +2,8 @@ import { createHash, randomBytes } from "node:crypto";
 import { deriveInvoiceAddress } from "./addressDeriver.ts";
 import { PAYMENT_CONFIG } from "./config.ts";
 import { PaymentStore } from "./storage.ts";
+import { pool as dbPool } from "../db/pool.ts";
+import { redisControl } from "../db/redis.ts";
 import type { AddressPoolService } from "./addressPoolService.ts";
 import type {
   InvoiceRecord,
@@ -12,6 +14,12 @@ import type {
   TronTransferEvent,
   UserRecord,
 } from "./types.ts";
+
+/** Minimum absolute tolerance floor in USDT — prevents abuse on small invoices */
+const MIN_TOLERANCE_USDT = 0.50;
+
+/** Redis distributed lock TTL in seconds */
+const PAYMENT_LOCK_TTL_SEC = 30;
 
 const nowIso = () => new Date().toISOString();
 const makeId = (prefix: string) => `${prefix}_${randomBytes(8).toString("hex")}`;
@@ -121,6 +129,7 @@ export class PaymentService {
       updatedAt: new Date(now).toISOString(),
     };
     await this.store.setInvoice(invoice);
+    console.log(`[Payment] stage=invoice_created invoice=${id} user=${user.id} plan=${planId} amount=${expectedAmount} address=${depositAddress} expires=${invoice.expiresAt}`);
     return invoice;
   }
 
@@ -176,10 +185,39 @@ export class PaymentService {
     const globalEventKey = `${transfer.txHash}:${transfer.logIndex ?? 0}`;
     if (await this.store.hasProcessedEventKey(globalEventKey)) return { applied: false, reason: "already_processed" };
 
-    if (transfer.contractAddress !== PAYMENT_CONFIG.usdtContractAddress) return { applied: false, reason: "invalid_contract" };
-    if (transfer.to !== invoice.depositAddress) return { applied: false, reason: "recipient_mismatch" };
-    if (!transfer.success) return { applied: false, reason: "tx_failed" };
-    if (transfer.confirmations < PAYMENT_CONFIG.confirmationsRequired) return { applied: false, reason: "insufficient_confirmations" };
+    // Distributed lock to prevent dual-worker race condition on same invoice
+    const lockKey = `payment_lock:${invoice.id}:${globalEventKey}`;
+    let lockAcquired = false;
+    try {
+      const result = await redisControl.set(lockKey, "1", "EX", PAYMENT_LOCK_TTL_SEC, "NX");
+      lockAcquired = result === "OK";
+    } catch {
+      // Redis unavailable — fall through with DB-level dedup as safety net
+      console.warn(`[Payment] Redis lock unavailable for ${lockKey}, relying on DB dedup`);
+      lockAcquired = true;
+    }
+    if (!lockAcquired) {
+      console.log(`[Payment] Lock contention on ${lockKey}, skipping (another worker processing)`);
+      return { applied: false, reason: "lock_contention" };
+    }
+
+    if (transfer.contractAddress !== PAYMENT_CONFIG.usdtContractAddress) {
+      console.log(`[Payment] stage=validation_failed invoice=${invoice.id} reason=invalid_contract expected=${PAYMENT_CONFIG.usdtContractAddress} got=${transfer.contractAddress}`);
+      return { applied: false, reason: "invalid_contract" };
+    }
+    if (transfer.to !== invoice.depositAddress) {
+      console.log(`[Payment] stage=validation_failed invoice=${invoice.id} reason=recipient_mismatch expected=${invoice.depositAddress} got=${transfer.to}`);
+      return { applied: false, reason: "recipient_mismatch" };
+    }
+    if (!transfer.success) {
+      console.log(`[Payment] stage=validation_failed invoice=${invoice.id} reason=tx_failed tx=${transfer.txHash}`);
+      return { applied: false, reason: "tx_failed" };
+    }
+    if (transfer.confirmations < PAYMENT_CONFIG.confirmationsRequired) {
+      console.log(`[Payment] stage=validation_failed invoice=${invoice.id} reason=insufficient_confirmations got=${transfer.confirmations} required=${PAYMENT_CONFIG.confirmationsRequired}`);
+      return { applied: false, reason: "insufficient_confirmations" };
+    }
+    console.log(`[Payment] stage=payment_detected invoice=${invoice.id} tx=${transfer.txHash} amount=${transfer.amount} confirmations=${transfer.confirmations}`);
 
     const now = nowIso();
 
@@ -216,8 +254,10 @@ export class PaymentService {
     invoice.paidAmountUsdt = Number((invoice.paidAmountUsdt + transfer.amount).toFixed(6));
     invoice.updatedAt = now;
 
-    // 1% tolerance for rounding (e.g. 79.01 vs 79.00)
-    const tolerance = invoice.expectedAmountUsdt * 0.01;
+    // 1% tolerance for rounding (e.g. 79.01 vs 79.00), with absolute minimum floor
+    // to prevent abuse on small invoices (e.g. paying $0.50 for a $50 plan)
+    const percentTolerance = invoice.expectedAmountUsdt * 0.01;
+    const tolerance = Math.min(percentTolerance, MIN_TOLERANCE_USDT);
     if (invoice.paidAmountUsdt >= invoice.expectedAmountUsdt - tolerance) {
       invoice.status = "paid";
       invoice.paidAt = now;
@@ -242,9 +282,11 @@ export class PaymentService {
     for (const invoice of invoices) {
       if (["paid", "expired", "failed", "manual_review"].includes(invoice.status)) continue;
       if (Date.parse(invoice.expiresAt) <= now) {
-        invoice.status = invoice.paidAmountUsdt > 0 ? "manual_review" : "expired";
+        const newStatus = invoice.paidAmountUsdt > 0 ? "manual_review" : "expired";
+        invoice.status = newStatus;
         invoice.updatedAt = nowIso();
         await this.store.setInvoice(invoice);
+        console.log(`[Payment] stage=invoice_expired invoice=${invoice.id} newStatus=${newStatus} partialPaid=${invoice.paidAmountUsdt}`);
         // Mark address as expired_unused — do NOT release back to pool
         // Reusing expired addresses risks mismatching late payments to new invoices
         if (this.addressPool) {
@@ -260,6 +302,9 @@ export class PaymentService {
     if (invoice.status === "paid") throw new Error("invoice_already_paid");
     const now = nowIso();
 
+    // Capture old status BEFORE mutation for audit trail
+    const oldStatus = invoice.status;
+
     // Use invoice expected amount if admin didn't specify
     const finalAmount = amountUsdt > 0 ? amountUsdt : invoice.expectedAmountUsdt;
     invoice.status = "paid";
@@ -268,15 +313,14 @@ export class PaymentService {
     invoice.paidAt = now;
     invoice.updatedAt = now;
     await this.handleInvoicePaid(invoice, txHash, finalAmount, now);
-    console.log(`[Payment] MANUAL CONFIRM: invoice=${invoiceId} by admin=${adminUserId ?? "unknown"} reason=${reason} amount=${finalAmount} tx=${txHash}`);
+    console.log(`[Payment] stage=manual_confirm invoice=${invoiceId} admin=${adminUserId ?? "unknown"} reason=${reason} amount=${finalAmount} oldStatus=${oldStatus} tx=${txHash}`);
 
     // Audit trail
     try {
-      const { pool: dbPool } = await import("../db/pool.ts");
       await dbPool.query(
         `INSERT INTO payment_admin_actions (id, admin_user_id, action, invoice_id, old_status, new_status, reason, metadata, created_at)
          VALUES ($1, $2, 'manual_confirm', $3, $4, 'paid', $5, $6, NOW())`,
-        [makeId("audit"), adminUserId ?? "unknown", invoiceId, invoice.status, reason,
+        [makeId("audit"), adminUserId ?? "unknown", invoiceId, oldStatus, reason,
          JSON.stringify({ txHash, amount: finalAmount })],
       );
     } catch { /* audit write should not break main flow */ }
@@ -349,10 +393,38 @@ export class PaymentService {
       updatedAt: nowIso(),
     };
 
-    await this.store.setSubscription(sub);
-    console.log(`[Payment] Subscription ${sub.id} activated: ${plan.name} for user ${invoice.userId} (${startAt} → ${endAt})`);
+    // Wrap invoice status + subscription creation in a DB transaction
+    // to prevent "paid invoice but no subscription" inconsistency
+    const client = await dbPool.connect();
+    try {
+      await client.query("BEGIN");
+      // Update invoice status to paid within the transaction
+      await client.query(
+        `UPDATE invoices SET status = $1, paid_amount_usdt = $2, paid_at = $3, payment_tx_hash = $4, updated_at = $5 WHERE id = $6`,
+        [invoice.status, invoice.paidAmountUsdt, invoice.paidAt ?? null, invoice.paymentTxHash ?? null, invoice.updatedAt, invoice.id],
+      );
+      // Insert subscription within the same transaction
+      await client.query(
+        `INSERT INTO subscriptions (id, user_id, plan_id, start_at, end_at, status, payment_tx_hash, paid_amount_usdt, paid_at, plan_snapshot, created_at, updated_at)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
+         ON CONFLICT (id) DO UPDATE SET end_at = EXCLUDED.end_at, status = EXCLUDED.status, updated_at = EXCLUDED.updated_at`,
+        [sub.id, sub.userId, sub.planId, sub.startAt, sub.endAt, sub.status, sub.paymentTxHash, sub.paidAmountUsdt, sub.paidAt, JSON.stringify(sub.planSnapshot), sub.createdAt, sub.updatedAt],
+      );
+      await client.query("COMMIT");
+      console.log(`[Payment] stage=subscription_activated invoice=${invoice.id} sub=${sub.id} plan=${plan.name} user=${invoice.userId} start=${startAt} end=${endAt} tx=${txHash}`);
+    } catch (err) {
+      await client.query("ROLLBACK");
+      console.error(`[Payment] stage=subscription_activation_failed invoice=${invoice.id} user=${invoice.userId} tx=${txHash} error=${(err as Error)?.message}`);
+      // Revert invoice status so it can be retried
+      invoice.status = "manual_review";
+      invoice.updatedAt = nowIso();
+      await this.store.setInvoice(invoice);
+      throw err;
+    } finally {
+      client.release();
+    }
 
-    // Mark deposit address as paid in pool
+    // Mark deposit address as paid in pool (outside transaction — best effort)
     if (this.addressPool) {
       await this.addressPool.markPaid(invoice.depositAddress).catch(() => {});
     }
@@ -360,14 +432,19 @@ export class PaymentService {
 
   private async markTokenCreatorOrderPaid(orderId: string, txHash: string) {
     const order = await this.store.getTokenCreatorOrder(orderId);
-    if (!order) return;
+    if (!order) {
+      console.warn(`[Payment] stage=token_order_not_found orderId=${orderId} tx=${txHash}`);
+      return;
+    }
     order.status = "paid";
     order.paymentTxHash = txHash;
     order.updatedAt = nowIso();
     await this.store.setTokenCreatorOrder(order);
+    console.log(`[Payment] stage=token_order_paid orderId=${orderId} tx=${txHash}`);
   }
 
   private async handleInvoicePaid(invoice: InvoiceRecord, txHash: string, paidAmountUsdt: number, paidAt: string) {
+    console.log(`[Payment] stage=invoice_paid invoice=${invoice.id} type=${invoice.invoiceType} amount=${paidAmountUsdt} tx=${txHash}`);
     if (invoice.invoiceType === "TOKEN_CREATOR" && invoice.externalRef) {
       await this.markTokenCreatorOrderPaid(invoice.externalRef, txHash);
       return;

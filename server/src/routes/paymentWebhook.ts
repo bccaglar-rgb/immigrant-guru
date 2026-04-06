@@ -31,6 +31,10 @@ export function registerPaymentWebhookRoutes(app: Express) {
     }
 
     const event = req.body;
+    if (!event || typeof event !== "object") {
+      return res.status(400).json({ ok: false, error: "invalid_payload" });
+    }
+
     const eventId = String(event.eventId ?? "");
     const eventType = String(event.eventType ?? "");
 
@@ -38,12 +42,15 @@ export function registerPaymentWebhookRoutes(app: Express) {
       return res.status(400).json({ ok: false, error: "missing_event_fields" });
     }
 
+    console.log(`[PaymentWebhook] stage=event_received eventId=${eventId} eventType=${eventType}`);
+
     // Idempotency check
     try {
       const { rows: existingEvt } = await pool.query(
         `SELECT id FROM payment_webhook_events WHERE event_id = $1`, [eventId],
       );
       if (existingEvt.length > 0) {
+        console.log(`[PaymentWebhook] stage=already_processed eventId=${eventId}`);
         return res.json({ ok: true, processed: false, reason: "already_processed" });
       }
     } catch {
@@ -57,8 +64,15 @@ export function registerPaymentWebhookRoutes(app: Express) {
         const amount = Number(event.amount ?? 0);
         const txHash = String(event.txHash ?? "");
 
-        if (!userId || !planId) {
-          return res.status(400).json({ ok: false, error: "missing_user_or_plan" });
+        // Validate all required fields for paid_confirmed events
+        const missingFields: string[] = [];
+        if (!userId) missingFields.push("userId");
+        if (!planId) missingFields.push("planId");
+        if (!txHash) missingFields.push("txHash");
+        if (!amount || amount <= 0) missingFields.push("amount");
+        if (missingFields.length > 0) {
+          console.error(`[PaymentWebhook] stage=validation_failed eventId=${eventId} missing=[${missingFields.join(",")}]`);
+          return res.status(400).json({ ok: false, error: "missing_required_fields", fields: missingFields });
         }
 
         // Get plan info
@@ -116,9 +130,10 @@ export function registerPaymentWebhookRoutes(app: Express) {
         // Best effort — table might not exist
       }
 
+      console.log(`[PaymentWebhook] stage=event_processed eventId=${eventId} eventType=${eventType}`);
       return res.json({ ok: true, processed: true });
     } catch (err: any) {
-      console.error(`[PaymentWebhook] Error processing ${eventType}:`, err?.message);
+      console.error(`[PaymentWebhook] stage=processing_failed eventId=${eventId} eventType=${eventType} error=${err?.message}`);
       return res.status(500).json({ ok: false, error: err?.message ?? "webhook_processing_failed" });
     }
   });
