@@ -169,10 +169,21 @@ export class PaymentStore {
   async bootstrap(): Promise<void> {
     const now = nowIso();
     const defaults: PlanRecord[] = [
-      { id: "plan-1m",  name: "1 Aylık",  priceUsdt: 89,  durationDays: 30,  features: ["Bitrium Quant Engine","Unlimited Trade Ideas","Exchanges","Super Charts"], enabled: true, createdAt: now, updatedAt: now },
-      { id: "plan-3m",  name: "3 Aylık",  priceUsdt: 207, durationDays: 90,  features: ["Bitrium Quant Engine","Unlimited Trade Ideas","Exchanges","Super Charts"], enabled: true, createdAt: now, updatedAt: now },
-      { id: "plan-6m",  name: "6 Aylık",  priceUsdt: 354, durationDays: 180, features: ["Bitrium Quant Engine","Unlimited Trade Ideas","Exchanges","Super Charts"], enabled: true, createdAt: now, updatedAt: now },
-      { id: "plan-12m", name: "Yıllık",   priceUsdt: 588, durationDays: 365, features: ["Bitrium Quant Engine","Unlimited Trade Ideas","Exchanges","Super Charts"], enabled: true, createdAt: now, updatedAt: now },
+      // Explorer tier
+      { id: "explorer-1m",  name: "Explorer · 1 Month",  priceUsdt: 10,  durationDays: 30,  features: ["Bitrium Quant Engine","Coin Universe","Crypto Market","Coin Insight"], enabled: true, createdAt: now, updatedAt: now },
+      { id: "explorer-3m",  name: "Explorer · 3 Months", priceUsdt: 27,  durationDays: 90,  features: ["Bitrium Quant Engine","Coin Universe","Crypto Market","Coin Insight"], enabled: true, createdAt: now, updatedAt: now },
+      { id: "explorer-6m",  name: "Explorer · 6 Months", priceUsdt: 48,  durationDays: 180, features: ["Bitrium Quant Engine","Coin Universe","Crypto Market","Coin Insight"], enabled: true, createdAt: now, updatedAt: now },
+      { id: "explorer-12m", name: "Explorer · 1 Year",   priceUsdt: 84,  durationDays: 365, features: ["Bitrium Quant Engine","Coin Universe","Crypto Market","Coin Insight"], enabled: true, createdAt: now, updatedAt: now },
+      // Trader tier
+      { id: "trader-1m",  name: "Trader · 1 Month",  priceUsdt: 20,  durationDays: 30,  features: ["All Explorer features","Exchanges","Super Charts","Trade Ideas","Bots (Trader tier)","Indicators","Portfolio"], enabled: true, createdAt: now, updatedAt: now },
+      { id: "trader-3m",  name: "Trader · 3 Months", priceUsdt: 54,  durationDays: 90,  features: ["All Explorer features","Exchanges","Super Charts","Trade Ideas","Bots (Trader tier)","Indicators","Portfolio"], enabled: true, createdAt: now, updatedAt: now },
+      { id: "trader-6m",  name: "Trader · 6 Months", priceUsdt: 96,  durationDays: 180, features: ["All Explorer features","Exchanges","Super Charts","Trade Ideas","Bots (Trader tier)","Indicators","Portfolio"], enabled: true, createdAt: now, updatedAt: now },
+      { id: "trader-12m", name: "Trader · 1 Year",   priceUsdt: 168, durationDays: 365, features: ["All Explorer features","Exchanges","Super Charts","Trade Ideas","Bots (Trader tier)","Indicators","Portfolio"], enabled: true, createdAt: now, updatedAt: now },
+      // Titan tier
+      { id: "titan-1m",  name: "Titan · 1 Month",  priceUsdt: 30,  durationDays: 30,  features: ["All Trader features","All 30 Bots","Spot Arbitrage","Futures Hedge","Spread Terminal","Institutional","Master Terminal","Alpha War Room"], enabled: true, createdAt: now, updatedAt: now },
+      { id: "titan-3m",  name: "Titan · 3 Months", priceUsdt: 81,  durationDays: 90,  features: ["All Trader features","All 30 Bots","Spot Arbitrage","Futures Hedge","Spread Terminal","Institutional","Master Terminal","Alpha War Room"], enabled: true, createdAt: now, updatedAt: now },
+      { id: "titan-6m",  name: "Titan · 6 Months", priceUsdt: 144, durationDays: 180, features: ["All Trader features","All 30 Bots","Spot Arbitrage","Futures Hedge","Spread Terminal","Institutional","Master Terminal","Alpha War Room"], enabled: true, createdAt: now, updatedAt: now },
+      { id: "titan-12m", name: "Titan · 1 Year",   priceUsdt: 252, durationDays: 365, features: ["All Trader features","All 30 Bots","Spot Arbitrage","Futures Hedge","Spread Terminal","Institutional","Master Terminal","Alpha War Room"], enabled: true, createdAt: now, updatedAt: now },
     ];
     for (const p of defaults) {
       await pool.query(

@@ -53,8 +53,8 @@ export class TreasuryWorker {
       const keepMinimum = threshold * 0.1;
       const transferAmount = Math.floor((hotBalance - keepMinimum) * 100) / 100;
 
-      if (transferAmount < 10) {
-        return; // Don't transfer less than 10 USDT
+      if (transferAmount < 1) {
+        return; // Don't transfer less than 1 USDT (gas fee not worth it)
       }
 
       console.log(`[TreasuryWorker] Hot wallet: ${hotBalance} USDT (threshold: ${threshold}), transferring ${transferAmount} USDT to cold`);

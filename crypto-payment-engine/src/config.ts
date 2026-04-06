@@ -32,7 +32,7 @@ export const ENGINE_CONFIG = {
   // Wallet
   masterHotWallet: process.env.MASTER_HOT_WALLET ?? "",
   coldWallet: process.env.COLD_WALLET ?? "",
-  hotWalletThresholdUsdt: Number(process.env.HOT_WALLET_THRESHOLD_USDT ?? 10000),
+  hotWalletThresholdUsdt: Number(process.env.HOT_WALLET_THRESHOLD_USDT ?? 9),
 
   // Security — HMAC shared secret for internal API auth
   internalApiSecret: process.env.INTERNAL_API_SECRET ?? "dev-internal-secret",
