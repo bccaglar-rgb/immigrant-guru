@@ -1,5 +1,16 @@
 import { useState } from "react";
 
+/* ── Variation helper ── */
+const vary = (base: number, range: number = 0.1) => {
+  const factor = 1 + (Math.random() - 0.5) * 2 * range;
+  return +(base * factor).toFixed(2);
+};
+
+/* ── AI badge label ── */
+const AILabel = () => (
+  <span className="text-[7px] text-[#6B6F76] uppercase tracking-[0.1em] font-medium ml-auto">AI Analysis</span>
+);
+
 /* ══════════════════════════════════════════════════════════════
    Shared primitives
    ══════════════════════════════════════════════════════════════ */
@@ -33,6 +44,7 @@ const SectionHeader = ({ icon, title }: { icon: string; title: string }) => (
   <div className="flex items-center gap-1.5 mb-1">
     <span className="text-[10px]">{icon}</span>
     <span className="text-[9px] font-bold uppercase tracking-widest text-[var(--textMuted)]">{title}</span>
+    <AILabel />
   </div>
 );
 
@@ -90,18 +102,23 @@ const StripChip = ({ label, value, variant }: { label: string; value: string; va
   );
 };
 
-export const CompactStrip = () => (
-  <div className="flex items-center gap-1.5 flex-wrap rounded-lg border border-white/[0.06] bg-white/[0.02] px-2 py-1.5" style={{ maxHeight: "50px" }}>
-    <StripChip label="Regime" value="TRENDING" variant="green" />
-    <StripChip label="Risk" value="ON" variant="green" />
-    <StripChip label="Vol" value="MEDIUM" variant="yellow" />
-    <StripChip label="Bias" value="BULLISH" variant="green" />
-    <StripChip label="AI" value="8.2\u2191" variant="green" />
-    <StripChip label="Mode" value="AGGRESSIVE" variant="green" />
-    <StripChip label="Conf" value="HIGH" variant="green" />
-    <StripChip label="Quality" value="8.2" variant="blue" />
-  </div>
-);
+export const CompactStrip = () => {
+  const aiScore = vary(8.2, 0.06).toFixed(1);
+  const quality = vary(8.2, 0.06).toFixed(1);
+  return (
+    <div className="flex items-center gap-1.5 flex-wrap rounded-lg border border-white/[0.06] bg-white/[0.02] px-2 py-1.5" style={{ maxHeight: "50px" }}>
+      <StripChip label="Regime" value="TRENDING" variant="green" />
+      <StripChip label="Risk" value="ON" variant="green" />
+      <StripChip label="Vol" value="MEDIUM" variant="yellow" />
+      <StripChip label="Bias" value="BULLISH" variant="green" />
+      <StripChip label="AI" value={`${aiScore}\u2191`} variant="green" />
+      <StripChip label="Mode" value="AGGRESSIVE" variant="green" />
+      <StripChip label="Conf" value="HIGH" variant="green" />
+      <StripChip label="Quality" value={quality} variant="blue" />
+      <AILabel />
+    </div>
+  );
+};
 
 /* keep old exports alive so nothing breaks at import level — but they are no longer used */
 export const MarketModePanel = CompactStrip;
@@ -115,9 +132,9 @@ export const CapitalFlowPanel = () => (
   <PanelCard>
     <SectionHeader icon={"\uD83D\uDCB0"} title="Capital Flow" />
     <div className="space-y-0.5">
-      <StatRow label="BTC Dominance" value="54.2%" color="#F5C542" arrow="down" />
+      <StatRow label="BTC Dominance" value={`${vary(54.2, 0.03).toFixed(1)}%`} color="#F5C542" arrow="down" />
       <StatRow label="Altcoin Flow" value="Increasing" color="#2bc48a" arrow="up" />
-      <StatRow label="Net Inflow" value="+$2.3B" color="#2bc48a" />
+      <StatRow label="Net Inflow" value={`+$${vary(2.3, 0.12).toFixed(1)}B`} color="#2bc48a" />
       <StatRow label="Stablecoin" value="Outflow" color="#F5C542" />
     </div>
   </PanelCard>
@@ -131,13 +148,13 @@ export const InstitutionalFlowPanel = () => (
   <PanelCard>
     <SectionHeader icon={"\uD83C\uDFE6"} title="Institutional" />
     <div className="space-y-0.5">
-      <StatRow label="ETF Inflow" value="+$480M" color="#2bc48a" />
-      <StatRow label="Whale Net" value="+$320M" color="#2bc48a" />
+      <StatRow label="ETF Inflow" value={`+$${Math.round(vary(480, 0.1))}M`} color="#2bc48a" />
+      <StatRow label="Whale Net" value={`+$${Math.round(vary(320, 0.1))}M`} color="#2bc48a" />
       <div className="flex items-center justify-between py-[2px]">
         <span className="text-[9px] text-[var(--textMuted)]">Smart Money</span>
         <Badge text="ACCUMULATING" variant="green" />
       </div>
-      <StatRow label="Grayscale" value="+$120M" color="#2bc48a" />
+      <StatRow label="Grayscale" value={`+$${Math.round(vary(120, 0.1))}M`} color="#2bc48a" />
     </div>
   </PanelCard>
 );
@@ -147,11 +164,11 @@ export const InstitutionalFlowPanel = () => (
    ══════════════════════════════════════════════════════════════ */
 
 const sectors = [
-  { rank: 1, name: "AI Coins", pct: 5.2, bar: 80 },
-  { rank: 2, name: "L1", pct: 3.8, bar: 60 },
-  { rank: 3, name: "Meme", pct: 1.2, bar: 40 },
-  { rank: 4, name: "DeFi", pct: -2.1, bar: 30 },
-  { rank: 5, name: "Gaming", pct: -3.5, bar: 15 },
+  { rank: 1, name: "AI Coins", pct: vary(5.2, 0.12), bar: Math.round(vary(80, 0.05)) },
+  { rank: 2, name: "L1", pct: vary(3.8, 0.12), bar: Math.round(vary(60, 0.06)) },
+  { rank: 3, name: "Meme", pct: vary(1.2, 0.2), bar: Math.round(vary(40, 0.08)) },
+  { rank: 4, name: "DeFi", pct: vary(-2.1, 0.12), bar: Math.round(vary(30, 0.08)) },
+  { rank: 5, name: "Gaming", pct: vary(-3.5, 0.12), bar: Math.round(vary(15, 0.1)) },
 ];
 
 export const SectorDominance = () => (
@@ -247,10 +264,10 @@ export const StrategyMode = () => (
    ══════════════════════════════════════════════════════════════ */
 
 const topAssets = [
-  { rank: 1, symbol: "SOL", note: "Strong trend, pullback entry", confidence: 84 },
-  { rank: 2, symbol: "AVAX", note: "Breakout imminent", confidence: 79 },
-  { rank: 3, symbol: "BTC", note: "Key level test", confidence: 76 },
-  { rank: 4, symbol: "LINK", note: "Momentum building", confidence: 72 },
+  { rank: 1, symbol: "SOL", note: "Strong trend, pullback entry", confidence: Math.round(vary(84, 0.04)) },
+  { rank: 2, symbol: "AVAX", note: "Breakout imminent", confidence: Math.round(vary(79, 0.04)) },
+  { rank: 3, symbol: "BTC", note: "Key level test", confidence: Math.round(vary(76, 0.04)) },
+  { rank: 4, symbol: "LINK", note: "Momentum building", confidence: Math.round(vary(72, 0.04)) },
 ];
 
 export const TopAssets = () => (
@@ -285,12 +302,13 @@ export const TopAssets = () => (
 
 export const MicroSignalBar = () => (
   <div className="flex items-center gap-1.5 flex-wrap rounded-lg border border-white/[0.06] bg-white/[0.02] px-2 py-1">
-    <StripChip label="BOS" value={"\u2191 $84.20"} variant="green" />
+    <StripChip label="BOS" value={`\u2191 $${vary(84.20, 0.02).toFixed(2)}`} variant="green" />
     <StripChip label="Sweep" value={"\u2713"} variant="green" />
-    <StripChip label="OB" value="Active $83.50" variant="blue" />
+    <StripChip label="OB" value={`Active $${vary(83.50, 0.02).toFixed(2)}`} variant="blue" />
     <StripChip label="FVG" value="Open" variant="yellow" />
-    <StripChip label="Delta" value="+62%" variant="green" />
+    <StripChip label="Delta" value={`+${Math.round(vary(62, 0.08))}%`} variant="green" />
     <StripChip label="Mom" value="Strong" variant="green" />
+    <AILabel />
   </div>
 );
 
@@ -302,16 +320,17 @@ export const QuickEntryPanel = () => (
   <div className="flex items-center gap-1.5 rounded-lg border border-white/[0.06] bg-white/[0.02] px-2 py-1">
     <div className="flex items-center gap-1.5 flex-1 flex-wrap">
       <span className="text-[8px] text-[var(--textSubtle)]">Entry:</span>
-      <span className="font-mono text-[9px] font-bold text-[var(--text)]">$84.20</span>
+      <span className="font-mono text-[9px] font-bold text-[var(--text)]">${vary(84.20, 0.02).toFixed(2)}</span>
       <span className="text-[8px] text-[var(--textSubtle)]">|</span>
       <span className="text-[8px] text-[var(--textSubtle)]">SL:</span>
-      <span className="font-mono text-[9px] font-bold text-[#f6465d]">$83.10</span>
+      <span className="font-mono text-[9px] font-bold text-[#f6465d]">${vary(83.10, 0.02).toFixed(2)}</span>
       <span className="text-[8px] text-[var(--textSubtle)]">|</span>
       <span className="text-[8px] text-[var(--textSubtle)]">TP:</span>
-      <span className="font-mono text-[9px] font-bold text-[#2bc48a]">$86.00</span>
+      <span className="font-mono text-[9px] font-bold text-[#2bc48a]">${vary(86.00, 0.02).toFixed(2)}</span>
       <span className="text-[8px] text-[var(--textSubtle)]">|</span>
       <span className="text-[8px] text-[var(--textSubtle)]">RR:</span>
-      <span className="font-mono text-[9px] font-bold text-[#5B8DEF]">2.3</span>
+      <span className="font-mono text-[9px] font-bold text-[#5B8DEF]">{vary(2.3, 0.1).toFixed(1)}</span>
+      <AILabel />
     </div>
     <div className="flex items-center gap-1">
       <button type="button" className="rounded-md bg-[#2bc48a]/20 border border-[#2bc48a]/30 px-2.5 py-0.5 text-[9px] font-bold text-[#2bc48a] hover:bg-[#2bc48a]/30 transition-colors">LONG</button>
@@ -329,12 +348,12 @@ export const DecisionBox = () => (
     <span className="text-[10px]">{"\uD83E\uDDE0"}</span>
     <span className="text-[9px] font-bold text-[#5B8DEF]">WHAT TO DO NOW?</span>
     <span className="text-[8px] text-[var(--textSubtle)]">{"\u2192"}</span>
-    <span className="text-[9px] text-[var(--text)]">Wait for pullback near $84.00</span>
+    <span className="text-[9px] text-[var(--text)]">Wait for pullback near ${vary(84.00, 0.02).toFixed(2)}</span>
     <span className="text-[8px] text-[var(--textSubtle)]">{"\u2192"}</span>
     <span className="text-[9px] text-[#F5C542]">Avoid chasing</span>
     <span className="text-[8px] text-[var(--textSubtle)]">{"\u2192"}</span>
     <span className="text-[8px] text-[var(--textSubtle)]">Edge:</span>
-    <span className="font-mono text-[9px] font-bold text-[#2bc48a]">8.5/10</span>
+    <span className="font-mono text-[9px] font-bold text-[#2bc48a]">{vary(8.5, 0.06).toFixed(1)}/10</span>
   </div>
 );
 
@@ -348,15 +367,15 @@ export const LiveOrderFlowMini = () => (
     <div className="flex items-center justify-between">
       <div className="flex items-center gap-1">
         <span className="text-[8px] text-[var(--textSubtle)]">Buy:</span>
-        <span className="font-mono text-[9px] font-bold text-[#2bc48a]">+$1.2M</span>
+        <span className="font-mono text-[9px] font-bold text-[#2bc48a]">+${vary(1.2, 0.15).toFixed(1)}M</span>
       </div>
       <div className="flex items-center gap-1">
         <span className="text-[8px] text-[var(--textSubtle)]">Sell:</span>
-        <span className="font-mono text-[9px] font-bold text-[#f6465d]">-$800K</span>
+        <span className="font-mono text-[9px] font-bold text-[#f6465d]">-${Math.round(vary(800, 0.12))}K</span>
       </div>
       <div className="flex items-center gap-1">
         <span className="text-[8px] text-[var(--textSubtle)]">Net:</span>
-        <span className="font-mono text-[9px] font-bold text-[#2bc48a]">+$400K</span>
+        <span className="font-mono text-[9px] font-bold text-[#2bc48a]">+${Math.round(vary(400, 0.15))}K</span>
         <span className="h-2 w-2 rounded-full bg-[#2bc48a]" />
       </div>
     </div>
@@ -403,7 +422,7 @@ export const LiquidityMagnet = () => (
       <div className="flex items-center gap-2">
         <div className="flex items-center gap-1">
           <span className="text-[8px] text-[var(--textSubtle)]">Magnet:</span>
-          <span className="font-mono text-[9px] font-bold text-[#2bc48a]">$85.20 {"\u2191"}</span>
+          <span className="font-mono text-[9px] font-bold text-[#2bc48a]">${vary(85.20, 0.02).toFixed(2)} {"\u2191"}</span>
         </div>
         <span className="text-[8px] text-[var(--textSubtle)]">|</span>
         <div className="flex items-center gap-1">

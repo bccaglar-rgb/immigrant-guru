@@ -1,5 +1,11 @@
 /* ═══ Institutional Command — Mock Data ═══ */
 
+/** Slight variation helper — values shift on each call / page load */
+const vary = (base: number, range: number = 0.1) => {
+  const factor = 1 + (Math.random() - 0.5) * 2 * range;
+  return +(base * factor).toFixed(base >= 1000 ? 1 : base >= 10 ? 2 : base >= 1 ? 4 : 6);
+};
+
 function gen(base: number, count: number, vol: number, seed: number, intervalMs = 60_000) {
   const out: Array<{ time: number; open: number; high: number; low: number; close: number; volume: number }> = [];
   let p = base, s = seed;
@@ -65,10 +71,10 @@ export function getCoinData(coin: string) {
 
   const sigs = {
     trendDirection: p.bias, regime: (p.confidence > 65 ? "Trending" : p.confidence > 45 ? "Ranging" : "Volatile") as "Trending" | "Ranging" | "Volatile",
-    momentumScore: p.confidence - 6, volumeExpansion: p.confidence - 11, volatilityScore: 54,
-    breakoutProb: p.confidence - 13, meanRevProb: 100 - p.confidence, liquiditySweep: p.confidence > 60,
-    structureBreak: false, orderFlowBias: p.confidence - 4, aiConviction: p.confidence,
-    setupQuality: p.confidence - 5, tradeReadiness: (p.confidence > 60 ? "Ready" : "Wait") as "Ready" | "Wait",
+    momentumScore: vary(p.confidence - 6, 0.08), volumeExpansion: vary(p.confidence - 11, 0.08), volatilityScore: vary(54, 0.1),
+    breakoutProb: vary(p.confidence - 13, 0.08), meanRevProb: vary(100 - p.confidence, 0.08), liquiditySweep: p.confidence > 60,
+    structureBreak: false, orderFlowBias: vary(p.confidence - 4, 0.08), aiConviction: vary(p.confidence, 0.05),
+    setupQuality: vary(p.confidence - 5, 0.08), tradeReadiness: (p.confidence > 60 ? "Ready" : "Wait") as "Ready" | "Wait",
   };
 
   const entry = fmt(b * 1.008);
@@ -155,10 +161,10 @@ export const tfContexts: TFContext[] = [
 
 export const signals = {
   trendDirection: "Bullish" as const, regime: "Trending" as const,
-  momentumScore: 71, volumeExpansion: 66, volatilityScore: 54,
-  breakoutProb: 64, meanRevProb: 18, liquiditySweep: true,
-  structureBreak: false, orderFlowBias: 73, aiConviction: 77,
-  setupQuality: 72, tradeReadiness: "Ready" as const,
+  momentumScore: vary(71, 0.08), volumeExpansion: vary(66, 0.08), volatilityScore: vary(54, 0.1),
+  breakoutProb: vary(64, 0.08), meanRevProb: vary(18, 0.1), liquiditySweep: true,
+  structureBreak: false, orderFlowBias: vary(73, 0.08), aiConviction: vary(77, 0.05),
+  setupQuality: vary(72, 0.08), tradeReadiness: "Ready" as const,
 };
 
 export const aiDecision = {
@@ -204,9 +210,9 @@ export const alerts = [
   { type: "liquidity", text: "Sell liquidity swept at $148.50", time: "12m", sev: "low" as const },
 ];
 
-export const session = { name: "London" as const, volatility: 67, bias: "Bullish" as const, high: 148.62, low: 146.30, range: 2.32, remaining: "2h 18m" };
-export const sentiment = { fearGreed: 69, label: "Greed", crowdBias: 74, crowdDir: "Long", contrarian: "Weak" };
-export const execQuality = { slippage: "0.02%", fillQuality: "98.4%", latency: "12ms", expectedMove: "$1.85", execRisk: "Low" };
+export const session = { name: "London" as const, volatility: vary(67, 0.08), bias: "Bullish" as const, high: vary(148.62, 0.02), low: vary(146.30, 0.02), range: vary(2.32, 0.1), remaining: "2h 18m" };
+export const sentiment = { fearGreed: vary(69, 0.08), label: "Greed", crowdBias: vary(74, 0.08), crowdDir: "Long", contrarian: "Weak" };
+export const execQuality = { slippage: "0.02%", fillQuality: "98.4%", latency: "12ms", expectedMove: `$${vary(1.85, 0.1).toFixed(2)}`, execRisk: "Low" };
 
 export const marketIntel = {
   btcTrend: "Bullish" as const, riskMode: "Risk-On" as const, dominance: "Rising",

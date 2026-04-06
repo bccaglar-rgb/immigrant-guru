@@ -9,19 +9,36 @@ import { useState } from "react";
 const card = "rounded-lg border border-white/[0.06] bg-white/[0.02] p-2";
 const header = "text-[10px] font-black tracking-widest uppercase";
 
+/* ── Variation helper ── */
+const vary = (base: number, range: number = 0.1) => {
+  const factor = 1 + (Math.random() - 0.5) * 2 * range;
+  return +(base * factor).toFixed(2);
+};
+
+const varyPctStr = (base: number, range: number = 0.15) => {
+  const val = vary(base, range);
+  return val >= 0 ? `+${val.toFixed(1)}%` : `${val.toFixed(1)}%`;
+};
+
+/* ── AI badge label ── */
+const AILabel = () => (
+  <span className="text-[7px] text-[#6B6F76] uppercase tracking-[0.1em] font-medium ml-auto">AI Analysis</span>
+);
+
 /* ================================================================
    1. TopTradesPanel — 3 best trades right now (compact + TRADE btn)
    ================================================================ */
 const topTrades = [
-  { rank: 1, coin: "SOL", direction: "LONG", reason: "Pullback + OB + Sweep", confidence: 84, rr: 2.8, entry: "$148.40" },
-  { rank: 2, coin: "BTC", direction: "BREAKOUT", reason: "Range break", confidence: 79, rr: 2.2, entry: "$67,200" },
-  { rank: 3, coin: "AVAX", direction: "LONG", reason: "Volume surge", confidence: 76, rr: 1.9, entry: "$38.50" },
+  { rank: 1, coin: "SOL", direction: "LONG", reason: "Pullback + OB + Sweep", confidence: Math.round(vary(84, 0.05)), rr: vary(2.8, 0.1), entry: `$${vary(148.40, 0.02).toFixed(2)}` },
+  { rank: 2, coin: "BTC", direction: "BREAKOUT", reason: "Range break", confidence: Math.round(vary(79, 0.05)), rr: vary(2.2, 0.1), entry: `$${Math.round(vary(67200, 0.02)).toLocaleString()}` },
+  { rank: 3, coin: "AVAX", direction: "LONG", reason: "Volume surge", confidence: Math.round(vary(76, 0.05)), rr: vary(1.9, 0.1), entry: `$${vary(38.50, 0.02).toFixed(2)}` },
 ] as { rank: number; coin: string; direction: "LONG" | "SHORT" | "BREAKOUT"; reason: string; confidence: number; rr: number; entry: string }[];
 
 export const TopTradesPanel = () => (
   <div className={card}>
     <div className="flex items-center gap-2 mb-1.5">
       <span className={`${header} text-yellow-400`}>Top 3 Trades Right Now</span>
+      <AILabel />
     </div>
     <div className="grid grid-cols-3 gap-1.5">
       {topTrades.map((t) => {
@@ -63,22 +80,25 @@ export const TopTradesPanel = () => (
    ================================================================ */
 const heatmapData = {
   trending: [
-    { coin: "SOL", val: "+4.2%" }, { coin: "AVAX", val: "+6.1%" },
-    { coin: "BNB", val: "+2.8%" }, { coin: "SUI", val: "+3.5%" },
+    { coin: "SOL", val: varyPctStr(4.2) }, { coin: "AVAX", val: varyPctStr(6.1) },
+    { coin: "BNB", val: varyPctStr(2.8) }, { coin: "SUI", val: varyPctStr(3.5) },
   ],
   weak: [
-    { coin: "ETH", val: "-2.1%" }, { coin: "ARB", val: "-3.8%" },
-    { coin: "DOGE", val: "-4.2%" }, { coin: "MATIC", val: "-1.9%" },
+    { coin: "ETH", val: varyPctStr(-2.1) }, { coin: "ARB", val: varyPctStr(-3.8) },
+    { coin: "DOGE", val: varyPctStr(-4.2) }, { coin: "MATIC", val: varyPctStr(-1.9) },
   ],
   volumeSpike: [
-    { coin: "BTC", val: "+180%" }, { coin: "SOL", val: "+220%" },
-    { coin: "LINK", val: "+150%" }, { coin: "INJ", val: "+95%" },
+    { coin: "BTC", val: varyPctStr(180) }, { coin: "SOL", val: varyPctStr(220) },
+    { coin: "LINK", val: varyPctStr(150) }, { coin: "INJ", val: varyPctStr(95) },
   ],
 };
 
 export const MarketHeatmap = () => (
   <div className={card}>
-    <span className={`${header} text-cyan-400`}>Market Heatmap</span>
+    <div className="flex items-center gap-2">
+      <span className={`${header} text-cyan-400`}>Market Heatmap</span>
+      <AILabel />
+    </div>
     <div className="grid grid-cols-3 gap-2 mt-1.5">
       <HeatCol title="Trending" items={heatmapData.trending} positive />
       <HeatCol title="Weak" items={heatmapData.weak} positive={false} />
@@ -105,16 +125,19 @@ const HeatCol = ({ title, items, positive }: { title: string; items: { coin: str
    3. SectorRotation
    ================================================================ */
 const sectors = [
-  { name: "AI Coins", change: "+5.2%", pct: 85, status: "hot" as const },
-  { name: "L1", change: "+3.8%", pct: 72, status: "hot" as const },
-  { name: "Meme", change: "+1.2%", pct: 55, status: "neutral" as const },
-  { name: "DeFi", change: "-2.1%", pct: 35, status: "cold" as const },
-  { name: "Gaming", change: "-3.5%", pct: 22, status: "cold" as const },
+  { name: "AI Coins", change: varyPctStr(5.2), pct: Math.round(vary(85, 0.05)), status: "hot" as const },
+  { name: "L1", change: varyPctStr(3.8), pct: Math.round(vary(72, 0.05)), status: "hot" as const },
+  { name: "Meme", change: varyPctStr(1.2), pct: Math.round(vary(55, 0.08)), status: "neutral" as const },
+  { name: "DeFi", change: varyPctStr(-2.1), pct: Math.round(vary(35, 0.08)), status: "cold" as const },
+  { name: "Gaming", change: varyPctStr(-3.5), pct: Math.round(vary(22, 0.08)), status: "cold" as const },
 ];
 
 export const SectorRotation = () => (
   <div className={card}>
-    <span className={`${header} text-violet-400`}>Sector Rotation</span>
+    <div className="flex items-center gap-2">
+      <span className={`${header} text-violet-400`}>Sector Rotation</span>
+      <AILabel />
+    </div>
     <div className="mt-1.5 space-y-1">
       {sectors.map((s) => {
         const barColor = s.status === "hot" ? "bg-emerald-500" : s.status === "neutral" ? "bg-yellow-500" : "bg-red-500";
@@ -148,7 +171,10 @@ const breakouts = [
 
 export const BreakoutScanner = () => (
   <div className={card}>
-    <span className={`${header} text-amber-400`}>Breakout Scanner</span>
+    <div className="flex items-center gap-2">
+      <span className={`${header} text-amber-400`}>Breakout Scanner</span>
+      <AILabel />
+    </div>
     <div className="mt-1.5 space-y-1">
       {breakouts.map((b) => {
         const dot = b.urgency === "red" ? "bg-red-500" : b.urgency === "yellow" ? "bg-yellow-500" : "bg-emerald-500";
@@ -169,18 +195,18 @@ export const BreakoutScanner = () => (
    5. SmartSignalGrid — LONG | SHORT | BREAKOUT | SCALP
    ================================================================ */
 const longSetups = [
-  { coin: "SOL", signal: "OB + Sweep", conf: 84, rr: 2.8 },
-  { coin: "AVAX", signal: "Pullback", conf: 79, rr: 2.2 },
-  { coin: "BNB", signal: "Support bounce", conf: 74, rr: 1.9 },
+  { coin: "SOL", signal: "OB + Sweep", conf: Math.round(vary(84, 0.05)), rr: vary(2.8, 0.1) },
+  { coin: "AVAX", signal: "Pullback", conf: Math.round(vary(79, 0.05)), rr: vary(2.2, 0.1) },
+  { coin: "BNB", signal: "Support bounce", conf: Math.round(vary(74, 0.05)), rr: vary(1.9, 0.1) },
 ];
 const shortSetups = [
-  { coin: "ETH", signal: "Resistance + OB", conf: 76, rr: 2.4 },
-  { coin: "ARB", signal: "Breakdown", conf: 71, rr: 2.0 },
+  { coin: "ETH", signal: "Resistance + OB", conf: Math.round(vary(76, 0.05)), rr: vary(2.4, 0.1) },
+  { coin: "ARB", signal: "Breakdown", conf: Math.round(vary(71, 0.05)), rr: vary(2.0, 0.1) },
 ];
 const breakoutSetups = [
-  { coin: "BTC", signal: "Range break", conf: 79 },
-  { coin: "LINK", signal: "Squeeze", conf: 75 },
-  { coin: "SOL", signal: "Triangle", conf: 82 },
+  { coin: "BTC", signal: "Range break", conf: Math.round(vary(79, 0.05)) },
+  { coin: "LINK", signal: "Squeeze", conf: Math.round(vary(75, 0.05)) },
+  { coin: "SOL", signal: "Triangle", conf: Math.round(vary(82, 0.05)) },
 ];
 const scalpSetups = [
   { coin: "BTC", signal: "Mom spike", window: "1-3min" },
@@ -199,7 +225,7 @@ export const SmartSignalGrid = () => (
   <div className="grid grid-cols-4 gap-1.5">
     {/* LONGS */}
     <div className={card}>
-      <span className={`${header} text-emerald-400`}>Long Setups</span>
+      <div className="flex items-center gap-1"><span className={`${header} text-emerald-400`}>Long Setups</span><AILabel /></div>
       <div className="mt-1.5 space-y-0.5">
         {longSetups.map((s) => (
           <SignalItem key={s.coin} coin={s.coin} text={`${s.signal} | ${s.conf}% | RR ${s.rr}`} borderColor="border-emerald-500" />
@@ -208,7 +234,7 @@ export const SmartSignalGrid = () => (
     </div>
     {/* SHORTS */}
     <div className={card}>
-      <span className={`${header} text-red-400`}>Short Setups</span>
+      <div className="flex items-center gap-1"><span className={`${header} text-red-400`}>Short Setups</span><AILabel /></div>
       <div className="mt-1.5 space-y-0.5">
         {shortSetups.map((s) => (
           <SignalItem key={s.coin} coin={s.coin} text={`${s.signal} | ${s.conf}% | RR ${s.rr}`} borderColor="border-red-500" />
@@ -217,7 +243,7 @@ export const SmartSignalGrid = () => (
     </div>
     {/* BREAKOUTS */}
     <div className={card}>
-      <span className={`${header} text-yellow-400`}>Breakouts</span>
+      <div className="flex items-center gap-1"><span className={`${header} text-yellow-400`}>Breakouts</span><AILabel /></div>
       <div className="mt-1.5 space-y-0.5">
         {breakoutSetups.map((s) => (
           <SignalItem key={s.coin} coin={s.coin} text={`${s.signal} | ${s.conf}%`} borderColor="border-yellow-500" />
@@ -227,7 +253,7 @@ export const SmartSignalGrid = () => (
     {/* SCALPS */}
     <div className={card}>
       <div className="flex items-center gap-1">
-        <span className={`${header} text-blue-400`}>Scalps</span>
+        <span className={`${header} text-blue-400`}>Scalps</span><AILabel />
         <span className="text-[9px]">&#9889;</span>
       </div>
       <div className="mt-1.5 space-y-0.5">
@@ -243,14 +269,14 @@ export const SmartSignalGrid = () => (
    6. OpportunityFeed — with expandable WHY
    ================================================================ */
 const opportunities = [
-  { id: 1, type: "LONG" as const, coin: "SOL", reason: "OB retest + volume spike", confidence: 84, rr: 2.8, time: "2s", why: ["HH/HL intact", "Liq swept", "Vol spike", "OB support"], score: 8.5 },
-  { id: 2, type: "BREAKOUT" as const, coin: "LINK", reason: "Range break w/ momentum", confidence: 77, rr: 2.1, time: "15s", why: ["Tight range 5D", "Vol expanding", "OI rising", "Above VWAP"], score: 7.8 },
-  { id: 3, type: "SHORT" as const, coin: "DOGE", reason: "Rejection at HTF supply", confidence: 72, rr: 1.8, time: "45s", why: ["LH forming", "Supply zone", "Delta divergence"], score: 7.2 },
-  { id: 4, type: "LONG" as const, coin: "BTC", reason: "Demand zone tap + RSI div", confidence: 79, rr: 2.2, time: "1m", why: ["RSI divergence", "Demand zone", "Funding reset", "OI drop"], score: 8.0 },
-  { id: 5, type: "BREAKOUT" as const, coin: "AVAX", reason: "Squeeze play detected", confidence: 76, rr: 1.9, time: "2m", why: ["BB squeeze", "Vol contraction", "Momentum building"], score: 7.6 },
-  { id: 6, type: "LONG" as const, coin: "BNB", reason: "Trend continuation pullback", confidence: 71, rr: 1.7, time: "3m", why: ["Uptrend intact", "50EMA bounce", "Vol support"], score: 7.1 },
-  { id: 7, type: "SHORT" as const, coin: "ARB", reason: "Bearish structure break", confidence: 68, rr: 1.6, time: "5m", why: ["Structure break", "Below VWAP", "Sell volume"], score: 6.8 },
-  { id: 8, type: "LONG" as const, coin: "SUI", reason: "Momentum + OI surge", confidence: 74, rr: 2.0, time: "8m", why: ["OI surge", "Momentum", "Trend aligned"], score: 7.4 },
+  { id: 1, type: "LONG" as const, coin: "SOL", reason: "OB retest + volume spike", confidence: Math.round(vary(84, 0.05)), rr: vary(2.8, 0.1), time: "2s", why: ["HH/HL intact", "Liq swept", "Vol spike", "OB support"], score: vary(8.5, 0.06) },
+  { id: 2, type: "BREAKOUT" as const, coin: "LINK", reason: "Range break w/ momentum", confidence: Math.round(vary(77, 0.05)), rr: vary(2.1, 0.1), time: "15s", why: ["Tight range 5D", "Vol expanding", "OI rising", "Above VWAP"], score: vary(7.8, 0.06) },
+  { id: 3, type: "SHORT" as const, coin: "DOGE", reason: "Rejection at HTF supply", confidence: Math.round(vary(72, 0.05)), rr: vary(1.8, 0.1), time: "45s", why: ["LH forming", "Supply zone", "Delta divergence"], score: vary(7.2, 0.06) },
+  { id: 4, type: "LONG" as const, coin: "BTC", reason: "Demand zone tap + RSI div", confidence: Math.round(vary(79, 0.05)), rr: vary(2.2, 0.1), time: "1m", why: ["RSI divergence", "Demand zone", "Funding reset", "OI drop"], score: vary(8.0, 0.06) },
+  { id: 5, type: "BREAKOUT" as const, coin: "AVAX", reason: "Squeeze play detected", confidence: Math.round(vary(76, 0.05)), rr: vary(1.9, 0.1), time: "2m", why: ["BB squeeze", "Vol contraction", "Momentum building"], score: vary(7.6, 0.06) },
+  { id: 6, type: "LONG" as const, coin: "BNB", reason: "Trend continuation pullback", confidence: Math.round(vary(71, 0.05)), rr: vary(1.7, 0.1), time: "3m", why: ["Uptrend intact", "50EMA bounce", "Vol support"], score: vary(7.1, 0.06) },
+  { id: 7, type: "SHORT" as const, coin: "ARB", reason: "Bearish structure break", confidence: Math.round(vary(68, 0.05)), rr: vary(1.6, 0.1), time: "5m", why: ["Structure break", "Below VWAP", "Sell volume"], score: vary(6.8, 0.06) },
+  { id: 8, type: "LONG" as const, coin: "SUI", reason: "Momentum + OI surge", confidence: Math.round(vary(74, 0.05)), rr: vary(2.0, 0.1), time: "8m", why: ["OI surge", "Momentum", "Trend aligned"], score: vary(7.4, 0.06) },
 ];
 
 const typeBadge = (type: "LONG" | "SHORT" | "BREAKOUT") => {
@@ -292,7 +318,7 @@ const OpportunityRow = ({ o }: { o: typeof opportunities[0] }) => {
 export const OpportunityFeed = () => (
   <div className={card}>
     <div className="flex items-center justify-between mb-1">
-      <span className={`${header} text-orange-400`}>Live Opportunity Feed</span>
+      <span className={`${header} text-orange-400`}>Live Opportunity Feed</span><AILabel />
       <div className="flex items-center gap-1">
         <div className="h-1.5 w-1.5 rounded-full bg-orange-400 animate-pulse" />
         <span className="text-[7px] text-white/30">LIVE</span>
@@ -317,7 +343,7 @@ const flows = [
 
 export const MoneyFlowPanel = () => (
   <div className={card}>
-    <span className={`${header} text-emerald-400`}>Money Flow</span>
+    <div className="flex items-center gap-2"><span className={`${header} text-emerald-400`}>Money Flow</span><AILabel /></div>
     <div className="flex items-center gap-3 mt-1.5 flex-wrap">
       {flows.map((f) => {
         const isIn = f.direction === "IN";
@@ -334,7 +360,7 @@ export const MoneyFlowPanel = () => (
     </div>
     <div className="mt-1 pt-1 border-t border-white/[0.06] flex items-center justify-between">
       <span className="text-[8px] text-white/30">Net</span>
-      <span className="text-[9px] font-bold font-mono text-emerald-400">+$480M</span>
+      <span className="text-[9px] font-bold font-mono text-emerald-400">+${Math.round(vary(480, 0.1))}M</span>
     </div>
   </div>
 );
@@ -358,7 +384,7 @@ const tapeData = [
 export const LiveTape = () => (
   <div className={card}>
     <div className="flex items-center gap-2 mb-1">
-      <span className={`${header} text-cyan-400`}>Live Tape</span>
+      <span className={`${header} text-cyan-400`}>Live Tape</span><AILabel />
       <div className="h-1.5 w-1.5 rounded-full bg-cyan-400 animate-pulse" />
     </div>
     <div className="overflow-x-auto">
@@ -385,11 +411,11 @@ export const LiveTape = () => (
    9. BuySellPressure
    ================================================================ */
 export const BuySellPressure = () => {
-  const buyPct = 72;
+  const buyPct = Math.round(vary(72, 0.06));
   const sellPct = 100 - buyPct;
   return (
     <div className={card}>
-      <span className={`${header} text-purple-400`}>Buy/Sell Pressure</span>
+      <div className="flex items-center gap-2"><span className={`${header} text-purple-400`}>Buy/Sell Pressure</span><AILabel /></div>
       <div className="mt-1.5">
         <div className="flex items-center gap-1.5">
           <span className="text-[9px] font-mono font-bold text-emerald-400">BUY {buyPct}%</span>
@@ -412,16 +438,16 @@ export const BuySellPressure = () => {
    10. WhaleActivityBoard (font-mono on amounts)
    ================================================================ */
 const whaleTransactions = [
-  { amount: "$4.2M", coin: "BTC", side: "BUY" as const, exchange: "Binance", time: "2m" },
-  { amount: "$2.1M", coin: "SOL", side: "BUY" as const, exchange: "Bybit", time: "5m" },
-  { amount: "$3.8M", coin: "ETH", side: "SELL" as const, exchange: "Coinbase", time: "8m" },
-  { amount: "$1.5M", coin: "AVAX", side: "BUY" as const, exchange: "OKX", time: "12m" },
-  { amount: "$2.7M", coin: "BNB", side: "BUY" as const, exchange: "Binance", time: "18m" },
+  { amount: `$${vary(4.2, 0.15).toFixed(1)}M`, coin: "BTC", side: "BUY" as const, exchange: "Binance", time: "2m" },
+  { amount: `$${vary(2.1, 0.15).toFixed(1)}M`, coin: "SOL", side: "BUY" as const, exchange: "Bybit", time: "5m" },
+  { amount: `$${vary(3.8, 0.15).toFixed(1)}M`, coin: "ETH", side: "SELL" as const, exchange: "Coinbase", time: "8m" },
+  { amount: `$${vary(1.5, 0.15).toFixed(1)}M`, coin: "AVAX", side: "BUY" as const, exchange: "OKX", time: "12m" },
+  { amount: `$${vary(2.7, 0.15).toFixed(1)}M`, coin: "BNB", side: "BUY" as const, exchange: "Binance", time: "18m" },
 ];
 
 export const WhaleActivityBoard = () => (
   <div className={card}>
-    <span className={`${header} text-blue-400`}>Whale Activity</span>
+    <div className="flex items-center gap-2"><span className={`${header} text-blue-400`}>Whale Activity</span><AILabel /></div>
     <div className="mt-1.5 space-y-0.5">
       {whaleTransactions.map((w, i) => {
         const isBuy = w.side === "BUY";
@@ -439,7 +465,7 @@ export const WhaleActivityBoard = () => (
     </div>
     <div className="mt-1.5 pt-1 border-t border-white/[0.06] flex items-center justify-between">
       <span className="text-[8px] text-white/30">Net Flow</span>
-      <span className="text-[9px] font-bold font-mono text-emerald-400">+$6.3M</span>
+      <span className="text-[9px] font-bold font-mono text-emerald-400">+${vary(6.3, 0.12).toFixed(1)}M</span>
     </div>
   </div>
 );
@@ -456,7 +482,7 @@ const liquidationLevels = [
 
 export const LiquidationMap = () => (
   <div className={card}>
-    <span className={`${header} text-rose-400`}>Liquidation Map</span>
+    <div className="flex items-center gap-2"><span className={`${header} text-rose-400`}>Liquidation Map</span><AILabel /></div>
     <div className="mt-1.5 space-y-0.5">
       {liquidationLevels.map((l, i) => {
         const isAbove = l.direction === "ABOVE";
@@ -481,15 +507,15 @@ export const LiquidationMap = () => (
    12. AIGlobalBias
    ================================================================ */
 const biasData = [
-  { coin: "BTC", bias: "Bullish", pct: 78 },
-  { coin: "ETH", bias: "Neutral", pct: 52 },
-  { coin: "SOL", bias: "Strong Bull", pct: 84 },
-  { coin: "AVAX", bias: "Bullish", pct: 71 },
+  { coin: "BTC", bias: "Bullish", pct: Math.round(vary(78, 0.05)) },
+  { coin: "ETH", bias: "Neutral", pct: Math.round(vary(52, 0.08)) },
+  { coin: "SOL", bias: "Strong Bull", pct: Math.round(vary(84, 0.05)) },
+  { coin: "AVAX", bias: "Bullish", pct: Math.round(vary(71, 0.06)) },
 ];
 
 export const AIGlobalBias = () => (
   <div className={card}>
-    <span className={`${header} text-sky-400`}>AI Global Bias</span>
+    <div className="flex items-center gap-2"><span className={`${header} text-sky-400`}>AI Global Bias</span><AILabel /></div>
     <div className="mt-1.5 space-y-1">
       {biasData.map((b) => {
         const barColor = b.pct >= 75 ? "bg-emerald-500" : b.pct >= 55 ? "bg-emerald-500/60" : "bg-yellow-500";
@@ -518,14 +544,14 @@ export const AIGlobalBias = () => (
    13. CorrelationPanel
    ================================================================ */
 const correlations = [
-  { pair: "BTC\u2194ETH", value: 0.92, label: "high" },
-  { pair: "BTC\u2194SOL", value: 0.78, label: "med" },
-  { pair: "BTC\u2194AVAX", value: 0.65, label: "med" },
+  { pair: "BTC\u2194ETH", value: vary(0.92, 0.03), label: "high" },
+  { pair: "BTC\u2194SOL", value: vary(0.78, 0.05), label: "med" },
+  { pair: "BTC\u2194AVAX", value: vary(0.65, 0.06), label: "med" },
 ];
 
 export const CorrelationPanel = () => (
   <div className={card}>
-    <span className={`${header} text-indigo-400`}>Correlation</span>
+    <div className="flex items-center gap-2"><span className={`${header} text-indigo-400`}>Correlation</span><AILabel /></div>
     <div className="mt-1.5 space-y-0.5">
       {correlations.map((c) => (
         <div key={c.pair} className="flex items-center justify-between">
@@ -552,7 +578,7 @@ const dangers = [
 export const DangerZone = () => (
   <div className="rounded-lg border border-red-500/20 bg-red-500/[0.04] p-2">
     <div className="flex items-center gap-1">
-      <span className={`${header} text-red-400 animate-pulse`}>Danger Zone</span>
+      <span className={`${header} text-red-400 animate-pulse`}>Danger Zone</span><AILabel />
       <span className="text-[9px] animate-pulse">&#9888;&#65039;</span>
     </div>
     <div className="mt-1.5 space-y-0.5">
@@ -574,7 +600,7 @@ export const DangerZone = () => (
    ================================================================ */
 export const MarketCondition = () => (
   <div className={card}>
-    <span className={`${header} text-teal-400`}>Market State</span>
+    <div className="flex items-center gap-2"><span className={`${header} text-teal-400`}>Market State</span><AILabel /></div>
     <div className="mt-1.5 space-y-1">
       <div className="flex items-center justify-between">
         <span className="text-[8px] text-white/40">Trend</span>
@@ -610,7 +636,7 @@ const keyLevels = [
 
 export const KeyLevelsDashboard = () => (
   <div className="rounded-lg border border-white/[0.06] bg-white/[0.02] px-2 py-1.5 flex items-center gap-3">
-    <span className={`${header} text-teal-400`}>Key Levels</span>
+    <span className={`${header} text-teal-400`}>Key Levels</span><AILabel />
     <div className="flex items-center gap-3 flex-1">
       {keyLevels.map((k) => (
         <div key={k.coin} className="flex items-center gap-1.5">
@@ -636,7 +662,7 @@ const narratives = [
 
 export const NarrativeEngine = () => (
   <div className="rounded-lg border border-white/[0.06] bg-white/[0.02] px-2 py-1.5 flex items-center gap-2">
-    <span className={`${header} text-pink-400`}>Narratives</span>
+    <span className={`${header} text-pink-400`}>Narratives</span><AILabel />
     <div className="flex items-center gap-2 flex-1 overflow-hidden">
       {narratives.map((n, i) => (
         <span key={i} className="text-[9px] text-white/50 whitespace-nowrap">
