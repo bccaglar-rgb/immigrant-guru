@@ -4,6 +4,7 @@ import { BotProvider } from "../../components/bot/BotContext";
 import BotExecutionLog from "../../components/bot/BotExecutionLog";
 import BotStrategyChart from "../../components/bot/BotStrategyChart";
 import BotBacktestPanel from "../../components/bot/BotBacktestPanel";
+import SignalsOverview from "../../components/bot/SignalsOverview";
 
 /* ── Helpers ── */
 const cn = (...cls: (string | false | undefined)[]) => cls.filter(Boolean).join(" ");
@@ -354,6 +355,16 @@ export default function MicroScalperBotPage() {
 
       {/* 4. Chart */}
       <BotStrategyChart defaultTf="1m" indicators={["Spread", "Depth"]} accentColor="#2bc48a" />
+
+      {/* Signals Overview */}
+      <SignalsOverview compact={true} overrides={[
+        { id: "volume", status: "Bullish" },
+        { id: "cvd", status: "Bullish" },
+        { id: "delta-volume", status: "Triggered" },
+        { id: "liquidity", status: "Watching" },
+        { id: "imbalance-fvg", status: "Neutral" },
+        { id: "vwap", status: "Neutral" },
+      ]} />
 
       {/* 5. Backtest */}
       <BotBacktestPanel strategyName="Micro Scalp" accentColor="#2bc48a" />

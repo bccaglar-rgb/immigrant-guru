@@ -4,6 +4,7 @@ import { BotProvider } from "../../components/bot/BotContext";
 import BotExecutionLog from "../../components/bot/BotExecutionLog";
 import BotStrategyChart from "../../components/bot/BotStrategyChart";
 import BotBacktestPanel from "../../components/bot/BotBacktestPanel";
+import SignalsOverview from "../../components/bot/SignalsOverview";
 
 /* ── Shared helpers ── */
 const cn = (...cls: (string | false | undefined)[]) => cls.filter(Boolean).join(" ");
@@ -267,6 +268,17 @@ export default function LiquiditySweepBotPage() {
           </div>
         </div>
       </Card>
+
+      {/* Signals Overview */}
+      <SignalsOverview overrides={[
+        { id: "liquidity", status: "Triggered" },
+        { id: "liquidation-map", status: "High Risk" },
+        { id: "squeeze", status: "Watching" },
+        { id: "market-structure", status: "Bullish" },
+        { id: "volume", status: "Watching" },
+        { id: "whale-activity", status: "Watching" },
+        { id: "imbalance-fvg", status: "Watching" },
+      ]} />
 
       {/* ── 5. Backtest ── */}
       <BotBacktestPanel strategyName="Liquidity Sweep" accentColor={accent} />

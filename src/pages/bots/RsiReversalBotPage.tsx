@@ -4,6 +4,7 @@ import { BotProvider } from "../../components/bot/BotContext";
 import BotExecutionLog from "../../components/bot/BotExecutionLog";
 import BotStrategyChart from "../../components/bot/BotStrategyChart";
 import BotBacktestPanel from "../../components/bot/BotBacktestPanel";
+import SignalsOverview from "../../components/bot/SignalsOverview";
 
 /* ── Helpers ── */
 const cn = (...cls: (string | false | undefined)[]) => cls.filter(Boolean).join(" ");
@@ -187,6 +188,17 @@ export default function RsiReversalBotPage() {
             </div>
           </div>
         </Card>
+
+        {/* Signals Overview */}
+        <SignalsOverview overrides={[
+          { id: "rsi-divergence", status: "Triggered" },
+          { id: "support-resistance", status: "Bullish" },
+          { id: "volume", status: "Watching" },
+          { id: "trend", status: "Bearish" },
+          { id: "market-structure", status: "Neutral" },
+          { id: "liquidity", status: "Watching" },
+          { id: "squeeze", status: "Watching" },
+        ]} />
 
         {/* 5. BACKTEST PANEL */}
         <BotBacktestPanel strategyName="RSI Reversal" accentColor="#9f8bff" />

@@ -3,6 +3,7 @@ import BotExchangeBar from "../../components/bot/BotExchangeBar";
 import { BotProvider } from "../../components/bot/BotContext";
 import BotExecutionLog from "../../components/bot/BotExecutionLog";
 import BotStrategyChart from "../../components/bot/BotStrategyChart";
+import SignalsOverview from "../../components/bot/SignalsOverview";
 
 /* ── Helpers ── */
 const cn = (...cls: (string | false | undefined)[]) => cls.filter(Boolean).join(" ");
@@ -189,6 +190,17 @@ export default function GridBotPage() {
           <StatBox label="Investment" value={fmtUsd(investment)} color="text-[#5B8DEF]" />
           <StatBox label="Per Grid" value={fmtUsd(perGrid)} color="text-white/70" />
         </div>
+
+        {/* Signals Overview */}
+        <SignalsOverview compact={true} overrides={[
+          { id: "trend", status: "Neutral" },
+          { id: "support-resistance", status: "Triggered" },
+          { id: "volume", status: "Neutral" },
+          { id: "funding-rate", status: "Neutral" },
+          { id: "liquidity", status: "Watching" },
+          { id: "vwap", status: "Neutral" },
+          { id: "open-interest", status: "Neutral" },
+        ]} />
 
         {/* ── CHART PREVIEW ── */}
         <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4">

@@ -3,6 +3,7 @@ import BotExchangeBar from "../../components/bot/BotExchangeBar";
 import { BotProvider } from "../../components/bot/BotContext";
 import BotExecutionLog from "../../components/bot/BotExecutionLog";
 import BotStrategyChart from "../../components/bot/BotStrategyChart";
+import SignalsOverview from "../../components/bot/SignalsOverview";
 
 /* ═══════════════════════════════════════════════════════════
    MOCK DATA
@@ -250,6 +251,17 @@ export default function SmartDcaBotPage() {
           <StatCell label="TP Target" value={`$${fmt(TP_TARGET, 0)}`} sub="BB Middle" color="#2bc48a" />
           <StatCell label="Max Drawdown Cap" value={`-${slPct}%`} color="#f6465d" />
         </div>
+
+        {/* Signals Overview */}
+        <SignalsOverview overrides={[
+          { id: "rsi-divergence", status: "Triggered" },
+          { id: "trend", status: "Bearish" },
+          { id: "support-resistance", status: "Bullish" },
+          { id: "volume", status: "Watching" },
+          { id: "vwap", status: "Bullish" },
+          { id: "market-structure", status: "Neutral" },
+          { id: "composite", status: "Watching" },
+        ]} />
 
         {/* ── CHART PREVIEW ── */}
         <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4">

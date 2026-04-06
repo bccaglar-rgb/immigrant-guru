@@ -3,6 +3,7 @@ import BotExchangeBar from "../../components/bot/BotExchangeBar";
 import { BotProvider } from "../../components/bot/BotContext";
 import BotExecutionLog from "../../components/bot/BotExecutionLog";
 import BotStrategyChart from "../../components/bot/BotStrategyChart";
+import SignalsOverview from "../../components/bot/SignalsOverview";
 
 /* ── Helpers ── */
 const cn = (...cls: (string | false | undefined)[]) => cls.filter(Boolean).join(" ");
@@ -434,6 +435,20 @@ export default function SessionBotPage() {
               </div>
             </div>
           </Card>
+
+          {/* ── Signals Overview ── */}
+          <SignalsOverview
+            overrides={[
+              { id: "trend", status: "Bullish" },
+              { id: "volume", status: "Bullish" },
+              { id: "market-structure", status: "Bullish" },
+              { id: "support-resistance", status: "Watching" },
+              { id: "funding-rate", status: "Neutral" },
+              { id: "open-interest", status: "Neutral" },
+              { id: "vwap", status: "Neutral" },
+              { id: "composite", status: "Watching" },
+            ]}
+          />
 
           {/* ── 4. Session Overlap ── */}
           <Card>

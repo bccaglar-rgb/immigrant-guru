@@ -4,6 +4,7 @@ import { BotProvider } from "../../components/bot/BotContext";
 import BotExecutionLog from "../../components/bot/BotExecutionLog";
 import BotStrategyChart from "../../components/bot/BotStrategyChart";
 import BotBacktestPanel from "../../components/bot/BotBacktestPanel";
+import SignalsOverview from "../../components/bot/SignalsOverview";
 
 /* ── Shared helpers ── */
 const cn = (...cls: (string | false | undefined)[]) => cls.filter(Boolean).join(" ");
@@ -466,6 +467,17 @@ export default function BreakoutRetestBotPage() {
           </table>
         </div>
       </Card>
+
+      {/* ── Signals Overview ── */}
+      <SignalsOverview overrides={[
+        { id: "trend", status: "Bullish" },
+        { id: "market-structure", status: "Triggered" },
+        { id: "support-resistance", status: "Triggered" },
+        { id: "volume", status: "Bullish" },
+        { id: "liquidity", status: "Watching" },
+        { id: "imbalance-fvg", status: "Triggered" },
+        { id: "open-interest", status: "Bullish" },
+      ]} />
 
       {/* ── 7. Strategy Logic ── */}
       <Card>

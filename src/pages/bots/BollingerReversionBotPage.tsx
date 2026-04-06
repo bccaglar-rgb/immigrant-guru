@@ -4,6 +4,7 @@ import { BotProvider } from "../../components/bot/BotContext";
 import BotExecutionLog from "../../components/bot/BotExecutionLog";
 import BotStrategyChart from "../../components/bot/BotStrategyChart";
 import BotBacktestPanel from "../../components/bot/BotBacktestPanel";
+import SignalsOverview from "../../components/bot/SignalsOverview";
 
 /* ── Helpers ── */
 const cn = (...cls: (string | false | undefined)[]) => cls.filter(Boolean).join(" ");
@@ -204,6 +205,16 @@ export default function BollingerReversionBotPage() {
             </div>
           </div>
         </Card>
+
+        {/* Signals Overview */}
+        <SignalsOverview overrides={[
+          { id: "trend", status: "Neutral" },
+          { id: "support-resistance", status: "Bullish" },
+          { id: "volume", status: "Watching" },
+          { id: "rsi-divergence", status: "Bullish" },
+          { id: "vwap", status: "Bullish" },
+          { id: "imbalance-fvg", status: "Neutral" },
+        ]} />
 
         {/* 5. BACKTEST PANEL */}
         <BotBacktestPanel strategyName="BB Reversion" accentColor="#9f8bff" />

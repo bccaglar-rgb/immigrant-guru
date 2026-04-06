@@ -4,6 +4,7 @@ import { BotProvider } from "../../components/bot/BotContext";
 import BotExecutionLog from "../../components/bot/BotExecutionLog";
 import BotStrategyChart from "../../components/bot/BotStrategyChart";
 import BotBacktestPanel from "../../components/bot/BotBacktestPanel";
+import SignalsOverview from "../../components/bot/SignalsOverview";
 
 /* ── Shared helpers ── */
 const cn = (...cls: (string | false | undefined)[]) => cls.filter(Boolean).join(" ");
@@ -143,6 +144,17 @@ export default function TrendPullbackBotPage() {
 
       {/* ── 4. Backtest ── */}
       <BotBacktestPanel strategyName="EMA Pullback" accentColor={accent} />
+
+      {/* ── Signals Overview ── */}
+      <SignalsOverview overrides={[
+        { id: "trend", status: "Bullish" },
+        { id: "market-structure", status: "Bullish" },
+        { id: "support-resistance", status: "Watching" },
+        { id: "volume", status: "Bullish" },
+        { id: "rsi-divergence", status: "Watching" },
+        { id: "vwap", status: "Neutral" },
+        { id: "funding-rate", status: "Neutral" },
+      ]} />
 
       {/* ── 5. Setup + Risk ── */}
       <div className="grid gap-4 lg:grid-cols-2">

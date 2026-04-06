@@ -4,6 +4,7 @@ import { BotProvider } from "../../components/bot/BotContext";
 import BotExecutionLog from "../../components/bot/BotExecutionLog";
 import BotStrategyChart from "../../components/bot/BotStrategyChart";
 import BotBacktestPanel from "../../components/bot/BotBacktestPanel";
+import SignalsOverview from "../../components/bot/SignalsOverview";
 
 /* ── Helpers ── */
 const cn = (...cls: (string | false | undefined)[]) => cls.filter(Boolean).join(" ");
@@ -329,6 +330,17 @@ export default function ScalpingBotPage() {
 
       {/* Session Summary */}
       <SessionSummary />
+
+      {/* Signals Overview */}
+      <SignalsOverview compact={true} overrides={[
+        { id: "volume", status: "Bullish" },
+        { id: "cvd", status: "Bullish" },
+        { id: "delta-volume", status: "Bullish" },
+        { id: "liquidity", status: "Watching" },
+        { id: "imbalance-fvg", status: "Neutral" },
+        { id: "vwap", status: "Neutral" },
+        { id: "funding-rate", status: "Neutral" },
+      ]} />
 
       {/* 4. Backtest */}
       <BotBacktestPanel strategyName="EMA Scalp" accentColor="#2bc48a" />

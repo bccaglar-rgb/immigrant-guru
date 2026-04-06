@@ -3,6 +3,7 @@ import BotExchangeBar from "../../components/bot/BotExchangeBar";
 import { BotProvider } from "../../components/bot/BotContext";
 import BotExecutionLog from "../../components/bot/BotExecutionLog";
 import BotStrategyChart from "../../components/bot/BotStrategyChart";
+import SignalsOverview from "../../components/bot/SignalsOverview";
 
 /* ── Helpers ── */
 const cn = (...cls: (string | false | undefined)[]) => cls.filter(Boolean).join(" ");
@@ -217,6 +218,20 @@ export default function HedgingBotPage() {
             </div>
           </Card>
         </div>
+
+        {/* ── Signals Overview ── */}
+        <SignalsOverview
+          overrides={[
+            { id: "trend", status: "Bullish" },
+            { id: "open-interest", status: "Neutral" },
+            { id: "funding-rate", status: "Bearish" },
+            { id: "liquidation-map", status: "High Risk" },
+            { id: "whale-activity", status: "Watching" },
+            { id: "volume", status: "Bullish" },
+            { id: "composite", status: "Watching" },
+            { id: "squeeze", status: "Watching" },
+          ]}
+        />
 
         {/* ── 3. HEDGE POSITIONS + CONTROLS ── */}
         <div className="grid gap-4 lg:grid-cols-[1fr_320px]">

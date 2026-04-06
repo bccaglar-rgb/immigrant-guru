@@ -3,6 +3,7 @@ import BotExchangeBar from "../../components/bot/BotExchangeBar";
 import { BotProvider } from "../../components/bot/BotContext";
 import BotExecutionLog from "../../components/bot/BotExecutionLog";
 import BotStrategyChart from "../../components/bot/BotStrategyChart";
+import SignalsOverview from "../../components/bot/SignalsOverview";
 
 /* ── Mock: Cross-Exchange Price Matrix ── */
 const PRICE_MATRIX = [
@@ -223,6 +224,20 @@ export default function CrossExchangeArbBotPage() {
             </div>
           ))}
         </div>
+
+        {/* ── Signals Overview ── */}
+        <SignalsOverview
+          compact={true}
+          overrides={[
+            { id: "exchange-flow", status: "Triggered" },
+            { id: "volume", status: "Bullish" },
+            { id: "liquidity", status: "Watching" },
+            { id: "funding-rate", status: "Neutral" },
+            { id: "open-interest", status: "Neutral" },
+            { id: "whale-activity", status: "Watching" },
+            { id: "composite", status: "Bullish" },
+          ]}
+        />
 
         {/* ── CHART PREVIEW ── */}
         <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4">

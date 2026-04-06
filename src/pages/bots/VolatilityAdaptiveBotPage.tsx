@@ -2,6 +2,7 @@ import { useState } from "react";
 import BotExchangeBar from "../../components/bot/BotExchangeBar";
 import { BotProvider } from "../../components/bot/BotContext";
 import BotExecutionLog from "../../components/bot/BotExecutionLog";
+import SignalsOverview from "../../components/bot/SignalsOverview";
 
 /* ── Helpers ── */
 const cn = (...cls: (string | false | undefined)[]) => cls.filter(Boolean).join(" ");
@@ -473,6 +474,19 @@ export default function VolatilityAdaptiveBotPage() {
               </div>
             </div>
           </Card>
+
+          {/* ── Signals Overview ── */}
+          <SignalsOverview
+            overrides={[
+              { id: "trend", status: "Bullish" },
+              { id: "volume", status: "Bullish" },
+              { id: "rsi-divergence", status: "Neutral" },
+              { id: "vwap", status: "Neutral" },
+              { id: "open-interest", status: "Neutral" },
+              { id: "funding-rate", status: "Bearish" },
+              { id: "composite", status: "Bullish" },
+            ]}
+          />
 
           {/* ── 5. Bot Thinking ── */}
           <Card>

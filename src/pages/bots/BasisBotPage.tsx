@@ -3,6 +3,7 @@ import BotExchangeBar from "../../components/bot/BotExchangeBar";
 import { BotProvider } from "../../components/bot/BotContext";
 import BotExecutionLog from "../../components/bot/BotExecutionLog";
 import BotStrategyChart from "../../components/bot/BotStrategyChart";
+import SignalsOverview from "../../components/bot/SignalsOverview";
 
 /* ── Shared helpers ── */
 const cn = (...cls: (string | false | undefined)[]) => cls.filter(Boolean).join(" ");
@@ -170,6 +171,18 @@ export default function BasisBotPage() {
             </Card>
           ))}
         </div>
+
+        {/* ── Signals Overview ── */}
+        <SignalsOverview
+          overrides={[
+            { id: "funding-rate", status: "Triggered" },
+            { id: "open-interest", status: "Bullish" },
+            { id: "trend", status: "Neutral" },
+            { id: "volume", status: "Neutral" },
+            { id: "exchange-flow", status: "Watching" },
+            { id: "composite", status: "Bullish" },
+          ]}
+        />
 
         {/* ── CHART PREVIEW ── */}
         <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4">

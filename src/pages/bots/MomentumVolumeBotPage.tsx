@@ -4,6 +4,7 @@ import { BotProvider } from "../../components/bot/BotContext";
 import BotExecutionLog from "../../components/bot/BotExecutionLog";
 import BotStrategyChart from "../../components/bot/BotStrategyChart";
 import BotBacktestPanel from "../../components/bot/BotBacktestPanel";
+import SignalsOverview from "../../components/bot/SignalsOverview";
 
 /* ── Shared helpers ── */
 const cn = (...cls: (string | false | undefined)[]) => cls.filter(Boolean).join(" ");
@@ -258,6 +259,17 @@ export default function MomentumVolumeBotPage() {
         <Card className="overflow-hidden p-0">
           <BotStrategyChart defaultPair={setup.pair} defaultTf={setup.timeframe} accentColor={ACCENT} />
         </Card>
+
+        {/* Signals Overview */}
+        <SignalsOverview overrides={[
+          { id: "volume", status: "Bullish" },
+          { id: "cvd", status: "Bullish" },
+          { id: "delta-volume", status: "Bullish" },
+          { id: "rsi-divergence", status: "Neutral" },
+          { id: "trend", status: "Bullish" },
+          { id: "open-interest", status: "Neutral" },
+          { id: "funding-rate", status: "Bearish" },
+        ]} />
 
         {/* Backtest */}
         <BotBacktestPanel strategyName="Momentum + Volume Engine" accentColor={ACCENT} />

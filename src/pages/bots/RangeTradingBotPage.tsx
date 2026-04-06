@@ -4,6 +4,7 @@ import { BotProvider } from "../../components/bot/BotContext";
 import BotExecutionLog from "../../components/bot/BotExecutionLog";
 import BotStrategyChart from "../../components/bot/BotStrategyChart";
 import BotBacktestPanel from "../../components/bot/BotBacktestPanel";
+import SignalsOverview from "../../components/bot/SignalsOverview";
 
 /* ── Helpers ── */
 const cn = (...cls: (string | false | undefined)[]) => cls.filter(Boolean).join(" ");
@@ -214,6 +215,17 @@ export default function RangeTradingBotPage() {
           </div>
           <RangePositionVisual upper={BB_UPPER} lower={BB_LOWER} price={CURRENT_PRICE} adx={ADX_VALUE} bbWidth={BB_WIDTH} />
         </Card>
+
+        {/* Signals Overview */}
+        <SignalsOverview overrides={[
+          { id: "trend", status: "Neutral" },
+          { id: "support-resistance", status: "Triggered" },
+          { id: "volume", status: "Neutral" },
+          { id: "rsi-divergence", status: "Watching" },
+          { id: "vwap", status: "Neutral" },
+          { id: "liquidity", status: "Watching" },
+          { id: "market-structure", status: "Neutral" },
+        ]} />
 
         {/* 5. BACKTEST PANEL */}
         <BotBacktestPanel strategyName="Range Trading" accentColor="#9f8bff" />

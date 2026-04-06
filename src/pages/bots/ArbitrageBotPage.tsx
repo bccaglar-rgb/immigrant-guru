@@ -3,6 +3,7 @@ import BotExchangeBar from "../../components/bot/BotExchangeBar";
 import { BotProvider } from "../../components/bot/BotContext";
 import BotExecutionLog from "../../components/bot/BotExecutionLog";
 import BotStrategyChart from "../../components/bot/BotStrategyChart";
+import SignalsOverview from "../../components/bot/SignalsOverview";
 
 /* ── Mock: Opportunity Scanner Data ── */
 const OPPORTUNITIES = [
@@ -158,6 +159,20 @@ export default function ArbitrageBotPage() {
             </div>
           ))}
         </div>
+
+        {/* ── Signals Overview ── */}
+        <SignalsOverview
+          compact={true}
+          overrides={[
+            { id: "volume", status: "Bullish" },
+            { id: "liquidity", status: "Watching" },
+            { id: "exchange-flow", status: "Triggered" },
+            { id: "delta-volume", status: "Neutral" },
+            { id: "open-interest", status: "Neutral" },
+            { id: "funding-rate", status: "Neutral" },
+            { id: "composite", status: "Bullish" },
+          ]}
+        />
 
         {/* ── CHART PREVIEW ── */}
         <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4">

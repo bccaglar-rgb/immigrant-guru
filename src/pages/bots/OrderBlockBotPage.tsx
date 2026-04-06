@@ -4,6 +4,7 @@ import { BotProvider } from "../../components/bot/BotContext";
 import BotExecutionLog from "../../components/bot/BotExecutionLog";
 import BotStrategyChart from "../../components/bot/BotStrategyChart";
 import BotBacktestPanel from "../../components/bot/BotBacktestPanel";
+import SignalsOverview from "../../components/bot/SignalsOverview";
 
 /* ── Shared helpers ── */
 const cn = (...cls: (string | false | undefined)[]) => cls.filter(Boolean).join(" ");
@@ -344,6 +345,16 @@ export default function OrderBlockBotPage() {
           </div>
         </div>
       </Card>
+
+      {/* Signals Overview */}
+      <SignalsOverview overrides={[
+        { id: "imbalance-fvg", status: "Triggered" },
+        { id: "market-structure", status: "Bullish" },
+        { id: "support-resistance", status: "Triggered" },
+        { id: "liquidity", status: "Watching" },
+        { id: "volume", status: "Neutral" },
+        { id: "trend", status: "Bullish" },
+      ]} />
 
       {/* ── 5. Backtest ── */}
       <BotBacktestPanel strategyName="Order Block + FVG" accentColor={accent} />

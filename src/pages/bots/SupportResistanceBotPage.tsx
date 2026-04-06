@@ -4,6 +4,7 @@ import { BotProvider } from "../../components/bot/BotContext";
 import BotExecutionLog from "../../components/bot/BotExecutionLog";
 import BotStrategyChart from "../../components/bot/BotStrategyChart";
 import BotBacktestPanel from "../../components/bot/BotBacktestPanel";
+import SignalsOverview from "../../components/bot/SignalsOverview";
 
 /* ── Shared helpers ── */
 const cn = (...cls: (string | false | undefined)[]) => cls.filter(Boolean).join(" ");
@@ -300,6 +301,16 @@ export default function SupportResistanceBotPage() {
           </span>
         </div>
       </Card>
+
+      {/* Signals Overview */}
+      <SignalsOverview overrides={[
+        { id: "support-resistance", status: "Triggered" },
+        { id: "market-structure", status: "Bullish" },
+        { id: "trend", status: "Bullish" },
+        { id: "volume", status: "Watching" },
+        { id: "liquidity", status: "Watching" },
+        { id: "rsi-divergence", status: "Neutral" },
+      ]} />
 
       {/* ── 5. Backtest ── */}
       <BotBacktestPanel strategyName="S/R Bounce + Break" accentColor={accent} />

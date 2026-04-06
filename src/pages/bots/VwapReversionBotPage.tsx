@@ -4,6 +4,7 @@ import { BotProvider } from "../../components/bot/BotContext";
 import BotExecutionLog from "../../components/bot/BotExecutionLog";
 import BotStrategyChart from "../../components/bot/BotStrategyChart";
 import BotBacktestPanel from "../../components/bot/BotBacktestPanel";
+import SignalsOverview from "../../components/bot/SignalsOverview";
 
 /* ── Helpers ── */
 const cn = (...cls: (string | false | undefined)[]) => cls.filter(Boolean).join(" ");
@@ -234,6 +235,16 @@ export default function VwapReversionBotPage() {
             </div>
           </div>
         </Card>
+
+        {/* Signals Overview */}
+        <SignalsOverview overrides={[
+          { id: "vwap", status: "Triggered" },
+          { id: "anchored-vwap", status: "Bullish" },
+          { id: "volume", status: "Watching" },
+          { id: "delta-volume", status: "Neutral" },
+          { id: "trend", status: "Neutral" },
+          { id: "imbalance-fvg", status: "Watching" },
+        ]} />
 
         {/* 5. BACKTEST PANEL */}
         <BotBacktestPanel strategyName="VWAP Mean Reversion" accentColor="#9f8bff" />

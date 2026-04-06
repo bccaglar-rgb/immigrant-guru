@@ -4,6 +4,7 @@ import { BotProvider } from "../../components/bot/BotContext";
 import BotExecutionLog from "../../components/bot/BotExecutionLog";
 import BotStrategyChart from "../../components/bot/BotStrategyChart";
 import BotBacktestPanel from "../../components/bot/BotBacktestPanel";
+import SignalsOverview from "../../components/bot/SignalsOverview";
 
 /* ── Shared helpers ── */
 const cn = (...cls: (string | false | undefined)[]) => cls.filter(Boolean).join(" ");
@@ -254,6 +255,16 @@ export default function MarketStructureBotPage() {
           </div>
         </div>
       </Card>
+
+      {/* Signals Overview */}
+      <SignalsOverview overrides={[
+        { id: "market-structure", status: "Triggered" },
+        { id: "trend", status: "Bullish" },
+        { id: "support-resistance", status: "Bullish" },
+        { id: "liquidity", status: "Watching" },
+        { id: "imbalance-fvg", status: "Triggered" },
+        { id: "volume", status: "Bullish" },
+      ]} />
 
       {/* ── 5. Backtest ── */}
       <BotBacktestPanel strategyName="Market Structure" accentColor={accent} />

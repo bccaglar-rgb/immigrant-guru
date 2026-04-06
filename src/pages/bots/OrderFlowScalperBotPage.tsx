@@ -4,6 +4,7 @@ import { BotProvider } from "../../components/bot/BotContext";
 import BotExecutionLog from "../../components/bot/BotExecutionLog";
 import BotStrategyChart from "../../components/bot/BotStrategyChart";
 import BotBacktestPanel from "../../components/bot/BotBacktestPanel";
+import SignalsOverview from "../../components/bot/SignalsOverview";
 
 /* ── Helpers ── */
 const cn = (...cls: (string | false | undefined)[]) => cls.filter(Boolean).join(" ");
@@ -332,6 +333,17 @@ export default function OrderFlowScalperBotPage() {
 
       {/* 4. Chart */}
       <BotStrategyChart defaultTf="1m" indicators={["Delta/CVD", "Imbalance"]} accentColor="#2bc48a" />
+
+      {/* Signals Overview */}
+      <SignalsOverview compact={true} overrides={[
+        { id: "cvd", status: "Bullish" },
+        { id: "delta-volume", status: "Triggered" },
+        { id: "volume", status: "Bullish" },
+        { id: "liquidity", status: "Watching" },
+        { id: "imbalance-fvg", status: "Neutral" },
+        { id: "whale-activity", status: "Watching" },
+        { id: "squeeze", status: "Watching" },
+      ]} />
 
       {/* 5. Backtest */}
       <BotBacktestPanel strategyName="Order Flow" accentColor="#2bc48a" />

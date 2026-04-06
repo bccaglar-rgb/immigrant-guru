@@ -4,6 +4,7 @@ import { BotProvider } from "../../components/bot/BotContext";
 import BotExecutionLog from "../../components/bot/BotExecutionLog";
 import BotStrategyChart from "../../components/bot/BotStrategyChart";
 import BotBacktestPanel from "../../components/bot/BotBacktestPanel";
+import SignalsOverview from "../../components/bot/SignalsOverview";
 
 /* ── Shared helpers ── */
 const cn = (...cls: (string | false | undefined)[]) => cls.filter(Boolean).join(" ");
@@ -236,6 +237,17 @@ export default function HybridBotPage() {
             </div>
           </div>
         </Card>
+
+        {/* Signals Overview */}
+        <SignalsOverview overrides={[
+          { id: "composite", status: "Bullish" },
+          { id: "trend", status: "Bullish" },
+          { id: "rsi-divergence", status: "Neutral" },
+          { id: "volume", status: "Bullish" },
+          { id: "market-structure", status: "Bullish" },
+          { id: "funding-rate", status: "Bearish" },
+          { id: "vwap", status: "Neutral" },
+        ]} />
 
         {/* Chart */}
         <Card className="overflow-hidden p-0">
