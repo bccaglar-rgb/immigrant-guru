@@ -18,13 +18,6 @@ type SettingValue = number | string | boolean | string[];
 
 interface ExchangeTopBarProps {
   onAddExchange?: () => void;
-  indicatorsState?: IndicatorsState;
-  indicatorsEnabledCount?: number;
-  setMasterIndicators?: (enabled: boolean) => void;
-  setIndicatorGroup?: (group: IndicatorGroupKey, enabled: boolean) => void;
-  setIndicatorEnabled?: (indicator: IndicatorKey, enabled: boolean) => void;
-  setIndicatorSetting?: (indicator: IndicatorKey, key: string, value: SettingValue) => void;
-  resetIndicator?: (indicator: IndicatorKey) => void;
 }
 
 export const ExchangeTopBar = ({
