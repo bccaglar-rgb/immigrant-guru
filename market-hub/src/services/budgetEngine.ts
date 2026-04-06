@@ -11,11 +11,12 @@
 
 // ── Types ──
 
-export enum RequestTier {
-  CRITICAL = "A",   // execution, auth — always allowed unless banned
-  IMPORTANT = "B",  // recovery snapshot, metadata — allowed if budget > 50%
-  OPTIONAL = "C",   // warmup, enrichment, convenience — allowed if budget > 70%
-}
+export const RequestTier = {
+  CRITICAL: "A",
+  IMPORTANT: "B",
+  OPTIONAL: "C",
+} as const;
+export type RequestTier = (typeof RequestTier)[keyof typeof RequestTier];
 
 export interface EndpointBudget {
   maxPerMinute: number;
