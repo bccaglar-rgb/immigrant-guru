@@ -2,4 +2,8 @@ node_modules
 dist
 .env
 .env.local
+.env.production
+deploy/.env
+*.pem
+*.key
 .DS_Store
