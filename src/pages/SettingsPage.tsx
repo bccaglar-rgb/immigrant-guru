@@ -205,11 +205,16 @@ export default function SettingsPage() {
               headers: { ...authHeaders() },
             });
             if (!res.ok) { results[key] = { usdt: null, fetchedAt: null }; return; }
-            const data = await res.json() as { balances?: Array<{ asset: string; available: number; total: number }> ; fetchedAt?: string };
-            const usdtEntry = (data.balances ?? []).find((b) => b.asset === "USDT");
+            const data = await res.json() as Record<string, unknown>;
+            // Try multiple response formats
+            const balancesArr = (data.balances ?? data.assets ?? []) as Array<{ asset?: string; currency?: string; available?: number; total?: number; balance?: number; free?: number }>;
+            const usdtEntry = balancesArr.find((b) => (b.asset ?? b.currency ?? "").toUpperCase() === "USDT");
+            const usdtAmount = usdtEntry ? (usdtEntry.total ?? usdtEntry.balance ?? usdtEntry.available ?? usdtEntry.free ?? null) : null;
+            // Also check for flat USDT field
+            const flatUsdt = typeof data.totalWalletBalance === "number" ? data.totalWalletBalance : null;
             results[key] = {
-              usdt: usdtEntry ? usdtEntry.total : null,
-              fetchedAt: data.fetchedAt ?? null,
+              usdt: usdtAmount ?? flatUsdt ?? null,
+              fetchedAt: (data.fetchedAt as string) ?? null,
             };
           } catch {
             results[key] = { usdt: null, fetchedAt: null };
