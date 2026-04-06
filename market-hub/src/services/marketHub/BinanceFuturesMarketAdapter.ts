@@ -1254,26 +1254,18 @@ export class BinanceFuturesMarketAdapter implements IExchangeMarketAdapter {
     const last = this.bookSnapshotLastEmit.get(symbol) ?? 0;
     if (now - last < 3000) return; // throttle: max 1 per 3s per symbol
     this.bookSnapshotLastEmit.set(symbol, now);
-    const state = (this.orderbooks as any).books?.get(symbol.toUpperCase());
-    if (!state || !state.ready) return;
-    const bids: Array<[number, number]> = [];
-    const asks: Array<[number, number]> = [];
-    for (const [p, q] of state.bids) { bids.push([p, q]); if (bids.length >= 20) break; }
-    for (const [p, q] of state.asks) { asks.push([p, q]); if (asks.length >= 20) break; }
-    bids.sort((a: [number, number], b: [number, number]) => b[0] - a[0]);
-    asks.sort((a: [number, number], b: [number, number]) => a[0] - b[0]);
-    if (bids.length > 0 && asks.length > 0) {
-      this.emit({
-        type: "book_snapshot",
-        exchange: this.exchange,
-        symbol,
-        ts,
-        recvTs: now,
-        seq: state.lastSeq,
-        bids,
-        asks,
-      } as any);
-    }
+    const top = this.orderbooks.getTopLevels(symbol, 20);
+    if (!top || top.bids.length === 0 || top.asks.length === 0) return;
+    this.emit({
+      type: "book_snapshot",
+      exchange: this.exchange,
+      symbol,
+      ts,
+      recvTs: now,
+      seq: top.seq,
+      bids: top.bids,
+      asks: top.asks,
+    } as any);
   }
 
   private enqueueSnapshot(symbol: string): void {

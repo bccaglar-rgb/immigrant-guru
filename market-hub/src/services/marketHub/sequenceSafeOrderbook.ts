@@ -185,5 +185,13 @@ export class SequenceSafeOrderbookStore {
       midPrice: Number.isFinite(midPrice) ? midPrice : null,
     };
   }
+
+  getTopLevels(symbol: string, n = 20): { bids: Array<[number, number]>; asks: Array<[number, number]>; seq: number } | null {
+    const state = this.ensure(symbol);
+    if (!state.ready || state.bids.size === 0 || state.asks.size === 0) return null;
+    const bids = Array.from(state.bids.entries()).sort((a, b) => b[0] - a[0]).slice(0, n);
+    const asks = Array.from(state.asks.entries()).sort((a, b) => a[0] - b[0]).slice(0, n);
+    return { bids, asks, seq: state.lastSeq };
+  }
 }
 
