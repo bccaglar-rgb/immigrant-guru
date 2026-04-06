@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useMarketDataRouterStore } from "../../data/MarketDataRouter";
 import {
   ColorType,
   createChart,
@@ -772,10 +771,9 @@ export const ChartPanel = ({
                       <span className="font-medium text-[#BFC2C7]">{exchangeName}</span>
                     </span>
                     <span className="mt-0.5 inline-flex items-center gap-1.5 text-[9px]">
-                      {(() => {
-                        const stale = useMarketDataRouterStore?.getState?.()?.stale;
-                        return stale ? <span className="rounded bg-orange-900/60 px-1 py-0.5 text-[8px] font-semibold uppercase text-orange-300">stale</span> : null;
-                      })()}
+                      {chartLatencyMs !== null && chartLatencyMs > 45000 && (
+                        <span className="rounded bg-orange-900/60 px-1 py-0.5 text-[8px] font-semibold uppercase text-orange-300">stale</span>
+                      )}
                       <span style={{ color: latencyColor }}>
                         {isDown ? "Disconnected" : chartLatencyMs !== null ? `${chartLatencyMs}ms` : "..."}
                       </span>

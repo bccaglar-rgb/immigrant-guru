@@ -14,7 +14,6 @@ const mapExchangeToSource = (exchange: string): ExchangeSourceId | null => {
   return null;
 };
 
-type SettingValue = number | string | boolean | string[];
 
 interface ExchangeTopBarProps {
   onAddExchange?: () => void;
