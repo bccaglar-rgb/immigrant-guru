@@ -28,6 +28,10 @@ export const registerExchangeRoutes = (app: Express, manager: ExchangeManager, a
     } catch (err: any) {
       const code = err?.code ?? err?.issue?.code ?? "UNKNOWN";
       const message = err?.message ?? err?.issue?.message ?? "connect_failed";
+      // Detect unique constraint violation (duplicate account name for same exchange)
+      if (message.includes("unique") || message.includes("duplicate") || code === "23505") {
+        return res.status(409).json({ ok: false, error: "duplicate_account", message: "An account with this name already exists for this exchange. Please use a different Account Name." });
+      }
       return res.status(500).json({ ok: false, error: code, message });
     }
   });
