@@ -159,3 +159,4 @@ except: print('Failed to parse')
       - name: Test SSH access
         run: |
           ssh -o ConnectTimeout=10 -o BatchMode=yes root@${{ secrets.DROPLET_IP }} 'echo "SSH pubkey auth working"; whoami; sshd -T | grep pubkeyauthentication'
+
