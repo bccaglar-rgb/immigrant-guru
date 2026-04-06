@@ -200,6 +200,7 @@ const menuItems = [
   { label: "Exchanges", to: "/exchanges", accent: "var(--menu-accent-3)", icon: () => <ExchangeIcon /> },
   { label: "Bots", to: "/bot", accent: "var(--menu-accent-10)", icon: () => <BotIcon /> },
   { label: "Spot Arbitrage", to: "/bot/spot-arbitrage", accent: "#2bc48a", icon: () => <ArbitrageIcon /> },
+  { label: "Futures Hedge", to: "/bot/futures-hedge", accent: "#5B8DEF", icon: () => <HedgeIcon /> },
   { label: "Portfolio", to: "/portfolio", accent: "#4ecdc4", icon: () => <PortfolioIcon /> },
   { label: "Indicators", to: "/indicators", accent: "var(--menu-accent-6)", icon: () => <IndicatorIcon /> },
   // Tools submenu inserted here in render
