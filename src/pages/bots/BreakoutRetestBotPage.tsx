@@ -2,6 +2,7 @@ import { useState } from "react";
 import BotExchangeBar from "../../components/bot/BotExchangeBar";
 import { BotProvider } from "../../components/bot/BotContext";
 import BotExecutionLog from "../../components/bot/BotExecutionLog";
+import BotLivePanel from "../../components/bot/BotLivePanel";
 import BotStrategyChart from "../../components/bot/BotStrategyChart";
 import BotBacktestPanel from "../../components/bot/BotBacktestPanel";
 import SignalsOverview from "../../components/bot/SignalsOverview";
@@ -577,6 +578,7 @@ export default function BreakoutRetestBotPage() {
         </Card>
 
         {/* Execution Log */}
+        <BotLivePanel botSlug="breakout-retest" botName="Breakout Retest Bot" accentColor="#F5C542" />
         <BotExecutionLog accentColor={accent} />
       </div>
     </div>

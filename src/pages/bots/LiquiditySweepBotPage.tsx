@@ -2,6 +2,7 @@ import { useState } from "react";
 import BotExchangeBar from "../../components/bot/BotExchangeBar";
 import { BotProvider } from "../../components/bot/BotContext";
 import BotExecutionLog from "../../components/bot/BotExecutionLog";
+import BotLivePanel from "../../components/bot/BotLivePanel";
 import BotStrategyChart from "../../components/bot/BotStrategyChart";
 import BotBacktestPanel from "../../components/bot/BotBacktestPanel";
 import SignalsOverview from "../../components/bot/SignalsOverview";
@@ -546,6 +547,7 @@ export default function LiquiditySweepBotPage() {
           </div>
         </Card>
 
+        <BotLivePanel botSlug="liquidity-sweep" botName="Liquidity Sweep Bot" accentColor="#f4906c" />
         <BotExecutionLog accentColor={accent} />
       </div>
     </div>

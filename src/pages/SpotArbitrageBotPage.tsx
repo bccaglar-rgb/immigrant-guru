@@ -1,4 +1,8 @@
 import { useState } from "react";
+import { BotProvider } from "../components/bot/BotContext";
+import BotExchangeBar from "../components/bot/BotExchangeBar";
+import BotLivePanel from "../components/bot/BotLivePanel";
+import SignalsOverview from "../components/bot/SignalsOverview";
 
 /* ── mock data ── */
 const sameExOps = [
@@ -97,9 +101,15 @@ const SpotArbitrageBotPage = () => {
   const opps = oppTab === "same" ? sameExOps : crossExOps;
 
   return (
+    <BotProvider>
     <div className="flex h-full flex-col overflow-auto bg-[#0B0B0C] text-white">
-      {/* TOP BAR */}
-      <div className="flex flex-wrap items-center gap-3 border-b border-white/[0.06] bg-white/[0.015] px-4 py-2">
+      {/* Exchange Bar */}
+      <div className="p-4 pb-0">
+        <BotExchangeBar botName="Spot Arbitrage Engine" accentColor="#2bc48a" />
+      </div>
+
+      {/* LEGACY TOP BAR */}
+      <div className="mx-4 mt-3 flex flex-wrap items-center gap-3 rounded-lg border border-white/[0.06] bg-white/[0.015] px-4 py-2">
         <div className="flex items-center gap-2">
           <span className="h-2.5 w-2.5 rounded-full bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,.5)]" />
           <span className="text-[13px] font-bold tracking-wide text-white/90">SPOT ARBITRAGE BOT</span>
@@ -326,8 +336,21 @@ const SpotArbitrageBotPage = () => {
             </div>
           )}
         </Card>
+
+        {/* Signals Overview */}
+        <SignalsOverview overrides={[
+          { id: "exchange-flow", status: "Triggered" },
+          { id: "volume", status: "Bullish" },
+          { id: "liquidity", status: "Watching" },
+          { id: "delta-volume", status: "Neutral" },
+          { id: "composite", status: "Bullish" },
+        ]} />
+
+        {/* Live Trading */}
+        <BotLivePanel botSlug="spot-arbitrage" botName="Spot Arbitrage Bot" accentColor="#2bc48a" />
       </div>
     </div>
+    </BotProvider>
   );
 };
 

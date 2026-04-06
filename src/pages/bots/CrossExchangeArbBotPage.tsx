@@ -2,6 +2,7 @@ import { useState } from "react";
 import BotExchangeBar from "../../components/bot/BotExchangeBar";
 import { BotProvider } from "../../components/bot/BotContext";
 import BotExecutionLog from "../../components/bot/BotExecutionLog";
+import BotLivePanel from "../../components/bot/BotLivePanel";
 import BotStrategyChart from "../../components/bot/BotStrategyChart";
 import SignalsOverview from "../../components/bot/SignalsOverview";
 
@@ -337,6 +338,7 @@ export default function CrossExchangeArbBotPage() {
         </div>
 
         {/* ── 7. Execution Log ── */}
+        <BotLivePanel botSlug="cross-exchange-arb" botName="Cross-Exchange Arb Bot" accentColor="#ef4444" />
         <BotExecutionLog accentColor="#ef4444" />
 
       </div>

@@ -2,6 +2,7 @@ import { useState } from "react";
 import BotExchangeBar from "../../components/bot/BotExchangeBar";
 import { BotProvider } from "../../components/bot/BotContext";
 import BotExecutionLog from "../../components/bot/BotExecutionLog";
+import BotLivePanel from "../../components/bot/BotLivePanel";
 import BotStrategyChart from "../../components/bot/BotStrategyChart";
 import SignalsOverview from "../../components/bot/SignalsOverview";
 
@@ -482,6 +483,7 @@ export default function SmartDcaBotPage() {
         </div>
 
         {/* ── 8. EXECUTION LOG ── */}
+        <BotLivePanel botSlug="smart-dca" botName="Smart DCA Bot" accentColor="#6ec4ff" />
         <BotExecutionLog accentColor="#6ec4ff" />
       </div>
     </div>

@@ -2,6 +2,7 @@ import { useState } from "react";
 import BotExchangeBar from "../../components/bot/BotExchangeBar";
 import { BotProvider } from "../../components/bot/BotContext";
 import BotExecutionLog from "../../components/bot/BotExecutionLog";
+import BotLivePanel from "../../components/bot/BotLivePanel";
 import BotStrategyChart from "../../components/bot/BotStrategyChart";
 import BotBacktestPanel from "../../components/bot/BotBacktestPanel";
 import SignalsOverview from "../../components/bot/SignalsOverview";
@@ -344,6 +345,7 @@ export default function RsiReversalBotPage() {
               <p className="mt-1 text-[14px] font-bold text-white font-mono">04:32:18</p>
             </div>
           </Card>
+          <BotLivePanel botSlug="rsi-reversal" botName="RSI Reversal Bot" accentColor="#9f8bff" />
           <BotExecutionLog accentColor="#9f8bff" />
         </div>
 

@@ -2,6 +2,7 @@ import { useState } from "react";
 import BotExchangeBar from "../../components/bot/BotExchangeBar";
 import { BotProvider } from "../../components/bot/BotContext";
 import BotExecutionLog from "../../components/bot/BotExecutionLog";
+import BotLivePanel from "../../components/bot/BotLivePanel";
 import BotStrategyChart from "../../components/bot/BotStrategyChart";
 import SignalsOverview from "../../components/bot/SignalsOverview";
 
@@ -419,6 +420,7 @@ export default function GridBotPage() {
         </div>
 
         {/* ── 6. EXECUTION LOG ── */}
+        <BotLivePanel botSlug="grid" botName="Grid Bot" accentColor="#9f8bff" />
         <BotExecutionLog accentColor="#9f8bff" />
       </div>
     </div>

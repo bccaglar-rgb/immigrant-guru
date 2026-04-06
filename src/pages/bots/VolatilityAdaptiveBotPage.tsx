@@ -2,6 +2,7 @@ import { useState } from "react";
 import BotExchangeBar from "../../components/bot/BotExchangeBar";
 import { BotProvider } from "../../components/bot/BotContext";
 import BotExecutionLog from "../../components/bot/BotExecutionLog";
+import BotLivePanel from "../../components/bot/BotLivePanel";
 import SignalsOverview from "../../components/bot/SignalsOverview";
 
 /* ── Helpers ── */
@@ -518,6 +519,7 @@ export default function VolatilityAdaptiveBotPage() {
           </Card>
 
           {/* ── 6. Execution Log ── */}
+          <BotLivePanel botSlug="volatility-adaptive" botName="Volatility Adaptive Bot" accentColor="#ef4444" />
           <BotExecutionLog accentColor="#ef4444" />
         </>
       )}

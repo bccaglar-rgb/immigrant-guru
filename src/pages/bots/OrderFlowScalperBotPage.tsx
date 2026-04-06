@@ -2,6 +2,7 @@ import { useState } from "react";
 import BotExchangeBar from "../../components/bot/BotExchangeBar";
 import { BotProvider } from "../../components/bot/BotContext";
 import BotExecutionLog from "../../components/bot/BotExecutionLog";
+import BotLivePanel from "../../components/bot/BotLivePanel";
 import BotStrategyChart from "../../components/bot/BotStrategyChart";
 import BotBacktestPanel from "../../components/bot/BotBacktestPanel";
 import SignalsOverview from "../../components/bot/SignalsOverview";
@@ -356,6 +357,7 @@ export default function OrderFlowScalperBotPage() {
 
       {/* 8. Bot Thinking + Log */}
       <ThinkingPanel />
+      <BotLivePanel botSlug="order-flow-scalper" botName="Order Flow Scalper Bot" accentColor="#2bc48a" />
       <BotExecutionLog accentColor="#2bc48a" />
     </div>
     </BotProvider>

@@ -1,4 +1,8 @@
 import { useState } from "react";
+import { BotProvider } from "../components/bot/BotContext";
+import BotExchangeBar from "../components/bot/BotExchangeBar";
+import BotLivePanel from "../components/bot/BotLivePanel";
+import SignalsOverview from "../components/bot/SignalsOverview";
 
 /* ═══════════════════════════════════════════════════════════════════
    FUTURES HEDGE BOT — Spread, Funding & Basis Engines
@@ -440,7 +444,11 @@ export default function FuturesHedgeBotPage() {
   const [basisRunning, setBasisRunning] = useState(false);
 
   return (
+    <BotProvider>
     <main className="min-h-screen bg-[var(--bg)] p-1.5 md:p-2 flex flex-col gap-2">
+      {/* ── Exchange Bar ── */}
+      <BotExchangeBar botName="Futures Hedge Engine" accentColor="#5B8DEF" />
+
       {/* ── TOP BAR ── */}
       <TopBar mode={mode} setMode={setMode} killSwitch={killSwitch} setKillSwitch={setKillSwitch} />
 
@@ -475,6 +483,20 @@ export default function FuturesHedgeBotPage() {
 
       {/* ── BOTTOM TABS ── */}
       <BottomTabs />
+
+      {/* ── Signals Overview ── */}
+      <SignalsOverview overrides={[
+        { id: "funding-rate", status: "Triggered" },
+        { id: "open-interest", status: "Bullish" },
+        { id: "trend", status: "Neutral" },
+        { id: "volume", status: "Neutral" },
+        { id: "exchange-flow", status: "Watching" },
+        { id: "composite", status: "Bullish" },
+      ]} />
+
+      {/* ── Live Trading ── */}
+      <BotLivePanel botSlug="futures-hedge" botName="Futures Hedge Bot" accentColor="#5B8DEF" />
     </main>
+    </BotProvider>
   );
 }

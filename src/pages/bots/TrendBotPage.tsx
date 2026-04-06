@@ -2,6 +2,7 @@ import { useState } from "react";
 import BotExchangeBar from "../../components/bot/BotExchangeBar";
 import { BotProvider } from "../../components/bot/BotContext";
 import BotExecutionLog from "../../components/bot/BotExecutionLog";
+import BotLivePanel from "../../components/bot/BotLivePanel";
 import BotStrategyChart from "../../components/bot/BotStrategyChart";
 import BotBacktestPanel from "../../components/bot/BotBacktestPanel";
 import SignalsOverview from "../../components/bot/SignalsOverview";
@@ -465,6 +466,7 @@ export default function TrendBotPage() {
         </Card>
 
         {/* Execution Log */}
+        <BotLivePanel botSlug="trend" botName="Trend Bot" accentColor="#6ec4ff" />
         <BotExecutionLog accentColor={accent} />
       </div>
     </div>

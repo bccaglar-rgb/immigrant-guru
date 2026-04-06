@@ -2,6 +2,7 @@ import { useState, useMemo } from "react";
 import BotExchangeBar from "../../components/bot/BotExchangeBar";
 import { BotProvider } from "../../components/bot/BotContext";
 import BotExecutionLog from "../../components/bot/BotExecutionLog";
+import BotLivePanel from "../../components/bot/BotLivePanel";
 import BotStrategyChart from "../../components/bot/BotStrategyChart";
 import BotBacktestPanel from "../../components/bot/BotBacktestPanel";
 import SignalsOverview from "../../components/bot/SignalsOverview";
@@ -409,6 +410,7 @@ export default function MomentumVolumeBotPage() {
         </Card>
 
         {/* Execution Log */}
+        <BotLivePanel botSlug="momentum-volume" botName="Momentum + Volume Bot" accentColor="#6ec4ff" />
         <BotExecutionLog accentColor={ACCENT} />
       </div>
     </div>

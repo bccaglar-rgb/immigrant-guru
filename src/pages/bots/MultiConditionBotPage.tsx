@@ -2,6 +2,7 @@ import { useState, useMemo } from "react";
 import BotExchangeBar from "../../components/bot/BotExchangeBar";
 import { BotProvider } from "../../components/bot/BotContext";
 import BotExecutionLog from "../../components/bot/BotExecutionLog";
+import BotLivePanel from "../../components/bot/BotLivePanel";
 import BotStrategyChart from "../../components/bot/BotStrategyChart";
 import BotBacktestPanel from "../../components/bot/BotBacktestPanel";
 import SignalsOverview from "../../components/bot/SignalsOverview";
@@ -342,6 +343,7 @@ export default function MultiConditionBotPage() {
         </Card>
 
         {/* Execution Log */}
+        <BotLivePanel botSlug="multi-condition" botName="Multi-Condition Bot" accentColor="#F5C542" />
         <BotExecutionLog accentColor={ACCENT} />
       </div>
     </div>

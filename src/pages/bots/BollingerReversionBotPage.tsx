@@ -2,6 +2,7 @@ import { useState } from "react";
 import BotExchangeBar from "../../components/bot/BotExchangeBar";
 import { BotProvider } from "../../components/bot/BotContext";
 import BotExecutionLog from "../../components/bot/BotExecutionLog";
+import BotLivePanel from "../../components/bot/BotLivePanel";
 import BotStrategyChart from "../../components/bot/BotStrategyChart";
 import BotBacktestPanel from "../../components/bot/BotBacktestPanel";
 import SignalsOverview from "../../components/bot/SignalsOverview";
@@ -360,6 +361,7 @@ export default function BollingerReversionBotPage() {
               <p className="mt-1 text-[14px] font-bold text-[#2bc48a] font-mono">4 wins / 2 losses</p>
             </div>
           </Card>
+          <BotLivePanel botSlug="bollinger-reversion" botName="Bollinger Reversion Bot" accentColor="#9f8bff" />
           <BotExecutionLog accentColor="#9f8bff" />
         </div>
 

@@ -2,6 +2,7 @@ import { useState } from "react";
 import BotExchangeBar from "../../components/bot/BotExchangeBar";
 import { BotProvider } from "../../components/bot/BotContext";
 import BotExecutionLog from "../../components/bot/BotExecutionLog";
+import BotLivePanel from "../../components/bot/BotLivePanel";
 import BotStrategyChart from "../../components/bot/BotStrategyChart";
 import SignalsOverview from "../../components/bot/SignalsOverview";
 
@@ -340,6 +341,7 @@ export default function HedgingBotPage() {
         </Card>
 
         {/* ── 5. EXECUTION LOG ── */}
+        <BotLivePanel botSlug="hedging" botName="Hedging Bot" accentColor="#ef4444" />
         <BotExecutionLog accentColor="#ef4444" />
       </div>
     </div>
