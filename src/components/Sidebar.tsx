@@ -198,9 +198,7 @@ const menuItems = [
   { label: "Crypto Market", to: "/crypto-market", accent: "var(--menu-accent-4)", icon: () => <MarketIcon /> },
   // AI Trader submenu inserted here in render
   { label: "Exchanges", to: "/exchanges", accent: "var(--menu-accent-3)", icon: () => <ExchangeIcon /> },
-  { label: "Bots", to: "/bot", accent: "var(--menu-accent-10)", icon: () => <BotIcon /> },
-  { label: "Spot Arbitrage", to: "/bot/spot-arbitrage", accent: "#2bc48a", icon: () => <ArbitrageIcon /> },
-  { label: "Futures Hedge", to: "/bot/futures-hedge", accent: "#5B8DEF", icon: () => <HedgeIcon /> },
+  // Bots submenu inserted here in render
   { label: "Portfolio", to: "/portfolio", accent: "#4ecdc4", icon: () => <PortfolioIcon /> },
   { label: "Indicators", to: "/indicators", accent: "var(--menu-accent-6)", icon: () => <IndicatorIcon /> },
   // Tools submenu inserted here in render
@@ -208,6 +206,12 @@ const menuItems = [
 ] as const;
 
 const aiTraderItem = { label: "AI Trader", accent: "var(--menu-accent-4)", icon: <AiTraderIcon /> } as const;
+const botsItem = { label: "Bots", accent: "var(--menu-accent-10)", icon: <BotIcon /> } as const;
+const botsSubItems = [
+  { label: "Bot Dashboard", to: "/bot", accent: "var(--menu-accent-10)", icon: <BotIcon /> },
+  { label: "Spot Arbitrage", to: "/bot/spot-arbitrage", accent: "#2bc48a", icon: <ArbitrageIcon /> },
+  { label: "Futures Hedge", to: "/bot/futures-hedge", accent: "#5B8DEF", icon: <HedgeIcon /> },
+] as const;
 const toolsItem = { label: "Tools", accent: "var(--menu-accent-12)", icon: <ToolsIcon /> } as const;
 const toolsSubItems = [
   {
@@ -275,11 +279,15 @@ export const Sidebar = ({
   const [labelTimer, setLabelTimer] = useState<number | null>(null);
   const [shrinkTimer, setShrinkTimer] = useState<number | null>(null);
   const [, setAiTraderOpen] = useState(false);
+  const [botsOpen, setBotsOpen] = useState(false);
   const [toolsOpen, setToolsOpen] = useState(false);
   const aiTraderRef = useRef<HTMLDivElement | null>(null);
+  const botsRef = useRef<HTMLDivElement | null>(null);
   const toolsRef = useRef<HTMLDivElement | null>(null);
   const aiTraderCloseTimerRef = useRef<number | null>(null);
+  const botsCloseTimerRef = useRef<number | null>(null);
   const toolsCloseTimerRef = useRef<number | null>(null);
+  const botsActive = location.pathname.startsWith("/bot");
   const toolsActive = location.pathname.startsWith("/coin-calculator") || location.pathname.startsWith("/token-creator");
 
   useEffect(() => {
@@ -481,6 +489,7 @@ export const Sidebar = ({
     const onDocClick = (event: MouseEvent) => {
       if (!aiTraderRef.current) return;
       if (!aiTraderRef.current.contains(event.target as Node)) setAiTraderOpen(false);
+      if (botsRef.current && !botsRef.current.contains(event.target as Node)) setBotsOpen(false);
       if (toolsRef.current && !toolsRef.current.contains(event.target as Node)) setToolsOpen(false);
     };
     const onKeyDown = (event: KeyboardEvent) => {
@@ -505,6 +514,14 @@ export const Sidebar = ({
   const closeAiTraderWithDelay = () => {
     if (aiTraderCloseTimerRef.current) window.clearTimeout(aiTraderCloseTimerRef.current);
     aiTraderCloseTimerRef.current = window.setTimeout(() => setAiTraderOpen(false), 120);
+  };
+  const openBots = () => {
+    if (botsCloseTimerRef.current) { window.clearTimeout(botsCloseTimerRef.current); botsCloseTimerRef.current = null; }
+    setBotsOpen(true);
+  };
+  const closeBotsWithDelay = () => {
+    if (botsCloseTimerRef.current) window.clearTimeout(botsCloseTimerRef.current);
+    botsCloseTimerRef.current = window.setTimeout(() => setBotsOpen(false), 120);
   };
   const openTools = () => {
     if (toolsCloseTimerRef.current) {
@@ -587,6 +604,63 @@ export const Sidebar = ({
 
           {/* Submenu removed — AI Trader navigates directly to /ai-trader/strategy */}
         </div> : null}
+
+        {/* Bots submenu */}
+        <div
+          ref={botsRef}
+          className="relative"
+          onMouseEnter={openBots}
+          onMouseLeave={closeBotsWithDelay}
+        >
+          <button
+            type="button"
+            title={botsItem.label}
+            onClick={() => { navigate("/bot"); onNavigate?.(); }}
+            className="group block w-full"
+            aria-haspopup="menu"
+            aria-expanded={botsOpen}
+          >
+            <span
+              className={`relative flex w-full items-center rounded-lg border border-transparent px-2 py-2 text-sm transition-all hover:border-[var(--borderSoft)] hover:bg-[var(--panelAlt)] ${
+                botsActive ? "bg-[var(--panelAlt3)] text-white" : "text-[var(--textMuted)]"
+              }`}
+              style={{ boxShadow: botsActive ? `inset 2px 0 0 0 ${botsItem.accent}` : undefined }}
+            >
+              <span className={`inline-grid h-[37px] w-[37px] place-items-center transition-all duration-[180ms] ease-[cubic-bezier(0.215,0.61,0.355,1)] ${showText ? "mr-2" : "mx-auto"}`} style={{ color: botsItem.accent }}>
+                {botsItem.icon}
+              </span>
+              <span className={`truncate transition-all duration-[180ms] ease-[cubic-bezier(0.215,0.61,0.355,1)] ${showText ? "translate-x-0 opacity-100" : "w-0 -translate-x-1 opacity-0"}`}>
+                {botsItem.label}
+              </span>
+            </span>
+          </button>
+          <div
+            className={`absolute left-full top-1/2 z-[120] ml-2 w-56 -translate-y-1/2 rounded-xl border border-[var(--borderSoft)] bg-[var(--panel)] p-2 shadow-2xl transition-all duration-180 ${
+              botsOpen ? "pointer-events-auto translate-x-0 opacity-100" : "pointer-events-none -translate-x-1 opacity-0"
+            }`}
+            role="menu"
+            aria-label="Bots submenu"
+          >
+            {botsSubItems.map((sub) => (
+              <NavLink
+                key={sub.to}
+                to={sub.to}
+                onClick={() => { setBotsOpen(false); onNavigate?.(); }}
+                className={({ isActive }) =>
+                  `block rounded-md border px-2 py-1.5 text-sm transition-colors ${
+                    isActive ? "border-[var(--borderSoft)] bg-[var(--panelAlt3)] text-white" : "border-transparent text-[var(--textMuted)] hover:border-[var(--borderSoft)] hover:bg-[var(--panelAlt)]"
+                  }`
+                }
+                role="menuitem"
+              >
+                <span className="flex items-center gap-2">
+                  <span className="h-4 w-4" style={{ color: sub.accent }}>{sub.icon}</span>
+                  <span>{sub.label}</span>
+                </span>
+              </NavLink>
+            ))}
+          </div>
+        </div>
 
         {midMenu.filter(() => true).map((item) => (
           <NavItem
