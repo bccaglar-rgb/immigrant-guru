@@ -51,23 +51,28 @@ export const ExchangeTopBar = ({
   const selectedExchangeId = useDataSourceManager((state) => state.selectedExchangeId);
   const setSelectedExchangeId = useDataSourceManager((state) => state.setSelectedExchangeId);
   const setSelectedAccountType = useDataSourceManager((state) => state.setSelectedAccountType);
-  const { enabledAccounts } = useExchangeConfigs();
+  const { registeredAccounts } = useExchangeConfigs();
 
+  // Show ALL connected accounts in the header (including FAILED / disabled ones)
+  // so users can see every exchange they added. The health badge already renders
+  // the correct status (OFF / ERROR) for non-ready accounts.
   const exchangeOptions = useMemo(
     () =>
-      [...enabledAccounts].sort((a, b) => {
-        const aName = String(a.exchangeDisplayName ?? "").toLowerCase();
-        const bName = String(b.exchangeDisplayName ?? "").toLowerCase();
-        const score = (name: string) => {
-          if (name.includes("binance")) return 0;
-          if (name.includes("gate")) return 1;
-          return 2;
-        };
-        const priDiff = score(aName) - score(bName);
-        if (priDiff !== 0) return priDiff;
-        return aName.localeCompare(bName);
-      }),
-    [enabledAccounts],
+      [...registeredAccounts]
+        .filter((row) => row.accountName !== "__test__")
+        .sort((a, b) => {
+          const aName = String(a.exchangeDisplayName ?? "").toLowerCase();
+          const bName = String(b.exchangeDisplayName ?? "").toLowerCase();
+          const score = (name: string) => {
+            if (name.includes("binance")) return 0;
+            if (name.includes("gate")) return 1;
+            return 2;
+          };
+          const priDiff = score(aName) - score(bName);
+          if (priDiff !== 0) return priDiff;
+          return aName.localeCompare(bName);
+        }),
+    [registeredAccounts],
   );
 
   const activeId = useMemo(() => {

@@ -65,18 +65,26 @@ jobs:
             echo "=== cloud-init sshd ==="
             cat /etc/ssh/sshd_config.d/50-cloud-init.conf 2>/dev/null || echo "No cloud-init sshd"
 
-            # Fix: ensure PubkeyAuthentication yes everywhere
-            sed -i 's/^PubkeyAuthentication no/PubkeyAuthentication yes/' /etc/ssh/sshd_config
-            sed -i 's/^#PubkeyAuthentication.*/PubkeyAuthentication yes/' /etc/ssh/sshd_config
-            grep -q "^PubkeyAuthentication" /etc/ssh/sshd_config || echo "PubkeyAuthentication yes" >> /etc/ssh/sshd_config
-            # Fix in ALL config.d files
-            for f in /etc/ssh/sshd_config.d/*.conf; do
+            # Force PubkeyAuthentication in ALL sshd config files (main + config.d overrides)
+            for f in /etc/ssh/sshd_config.d/*.conf /etc/ssh/sshd_config; do
               if [ -f "$f" ]; then
+                echo "Fixing PubkeyAuthentication in $f"
                 sed -i 's/^PubkeyAuthentication no/PubkeyAuthentication yes/' "$f"
+                sed -i 's/^#PubkeyAuthentication.*/PubkeyAuthentication yes/' "$f"
               fi
             done
-            # If PasswordAuthentication only, enable pubkey
-            grep -rn "PubkeyAuthentication" /etc/ssh/sshd_config.d/ 2>/dev/null || true
+            # Ensure main config has PubkeyAuthentication yes if not present at all
+            grep -q "^PubkeyAuthentication" /etc/ssh/sshd_config || echo "PubkeyAuthentication yes" >> /etc/ssh/sshd_config
+            # Remove any PasswordAuthentication-only enforcement in config.d
+            for f in /etc/ssh/sshd_config.d/*.conf; do
+              if [ -f "$f" ]; then
+                # If file only enforces password auth without pubkey, add pubkey
+                if grep -q "PasswordAuthentication" "$f" && ! grep -q "^PubkeyAuthentication yes" "$f"; then
+                  echo "PubkeyAuthentication yes" >> "$f"
+                  echo "Added PubkeyAuthentication yes to $f"
+                fi
+              fi
+            done
 
             # Restart sshd
             systemctl restart sshd || service ssh restart || true
@@ -85,6 +93,15 @@ jobs:
             # Verify final effective config
             echo "=== Effective sshd settings ==="
             sshd -T 2>/dev/null | grep -E "pubkeyauthentication|authorizedkeysfile|permitrootlogin" || true
+
+            # Show all config.d files after fix
+            echo "=== Post-fix sshd_config.d/ ==="
+            for f in /etc/ssh/sshd_config.d/*.conf; do
+              if [ -f "$f" ]; then
+                echo "--- $f ---"
+                cat "$f"
+              fi
+            done
 
             # 2. Create admin user via API signup then promote to ADMIN
             echo ""
@@ -114,3 +131,7 @@ jobs:
             echo "=== Health ==="
             curl -sf http://127.0.0.1:8090/api/health && echo " HEALTHY" || echo "UNHEALTHY"
           FIXEOF
+
+      - name: Test SSH access
+        run: |
+          ssh -o ConnectTimeout=10 -o BatchMode=yes root@${{ secrets.DROPLET_IP }} 'echo "SSH pubkey auth working"; whoami; sshd -T | grep pubkeyauthentication'
