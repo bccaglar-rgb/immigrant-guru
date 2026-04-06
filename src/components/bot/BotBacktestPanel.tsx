@@ -26,7 +26,14 @@ const PERIOD_POINTS: Record<Period, number> = {
   All: 200,
 };
 
-function generateEquityCurve(points: number): { date: string; return: number }[] {
+// Seeded PRNG — deterministic results (same seed = same curve every time)
+function seededRng(seed: number) {
+  let s = seed;
+  return () => { s = (s * 16807 + 0) % 2147483647; return (s - 1) / 2147483646; };
+}
+
+function generateEquityCurve(points: number, seed = 42): { date: string; return: number }[] {
+  const rng = seededRng(seed + points); // seed varies by period for different but stable curves
   const data: { date: string; return: number }[] = [];
   let cumulative = 0;
   const baseDate = new Date(2025, 0, 1);
@@ -37,10 +44,10 @@ function generateEquityCurve(points: number): { date: string; return: number }[]
 
     const drift = 0.05;
     const volatility = 0.6;
-    const change = drift + volatility * (Math.random() - 0.45);
+    const change = drift + volatility * (rng() - 0.45);
 
-    // Simulate occasional drawdowns
-    const drawdown = Math.random() < 0.08 ? -(Math.random() * 2.5) : 0;
+    // Simulate occasional drawdowns (deterministic)
+    const drawdown = rng() < 0.08 ? -(rng() * 2.5) : 0;
     cumulative += change + drawdown;
 
     data.push({

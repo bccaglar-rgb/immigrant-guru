@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
 import { LWChart } from "../components/shared/LWChart";
 import { useLiveMarketData } from "../hooks/useLiveMarketData";
+import SignalsOverview from "../components/bot/SignalsOverview";
 import type { Timeframe } from "../types";
 
 /* ── Constants ── */
@@ -385,6 +386,17 @@ export default function SpreadTerminalPage() {
 
       {/* Paired Execution Panel */}
       <PairedExecutionPanel leftExchange={leftExchange} rightExchange={rightExchange} />
+
+      {/* Signals Overview */}
+      <SignalsOverview compact overrides={[
+        { id: "exchange-flow", status: "Triggered" },
+        { id: "volume", status: "Bullish" },
+        { id: "funding-rate", status: "Watching" },
+        { id: "open-interest", status: "Neutral" },
+        { id: "liquidity", status: "Watching" },
+        { id: "delta-volume", status: "Bullish" },
+        { id: "composite", status: "Bullish" },
+      ]} />
     </div>
   );
 }

@@ -911,7 +911,7 @@ export default function BotPage() {
                       {locked && <span className="text-[10px]">&#128274;</span>}
                       <span className={locked ? "line-clamp-1" : ""}>{bot.name}</span>
                       {locked && <span className={`ml-auto rounded px-1 py-px text-[8px] font-bold ${planInfo.color} ${planInfo.bg}`}>{planInfo.label}</span>}
-                      {!locked && bot.id in B && !isBuilder && <span className="ml-auto h-1.5 w-1.5 rounded-full bg-[#2bc48a]" title="Ready" />}
+                      {!locked && (bot.id in B || bot.id in BOT_PAGE_ROUTES) && !isBuilder && <span className="ml-auto h-1.5 w-1.5 rounded-full bg-[#2bc48a]" title="Ready" />}
                     </span>
                   </button>
                 );

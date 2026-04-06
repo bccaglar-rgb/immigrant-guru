@@ -29,12 +29,21 @@ const DEFAULT_CONDITIONS: Condition[] = [
   { label: "Funding rate", met: true, currentValue: "0.008%", targetValue: "< 0.02%" },
 ];
 
-const MARKET_STATE = [
-  { label: "Trend", value: "Bullish", color: "#2cc497" },
-  { label: "Price", value: "$68,420", color: "#fff" },
-  { label: "Volume", value: "High", color: "#F5C542" },
-  { label: "RSI", value: "44", color: "#FF9F43" },
-];
+// Market state now derived from conditions — no hardcoded values
+const deriveMarketState = (conditions: Condition[]) => {
+  const trendCond = conditions.find(c => c.label.toLowerCase().includes("ema") || c.label.toLowerCase().includes("trend"));
+  const rsiCond = conditions.find(c => c.label.toLowerCase().includes("rsi"));
+  const volCond = conditions.find(c => c.label.toLowerCase().includes("volume") || c.label.toLowerCase().includes("vol"));
+  const metCount = conditions.filter(c => c.met).length;
+  const totalCount = conditions.length;
+
+  return [
+    { label: "Trend", value: trendCond?.met ? "Favorable" : "Unfavorable", color: trendCond?.met ? "#2cc497" : "#f6465d" },
+    { label: "Conditions", value: `${metCount}/${totalCount}`, color: metCount > totalCount / 2 ? "#2cc497" : "#F5C542" },
+    { label: "Volume", value: volCond?.met ? "Confirmed" : "Weak", color: volCond?.met ? "#2cc497" : "#FF9F43" },
+    { label: "RSI", value: rsiCond?.currentValue ?? "—", color: rsiCond?.met ? "#2cc497" : "#FF9F43" },
+  ];
+};
 
 /* ---- Icons ---- */
 
@@ -164,7 +173,7 @@ export const BotThinkingPanel = ({
           Current Market State
         </p>
         <div className="grid grid-cols-2 gap-2">
-          {MARKET_STATE.map((item) => (
+          {deriveMarketState(conditions).map((item) => (
             <div key={item.label} className="rounded-lg bg-white/[0.03] px-2.5 py-2">
               <p className="text-[10px] text-white/30">{item.label}</p>
               <p className="text-xs font-semibold" style={{ color: item.color }}>
