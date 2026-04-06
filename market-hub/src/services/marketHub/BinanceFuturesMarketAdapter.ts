@@ -46,12 +46,12 @@ const DEPTH_BUFFER_MAX = 400;
 // Each symbol = @depth@500ms (2/sec) + 7 @kline streams + @trade on tradeWs.
 // 10 symbols × 2/sec = 20 depth msgs/sec — keeps event loop clean for trade latency.
 // Beyond this, symbols still get price/ticker/mark from the aggregate WS (!ticker@arr).
-const MAX_DEPTH_SYMBOLS = 10;
+const MAX_DEPTH_SYMBOLS = 20;
 
 // Priority symbols that MUST be in depthSymbols (subscribed first on start).
 // These are the highest-volume Binance Futures pairs — without priority seeding,
 // random low-volume symbols from !ticker@arr could fill the depth slots first.
-const PRIORITY_DEPTH_SYMBOLS = ["BTCUSDT", "ETHUSDT", "SOLUSDT", "BNBUSDT", "XRPUSDT"];
+const PRIORITY_DEPTH_SYMBOLS = ["BTCUSDT", "ETHUSDT", "SOLUSDT", "BNBUSDT", "XRPUSDT", "AAVEUSDT", "AVAXUSDT", "DOGEUSDT", "LINKUSDT", "ARBUSDT"];
 const BINANCE_CANDLE_INTERVALS = ["1m", "5m", "15m", "30m", "1h", "4h", "1d"] as const;
 const CANDLE_STORE_MAX = 900;
 const TRADE_STORE_MAX = 500;
