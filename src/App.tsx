@@ -63,6 +63,8 @@ const SniperPage = lazyRetry(() => import("./pages/SniperPage"));
 const MasterPage = lazyRetry(() => import("./pages/MasterPage"));
 const AlphaWarRoomPage = lazyRetry(() => import("./pages/AlphaWarRoomPage"));
 const InstitutionalCommandPage = lazyRetry(() => import("./pages/InstitutionalCommandPage"));
+const SpotArbitrageBotPage = lazyRetry(() => import("./pages/SpotArbitrageBotPage"));
+const FuturesHedgeBotPage = lazyRetry(() => import("./pages/FuturesHedgeBotPage"));
 
 const PageLoader = () => (
   <div className="flex min-h-[60vh] items-center justify-center">
@@ -159,6 +161,8 @@ function App() {
         <Route path="/ai-trader/arena" element={<RequireAuth><Suspense fallback={<PageLoader />}><AiTraderComingSoonPage title="AI Trader · AI Arena" note="AI Arena module is coming soon." /></Suspense></RequireAuth>} />
         <Route path="/ai-trader/backtest" element={<RequireAuth><Suspense fallback={<PageLoader />}><AiTraderComingSoonPage title="AI Trader · Backtest" note="Backtest module is coming soon." /></Suspense></RequireAuth>} />
         <Route path="/bot" element={<RequirePlan><Suspense fallback={<PageLoader />}><BotPage /></Suspense></RequirePlan>} />
+        <Route path="/bot/spot-arbitrage" element={<RequirePlan><Suspense fallback={<PageLoader />}><SpotArbitrageBotPage /></Suspense></RequirePlan>} />
+        <Route path="/bot/futures-hedge" element={<RequirePlan><Suspense fallback={<PageLoader />}><FuturesHedgeBotPage /></Suspense></RequirePlan>} />
         <Route path="/coin-universe" element={<RequirePlan><Suspense fallback={<PageLoader />}><CoinUniversePage /></Suspense></RequirePlan>} />
         <Route path="/coin-insight" element={<RequirePlan><Suspense fallback={<PageLoader />}><CoinInsightPage /></Suspense></RequirePlan>} />
         <Route path="/sniper" element={<RequirePlan><Suspense fallback={<PageLoader />}><SniperPage /></Suspense></RequirePlan>} />

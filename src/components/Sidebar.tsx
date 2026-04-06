@@ -143,6 +143,24 @@ const AdminIcon = () => <Icon>
   <path d="M12 2L4 6.5v5c0 5.25 3.4 10.15 8 11.5 4.6-1.35 8-6.25 8-11.5v-5z" fill="url(#iconGoldLight)" stroke="url(#iconGold)" strokeWidth="1.2" />
   <path d="M9 12l2 2 4-4" stroke="url(#iconGold)" strokeWidth="1.5" fill="none" />
 </Icon>;
+const ArbitrageIcon = () => <Icon>
+  <path d="M4 12h16" stroke="url(#iconGold)" strokeWidth="1.2" />
+  <path d="M8 7l-4 5 4 5" stroke="url(#iconGold)" strokeWidth="1.3" fill="none" />
+  <path d="M16 7l4 5-4 5" stroke="url(#iconGold)" strokeWidth="1.3" fill="none" />
+  <circle cx="12" cy="12" r="2.5" fill="url(#iconGoldLight)" stroke="url(#iconGold)" strokeWidth="1.2" />
+  <path d="M12 9.5v5" stroke="url(#iconGold)" strokeWidth="0.8" />
+  <path d="M10.5 11h3" stroke="url(#iconGold)" strokeWidth="0.8" />
+</Icon>;
+const HedgeIcon = () => <Icon>
+  <path d="M6 4v16" stroke="url(#iconGold)" strokeWidth="1.2" />
+  <path d="M18 4v16" stroke="url(#iconGold)" strokeWidth="1.2" />
+  <path d="M6 8h12" stroke="url(#iconGold)" strokeWidth="1" strokeDasharray="2 1.5" />
+  <path d="M6 16h12" stroke="url(#iconGold)" strokeWidth="1" strokeDasharray="2 1.5" />
+  <path d="M6 12l3-3 3 3 3-3 3 3" stroke="url(#iconGold)" strokeWidth="1.4" fill="none" />
+  <circle cx="6" cy="12" r="1.5" fill="url(#iconGold)" />
+  <circle cx="18" cy="12" r="1.5" fill="url(#iconGold)" />
+  <rect x="9" y="10" width="6" height="4" rx="1" fill="url(#iconGoldLight)" stroke="url(#iconGold)" strokeWidth="0.8" />
+</Icon>;
 const BotIcon = () => <Icon>
   <rect x="5" y="9" width="14" height="10" rx="3" fill="url(#iconGoldLight)" stroke="url(#iconGold)" strokeWidth="1.2" />
   <circle cx="9" cy="14" r="1.5" fill="url(#iconGold)" />
@@ -181,6 +199,7 @@ const menuItems = [
   // AI Trader submenu inserted here in render
   { label: "Exchanges", to: "/exchanges", accent: "var(--menu-accent-3)", icon: () => <ExchangeIcon /> },
   { label: "Bots", to: "/bot", accent: "var(--menu-accent-10)", icon: () => <BotIcon /> },
+  { label: "Spot Arbitrage", to: "/bot/spot-arbitrage", accent: "#2bc48a", icon: () => <ArbitrageIcon /> },
   { label: "Portfolio", to: "/portfolio", accent: "#4ecdc4", icon: () => <PortfolioIcon /> },
   { label: "Indicators", to: "/indicators", accent: "var(--menu-accent-6)", icon: () => <IndicatorIcon /> },
   // Tools submenu inserted here in render
@@ -499,11 +518,11 @@ export const Sidebar = ({
   };
 
 
-  const topMenu = menuItems.slice(0, 9);
-  // Items between AI Trader and Tools: Exchanges..Indicators (index 9-12)
-  const midMenu = menuItems.slice(9, 13);
-  // Items after Tools: Bitrium Token, Pricing (index 13+)
-  const bottomMenu = menuItems.slice(13);
+  const topMenu = menuItems.slice(0, 10);
+  // Items between AI Trader and Tools: Portfolio..Pricing (index 10-13)
+  const midMenu = menuItems.slice(10, 14);
+  // Items after Tools (index 14+)
+  const bottomMenu = menuItems.slice(14);
 
   return (
     <aside
