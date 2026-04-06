@@ -128,6 +128,30 @@ jobs:
               -c "SELECT id, email, role FROM users;" 2>/dev/null
 
             echo ""
+            echo "=== Restart market-hub and server ==="
+            cd /var/www/bitrium
+            pm2 restart all --update-env 2>/dev/null || true
+            sleep 5
+            pm2 list
+
+            echo ""
+            echo "=== Check market-hub logs ==="
+            pm2 logs market-hub --lines 10 --nostream 2>/dev/null || true
+
+            echo ""
+            echo "=== Check depth cache ==="
+            sleep 10
+            curl -sf http://127.0.0.1:8090/api/market/live?symbol=BTCUSDT'&'exchange=binance 2>/dev/null | python3 -c "
+import sys,json
+try:
+  d=json.load(sys.stdin)
+  print('orderbookSource:', d.get('orderbookSource'))
+  print('feedSource:', d.get('feedSource'))
+  print('price:', d.get('lastTradePrice'))
+except: print('Failed to parse')
+" || echo "Market API unavailable"
+
+            echo ""
             echo "=== Health ==="
             curl -sf http://127.0.0.1:8090/api/health && echo " HEALTHY" || echo "UNHEALTHY"
           FIXEOF
