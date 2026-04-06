@@ -66,6 +66,22 @@ const AI_PROVIDER_PRESETS: ProviderPreset[] = [
 const nowIso = () => new Date().toISOString();
 const makeId = () => Math.random().toString(36).slice(2, 10);
 
+const timeAgo = (iso: string | undefined): string => {
+  if (!iso) return "";
+  const diff = Date.now() - new Date(iso).getTime();
+  if (diff < 0) return "just now";
+  const seconds = Math.floor(diff / 1000);
+  if (seconds < 60) return "just now";
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return `${minutes} min ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  return `${days}d ago`;
+};
+
+type BalanceMap = Record<string, { usdt: number | null; fetchedAt: string | null }>;
+
 const parseJsonResponse = async <T,>(res: Response): Promise<T> => {
   const contentType = res.headers.get("content-type") ?? "";
   const text = await res.text();
@@ -169,6 +185,42 @@ export default function SettingsPage() {
   const [modelErrors, setModelErrors] = useState<Record<string, string>>({});
 
   const authUser = useAuthStore((s) => s.user);
+
+  const [balances, setBalances] = useState<BalanceMap>({});
+
+  // Fetch USDT balance for each connected exchange on mount and when rows change
+  useEffect(() => {
+    let cancelled = false;
+    const fetchBalances = async () => {
+      const readyRows = exchangeRows.filter((r) => r.status === "READY" || r.status === "PARTIAL");
+      if (!readyRows.length) return;
+      const results: BalanceMap = {};
+      await Promise.allSettled(
+        readyRows.map(async (row) => {
+          const key = `${row.exchangeId}::${row.accountName ?? "Main"}`;
+          try {
+            const q = new URLSearchParams({ symbol: "BTCUSDT" });
+            if (row.accountName?.trim()) q.set("accountName", row.accountName.trim());
+            const res = await fetch(`/api/exchanges/${encodeURIComponent(row.exchangeId)}/account?${q.toString()}`, {
+              headers: { ...authHeaders() },
+            });
+            if (!res.ok) { results[key] = { usdt: null, fetchedAt: null }; return; }
+            const data = await res.json() as { balances?: Array<{ asset: string; available: number; total: number }> ; fetchedAt?: string };
+            const usdtEntry = (data.balances ?? []).find((b) => b.asset === "USDT");
+            results[key] = {
+              usdt: usdtEntry ? usdtEntry.total : null,
+              fetchedAt: data.fetchedAt ?? null,
+            };
+          } catch {
+            results[key] = { usdt: null, fetchedAt: null };
+          }
+        }),
+      );
+      if (!cancelled) setBalances((prev) => ({ ...prev, ...results }));
+    };
+    void fetchBalances();
+    return () => { cancelled = true; };
+  }, [exchangeRows]);
 
   const effectivePalette = useMemo(() => resolveEffectivePalette(themeState), [themeState]);
   const activePalette = useMemo(() => getPaletteById(themeState.paletteId), [themeState.paletteId]);
@@ -522,10 +574,28 @@ export default function SettingsPage() {
             <p className="mb-2 text-xs uppercase tracking-wider text-[var(--textMuted)]">Connected Exchange Accounts</p>
             <div className="space-y-2">
               {exchangeRows.length ? (
-                exchangeRows.map((row) => (
+                exchangeRows.map((row) => {
+                  const balKey = `${row.exchangeId}::${row.accountName ?? "Main"}`;
+                  const bal = balances[balKey];
+                  const checkedLabel = timeAgo(row.checkedAt);
+                  return (
                   <div key={`${row.exchangeId}-${row.accountName ?? "main"}-${row.checkedAt ?? row.exchangeDisplayName}`} className="rounded-lg border border-[var(--borderSoft)] bg-[var(--panel)] px-3 py-2.5 text-sm">
                     <div className="flex items-center justify-between">
                       <span className="inline-flex items-center gap-2 font-semibold text-[var(--text)]">
+                        <span
+                          className="relative inline-flex h-2.5 w-2.5 shrink-0 rounded-full"
+                          title={
+                            row.status === "READY" ? "Connected"
+                              : row.status === "PARTIAL" ? "Connecting..."
+                                : "Connection failed"
+                          }
+                          style={{
+                            backgroundColor:
+                              row.status === "READY" ? "#4ade80"
+                                : row.status === "PARTIAL" ? "#facc15"
+                                  : "#f87171",
+                          }}
+                        />
                         <img
                           src={getExchangeBranding(row.exchangeId).iconUrl}
                           alt={row.exchangeDisplayName}
@@ -534,6 +604,13 @@ export default function SettingsPage() {
                         <span>{row.exchangeDisplayName}</span>
                         <span className="rounded border border-white/10 bg-[var(--panelMuted)] px-1.5 py-0.5 text-[11px] text-[var(--textMuted)]">
                           {row.accountName ?? "Main"}
+                        </span>
+                        <span className={`text-[11px] font-normal ${
+                          row.status === "READY" ? "text-[#4ade80]"
+                            : row.status === "PARTIAL" ? "text-[#facc15]"
+                              : "text-[#f87171]"
+                        }`}>
+                          {row.status === "READY" ? "Connected" : row.status === "PARTIAL" ? "Connecting..." : "Failed"}
                         </span>
                       </span>
                       <div className="flex items-center gap-1.5">
@@ -551,18 +628,28 @@ export default function SettingsPage() {
                         >
                           Delete
                         </button>
-                        <span className={`rounded-full border px-2 py-0.5 text-[10px] font-semibold ${
-                          row.status === "READY"
-                            ? "border-[#6f765f] bg-[#1f251b] text-[#d8decf]"
-                            : row.status === "PARTIAL"
-                              ? "border-[#7a6840] bg-[#2a2418] text-[#e7d9b3]"
-                              : "border-[#704844] bg-[#271a19] text-[#d6b3af]"
-                        }`}>{row.status}</span>
                       </div>
                     </div>
-                    <p className="mt-1 text-xs text-[var(--textMuted)]">{row.marketTypes?.join(", ").toUpperCase() || "-"} · {row.symbolsCount ?? 0} symbols</p>
+                    <div className="mt-1 flex items-center justify-between gap-2">
+                      <p className="text-xs text-[var(--textMuted)]">
+                        {row.marketTypes?.join(", ").toUpperCase() || "-"} · {row.symbolsCount ?? 0} symbols
+                        {row.status === "FAILED" && " · Connection failed"}
+                      </p>
+                      {checkedLabel && (
+                        <span className="text-[10px] text-[var(--textMuted)] opacity-60">Last checked: {checkedLabel}</span>
+                      )}
+                    </div>
+                    <p className="mt-0.5 text-xs">
+                      <span className="text-[var(--textMuted)]">Balance: </span>
+                      {bal?.usdt != null ? (
+                        <span className="font-mono text-[var(--text)]">{"$"}{bal.usdt.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USDT</span>
+                      ) : (
+                        <span className="text-[var(--textMuted)]">--</span>
+                      )}
+                    </p>
                   </div>
-                ))
+                  );
+                })
               ) : (
                 <div className="rounded-xl border border-dashed border-[var(--borderSoft)] bg-[var(--panel)] p-6 text-center">
                   <p className="text-sm text-[var(--textMuted)]">No exchange connected yet.</p>
