@@ -1,4 +1,5 @@
 import { pool } from "../db/pool.ts";
+import { encrypt, decrypt } from "../utils/encryption.ts";
 
 export type AiProviderId = "CHATGPT" | "QWEN" | "QWEN2" | "CLAUDE";
 
@@ -92,7 +93,20 @@ const normalizeProvider = (raw: unknown): AiProviderRecord | null => {
 const rowToAiProvider = (r: Record<string, unknown>): AiProviderRecord | null => {
   const config = r.config as Record<string, unknown> | null;
   if (!config) return null;
+  // Decrypt apiKey after reading from DB (handles both encrypted and plaintext values)
+  if (typeof config.apiKey === "string" && config.apiKey) {
+    config.apiKey = decrypt(config.apiKey);
+  }
   return normalizeProvider({ ...config, id: String(r.id) });
+};
+
+/** Serialize provider config for DB storage, encrypting the apiKey */
+const serializeForDb = (p: AiProviderRecord): string => {
+  const obj: Record<string, unknown> = { ...p };
+  if (typeof obj.apiKey === "string" && obj.apiKey) {
+    obj.apiKey = encrypt(obj.apiKey as string);
+  }
+  return JSON.stringify(obj);
 };
 
 /* ── Store ────────────────────────────────────────────────── */
@@ -115,7 +129,7 @@ export class AiProviderStore {
           `INSERT INTO ai_providers (id, config, updated_at)
            VALUES ($1, $2, now())
            ON CONFLICT (id) DO NOTHING`,
-          [def.id, JSON.stringify(def)],
+          [def.id, serializeForDb(def)],
         );
       }
 
@@ -137,7 +151,7 @@ export class AiProviderStore {
              updated_at = now()
              WHERE id = $2
                AND (config->>'apiKey' IS NULL OR config->>'apiKey' = '')`,
-            [JSON.stringify(envKey), providerId],
+            [JSON.stringify(encrypt(envKey)), providerId],
           );
         }
       }
@@ -175,7 +189,7 @@ export class AiProviderStore {
            ON CONFLICT (id) DO UPDATE SET
              config = EXCLUDED.config,
              updated_at = now()`,
-          [p.id, JSON.stringify(p)],
+          [p.id, serializeForDb(p)],
         );
       }
       await client.query("COMMIT");

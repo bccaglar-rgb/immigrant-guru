@@ -247,6 +247,11 @@ export class AuthService {
     return { ok: true, resetToken: rawToken };
   }
 
+  // TODO: Invalidate all existing sessions on password change.
+  // Options: (1) add token_version column to users, include in session, check on verify;
+  // (2) delete all sessions for user_id from sessions table + Redis after password reset;
+  // (3) add old session tokens to a Redis blacklist with TTL matching expiry.
+  // Currently, old sessions remain valid after password reset until they expire naturally.
   async resetPassword(resetToken: string, newPassword: string) {
     if (!newPassword || newPassword.length < 8) throw new Error("weak_password");
     const tokenHash = createHash("sha256").update(resetToken).digest("hex");
