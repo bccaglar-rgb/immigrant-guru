@@ -65,6 +65,8 @@ const AlphaWarRoomPage = lazyRetry(() => import("./pages/AlphaWarRoomPage"));
 const InstitutionalCommandPage = lazyRetry(() => import("./pages/InstitutionalCommandPage"));
 const SpotArbitrageBotPage = lazyRetry(() => import("./pages/SpotArbitrageBotPage"));
 const FuturesHedgeBotPage = lazyRetry(() => import("./pages/FuturesHedgeBotPage"));
+const SpreadTerminalPage = lazyRetry(() => import("./pages/SpreadTerminalPage"));
+const ForgotPasswordPage = lazyRetry(() => import("./pages/ForgotPasswordPage"));
 
 const PageLoader = () => (
   <div className="flex min-h-[60vh] items-center justify-center">
@@ -130,6 +132,7 @@ function App() {
       <Route path="/login" element={<Suspense fallback={<PageLoader />}><LoginPage /></Suspense>} />
       <Route path="/signup" element={<Suspense fallback={<PageLoader />}><SignupPage /></Suspense>} />
       <Route path="/auth/google/callback" element={<Suspense fallback={<PageLoader />}><GoogleCallbackPage /></Suspense>} />
+      <Route path="/forgot-password" element={<Suspense fallback={<PageLoader />}><ForgotPasswordPage /></Suspense>} />
 
       {/* Main app — WITH sidebar */}
       <Route element={<AppShell />}>
@@ -198,6 +201,7 @@ function App() {
         <Route path="/master" element={<RequireTier tier="titan"><Suspense fallback={<PageLoader />}><MasterPage /></Suspense></RequireTier>} />
         <Route path="/alpha-war-room" element={<RequireTier tier="titan"><Suspense fallback={<PageLoader />}><AlphaWarRoomPage /></Suspense></RequireTier>} />
         <Route path="/institutional" element={<RequireTier tier="titan"><Suspense fallback={<PageLoader />}><InstitutionalCommandPage /></Suspense></RequireTier>} />
+        <Route path="/spread-terminal" element={<RequireTier tier="titan"><Suspense fallback={<PageLoader />}><SpreadTerminalPage /></Suspense></RequireTier>} />
 
         <Route path="*" element={<Navigate to="/" replace />} />
       </Route>

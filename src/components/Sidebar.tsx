@@ -188,6 +188,16 @@ const SignInIcon = () => <Icon>
   <path d="M13 9l3 3-3 3" stroke="url(#iconGold)" strokeWidth="1.5" fill="none" />
   <circle cx="12" cy="7" r="1.2" fill="url(#iconGold)" />
 </Icon>;
+const SpreadIcon = () => <Icon>
+  <rect x="3" y="5" width="8" height="14" rx="1.5" fill="url(#iconGoldLight)" stroke="url(#iconGold)" strokeWidth="1.1" />
+  <rect x="13" y="5" width="8" height="14" rx="1.5" fill="url(#iconGoldLight)" stroke="url(#iconGold)" strokeWidth="1.1" />
+  <path d="M5 10h4" stroke="url(#iconGold)" strokeWidth="1.2" strokeLinecap="round" />
+  <path d="M5 13h4" stroke="url(#iconGold)" strokeWidth="1.2" strokeLinecap="round" />
+  <path d="M15 10h4" stroke="url(#iconGold)" strokeWidth="1.2" strokeLinecap="round" />
+  <path d="M15 13h4" stroke="url(#iconGold)" strokeWidth="1.2" strokeLinecap="round" />
+  <path d="M11 9l1 1.5-1 1.5" stroke="url(#iconGold)" strokeWidth="1" fill="none" />
+  <path d="M13 9l-1 1.5 1 1.5" stroke="url(#iconGold)" strokeWidth="1" fill="none" />
+</Icon>;
 const menuItems = [
   { label: "Bitrium Quant Engine", to: "/quant-engine", accent: "var(--menu-accent-1)", icon: () => <DashboardIcon /> },
   { label: "Sniper", to: "/sniper", accent: "#f6465d", icon: () => <SniperIcon /> },
@@ -198,6 +208,7 @@ const menuItems = [
   { label: "Crypto Market", to: "/crypto-market", accent: "var(--menu-accent-4)", icon: () => <MarketIcon /> },
   // AI Trader submenu inserted here in render
   { label: "Exchanges", to: "/exchanges", accent: "var(--menu-accent-3)", icon: () => <ExchangeIcon /> },
+  { label: "Spread Terminal", to: "/spread-terminal", accent: "#F5C542", icon: () => <SpreadIcon /> },
   // Bots submenu inserted here in render
   { label: "Portfolio", to: "/portfolio", accent: "#4ecdc4", icon: () => <PortfolioIcon /> },
   { label: "Indicators", to: "/indicators", accent: "var(--menu-accent-6)", icon: () => <IndicatorIcon /> },
