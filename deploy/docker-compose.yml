@@ -204,6 +204,22 @@ services:
     ports:
       - "127.0.0.1:3001:3000"
 
+  # ── Bot Engines (Go microservice) ────────────────────────────────────
+  bot-engines:
+    build:
+      context: ../bot-engines
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    networks: [backend]
+    depends_on:
+      redis:
+        condition: service_healthy
+    environment:
+      REDIS_URL: redis:6379
+      PORT:      8092
+    ports:
+      - "127.0.0.1:8092:8092"
+
   # ── Market Hub (Faz 2+ — uncomment when HUB_EXTERNAL=true) ─────────────
   # market-hub:
   #   build:

@@ -68,6 +68,36 @@ const FuturesHedgeBotPage = lazyRetry(() => import("./pages/FuturesHedgeBotPage"
 const SpreadTerminalPage = lazyRetry(() => import("./pages/SpreadTerminalPage"));
 const ForgotPasswordPage = lazyRetry(() => import("./pages/ForgotPasswordPage"));
 
+/* ── Bot detail pages ── */
+const TrendPullbackBotPage = lazyRetry(() => import("./pages/bots/TrendPullbackBotPage"));
+const BreakoutRetestBotPage = lazyRetry(() => import("./pages/bots/BreakoutRetestBotPage"));
+const MultiConditionBotPage = lazyRetry(() => import("./pages/bots/MultiConditionBotPage"));
+const TrendBotPage = lazyRetry(() => import("./pages/bots/TrendBotPage"));
+const MomentumVolumeBotPage = lazyRetry(() => import("./pages/bots/MomentumVolumeBotPage"));
+const SmartDcaBotPage = lazyRetry(() => import("./pages/bots/SmartDcaBotPage"));
+const GridBotPage = lazyRetry(() => import("./pages/bots/GridBotPage"));
+const RangeTradingBotPage = lazyRetry(() => import("./pages/bots/RangeTradingBotPage"));
+const RsiReversalBotPage = lazyRetry(() => import("./pages/bots/RsiReversalBotPage"));
+const BollingerReversionBotPage = lazyRetry(() => import("./pages/bots/BollingerReversionBotPage"));
+const VwapReversionBotPage = lazyRetry(() => import("./pages/bots/VwapReversionBotPage"));
+const ScalpingBotPage = lazyRetry(() => import("./pages/bots/ScalpingBotPage"));
+const MicroScalperBotPage = lazyRetry(() => import("./pages/bots/MicroScalperBotPage"));
+const OrderFlowScalperBotPage = lazyRetry(() => import("./pages/bots/OrderFlowScalperBotPage"));
+const MarketStructureBotPage = lazyRetry(() => import("./pages/bots/MarketStructureBotPage"));
+const SupportResistanceBotPage = lazyRetry(() => import("./pages/bots/SupportResistanceBotPage"));
+const LiquiditySweepBotPage = lazyRetry(() => import("./pages/bots/LiquiditySweepBotPage"));
+const OrderBlockBotPage = lazyRetry(() => import("./pages/bots/OrderBlockBotPage"));
+const HybridBotPage = lazyRetry(() => import("./pages/bots/HybridBotPage"));
+const CustomRuleBotPage = lazyRetry(() => import("./pages/bots/CustomRuleBotPage"));
+const ArbitrageBotPage = lazyRetry(() => import("./pages/bots/ArbitrageBotPage"));
+const CrossExchangeArbBotPage = lazyRetry(() => import("./pages/bots/CrossExchangeArbBotPage"));
+const DeltaNeutralBotPage = lazyRetry(() => import("./pages/bots/DeltaNeutralBotPage"));
+const HedgingBotPage = lazyRetry(() => import("./pages/bots/HedgingBotPage"));
+const FundingRateBotPage = lazyRetry(() => import("./pages/bots/FundingRateBotPage"));
+const BasisBotPage = lazyRetry(() => import("./pages/bots/BasisBotPage"));
+const VolatilityAdaptiveBotPage = lazyRetry(() => import("./pages/bots/VolatilityAdaptiveBotPage"));
+const SessionBotPage = lazyRetry(() => import("./pages/bots/SessionBotPage"));
+
 const PageLoader = () => (
   <div className="flex min-h-[60vh] items-center justify-center">
     <div className="h-6 w-6 animate-spin rounded-full border-2 border-[#F5C542] border-t-transparent" />
@@ -166,6 +196,40 @@ function App() {
         <Route path="/bot" element={<RequirePlan><Suspense fallback={<PageLoader />}><BotPage /></Suspense></RequirePlan>} />
         <Route path="/bot/spot-arbitrage" element={<RequirePlan><Suspense fallback={<PageLoader />}><SpotArbitrageBotPage /></Suspense></RequirePlan>} />
         <Route path="/bot/futures-hedge" element={<RequirePlan><Suspense fallback={<PageLoader />}><FuturesHedgeBotPage /></Suspense></RequirePlan>} />
+        {/* Featured */}
+        <Route path="/bot/trend-pullback" element={<RequirePlan><Suspense fallback={<PageLoader />}><TrendPullbackBotPage /></Suspense></RequirePlan>} />
+        <Route path="/bot/breakout-retest" element={<RequirePlan><Suspense fallback={<PageLoader />}><BreakoutRetestBotPage /></Suspense></RequirePlan>} />
+        <Route path="/bot/multi-condition" element={<RequirePlan><Suspense fallback={<PageLoader />}><MultiConditionBotPage /></Suspense></RequirePlan>} />
+        {/* Popular */}
+        <Route path="/bot/trend" element={<RequirePlan><Suspense fallback={<PageLoader />}><TrendBotPage /></Suspense></RequirePlan>} />
+        <Route path="/bot/momentum-volume" element={<RequirePlan><Suspense fallback={<PageLoader />}><MomentumVolumeBotPage /></Suspense></RequirePlan>} />
+        <Route path="/bot/smart-dca" element={<RequirePlan><Suspense fallback={<PageLoader />}><SmartDcaBotPage /></Suspense></RequirePlan>} />
+        {/* Market */}
+        <Route path="/bot/grid" element={<RequirePlan><Suspense fallback={<PageLoader />}><GridBotPage /></Suspense></RequirePlan>} />
+        <Route path="/bot/range-trading" element={<RequirePlan><Suspense fallback={<PageLoader />}><RangeTradingBotPage /></Suspense></RequirePlan>} />
+        <Route path="/bot/rsi-reversal" element={<RequirePlan><Suspense fallback={<PageLoader />}><RsiReversalBotPage /></Suspense></RequirePlan>} />
+        <Route path="/bot/bollinger-reversion" element={<RequirePlan><Suspense fallback={<PageLoader />}><BollingerReversionBotPage /></Suspense></RequirePlan>} />
+        <Route path="/bot/vwap-reversion" element={<RequirePlan><Suspense fallback={<PageLoader />}><VwapReversionBotPage /></Suspense></RequirePlan>} />
+        {/* Scalping */}
+        <Route path="/bot/scalping" element={<RequirePlan><Suspense fallback={<PageLoader />}><ScalpingBotPage /></Suspense></RequirePlan>} />
+        <Route path="/bot/micro-scalper" element={<RequirePlan><Suspense fallback={<PageLoader />}><MicroScalperBotPage /></Suspense></RequirePlan>} />
+        <Route path="/bot/order-flow-scalper" element={<RequirePlan><Suspense fallback={<PageLoader />}><OrderFlowScalperBotPage /></Suspense></RequirePlan>} />
+        {/* Advanced */}
+        <Route path="/bot/market-structure" element={<RequirePlan><Suspense fallback={<PageLoader />}><MarketStructureBotPage /></Suspense></RequirePlan>} />
+        <Route path="/bot/support-resistance" element={<RequirePlan><Suspense fallback={<PageLoader />}><SupportResistanceBotPage /></Suspense></RequirePlan>} />
+        <Route path="/bot/liquidity-sweep" element={<RequirePlan><Suspense fallback={<PageLoader />}><LiquiditySweepBotPage /></Suspense></RequirePlan>} />
+        <Route path="/bot/order-block" element={<RequirePlan><Suspense fallback={<PageLoader />}><OrderBlockBotPage /></Suspense></RequirePlan>} />
+        <Route path="/bot/hybrid" element={<RequirePlan><Suspense fallback={<PageLoader />}><HybridBotPage /></Suspense></RequirePlan>} />
+        <Route path="/bot/custom-rule" element={<RequirePlan><Suspense fallback={<PageLoader />}><CustomRuleBotPage /></Suspense></RequirePlan>} />
+        {/* Pro */}
+        <Route path="/bot/arbitrage" element={<RequirePlan><Suspense fallback={<PageLoader />}><ArbitrageBotPage /></Suspense></RequirePlan>} />
+        <Route path="/bot/cross-exchange-arb" element={<RequirePlan><Suspense fallback={<PageLoader />}><CrossExchangeArbBotPage /></Suspense></RequirePlan>} />
+        <Route path="/bot/delta-neutral" element={<RequirePlan><Suspense fallback={<PageLoader />}><DeltaNeutralBotPage /></Suspense></RequirePlan>} />
+        <Route path="/bot/hedging" element={<RequirePlan><Suspense fallback={<PageLoader />}><HedgingBotPage /></Suspense></RequirePlan>} />
+        <Route path="/bot/funding-rate" element={<RequirePlan><Suspense fallback={<PageLoader />}><FundingRateBotPage /></Suspense></RequirePlan>} />
+        <Route path="/bot/basis" element={<RequirePlan><Suspense fallback={<PageLoader />}><BasisBotPage /></Suspense></RequirePlan>} />
+        <Route path="/bot/volatility-adaptive" element={<RequirePlan><Suspense fallback={<PageLoader />}><VolatilityAdaptiveBotPage /></Suspense></RequirePlan>} />
+        <Route path="/bot/session" element={<RequirePlan><Suspense fallback={<PageLoader />}><SessionBotPage /></Suspense></RequirePlan>} />
         <Route path="/coin-universe" element={<RequirePlan><Suspense fallback={<PageLoader />}><CoinUniversePage /></Suspense></RequirePlan>} />
         <Route path="/coin-insight" element={<RequirePlan><Suspense fallback={<PageLoader />}><CoinInsightPage /></Suspense></RequirePlan>} />
         <Route path="/sniper" element={<RequirePlan><Suspense fallback={<PageLoader />}><SniperPage /></Suspense></RequirePlan>} />

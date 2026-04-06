@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuthStore } from "../hooks/useAuthStore";
+import { useExchangeConfigs, type ExchangeAccountOption } from "../hooks/useExchangeConfigs";
 
 // ═══════════════════════════════════════════════════════════════════
 // BOT DEFINITIONS — ALL 30 BOTS + BUILDER
@@ -349,6 +350,7 @@ const BOT_CATEGORIES = [
     { id: "session", name: "Session Bot", tier: "pro" },
     { id: "spot-arbitrage", name: "Spot Arbitrage Bot", tier: "pro" },
     { id: "futures-hedge", name: "Futures Hedge Bot", tier: "pro" },
+    { id: "spread-terminal", name: "Spread Terminal Bot", tier: "pro" },
   ]},
 ] as const;
 
@@ -510,6 +512,57 @@ const BuilderPanel = () => {
 // BOT DETAIL PANEL — standard bot page
 // ═══════════════════════════════════════════════════════════════════
 
+// ── Exchange Selector component ──
+const ExchangeSelector = ({ accounts, selected, onSelect }: { accounts: ExchangeAccountOption[]; selected: string; onSelect: (id: string) => void }) => {
+  if (accounts.length === 0) {
+    return (
+      <div className="rounded-lg border border-[#F5C542]/30 bg-[#F5C542]/5 p-3">
+        <p className="text-[12px] font-semibold text-[#F5C542]">&#9888; No Exchange Connected</p>
+        <p className="mt-1 text-[11px] text-[#9CA3AF]">Connect an exchange in Settings to start trading with bots.</p>
+        <a href="/settings" className="mt-2 inline-block rounded-md bg-[#F5C542] px-3 py-1.5 text-[11px] font-bold text-black transition hover:bg-[#e6b030]">Connect Exchange</a>
+      </div>
+    );
+  }
+  return (
+    <div>
+      <p className="text-[11px] text-[#6B6F76]">Exchange Account</p>
+      <div className="mt-1 flex flex-wrap gap-1.5">
+        {accounts.map(acc => (
+          <button key={acc.id} type="button" onClick={() => onSelect(acc.id)}
+            className={`flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-[12px] font-medium transition ${
+              selected === acc.id
+                ? "border-[#2bc48a]/50 bg-[#2bc48a]/10 text-[#2bc48a]"
+                : "border-white/10 bg-[#0F1012] text-[#9CA3AF] hover:border-white/20"
+            }`}>
+            {acc.iconUrl && <img src={acc.iconUrl} alt="" className="h-4 w-4 rounded-full" />}
+            <span>{acc.exchangeDisplayName}</span>
+            <span className="text-[10px] text-white/30">· {acc.accountName}</span>
+            {acc.status === "READY" && <span className="h-1.5 w-1.5 rounded-full bg-[#2bc48a]" />}
+            {acc.status === "PARTIAL" && <span className="h-1.5 w-1.5 rounded-full bg-[#F5C542]" />}
+            {acc.status === "FAILED" && <span className="h-1.5 w-1.5 rounded-full bg-[#f6465d]" />}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+// ── Bot Mode Selector ──
+const ModeSelector = ({ mode, onModeChange }: { mode: string; onModeChange: (m: string) => void }) => (
+  <div className="flex items-center gap-1 rounded-lg border border-white/10 bg-[#0F1012] p-0.5">
+    {["paper", "live"].map(m => (
+      <button key={m} type="button" onClick={() => onModeChange(m)}
+        className={`rounded-md px-3 py-1 text-[11px] font-semibold transition ${
+          mode === m
+            ? m === "live" ? "bg-[#f6465d]/20 text-[#f6465d]" : "bg-[#2bc48a]/20 text-[#2bc48a]"
+            : "text-[#6B6F76] hover:text-white"
+        }`}>
+        {m === "paper" ? "&#128196; Paper" : "&#9889; Live"}
+      </button>
+    ))}
+  </div>
+);
+
 // ── Bot-specific Quick Setup forms ──
 const I = "mt-1 w-full rounded-lg border border-white/10 bg-[#0F1012] px-3 py-2 text-sm text-white outline-none";
 const L = "text-[11px] text-[#6B6F76]";
@@ -631,8 +684,10 @@ const botAccent = (id: string): string => {
   return "#ef4444";
 };
 
-const BotDetailPanel = ({ bot, userPlan }: { bot: BotEntry; userPlan: PlanLevel }) => {
+const BotDetailPanel = ({ bot, userPlan, exchangeAccounts }: { bot: BotEntry; userPlan: PlanLevel; exchangeAccounts: ExchangeAccountOption[] }) => {
   const config = B[bot.id];
+  const [selectedExchange, setSelectedExchange] = useState(exchangeAccounts[0]?.id ?? "");
+  const [botMode, setBotMode] = useState("paper");
   if (!config) return <div className="flex flex-1 items-center justify-center text-[#6B6F76]">Bot configuration not found.</div>;
 
   const locked = isBotLocked(bot.id, userPlan);
@@ -699,6 +754,23 @@ const BotDetailPanel = ({ bot, userPlan }: { bot: BotEntry; userPlan: PlanLevel 
           ))}
         </div>
 
+        {/* Exchange & Mode Selection */}
+        <div className="flex flex-wrap items-start gap-4 rounded-xl border border-white/10 bg-[#121316] p-4">
+          <div className="flex-1">
+            <ExchangeSelector accounts={exchangeAccounts} selected={selectedExchange} onSelect={setSelectedExchange} />
+          </div>
+          <div>
+            <p className="text-[11px] text-[#6B6F76]">Trading Mode</p>
+            <div className="mt-1"><ModeSelector mode={botMode} onModeChange={setBotMode} /></div>
+          </div>
+        </div>
+
+        {botMode === "live" && !selectedExchange && (
+          <div className="rounded-lg border border-[#f6465d]/30 bg-[#f6465d]/5 p-3 text-[12px] text-[#f6465d]">
+            &#9888; Live mode requires a connected exchange account. Select an exchange above or switch to Paper mode.
+          </div>
+        )}
+
         <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_320px]">
           {/* Bot-specific Quick Setup */}
           {bot.id === "grid" ? <GridSetup /> : bot.id === "smart-dca" ? <DcaSetup /> : <StandardSetup config={config} accentColor={accent} />}
@@ -760,13 +832,49 @@ const BotDetailPanel = ({ bot, userPlan }: { bot: BotEntry; userPlan: PlanLevel 
 // ═══════════════════════════════════════════════════════════════════
 
 const BOT_PAGE_ROUTES: Record<string, string> = {
+  // Featured
+  "trend-pullback": "/bot/trend-pullback",
+  "breakout-retest": "/bot/breakout-retest",
+  "multi-condition": "/bot/multi-condition",
+  // Popular
+  "trend": "/bot/trend",
+  "momentum-volume": "/bot/momentum-volume",
+  "smart-dca": "/bot/smart-dca",
+  // Market
+  "grid": "/bot/grid",
+  "range-trading": "/bot/range-trading",
+  "rsi-reversal": "/bot/rsi-reversal",
+  "bollinger-reversion": "/bot/bollinger-reversion",
+  "vwap-reversion": "/bot/vwap-reversion",
+  // Scalping
+  "scalping": "/bot/scalping",
+  "micro-scalper": "/bot/micro-scalper",
+  "order-flow-scalper": "/bot/order-flow-scalper",
+  // Advanced
+  "market-structure": "/bot/market-structure",
+  "support-resistance": "/bot/support-resistance",
+  "liquidity-sweep": "/bot/liquidity-sweep",
+  "order-block": "/bot/order-block",
+  "hybrid": "/bot/hybrid",
+  "custom-rule": "/bot/custom-rule",
+  // Pro
+  "arbitrage": "/bot/arbitrage",
+  "cross-exchange-arb": "/bot/cross-exchange-arb",
+  "delta-neutral": "/bot/delta-neutral",
+  "hedging": "/bot/hedging",
+  "funding-rate": "/bot/funding-rate",
+  "basis": "/bot/basis",
+  "volatility-adaptive": "/bot/volatility-adaptive",
+  "session": "/bot/session",
   "spot-arbitrage": "/bot/spot-arbitrage",
   "futures-hedge": "/bot/futures-hedge",
+  "spread-terminal": "/spread-terminal",
 };
 
 export default function BotPage() {
   const authUser = useAuthStore((s) => s.user);
   const navigate = useNavigate();
+  const { enabledAccounts } = useExchangeConfigs();
   const USER_PLAN: PlanLevel = (authUser?.activePlanTier as PlanLevel) || "explorer";
   const [selectedBot, setSelectedBot] = useState<BotEntry>(BOT_CATEGORIES[0].bots[0]);
 
@@ -814,7 +922,7 @@ export default function BotPage() {
 
       {/* Right — Detail */}
       <div className="flex flex-1 flex-col bg-[#0F1012]">
-        <BotDetailPanel bot={selectedBot} userPlan={USER_PLAN} />
+        <BotDetailPanel bot={selectedBot} userPlan={USER_PLAN} exchangeAccounts={enabledAccounts} />
       </div>
     </div>
   );
