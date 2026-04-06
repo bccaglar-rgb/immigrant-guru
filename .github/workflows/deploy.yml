@@ -96,8 +96,15 @@ jobs:
             # Zero-downtime reload: PM2 restarts workers one by one
             pm2 reload ecosystem.config.cjs || pm2 start ecosystem.config.cjs
 
-            # Restart market-hub if it exists as PM2 process
-            pm2 restart market-hub 2>/dev/null || echo "market-hub PM2 process not found — skipping"
+            # Force restart market-hub: delete + start fresh to pick up new TypeScript code
+            echo "=== Restarting market-hub ==="
+            pm2 delete market-hub 2>/dev/null || true
+            sleep 2
+            pm2 start ecosystem.config.cjs --only market-hub
+            sleep 5
+            pm2 list
+            echo "=== Market-hub logs ==="
+            pm2 logs market-hub --lines 5 --nostream 2>/dev/null || true
 
             pm2 save
 
