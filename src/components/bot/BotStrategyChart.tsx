@@ -5,6 +5,7 @@ import {
   type IChartApi,
   type ISeriesApi,
 } from "lightweight-charts";
+import { useMarketSymbols } from "../../hooks/useMarketSymbols";
 
 /* ── EMA helper ── */
 
@@ -40,17 +41,7 @@ interface BotStrategyChartProps {
 
 /* ── Constants ── */
 
-const PAIRS = ["BTCUSDT", "ETHUSDT", "SOLUSDT", "BNBUSDT", "XRPUSDT", "DOGEUSDT"];
 const TIMEFRAMES = ["1m", "5m", "15m", "1h", "4h"];
-
-const PAIR_LABELS: Record<string, string> = {
-  BTCUSDT: "BTC/USDT",
-  ETHUSDT: "ETH/USDT",
-  SOLUSDT: "SOL/USDT",
-  BNBUSDT: "BNB/USDT",
-  XRPUSDT: "XRP/USDT",
-  DOGEUSDT: "DOGE/USDT",
-};
 
 const SIGNAL_CONFIG: Record<
   SignalMarker["type"],
@@ -139,6 +130,9 @@ export const BotStrategyChart = ({
   const [pairOpen, setPairOpen] = useState(false);
   const [dataSource, setDataSource] = useState<"live" | "mock" | "loading">("loading");
   const [fetchError, setFetchError] = useState<string | null>(null);
+
+  // Dynamic symbol list from market hub
+  const { symbols: marketSymbols, loading: symbolsLoading } = useMarketSymbols();
 
   /* ── Fetch or generate candle data ── */
   const fetchData = useCallback(async () => {
@@ -375,27 +369,31 @@ export const BotStrategyChart = ({
             onClick={() => setPairOpen((p) => !p)}
             className="flex items-center gap-1.5 rounded-lg border border-white/[0.08] bg-white/[0.04] px-3 py-1.5 text-xs font-medium text-white/80 backdrop-blur-sm transition hover:bg-white/[0.08]"
           >
-            {PAIR_LABELS[pair] ?? pair}
+            {marketSymbols.find(s => s.symbol === pair)?.label ?? pair}
+            {symbolsLoading && <span className="ml-1 h-2 w-2 animate-spin rounded-full border border-white/30 border-t-transparent" />}
             <svg width="10" height="6" viewBox="0 0 10 6" fill="none" className="ml-1 opacity-50">
               <path d="M1 1L5 5L9 1" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
             </svg>
           </button>
           {pairOpen && (
-            <div className="absolute right-0 top-full mt-1 w-36 rounded-lg border border-white/[0.08] bg-[#151518] py-1 shadow-xl">
-              {PAIRS.map((p) => (
+            <div className="absolute right-0 top-full mt-1 max-h-[320px] w-44 overflow-y-auto rounded-lg border border-white/[0.08] bg-[#151518] py-1 shadow-xl scrollbar-thin scrollbar-track-transparent scrollbar-thumb-white/10">
+              {marketSymbols.map((s) => (
                 <button
-                  key={p}
+                  key={s.symbol}
                   onClick={() => {
-                    setPair(p);
+                    setPair(s.symbol);
                     setPairOpen(false);
                   }}
                   className={`block w-full px-3 py-1.5 text-left text-xs transition hover:bg-white/[0.06] ${
-                    p === pair ? "text-white" : "text-white/50"
+                    s.symbol === pair ? "text-white" : "text-white/50"
                   }`}
                 >
-                  {PAIR_LABELS[p]}
+                  {s.label}
                 </button>
               ))}
+              {marketSymbols.length === 0 && !symbolsLoading && (
+                <p className="px-3 py-2 text-[10px] text-white/30">No symbols available</p>
+              )}
             </div>
           )}
         </div>

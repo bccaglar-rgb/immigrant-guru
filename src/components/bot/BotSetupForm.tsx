@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { useMarketSymbols } from "../../hooks/useMarketSymbols";
 
 /* ── Types ── */
 interface ExchangeAccount {
@@ -24,7 +25,7 @@ interface BotSetupFormProps {
 }
 
 /* ── Constants ── */
-const PAIRS = ["BTC/USDT", "ETH/USDT", "SOL/USDT", "BNB/USDT", "XRP/USDT", "DOGE/USDT"];
+// PAIRS loaded dynamically via useMarketSymbols hook
 const TIMEFRAMES = ["1m", "3m", "5m", "15m", "1h", "4h", "1d"];
 const RISK_PROFILES = ["Conservative", "Balanced", "Aggressive"] as const;
 
@@ -105,6 +106,7 @@ export default function BotSetupForm({
   onLaunch,
 }: BotSetupFormProps) {
   const accounts = useExchangeAccounts();
+  const { symbols: marketSymbols } = useMarketSymbols();
 
   const [exchangeId, setExchangeId] = useState("");
   const [mode, setMode] = useState<"paper" | "live">("paper");
@@ -201,7 +203,10 @@ export default function BotSetupForm({
         <div className="grid grid-cols-2 gap-2">
           <div>
             <select value={pair} onChange={e => setPair(e.target.value)} className="w-full rounded-md border border-white/10 bg-[#0F1012] px-3 py-1.5 text-[12px] text-white outline-none">
-              {PAIRS.map(p => <option key={p} value={p}>{p}</option>)}
+              {marketSymbols.length > 0
+                ? marketSymbols.map(s => <option key={s.symbol} value={s.label}>{s.label}</option>)
+                : ["BTC/USDT","ETH/USDT","SOL/USDT","BNB/USDT","XRP/USDT","DOGE/USDT"].map(p => <option key={p} value={p}>{p}</option>)
+              }
             </select>
             <Hint>Trading pair</Hint>
           </div>

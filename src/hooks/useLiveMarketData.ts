@@ -40,7 +40,6 @@ export const useLiveMarketData = (
   symbol: string,
   exchangeHint?: "BINANCE" | "BYBIT" | "OKX" | "GATEIO",
 ): LiveMarketDataResult => {
-  const selectedSource = useDataSourceManager((s) => s.selectedExchangeId);
   const setSelectedSource = useDataSourceManager((s) => s.setSelectedExchangeId);
 
   // Mount / unmount the router
@@ -51,11 +50,12 @@ export const useLiveMarketData = (
     };
   }, []);
 
-  // Sync exchange hint to data source manager
+  // Sync exchange hint to data source manager (only when hint changes, not on selectedSource change)
   useEffect(() => {
     if (!exchangeHint) return;
-    if (selectedSource !== exchangeHint) setSelectedSource(exchangeHint);
-  }, [exchangeHint, selectedSource, setSelectedSource]);
+    setSelectedSource(exchangeHint);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [exchangeHint]);
 
   // Subscribe to all timeframes
   useEffect(() => {
