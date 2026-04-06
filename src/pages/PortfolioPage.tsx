@@ -17,6 +17,7 @@ interface PortfolioAccount {
   enabled: boolean;
   environment?: string;
   balances: BalanceItem[];
+  spotBalances?: BalanceItem[];
   positions: PositionItem[];
   openOrders: Array<Record<string, unknown>>;
   fetchedAt: string;
@@ -74,10 +75,10 @@ const estimateUsdValue = (asset: string, total: number): number => {
 };
 
 const accountTotalUsd = (account: PortfolioAccount): number =>
-  account.balances.reduce((sum, b) => sum + estimateUsdValue(b.asset, b.total), 0);
+  [...account.balances, ...(account.spotBalances ?? [])].reduce((sum, b) => sum + estimateUsdValue(b.asset, b.total), 0);
 
 const accountAvailableUsd = (account: PortfolioAccount): number =>
-  account.balances.reduce((sum, b) => sum + estimateUsdValue(b.asset, b.available), 0);
+  [...account.balances, ...(account.spotBalances ?? [])].reduce((sum, b) => sum + estimateUsdValue(b.asset, b.available), 0);
 
 const fmt = (n: number, decimals = 2): string => {
   if (Math.abs(n) >= 1_000_000) return `$${(n / 1_000_000).toFixed(2)}M`;
@@ -262,7 +263,7 @@ export default function PortfolioPage() {
     }
     return [...map.entries()].map(([exchangeId, accs]) => {
       const branding = getExchangeBranding(exchangeId);
-      const allBalances = accs.flatMap((a) => a.balances);
+      const allBalances = accs.flatMap((a) => [...a.balances, ...(a.spotBalances ?? [])]);
       const allPositions = accs.flatMap((a) => a.positions ?? []);
       const uniqueAssets = new Set(allBalances.map((b) => b.asset));
       return {
@@ -282,7 +283,7 @@ export default function PortfolioPage() {
   const aggregatedAssets = useMemo<AggregatedAsset[]>(() => {
     const map = new Map<string, AggregatedAsset>();
     for (const acc of accounts) {
-      for (const bal of acc.balances) {
+      for (const bal of [...acc.balances, ...(acc.spotBalances ?? [])]) {
         const existing = map.get(bal.asset);
         if (existing) {
           existing.totalAmount += bal.total;
@@ -320,7 +321,7 @@ export default function PortfolioPage() {
   );
 
   // Unique assets count
-  const uniqueAssetsCount = useMemo(() => new Set(accounts.flatMap((a) => a.balances.map((b) => b.asset))).size, [accounts]);
+  const uniqueAssetsCount = useMemo(() => new Set(accounts.flatMap((a) => [...a.balances, ...(a.spotBalances ?? [])].map((b) => b.asset))).size, [accounts]);
 
   // Activity events (generated from data)
   const activityEvents = useMemo(() => {
@@ -590,7 +591,7 @@ export default function PortfolioPage() {
                               )}
                             </div>
                             <p className="text-[10px] text-[#6B6F76]">
-                              {acc.balances.length} assets · {acc.positions?.length ?? 0} positions · Last synced {relTime(acc.fetchedAt)}
+                              {acc.balances.length + (acc.spotBalances?.length ?? 0)} assets{acc.spotBalances?.length ? ` (${acc.spotBalances.length} spot)` : ""} · {acc.positions?.length ?? 0} positions · Last synced {relTime(acc.fetchedAt)}
                             </p>
                             {acc.error && <p className="mt-0.5 text-[10px] text-[#d6b3af]">{acc.error}</p>}
                           </div>
