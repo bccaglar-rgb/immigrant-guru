@@ -506,6 +506,9 @@ export class BinanceFuturesMarketAdapter implements IExchangeMarketAdapter {
         this.symbolRecoveryAttempts.set(depthArr[i], 0);
         this.snapshotFailuresBySymbol.set(depthArr[i], 0);
         this.excludedDepthSymbols.delete(depthArr[i]);
+        // Clear incremental book maps so stale partial books don't persist
+        this.incrementalBooks.delete(depthArr[i]);
+        this.incrementalAsks.delete(depthArr[i]);
         this.transitionState(depthArr[i], DepthSymbolState.INIT, "ws_reconnect");
         // Stagger: 2s apart per symbol to avoid REST burst
         setTimeout(() => { if (this.started) this.enqueueSnapshot(depthArr[i]); }, i * 2000);
@@ -1258,10 +1261,6 @@ export class BinanceFuturesMarketAdapter implements IExchangeMarketAdapter {
   private incrementalLastEmit = new Map<string, number>();
 
   private emitIncrementalDepth(symbol: string, bids: Array<[number, number]>, asks: Array<[number, number]>, ts: number): void {
-    const now = Date.now();
-    const last = this.incrementalLastEmit.get(symbol) ?? 0;
-    if (now - last < 3000) return; // throttle: max 1 per 3s
-
     // Initialize maps if needed
     if (!this.incrementalBooks.has(symbol)) this.incrementalBooks.set(symbol, new Map());
     if (!this.incrementalAsks.has(symbol)) this.incrementalAsks.set(symbol, new Map());
@@ -1269,7 +1268,7 @@ export class BinanceFuturesMarketAdapter implements IExchangeMarketAdapter {
     const bidsMap = this.incrementalBooks.get(symbol)!;
     const asksMap = this.incrementalAsks.get(symbol)!;
 
-    // Apply delta to incremental book
+    // Always accumulate deltas — even when throttled — so the book stays current
     for (const [p, q] of bids) {
       if (q <= 0) bidsMap.delete(p);
       else bidsMap.set(p, q);
@@ -1278,6 +1277,11 @@ export class BinanceFuturesMarketAdapter implements IExchangeMarketAdapter {
       if (q <= 0) asksMap.delete(p);
       else asksMap.set(p, q);
     }
+
+    // Throttle emission only — accumulation happens above
+    const now = Date.now();
+    const last = this.incrementalLastEmit.get(symbol) ?? 0;
+    if (now - last < 1000) return; // throttle: max 1 per 1s
 
     // Need at least 3 levels each side to emit
     if (bidsMap.size < 3 || asksMap.size < 3) return;
@@ -1288,6 +1292,8 @@ export class BinanceFuturesMarketAdapter implements IExchangeMarketAdapter {
     const sortedBids = Array.from(bidsMap.entries()).sort((a, b) => b[0] - a[0]).slice(0, 20);
     const sortedAsks = Array.from(asksMap.entries()).sort((a, b) => a[0] - b[0]).slice(0, 20);
 
+    const bookState = this.orderbooks.isReady(symbol) ? "LIVE_FULL" : "LIVE_DEGRADED";
+
     this.emit({
       type: "book_snapshot",
       exchange: this.exchange,
@@ -1297,6 +1303,7 @@ export class BinanceFuturesMarketAdapter implements IExchangeMarketAdapter {
       seq: 0,
       bids: sortedBids,
       asks: sortedAsks,
+      bookState,
     } as any);
   }
 
@@ -1304,7 +1311,7 @@ export class BinanceFuturesMarketAdapter implements IExchangeMarketAdapter {
   private emitThrottledBookSnapshot(symbol: string, ts: number): void {
     const now = Date.now();
     const last = this.bookSnapshotLastEmit.get(symbol) ?? 0;
-    if (now - last < 3000) return; // throttle: max 1 per 3s per symbol
+    if (now - last < 1000) return; // throttle: max 1 per 1s per symbol
     this.bookSnapshotLastEmit.set(symbol, now);
     const top = this.orderbooks.getTopLevels(symbol, 20);
     if (!top || top.bids.length === 0 || top.asks.length === 0) return;
@@ -1317,6 +1324,7 @@ export class BinanceFuturesMarketAdapter implements IExchangeMarketAdapter {
       seq: top.seq,
       bids: top.bids,
       asks: top.asks,
+      bookState: "LIVE_FULL",
     } as any);
   }
 

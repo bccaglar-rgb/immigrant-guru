@@ -124,12 +124,18 @@ export class HubEventBridge {
       if (bids && asks && bids.length > 0 && asks.length > 0) {
         this.depthCacheLastWrite.set(cacheKey, now);
         const source = isBinance ? "BINANCE" : eventExchange;
+        const bookState = (event as any).bookState as string | undefined;
+        const resolvedBookState = bookState ?? "LIVE_FULL";
+        const isDegraded = resolvedBookState === "LIVE_DEGRADED";
         const depthPayload = JSON.stringify({
           bids: bids.slice(0, 20).map(([p, q]: [number, number]) => [String(p), String(q)]),
           asks: asks.slice(0, 20).map(([p, q]: [number, number]) => [String(p), String(q)]),
           source,
+          bookState: resolvedBookState,
+          lastWsAt: now,
           fetchedAt: now,
           cachedAt: now,
+          isDegraded,
         });
         this.pub.set(`mdc:depth:${event.symbol}`, depthPayload, "EX", 60);
       }
