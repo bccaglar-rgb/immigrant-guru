@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useAuthStore } from "../hooks/useAuthStore";
 
 // ═══════════════════════════════════════════════════════════════════
@@ -346,6 +347,8 @@ const BOT_CATEGORIES = [
     { id: "basis", name: "Basis Bot", tier: "pro" },
     { id: "volatility-adaptive", name: "Volatility Adaptive Bot", tier: "pro" },
     { id: "session", name: "Session Bot", tier: "pro" },
+    { id: "spot-arbitrage", name: "Spot Arbitrage Bot", tier: "pro" },
+    { id: "futures-hedge", name: "Futures Hedge Bot", tier: "pro" },
   ]},
 ] as const;
 
@@ -756,8 +759,14 @@ const BotDetailPanel = ({ bot, userPlan }: { bot: BotEntry; userPlan: PlanLevel 
 // MAIN PAGE
 // ═══════════════════════════════════════════════════════════════════
 
+const BOT_PAGE_ROUTES: Record<string, string> = {
+  "spot-arbitrage": "/bot/spot-arbitrage",
+  "futures-hedge": "/bot/futures-hedge",
+};
+
 export default function BotPage() {
   const authUser = useAuthStore((s) => s.user);
+  const navigate = useNavigate();
   const USER_PLAN: PlanLevel = (authUser?.activePlanTier as PlanLevel) || "explorer";
   const [selectedBot, setSelectedBot] = useState<BotEntry>(BOT_CATEGORIES[0].bots[0]);
 
@@ -780,7 +789,7 @@ export default function BotPage() {
                 const reqPlan = getRequiredPlan(bot.id);
                 const planInfo = PLAN_LABELS[reqPlan];
                 return (
-                  <button key={bot.id} type="button" onClick={() => setSelectedBot(bot)}
+                  <button key={bot.id} type="button" onClick={() => { const route = BOT_PAGE_ROUTES[bot.id]; if (route && !locked) { navigate(route); } else { setSelectedBot(bot); } }}
                     className={`mb-0.5 block w-full rounded-lg border px-3 py-2 text-left text-[13px] transition-all ${
                       isActive ? "border-[var(--borderSoft)] bg-[var(--panelAlt3)] text-white"
                       : locked ? "border-transparent text-[var(--textMuted)] opacity-60 hover:opacity-80"
