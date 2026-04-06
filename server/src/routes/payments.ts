@@ -2,6 +2,9 @@ import type { Express, Request, Response } from "express";
 import { PaymentService } from "../payments/paymentService.ts";
 import { AuthService } from "../payments/authService.ts";
 import { PAYMENT_CONFIG } from "../payments/config.ts";
+import { createLogger } from "../utils/logger.ts";
+
+const log = createLogger("payments");
 
 const bearer = (header: string | undefined) => {
   if (!header) return "";
@@ -41,9 +44,11 @@ export const registerPaymentsRoutes = (app: Express, auth: AuthService, payments
     try {
       const { planId } = req.body ?? {};
       const invoice = await payments.createInvoice(ctx.user, String(planId ?? ""));
+      log.info("invoice_created", { invoiceId: invoice.id, userId: ctx.user.id, planId, amount: invoice.expectedAmountUsdt, depositAddress: invoice.depositAddress });
       const qrPayload = `tron:${invoice.depositAddress}?amount=${invoice.expectedAmountUsdt}&token=${PAYMENT_CONFIG.usdtContractAddress}`;
       return res.json({ ok: true, invoice, qrPayload });
     } catch (err: any) {
+      log.error("invoice_create_failed", { userId: ctx.user.id, planId: req.body?.planId, error: err?.message });
       return res.status(400).json({ ok: false, error: err?.message ?? "invoice_create_failed" });
     }
   });
@@ -112,6 +117,7 @@ export const registerPaymentsRoutes = (app: Express, auth: AuthService, payments
     try {
       const { txHash, amountUsdt, reason } = req.body ?? {};
       const invoice = await payments.manualMarkPaid(req.params.invoiceId, String(txHash ?? "manual"), Number(amountUsdt ?? 0), String(reason ?? "manual_override"));
+      log.info("invoice_manual_mark_paid", { invoiceId: req.params.invoiceId, adminUserId: ctx.user.id, txHash, amountUsdt, reason });
       return res.json({ ok: true, invoice });
     } catch (err: any) {
       return res.status(400).json({ ok: false, error: err?.message ?? "manual_mark_paid_failed" });
@@ -221,6 +227,7 @@ export const registerPaymentsRoutes = (app: Express, auth: AuthService, payments
         String(reason ?? "admin_manual"),
         ctx.user.id,
       );
+      log.info("admin_mark_paid", { invoiceId, adminUserId: ctx.user.id, txHash, amountUsdt, reason });
       return res.json({ ok: true, invoice });
     } catch (err: any) {
       return res.status(400).json({ ok: false, error: err?.message ?? "mark_paid_failed" });

@@ -5,6 +5,9 @@
 import type { Express } from "express";
 import { createHmac } from "node:crypto";
 import { pool } from "../db/pool.ts";
+import { createLogger } from "../utils/logger.ts";
+
+const log = createLogger("webhook");
 
 const INTERNAL_SECRET = process.env.INTERNAL_API_SECRET ?? "dev-internal-secret";
 
@@ -27,6 +30,7 @@ export function registerPaymentWebhookRoutes(app: Express) {
     const rawBody = JSON.stringify(req.body ?? {});
 
     if (!verifySignature(rawBody, timestamp, signature)) {
+      log.warn("webhook_invalid_signature", { ip: req.ip, timestamp });
       return res.status(401).json({ ok: false, error: "invalid_signature" });
     }
 
@@ -43,6 +47,7 @@ export function registerPaymentWebhookRoutes(app: Express) {
     }
 
     console.log(`[PaymentWebhook] stage=event_received eventId=${eventId} eventType=${eventType}`);
+    log.info("event_received", { eventId, eventType });
 
     // Idempotency check
     try {
@@ -71,7 +76,8 @@ export function registerPaymentWebhookRoutes(app: Express) {
         if (!txHash) missingFields.push("txHash");
         if (!amount || amount <= 0) missingFields.push("amount");
         if (missingFields.length > 0) {
-          console.error(`[PaymentWebhook] stage=validation_failed eventId=${eventId} missing=[${missingFields.join(",")}]`);
+          log.error("validation_failed", { eventId, missingFields });
+        console.error(`[PaymentWebhook] stage=validation_failed eventId=${eventId} missing=[${missingFields.join(",")}]`);
           return res.status(400).json({ ok: false, error: "missing_required_fields", fields: missingFields });
         }
 
@@ -116,7 +122,8 @@ export function registerPaymentWebhookRoutes(app: Express) {
               JSON.stringify({ name: String(plan.name), priceUsdt: Number(plan.price_usdt), durationDays: Number(plan.duration_days), features: plan.features ?? [] }),
             ],
           );
-          console.log(`[PaymentWebhook] Subscription activated: ${planId} for ${userId} (${finalStartAt} → ${finalEndAt})`);
+          log.info("subscription_activated", { eventId, userId, planId, txHash, amount, startAt: finalStartAt, endAt: finalEndAt });
+        console.log(`[PaymentWebhook] Subscription activated: ${planId} for ${userId} (${finalStartAt} → ${finalEndAt})`);
         }
       }
 
@@ -130,9 +137,11 @@ export function registerPaymentWebhookRoutes(app: Express) {
         // Best effort — table might not exist
       }
 
+      log.info("event_processed", { eventId, eventType });
       console.log(`[PaymentWebhook] stage=event_processed eventId=${eventId} eventType=${eventType}`);
       return res.json({ ok: true, processed: true });
     } catch (err: any) {
+      log.error("processing_failed", { eventId, eventType, error: err?.message });
       console.error(`[PaymentWebhook] stage=processing_failed eventId=${eventId} eventType=${eventType} error=${err?.message}`);
       return res.status(500).json({ ok: false, error: err?.message ?? "webhook_processing_failed" });
     }

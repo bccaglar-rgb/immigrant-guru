@@ -2,6 +2,9 @@ import type { Express, Request, Response, NextFunction } from "express";
 import { AuthService } from "../payments/authService.ts";
 import type { Role } from "../payments/types.ts";
 import { redisControl } from "../db/redis.ts";
+import { createLogger } from "../utils/logger.ts";
+
+const log = createLogger("auth");
 import {
   issueTokenPair,
   issueWsToken,
@@ -66,8 +69,10 @@ export const registerAuthRoutes = (app: Express, auth: AuthService) => {
       const ADMIN_EMAILS = ["bccaglar@gmail.com"];
       const role: Role = ADMIN_EMAILS.includes(String(email ?? "").toLowerCase().trim()) ? "ADMIN" : "USER";
       const user = await auth.signup(String(email ?? ""), String(password ?? ""), role);
+      log.info("signup_success", { userId: user.id, email: user.email, role });
       return res.json({ ok: true, user: { id: user.id, email: user.email } });
     } catch (err: any) {
+      log.warn("signup_failed", { email: req.body?.email, reason: err?.message });
       return res.status(400).json({ ok: false, error: err?.message ?? "signup_failed" });
     }
   });
@@ -110,6 +115,7 @@ export const registerAuthRoutes = (app: Express, auth: AuthService) => {
         jwt = await issueTokenPair(result.user.id, result.user.role, result.user.email);
       } catch { /* JWT service not ready — still return session token */ }
 
+      log.info("login_success", { userId: result.user.id, email: result.user.email, hasActivePlan, activePlanTier });
       return res.json({
         ok: true,
         token: result.session.token,
@@ -132,6 +138,7 @@ export const registerAuthRoutes = (app: Express, auth: AuthService) => {
     } catch (err: any) {
       const code = err?.message ?? "login_failed";
       const status = code === "two_factor_required" ? 401 : 400;
+      log.warn("login_failed", { email: req.body?.email, reason: code });
       return res.status(status).json({ ok: false, error: code });
     }
   });
@@ -206,6 +213,7 @@ export const registerAuthRoutes = (app: Express, auth: AuthService) => {
     if (!ctx) return res.status(401).json({ ok: false, error: "unauthorized" });
     try {
       const setup = await auth.setupTwoFactor(ctx.user.id);
+      log.info("2fa_setup_initiated", { userId: ctx.user.id });
       return res.json({ ok: true, ...setup });
     } catch (err: any) {
       return res.status(400).json({ ok: false, error: err?.message ?? "two_factor_setup_failed" });
@@ -218,6 +226,7 @@ export const registerAuthRoutes = (app: Express, auth: AuthService) => {
     if (!ctx) return res.status(401).json({ ok: false, error: "unauthorized" });
     try {
       await auth.enableTwoFactor(ctx.user.id, String(req.body?.token ?? ""));
+      log.info("2fa_enabled", { userId: ctx.user.id });
       return res.json({ ok: true });
     } catch (err: any) {
       return res.status(400).json({ ok: false, error: err?.message ?? "two_factor_enable_failed" });
@@ -227,6 +236,7 @@ export const registerAuthRoutes = (app: Express, auth: AuthService) => {
   app.post("/api/auth/password-reset/request", ratelimitAuth, async (req, res) => {
     const { email } = req.body ?? {};
     const result = await auth.requestPasswordReset(String(email ?? ""));
+    log.info("password_reset_requested", { email: String(email ?? "") });
     return res.json({ ok: true, ...(process.env.NODE_ENV !== "production" ? { devResetToken: result.resetToken } : {}) });
   });
 
@@ -400,6 +410,7 @@ export const registerAuthRoutes = (app: Express, auth: AuthService) => {
         [refCode.id],
       );
 
+      log.info("referral_redeemed", { userId: ctx.user.id, code, planId, durationDays, startAt: startAt.toISOString(), endAt: endAt.toISOString() });
       return res.json({
         ok: true,
         message: `Referral code redeemed! ${durationDays} days ${planTier.charAt(0).toUpperCase() + planTier.slice(1)} plan activated.`,
@@ -426,8 +437,10 @@ export const registerAuthRoutes = (app: Express, auth: AuthService) => {
       if (googleClientId && payload.aud !== googleClientId) return res.status(401).json({ ok: false, error: "invalid_audience" });
       if (!payload.email || !payload.email_verified) return res.status(400).json({ ok: false, error: "email_not_verified" });
       const result = await auth.socialLogin(payload.email, "google");
+      log.info("social_login_success", { provider: "google", userId: result.user.id, email: result.user.email });
       return res.json({ ok: true, token: result.session.token, user: { id: result.user.id, email: result.user.email, role: result.user.role, twoFactorEnabled: result.user.twoFactorEnabled, hasActivePlan: result.user.role === "ADMIN" } });
     } catch (err: any) {
+      log.warn("social_login_failed", { provider: "google", reason: err?.message });
       return res.status(400).json({ ok: false, error: err?.message ?? "google_auth_failed" });
     }
   });
@@ -442,8 +455,10 @@ export const registerAuthRoutes = (app: Express, auth: AuthService) => {
       const email = payload.email ?? (appleUser as any)?.email;
       if (!email) return res.status(400).json({ ok: false, error: "email_not_available" });
       const result = await auth.socialLogin(String(email), "apple");
+      log.info("social_login_success", { provider: "apple", userId: result.user.id, email: result.user.email });
       return res.json({ ok: true, token: result.session.token, user: { id: result.user.id, email: result.user.email, role: result.user.role, twoFactorEnabled: result.user.twoFactorEnabled, hasActivePlan: result.user.role === "ADMIN" } });
     } catch (err: any) {
+      log.warn("social_login_failed", { provider: "apple", reason: err?.message });
       return res.status(400).json({ ok: false, error: err?.message ?? "apple_auth_failed" });
     }
   });
@@ -461,8 +476,10 @@ export const registerAuthRoutes = (app: Express, auth: AuthService) => {
       if (Date.now() / 1000 - Number(auth_date) > 3600) return res.status(401).json({ ok: false, error: "telegram_auth_expired" });
       const email = `telegram_${id}@bitrium.com`;
       const result = await auth.socialLogin(email, "telegram");
+      log.info("social_login_success", { provider: "telegram", userId: result.user.id });
       return res.json({ ok: true, token: result.session.token, user: { id: result.user.id, email: result.user.email, role: result.user.role, twoFactorEnabled: false, hasActivePlan: false } });
     } catch (err: any) {
+      log.warn("social_login_failed", { provider: "telegram", reason: err?.message });
       return res.status(400).json({ ok: false, error: err?.message ?? "telegram_auth_failed" });
     }
   });
