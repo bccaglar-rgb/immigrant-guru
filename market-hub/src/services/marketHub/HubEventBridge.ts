@@ -109,14 +109,15 @@ export class HubEventBridge {
     // Server's readDepth() reads from "mdc:depth:SYMBOL" (JSON string key).
     // Accept depth from ANY exchange (Binance preferred, but fallback OK).
     // This runs BEFORE the Binance-only filter below.
-    if (event.type === "book_snapshot") {
+    if (event.type === "book_snapshot" || event.type === "book_delta") {
       const now = Date.now();
       const cacheKey = `depth:${event.symbol}`;
       const lastWrite = this.depthCacheLastWrite.get(cacheKey) ?? 0;
-      // Throttle: 3s per symbol, but allow Binance to override non-Binance immediately
+      // Throttle per symbol — snapshots more frequent, deltas less
       const isBinance = eventExchange.includes("BINANCE");
-      const throttleMs = isBinance ? 2_000 : 5_000;
-      if (now - lastWrite < throttleMs && !isBinance) return;
+      const isSnapshot = event.type === "book_snapshot";
+      const throttleMs = isSnapshot ? (isBinance ? 2_000 : 5_000) : (isBinance ? 3_000 : 10_000);
+      if (now - lastWrite < throttleMs) return;
 
       const bids = (event as any).bids as Array<[number, number]>;
       const asks = (event as any).asks as Array<[number, number]>;
