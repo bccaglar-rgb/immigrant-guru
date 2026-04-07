@@ -229,7 +229,6 @@ const TRANSLATIONS: TranslationCatalog = {
     Home: "Startseite",
     "Sign in": "Anmelden",
     "Sign up": "Registrieren",
-    Dashboard: "Dashboard",
     "Log out": "Abmelden",
     "Move to a New Country Without Confusion":
       "Ohne Verwirrung in ein neues Land ziehen",
