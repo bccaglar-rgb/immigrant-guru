@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
 
+import { LanguageSwitcher } from "@/components/layout/language-switcher";
 import { useAuthSession } from "@/hooks/use-auth-session";
 import { HeaderAuthActions } from "@/components/layout/header-auth-actions";
 
@@ -45,6 +46,7 @@ export function SiteHeader() {
         </nav>
 
         <div className="flex items-center gap-3">
+          <LanguageSwitcher />
           <HeaderAuthActions />
           <button
             className="flex h-9 w-9 items-center justify-center rounded-lg text-muted hover:bg-ink/5 lg:hidden"
