@@ -16,11 +16,12 @@ export function WelcomeStep({ firstName, onNext }: WelcomeStepProps) {
     <div className="flex flex-col items-center justify-center text-center py-12 md:py-20">
       <Animate animation="scale-in" duration={800}>
         <Image
-          src="/logo-mark.svg"
+          src="/logo.png"
           alt="Immigrant Guru"
-          width={80}
-          height={80}
-          className="h-20 w-20 object-contain anim-pulse-glow rounded-3xl"
+          width={320}
+          height={112}
+          className="h-auto w-[220px] object-contain anim-pulse-glow"
+          priority
         />
       </Animate>
 

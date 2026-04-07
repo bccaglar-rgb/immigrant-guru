@@ -31,16 +31,14 @@ export function MobileNavbar({
       >
         <div className="flex min-w-0 items-start gap-3">
           <Image
-            src="/logo-mark.svg"
+            src="/logo.png"
             alt="Immigrant Guru"
-            width={40}
-            height={40}
-            className="mt-0.5 h-10 w-10 shrink-0 object-contain"
+            width={320}
+            height={112}
+            className="mt-0.5 h-auto w-[150px] shrink-0 object-contain"
+            priority
           />
           <div className="min-w-0">
-            <p className="text-xs font-medium uppercase tracking-[0.08em] text-accent">
-              Immigrant Guru
-            </p>
             <h1 className="mt-1 truncate text-lg font-semibold tracking-tight text-ink">
               {title}
             </h1>
