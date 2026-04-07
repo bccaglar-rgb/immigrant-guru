@@ -127,22 +127,9 @@ export default function PaymentCheckoutPage() {
               {qrUrl ? (
                 <div className="relative mx-auto w-fit">
                   <img src={qrUrl} alt="TRON payment QR" className="rounded bg-white p-2" style={{ width: 220, height: 220 }} />
-                  {/* Bitrium logo overlay in center of QR */}
-                  <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex h-[44px] w-[44px] items-center justify-center rounded-lg bg-white p-1 shadow-sm">
-                    <svg viewBox="0 0 512 512" width="32" height="32" xmlns="http://www.w3.org/2000/svg">
-                      <defs>
-                        <linearGradient id="qr-bg" x1="0" y1="0" x2="1" y2="1">
-                          <stop offset="0%" stopColor="#121316"/>
-                          <stop offset="100%" stopColor="#0B0B0C"/>
-                        </linearGradient>
-                        <linearGradient id="qr-gold" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="0%" stopColor="#F5C542"/>
-                          <stop offset="100%" stopColor="#D4A832"/>
-                        </linearGradient>
-                      </defs>
-                      <rect width="512" height="512" rx="96" fill="url(#qr-bg)"/>
-                      <path fill="url(#qr-gold)" d="M168 108 h120 q40 0 66 22 q26 22 26 58 q0 30 -16 48 q-14 16 -38 22 v2 q30 6 48 28 q18 22 18 54 q0 42 -30 66 q-30 24 -78 24 H168 Z M220 244 h60 q24 0 38 -14 q14 -14 14 -36 q0 -22 -14 -36 q-14 -14 -38 -14 h-60 Z M220 384 h68 q28 0 44 -16 q16 -16 16 -40 q0 -24 -16 -40 q-16 -16 -44 -16 h-68 Z"/>
-                    </svg>
+                  {/* Bitrium icon overlay in center of QR */}
+                  <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex h-[52px] w-[52px] items-center justify-center rounded-xl bg-white p-1.5 shadow-md">
+                    <img src="/android-chrome-192x192.png" alt="Bitrium" width="40" height="40" className="rounded-lg" />
                   </div>
                 </div>
               ) : null}
