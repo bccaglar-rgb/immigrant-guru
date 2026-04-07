@@ -24,6 +24,16 @@ body {
   overflow-x: hidden;
 }
 
+html[dir="rtl"] body {
+  text-align: right;
+}
+
+html[dir="rtl"] input,
+html[dir="rtl"] textarea,
+html[dir="rtl"] select {
+  text-align: right;
+}
+
 h1,
 h2,
 h3,

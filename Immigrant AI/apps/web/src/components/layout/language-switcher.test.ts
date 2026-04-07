@@ -1,7 +1,7 @@
 import {
   LANGUAGE_OPTIONS,
   resolvePreferredLanguage
-} from "@/components/layout/language-switcher";
+} from "@/lib/i18n";
 
 describe("language switcher helpers", () => {
   it("prefers a supported stored language over the browser language", () => {
@@ -25,6 +25,16 @@ describe("language switcher helpers", () => {
       "es",
       "pt",
       "ar",
+      "tl",
+      "vi",
+      "ht",
+      "pa",
+      "gu",
+      "ur",
+      "bn",
+      "te",
+      "ta",
+      "fa",
       "zh",
       "ja",
       "ko",

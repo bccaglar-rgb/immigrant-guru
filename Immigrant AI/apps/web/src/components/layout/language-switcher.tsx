@@ -2,91 +2,42 @@
 
 import { useEffect, useRef, useState } from "react";
 
+import { useLocale } from "@/components/providers/locale-provider";
 import { cn } from "@/lib/utils";
-
-const STORAGE_KEY = "immigrant-guru-language";
-
-export const LANGUAGE_OPTIONS = [
-  { code: "en", flag: "🇺🇸", label: "English" },
-  { code: "tr", flag: "🇹🇷", label: "Türkçe" },
-  { code: "de", flag: "🇩🇪", label: "Deutsch" },
-  { code: "fr", flag: "🇫🇷", label: "Français" },
-  { code: "es", flag: "🇪🇸", label: "Español" },
-  { code: "pt", flag: "🇧🇷", label: "Português" },
-  { code: "ar", flag: "🇸🇦", label: "العربية" },
-  { code: "zh", flag: "🇨🇳", label: "中文" },
-  { code: "ja", flag: "🇯🇵", label: "日本語" },
-  { code: "ko", flag: "🇰🇷", label: "한국어" },
-  { code: "ru", flag: "🇷🇺", label: "Русский" },
-  { code: "hi", flag: "🇮🇳", label: "हिंदी" }
-] as const;
-
-export type LanguageCode = (typeof LANGUAGE_OPTIONS)[number]["code"];
+import {
+  LANGUAGE_OPTIONS,
+  STORAGE_KEY,
+  type LanguageCode,
+  resolvePreferredLanguage
+} from "@/lib/i18n";
 
 type LanguageSwitcherProps = Readonly<{
   align?: "left" | "right";
   compact?: boolean;
 }>;
 
-export function resolvePreferredLanguage(
-  storedLanguage: string | null | undefined,
-  browserLanguage: string | null | undefined
-): LanguageCode {
-  if (
-    storedLanguage &&
-    LANGUAGE_OPTIONS.some((language) => language.code === storedLanguage)
-  ) {
-    return storedLanguage as LanguageCode;
-  }
-
-  const normalizedBrowserLanguage = browserLanguage?.toLowerCase().split("-")[0];
-  if (
-    normalizedBrowserLanguage &&
-    LANGUAGE_OPTIONS.some((language) => language.code === normalizedBrowserLanguage)
-  ) {
-    return normalizedBrowserLanguage as LanguageCode;
-  }
-
-  return "en";
-}
-
-function getInitialLanguage(): LanguageCode {
-  if (typeof window === "undefined") {
-    return "en";
-  }
-
-  return resolvePreferredLanguage(
-    window.localStorage.getItem(STORAGE_KEY),
-    window.navigator.language
-  );
-}
-
 export function LanguageSwitcher({
   align = "right",
   compact = false
 }: LanguageSwitcherProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const [selectedCode, setSelectedCode] = useState<LanguageCode>("en");
+  const { locale, setLocale } = useLocale();
   const containerRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
-    const nextLanguage = getInitialLanguage();
-    if (nextLanguage === selectedCode) {
+    if (typeof window === "undefined") {
       return;
     }
 
-    const frame = window.requestAnimationFrame(() => {
-      setSelectedCode(nextLanguage);
-    });
+    const nextLanguage = resolvePreferredLanguage(
+      window.localStorage.getItem(STORAGE_KEY),
+      window.navigator.language
+    );
 
-    return () => {
-      window.cancelAnimationFrame(frame);
-    };
-  }, [selectedCode]);
-
-  useEffect(() => {
-    document.documentElement.lang = selectedCode;
-  }, [selectedCode]);
+    if (nextLanguage !== locale) {
+      setLocale(nextLanguage);
+    }
+  }, [locale, setLocale]);
 
   useEffect(() => {
     function handlePointerDown(event: MouseEvent) {
@@ -114,12 +65,11 @@ export function LanguageSwitcher({
   }, []);
 
   const selectedLanguage =
-    LANGUAGE_OPTIONS.find((language) => language.code === selectedCode) ??
+    LANGUAGE_OPTIONS.find((language) => language.code === locale) ??
     LANGUAGE_OPTIONS[0];
 
   function handleSelect(code: LanguageCode) {
-    setSelectedCode(code);
-    window.localStorage.setItem(STORAGE_KEY, code);
+    setLocale(code);
     setIsOpen(false);
   }
 
@@ -155,7 +105,7 @@ export function LanguageSwitcher({
 
           <div className="pb-3">
             {LANGUAGE_OPTIONS.map((language) => {
-              const active = language.code === selectedCode;
+              const active = language.code === locale;
 
               return (
                 <button

@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 
 import "@/app/globals.css";
 import { AuthProvider } from "@/components/auth/auth-provider";
+import { LocaleProvider } from "@/components/providers/locale-provider";
 
 const bodyFont = Inter({
   subsets: ["latin"],
@@ -121,7 +122,9 @@ export default function RootLayout({ children }: RootLayoutProps) {
         <link rel="preconnect" href="https://fonts.googleapis.com" crossOrigin="anonymous" />
       </head>
       <body className={`${bodyFont.variable} font-sans`}>
-        <AuthProvider>{children}</AuthProvider>
+        <LocaleProvider>
+          <AuthProvider>{children}</AuthProvider>
+        </LocaleProvider>
       </body>
     </html>
   );

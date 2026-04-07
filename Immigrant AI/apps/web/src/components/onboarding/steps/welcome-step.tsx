@@ -20,7 +20,7 @@ export function WelcomeStep({ firstName, onNext }: WelcomeStepProps) {
           alt="Immigrant Guru"
           width={320}
           height={112}
-          className="h-auto w-[132px] object-contain anim-pulse-glow"
+          className="h-auto w-[220px] object-contain anim-pulse-glow"
           priority
         />
       </Animate>

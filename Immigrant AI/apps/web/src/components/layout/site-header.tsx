@@ -4,7 +4,6 @@ import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
 
-import { LanguageSwitcher } from "@/components/layout/language-switcher";
 import { useAuthSession } from "@/hooks/use-auth-session";
 import { HeaderAuthActions } from "@/components/layout/header-auth-actions";
 
@@ -22,15 +21,19 @@ export function SiteHeader() {
   return (
     <header className="sticky top-0 z-30 glass border-b border-line">
       <div className="mx-auto flex max-w-content items-center justify-between gap-6 px-6 py-3.5 md:px-10">
-        <Link className="flex items-center" href="/">
+        <Link className="flex items-center gap-2.5" href="/">
           <Image
             src="/logo.png"
             alt="Immigrant Guru"
             width={320}
             height={112}
-            className="h-auto w-[100px] object-contain md:w-[118px]"
+            className="h-auto w-[42px] object-contain md:w-[48px]"
             priority
           />
+          <span className="select-none text-[1.05rem] font-black tracking-[-0.045em] text-ink md:text-[1.22rem]">
+            <span>Immigrant</span>
+            <span className="text-accent">Guru</span>
+          </span>
         </Link>
 
         <nav className="hidden items-center gap-7 lg:flex">
@@ -46,7 +49,6 @@ export function SiteHeader() {
         </nav>
 
         <div className="flex items-center gap-3">
-          <LanguageSwitcher />
           <HeaderAuthActions />
           <button
             className="flex h-9 w-9 items-center justify-center rounded-lg text-muted hover:bg-ink/5 lg:hidden"
