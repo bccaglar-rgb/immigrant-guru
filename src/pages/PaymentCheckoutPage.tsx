@@ -127,9 +127,20 @@ export default function PaymentCheckoutPage() {
               {qrUrl ? (
                 <div className="relative mx-auto w-fit">
                   <img src={qrUrl} alt="TRON payment QR" className="rounded bg-white p-2" style={{ width: 220, height: 220 }} />
-                  {/* Bitrium icon overlay in center of QR */}
-                  <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex h-[52px] w-[52px] items-center justify-center rounded-xl bg-white p-1.5 shadow-md">
-                    <img src="/android-chrome-192x192.png" alt="Bitrium" width="40" height="40" className="rounded-lg" />
+                  {/* Bitrium 3D cube icon overlay in center of QR */}
+                  <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex h-[56px] w-[56px] items-center justify-center rounded-xl bg-[#0B0B0C] p-2 shadow-lg" style={{ border: "2px solid rgba(245,197,66,0.3)" }}>
+                    <svg viewBox="0 0 64 64" width="38" height="38" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      {/* 3D isometric cube — Bitrium brand icon */}
+                      {/* Top face */}
+                      <polygon points="32,8 56,20 32,32 8,20" fill="#F5C542" opacity="0.9"/>
+                      {/* Left face */}
+                      <polygon points="8,20 32,32 32,56 8,44" fill="#D4A832" opacity="0.7"/>
+                      {/* Right face */}
+                      <polygon points="56,20 32,32 32,56 56,44" fill="#B8922A" opacity="0.55"/>
+                      {/* Edge lines */}
+                      <polygon points="32,8 56,20 32,32 8,20" stroke="#F5C542" strokeWidth="1" fill="none" opacity="0.4"/>
+                      <line x1="32" y1="32" x2="32" y2="56" stroke="#D4A832" strokeWidth="0.8" opacity="0.5"/>
+                    </svg>
                   </div>
                 </div>
               ) : null}
