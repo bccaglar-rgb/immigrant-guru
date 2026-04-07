@@ -28,7 +28,7 @@ export function SiteHeader() {
             alt="Immigrant Guru"
             width={320}
             height={112}
-            className="h-auto w-[168px] object-contain md:w-[196px]"
+            className="h-auto w-[100px] object-contain md:w-[118px]"
             priority
           />
         </Link>

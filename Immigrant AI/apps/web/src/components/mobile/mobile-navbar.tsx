@@ -35,7 +35,7 @@ export function MobileNavbar({
             alt="Immigrant Guru"
             width={320}
             height={112}
-            className="mt-0.5 h-auto w-[150px] shrink-0 object-contain"
+            className="mt-0.5 h-auto w-[90px] shrink-0 object-contain"
             priority
           />
           <div className="min-w-0">
