@@ -2,20 +2,19 @@
 
 import { useState } from "react";
 
+import { AIStrategyPanel } from "@/components/dashboard/ai-strategy-panel";
 import { CaseSimulationPanel } from "@/components/dashboard/case-simulation-panel";
+import { CaseDocumentCenter } from "@/components/dashboard/case-document-center";
 import { ComparisonPanel } from "@/components/dashboard/comparison-panel";
 import { CopilotPanel } from "@/components/dashboard/copilot-panel";
 import { DashboardErrorState } from "@/components/dashboard/dashboard-error-state";
-import { DocumentCenterPanel } from "@/components/dashboard/document-center-panel";
 import { DocumentChecklistPanel } from "@/components/dashboard/document-checklist-panel";
 import { RiskBreakdownPanel } from "@/components/dashboard/risk-breakdown-panel";
-import { StrategyPlansPanel } from "@/components/dashboard/strategy-plans-panel";
 import { TimelineStepper } from "@/components/dashboard/timeline-stepper";
 import { MobileCardList } from "@/components/mobile/mobile-card-list";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { useCaseWorkspaceMock } from "@/hooks/use-case-workspace-mock";
-import { documentCenterMock } from "@/lib/document-center-mocks";
+import { useCaseWorkspace } from "@/hooks/use-case-workspace";
 import type { CaseWorkspaceTabId } from "@/types/case-workspace";
 
 type MobileDashboardCaseDetailPageProps = Readonly<{
@@ -65,7 +64,8 @@ export function MobileDashboardCaseDetailPage({
   caseId
 }: MobileDashboardCaseDetailPageProps) {
   const [activeTab, setActiveTab] = useState<CaseWorkspaceTabId>("overview");
-  const { data, error, reload, status } = useCaseWorkspaceMock(caseId);
+  const { accessToken, caseRecord, data, error, reload, status } =
+    useCaseWorkspace(caseId);
   const stickyAction = getStickyAction(activeTab);
 
   if (status === "loading") {
@@ -176,13 +176,38 @@ export function MobileDashboardCaseDetailPage({
         </div>
       ) : null}
 
-      {activeTab === "strategy" ? <StrategyPlansPanel strategy={data.strategy} /> : null}
+      {activeTab === "strategy" ? (
+        accessToken && caseRecord ? (
+          <AIStrategyPanel accessToken={accessToken} caseRecord={caseRecord} />
+        ) : null
+      ) : null}
       {activeTab === "timeline" ? <TimelineStepper timeline={data.timeline} /> : null}
       {activeTab === "simulation" ? <CaseSimulationPanel caseId={caseId} /> : null}
-      {activeTab === "documents" ? <DocumentCenterPanel data={documentCenterMock} /> : null}
+      {activeTab === "documents" ? (
+        accessToken ? (
+          <CaseDocumentCenter
+            accessToken={accessToken}
+            caseId={caseId}
+            onDocumentsChanged={reload}
+          />
+        ) : null
+      ) : null}
       {activeTab === "risks" ? <RiskBreakdownPanel risks={data.risks} /> : null}
-      {activeTab === "copilot" ? <CopilotPanel copilot={data.copilot} /> : null}
-      {activeTab === "comparison" ? <ComparisonPanel comparison={data.comparison} /> : null}
+      {activeTab === "copilot" ? (
+        accessToken ? (
+          <CopilotPanel
+            accessToken={accessToken}
+            caseId={caseId}
+            suggestedPrompts={data.copilot.suggestedPrompts}
+            summary={data.copilot.summary}
+          />
+        ) : null
+      ) : null}
+      {activeTab === "comparison" ? (
+        accessToken && caseRecord ? (
+          <ComparisonPanel accessToken={accessToken} caseRecord={caseRecord} />
+        ) : null
+      ) : null}
 
       <div
         className="sticky z-10"

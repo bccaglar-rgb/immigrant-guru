@@ -33,7 +33,7 @@ type LocaleProviderProps = Readonly<{
 const ATTRIBUTE_NAMES = ["placeholder", "aria-label", "title"] as const;
 
 export function LocaleProvider({ children }: LocaleProviderProps) {
-  const [locale, setLocaleState] = useState<LanguageCode>("en");
+  const [locale, setLocaleState] = useState<LanguageCode>(() => getInitialLanguage());
   const textNodeSources = useRef(
     new WeakMap<Text, { source: string }>()
   );
@@ -165,11 +165,6 @@ export function LocaleProvider({ children }: LocaleProviderProps) {
     },
     [translateElementAttributes, translateTextNode]
   );
-
-  useEffect(() => {
-    const nextLanguage = getInitialLanguage();
-    setLocaleState(nextLanguage);
-  }, []);
 
   useEffect(() => {
     window.localStorage.setItem(STORAGE_KEY, locale);

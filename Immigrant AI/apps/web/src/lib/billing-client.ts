@@ -24,9 +24,12 @@ export type BillingStatus = {
 export type CheckoutResult = {
   success: boolean;
   plan: string;
-  plan_name: string;
-  price: number;
-  message: string;
+  mode?: "demo" | "stripe";
+  plan_name?: string;
+  price?: number;
+  message?: string;
+  checkout_url?: string;
+  session_id?: string;
 };
 
 export async function getPlans(): Promise<ApiRequestResult<PlansResponse>> {

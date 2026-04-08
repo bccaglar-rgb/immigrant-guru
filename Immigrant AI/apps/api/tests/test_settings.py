@@ -30,3 +30,10 @@ def test_settings_reject_short_jwt_secret_in_staging() -> None:
             app_env="staging",
             jwt_secret_key="short-secret",
         )
+
+
+def test_settings_reject_invalid_frontend_app_url() -> None:
+    with pytest.raises(ValueError):
+        Settings(
+            frontend_app_url="immigrant.guru",
+        )

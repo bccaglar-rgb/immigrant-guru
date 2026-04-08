@@ -1,27 +1,173 @@
 "use client";
 
+import { useEffect, useMemo, useState } from "react";
+
 import { CopilotComposer } from "@/components/dashboard/copilot-composer";
 import { CopilotMessageList } from "@/components/dashboard/copilot-message-list";
 import { CopilotSuggestedPrompts } from "@/components/dashboard/copilot-suggested-prompts";
 import { DashboardStatusPill } from "@/components/dashboard/dashboard-status-pill";
 import { Card } from "@/components/ui/card";
-import { useCopilotThreadMock } from "@/hooks/use-copilot-thread-mock";
-import type { CaseWorkspaceCopilot } from "@/types/case-workspace";
+import { useAuthSession } from "@/hooks/use-auth-session";
+import {
+  createCaseCopilotMessage,
+  getCaseCopilotThread
+} from "@/lib/copilot-client";
+import type { CopilotThreadMessage } from "@/types/copilot";
+import type { CaseWorkspaceCopilotMessage } from "@/types/case-workspace";
 
 type CopilotPanelProps = Readonly<{
-  copilot: CaseWorkspaceCopilot;
+  accessToken: string;
+  caseId: string;
+  suggestedPrompts?: string[];
+  summary?: string;
 }>;
 
-export function CopilotPanel({ copilot }: CopilotPanelProps) {
-  const {
-    draft,
-    isSending,
-    messages,
-    selectedPrompt,
-    sendDraft,
-    setDraft,
-    useSuggestedPrompt
-  } = useCopilotThreadMock(copilot);
+const defaultPrompts = [
+  "What should I focus on next for this case?",
+  "Which missing document matters most right now?",
+  "What weakens the current pathway the most?"
+];
+
+function mapMessage(
+  message: CopilotThreadMessage
+): CaseWorkspaceCopilotMessage | null {
+  if (message.role === "system") {
+    return null;
+  }
+
+  const suggestedActions = Array.isArray(message.metadata_json.suggested_actions)
+    ? message.metadata_json.suggested_actions.filter(
+        (value): value is string => typeof value === "string"
+      )
+    : [];
+  const relatedRisks = Array.isArray(message.metadata_json.related_risks)
+    ? message.metadata_json.related_risks.filter(
+        (value): value is string => typeof value === "string"
+      )
+    : [];
+
+  return {
+    content: message.content,
+    id: message.id,
+    role: message.role === "assistant" ? "assistant" : "user",
+    sourceAttributions: [
+      ...(suggestedActions.length > 0
+        ? [
+            {
+              id: `${message.id}-actions`,
+              label: `${suggestedActions.length} suggested action${suggestedActions.length === 1 ? "" : "s"}`,
+              type: "strategy" as const
+            }
+          ]
+        : []),
+      ...(relatedRisks.length > 0
+        ? [
+            {
+              id: `${message.id}-risks`,
+              label: `${relatedRisks.length} related risk${relatedRisks.length === 1 ? "" : "s"}`,
+              type: "case" as const
+            }
+          ]
+        : [])
+    ],
+    timestamp: message.created_at
+  };
+}
+
+export function CopilotPanel({
+  accessToken,
+  caseId,
+  suggestedPrompts = defaultPrompts,
+  summary
+}: CopilotPanelProps) {
+  const { clearSession } = useAuthSession();
+  const [draft, setDraft] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSending, setIsSending] = useState(false);
+  const [messages, setMessages] = useState<CaseWorkspaceCopilotMessage[]>([]);
+  const [selectedPrompt, setSelectedPrompt] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadThread() {
+      setIsLoading(true);
+      setError(null);
+
+      const result = await getCaseCopilotThread(accessToken, caseId);
+      if (cancelled) {
+        return;
+      }
+
+      setIsLoading(false);
+
+      if (!result.ok) {
+        if (result.status === 401) {
+          clearSession();
+          return;
+        }
+
+        setError(result.errorMessage);
+        return;
+      }
+
+      setMessages(
+        result.data.messages
+          .map(mapMessage)
+          .filter((message): message is CaseWorkspaceCopilotMessage => message !== null)
+      );
+    }
+
+    void loadThread();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [accessToken, caseId, clearSession]);
+
+  async function sendDraft() {
+    const content = draft.trim();
+    if (content.length === 0) {
+      return;
+    }
+
+    setIsSending(true);
+    setError(null);
+
+    const result = await createCaseCopilotMessage(accessToken, caseId, { content });
+    setIsSending(false);
+
+    if (!result.ok) {
+      if (result.status === 401) {
+        clearSession();
+        return;
+      }
+
+      setError(result.errorMessage);
+      return;
+    }
+
+    setMessages(
+      result.data.thread.messages
+        .map(mapMessage)
+        .filter((message): message is CaseWorkspaceCopilotMessage => message !== null)
+    );
+    setDraft("");
+    setSelectedPrompt(null);
+  }
+
+  function useSuggestedPrompt(prompt: string) {
+    setDraft(prompt);
+    setSelectedPrompt(prompt);
+  }
+
+  const panelSummary = useMemo(
+    () =>
+      summary ||
+      "Ask focused, case-aware questions to turn current evidence, risk signals, and next actions into a practical execution sequence.",
+    [summary]
+  );
 
   return (
     <div className="grid gap-6 xl:grid-cols-[1.18fr_0.82fr]">
@@ -35,7 +181,7 @@ export function CopilotPanel({ copilot }: CopilotPanelProps) {
               Case advisory conversation
             </h2>
             <p className="mt-3 max-w-2xl text-sm leading-7 text-muted">
-              {copilot.summary}
+              {panelSummary}
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -45,7 +191,18 @@ export function CopilotPanel({ copilot }: CopilotPanelProps) {
         </div>
 
         <div className="mt-6">
+          {error ? (
+            <div className="mb-5 rounded-xl border border-red/20 bg-red/5 px-4 py-4">
+              <p className="text-sm font-semibold uppercase tracking-[0.08em] text-red">
+                Copilot unavailable
+              </p>
+              <p className="mt-3 text-sm leading-7 text-red">{error}</p>
+            </div>
+          ) : null}
           <CopilotMessageList isSending={isSending} messages={messages} />
+          {isLoading ? (
+            <p className="mt-4 text-sm text-muted">Loading case conversation...</p>
+          ) : null}
         </div>
       </Card>
 
@@ -53,7 +210,7 @@ export function CopilotPanel({ copilot }: CopilotPanelProps) {
         <Card className="rounded-[32px] border border-white/80 bg-[linear-gradient(180deg,rgba(255,255,255,0.96),rgba(248,250,252,0.88))] p-6 shadow-[0_24px_70px_rgba(15,23,42,0.07)]">
           <CopilotSuggestedPrompts
             onSelect={useSuggestedPrompt}
-            prompts={copilot.suggestedPrompts}
+            prompts={suggestedPrompts}
             selectedPrompt={selectedPrompt}
           />
         </Card>
@@ -68,7 +225,7 @@ export function CopilotPanel({ copilot }: CopilotPanelProps) {
                 Ask a focused case question
               </h3>
             </div>
-            <DashboardStatusPill label="Mock thread" tone="warning" />
+            <DashboardStatusPill label="Persistent thread" tone="positive" />
           </div>
 
           <div className="mt-5">

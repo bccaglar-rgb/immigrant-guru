@@ -4,5 +4,12 @@ import { getCaseWorkspaceMock } from "@/lib/case-workspace-mocks";
 export function CopilotPanelExample() {
   const workspace = getCaseWorkspaceMock("copilot-demo");
 
-  return <CopilotPanel copilot={workspace.copilot} />;
+  return (
+    <CopilotPanel
+      accessToken="demo-token"
+      caseId={workspace.header.caseId}
+      suggestedPrompts={workspace.copilot.suggestedPrompts}
+      summary={workspace.copilot.summary}
+    />
+  );
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useEffectEvent, useState } from "react";
 
 import { Animate, Stagger } from "@/components/ui/animate";
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -68,25 +68,35 @@ export function AIAnalysisPage() {
     setStatus("ready");
   }, [session]);
 
+  const handleLoadAnalysis = useEffectEvent(async () => {
+    await loadAnalysis();
+  });
+
   useEffect(() => {
-    if (session?.accessToken) void loadAnalysis();
-  }, [loadAnalysis, session?.accessToken]);
+    if (!session?.accessToken) {
+      return;
+    }
+    void handleLoadAnalysis();
+  }, [session?.accessToken]);
 
   const handleUpgrade = useCallback(async (plan: string) => {
     if (!session) return;
     setUpgrading(plan);
     const res = await checkout(session.accessToken, plan);
     setUpgrading(null);
-    if (res.ok) {
-      const data = res.data;
-      // If Stripe returned a checkout URL, redirect to it
-      if ((data as any).checkout_url) {
-        window.location.href = (data as any).checkout_url;
-        return;
-      }
-      // Demo mode: reload analysis with premium data
-      void loadAnalysis();
+    if (!res.ok) {
+      setError(res.errorMessage);
+      setStatus("error");
+      return;
     }
+
+    const data = res.data;
+    if (data.checkout_url) {
+      window.location.href = data.checkout_url;
+      return;
+    }
+
+    void loadAnalysis();
   }, [session, loadAnalysis]);
 
   // Not logged in — redirect to sign-up

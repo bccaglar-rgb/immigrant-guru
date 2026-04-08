@@ -18,6 +18,7 @@ export type CaseWorkspaceTabId = (typeof caseWorkspaceTabIds)[number];
 export type CaseWorkspaceHealthStatus =
   | "strong"
   | "stable"
+  | "incomplete"
   | "needs_attention"
   | "at_risk";
 

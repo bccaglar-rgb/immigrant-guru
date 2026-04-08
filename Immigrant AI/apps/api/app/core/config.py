@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from functools import lru_cache
+from urllib.parse import urlparse
 from pathlib import Path
 from typing import Literal
 
@@ -80,9 +81,12 @@ class Settings(BaseSettings):
     stripe_secret_key: str = ""
     stripe_publishable_key: str = ""
     stripe_webhook_secret: str = ""
+    stripe_webhook_tolerance_seconds: int = 300
+    stripe_webhook_event_ttl_seconds: int = 7 * 24 * 60 * 60
     stripe_starter_price_id: str = ""
     stripe_plus_price_id: str = ""
     stripe_premium_price_id: str = ""
+    frontend_app_url: str = "https://immigrant.guru"
 
     @field_validator("admin_emails")
     @classmethod
@@ -112,6 +116,10 @@ class Settings(BaseSettings):
                 raise ValueError(
                     "JWT_SECRET_KEY must be at least 32 characters in staging or production."
                 )
+
+        parsed_frontend_url = urlparse(self.frontend_app_url)
+        if parsed_frontend_url.scheme not in {"http", "https"} or not parsed_frontend_url.netloc:
+            raise ValueError("FRONTEND_APP_URL must be an absolute http or https URL.")
 
         return self
 

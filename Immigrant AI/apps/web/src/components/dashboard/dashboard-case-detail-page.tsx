@@ -2,22 +2,21 @@
 
 import { useState } from "react";
 
+import { AIStrategyPanel } from "@/components/dashboard/ai-strategy-panel";
 import { CaseWorkspaceHeader } from "@/components/dashboard/case-workspace-header";
 import { CaseWorkspaceTabs } from "@/components/dashboard/case-workspace-tabs";
 import { ComparisonPanel } from "@/components/dashboard/comparison-panel";
 import { CopilotPanel } from "@/components/dashboard/copilot-panel";
 import { CaseSimulationPanel } from "@/components/dashboard/case-simulation-panel";
+import { CaseDocumentCenter } from "@/components/dashboard/case-document-center";
 import { DashboardErrorState } from "@/components/dashboard/dashboard-error-state";
-import { DocumentCenterPanel } from "@/components/dashboard/document-center-panel";
 import { DocumentChecklistPanel } from "@/components/dashboard/document-checklist-panel";
 import { RiskBreakdownPanel } from "@/components/dashboard/risk-breakdown-panel";
-import { StrategyPlansPanel } from "@/components/dashboard/strategy-plans-panel";
 import { TimelineStepper } from "@/components/dashboard/timeline-stepper";
 import { Card } from "@/components/ui/card";
 import { MobileDashboardCaseDetailPage } from "@/components/mobile/mobile-dashboard-case-detail-page";
 import { useIsMobile } from "@/hooks/use-is-mobile";
-import { useCaseWorkspaceMock } from "@/hooks/use-case-workspace-mock";
-import { documentCenterMock } from "@/lib/document-center-mocks";
+import { useCaseWorkspace } from "@/hooks/use-case-workspace";
 import type { CaseWorkspaceTabId } from "@/types/case-workspace";
 
 type DashboardCaseDetailPageProps = Readonly<{
@@ -82,7 +81,8 @@ function DesktopDashboardCaseDetailPage({
   caseId
 }: DashboardCaseDetailPageProps) {
   const [activeTab, setActiveTab] = useState<CaseWorkspaceTabId>("overview");
-  const { data, error, reload, status } = useCaseWorkspaceMock(caseId);
+  const { accessToken, caseRecord, data, error, reload, status } =
+    useCaseWorkspace(caseId);
 
   if (status === "loading") {
     return <WorkspaceLoadingState />;
@@ -137,7 +137,14 @@ function DesktopDashboardCaseDetailPage({
       ) : null}
 
       {activeTab === "strategy" ? (
-        <StrategyPlansPanel strategy={data.strategy} />
+        accessToken && caseRecord ? (
+          <AIStrategyPanel accessToken={accessToken} caseRecord={caseRecord} />
+        ) : (
+          <EmptyWorkspaceSection
+            description="Sign in again to generate and compare strategic pathways for this case."
+            title="Strategy"
+          />
+        )
       ) : null}
 
       {activeTab === "timeline" ? (
@@ -149,7 +156,18 @@ function DesktopDashboardCaseDetailPage({
       ) : null}
 
       {activeTab === "documents" ? (
-        <DocumentCenterPanel data={documentCenterMock} />
+        accessToken ? (
+          <CaseDocumentCenter
+            accessToken={accessToken}
+            caseId={caseId}
+            onDocumentsChanged={reload}
+          />
+        ) : (
+          <EmptyWorkspaceSection
+            description="Sign in again to manage documents for this case."
+            title="Documents"
+          />
+        )
       ) : null}
 
       {activeTab === "risks" ? (
@@ -164,11 +182,30 @@ function DesktopDashboardCaseDetailPage({
       ) : null}
 
       {activeTab === "copilot" ? (
-        <CopilotPanel copilot={data.copilot} />
+        accessToken ? (
+          <CopilotPanel
+            accessToken={accessToken}
+            caseId={caseId}
+            suggestedPrompts={data.copilot.suggestedPrompts}
+            summary={data.copilot.summary}
+          />
+        ) : (
+          <EmptyWorkspaceSection
+            description="Sign in again to use the case copilot."
+            title="Copilot"
+          />
+        )
       ) : null}
 
       {activeTab === "comparison" ? (
-        <ComparisonPanel comparison={data.comparison} />
+        accessToken && caseRecord ? (
+          <ComparisonPanel accessToken={accessToken} caseRecord={caseRecord} />
+        ) : (
+          <EmptyWorkspaceSection
+            description="Sign in again to compare this case against alternative country-pathway routes."
+            title="Comparison"
+          />
+        )
       ) : null}
     </div>
   );
