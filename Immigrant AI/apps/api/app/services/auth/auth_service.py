@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 from uuid import UUID
 
 from fastapi import HTTPException, status
@@ -14,6 +15,8 @@ from app.models.user import User
 from app.models.user_profile import UserProfile
 from app.schemas.auth import LoginRequest, TokenResponse, UserRegistrationRequest
 from app.services.shared.audit_service import AuditService
+
+logger = logging.getLogger(__name__)
 
 
 class AuthService:
@@ -71,13 +74,15 @@ class AuthService:
             metadata={"email": created_user.email},
         )
 
-        # Send welcome email (fire-and-forget, don't block registration)
+        # Send welcome email (fire-and-forget, must never block registration)
         try:
             from app.services.shared.email_service import send_welcome_email
             first_name = created_user.profile.first_name if created_user.profile else None
-            await send_welcome_email(created_user.email, first_name)
+            result = await send_welcome_email(created_user.email, first_name)
+            if result is None:
+                logger.warning("auth.welcome_email_failed email=%s", created_user.email)
         except Exception:
-            pass  # Email failure should never block registration
+            logger.exception("auth.welcome_email_error email=%s", created_user.email)
 
         return created_user
 

@@ -81,7 +81,17 @@ def _verify_stripe_signature(payload: bytes, signature_header: str, secret: str,
     return any(hmac.compare_digest(expected, candidate) for candidate in signatures)
 
 
+_PAID_PLANS = {"starter", "plus", "premium"}
+
+
 async def _claim_stripe_event(event_id: str, redis_url: str, ttl_seconds: int) -> bool:
+    """Claim a Stripe event ID in Redis to prevent duplicate processing.
+
+    Returns True  → event is new, process it.
+    Returns False → event already seen, skip it.
+    On Redis failure: log and return True (fail-open: better to risk a duplicate
+    than to silently drop a payment confirmation).
+    """
     redis_client = None
     try:
         redis_client = redis_from_url(
@@ -97,8 +107,8 @@ async def _claim_stripe_event(event_id: str, redis_url: str, ttl_seconds: int) -
         )
         return bool(result)
     except Exception:
-        logger.exception("stripe.webhook_replay_guard_failed event_id=%s", event_id)
-        return True
+        logger.exception("stripe.webhook_replay_guard_failed event_id=%s — failing open", event_id)
+        return True  # fail-open: process the event; webhook handler is idempotent
     finally:
         if redis_client is not None:
             await redis_client.aclose()
@@ -135,8 +145,8 @@ async def create_checkout(
     """Create a Stripe Checkout Session and return the URL."""
     normalized_plan = _normalize_plan(body.plan)
 
-    if normalized_plan not in PLANS or normalized_plan == "free":
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Invalid plan: {body.plan}")
+    if normalized_plan not in _PAID_PLANS:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Invalid plan: {body.plan!r}. Choose one of: {', '.join(sorted(_PAID_PLANS))}")
 
     settings = get_settings()
     plan_info = PLANS[normalized_plan]
@@ -165,9 +175,11 @@ async def create_checkout(
         try:
             from app.services.shared.email_service import send_upgrade_email
             first_name = current_user.profile.first_name if current_user.profile else None
-            await send_upgrade_email(current_user.email, plan_name, first_name)
+            result = await send_upgrade_email(current_user.email, plan_name, first_name)
+            if result is None:
+                logger.warning("billing.demo_upgrade_email_failed user=%s plan=%s", current_user.id, normalized_plan)
         except Exception:
-            pass
+            logger.exception("billing.demo_upgrade_email_error user=%s plan=%s", current_user.id, normalized_plan)
         return {
             "success": True,
             "mode": "demo",
@@ -269,7 +281,7 @@ async def stripe_webhook(
         user_id = data.get("metadata", {}).get("user_id")
         plan = _normalize_plan(str(data.get("metadata", {}).get("plan", "")))
 
-        if user_id and plan in PLANS and plan != "free":
+        if user_id and plan in _PAID_PLANS:
             from uuid import UUID
             result = await session.execute(
                 select(User).where(User.id == UUID(user_id))
@@ -287,9 +299,11 @@ async def stripe_webhook(
                     from app.services.shared.email_service import send_upgrade_email
                     plan_name = str(PLANS.get(str(plan), {}).get("name", plan))
                     first_name = user.profile.first_name if user.profile else None
-                    await send_upgrade_email(user.email, plan_name, first_name)
+                    result = await send_upgrade_email(user.email, plan_name, first_name)
+                    if result is None:
+                        logger.warning("stripe.upgrade_email_failed user=%s plan=%s", user_id, plan)
                 except Exception:
-                    pass
+                    logger.exception("stripe.upgrade_email_error user=%s plan=%s", user_id, plan)
         else:
             logger.warning("stripe.webhook_invalid_metadata user_id=%s plan=%s", user_id, plan)
 
