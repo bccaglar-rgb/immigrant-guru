@@ -170,38 +170,65 @@ export function LocaleProvider({ children }: LocaleProviderProps) {
     document.documentElement.lang = locale;
     document.documentElement.dir = getDocumentDirection(locale);
 
+    // English is the source language — no translation needed,
+    // so skip the DOM observer entirely to avoid any loop risk.
+    if (locale === "en") {
+      return;
+    }
+
     const applyTitleTranslation = () => {
       if (!document.title) {
         return;
       }
 
       titleSource.current = document.title;
-      document.title = translateText(locale, titleSource.current);
+      const translated = translateText(locale, titleSource.current);
+      if (document.title !== translated) {
+        document.title = translated;
+      }
     };
 
     applyTitleTranslation();
 
-    translateTree(document.body);
+    // Re-entry guard: MutationObserver fires characterData events for every
+    // nodeValue write, so without this flag translateTextNode would observe
+    // its own writes and loop until the tab hangs.
+    let isTranslating = false;
+    const runTranslation = (fn: () => void) => {
+      if (isTranslating) return;
+      isTranslating = true;
+      try {
+        fn();
+      } finally {
+        isTranslating = false;
+      }
+    };
+
+    runTranslation(() => translateTree(document.body));
 
     const observer = new MutationObserver((mutations) => {
-      for (const mutation of mutations) {
-        if (mutation.type === "characterData" && mutation.target instanceof Text) {
-          translateTextNode(mutation.target);
-        }
-
-        mutation.addedNodes.forEach((node) => {
-          if (node instanceof Text) {
-            translateTextNode(node);
-          } else if (node instanceof Element) {
-            translateTree(node);
+      if (isTranslating) return;
+      runTranslation(() => {
+        for (const mutation of mutations) {
+          if (mutation.type === "characterData" && mutation.target instanceof Text) {
+            translateTextNode(mutation.target);
           }
-        });
-      }
+
+          mutation.addedNodes.forEach((node) => {
+            if (node instanceof Text) {
+              translateTextNode(node);
+            } else if (node instanceof Element) {
+              translateTree(node);
+            }
+          });
+        }
+      });
     });
 
     const titleElement = document.head.querySelector("title");
     const titleObserver = new MutationObserver(() => {
-      applyTitleTranslation();
+      if (isTranslating) return;
+      runTranslation(applyTitleTranslation);
     });
 
     observer.observe(document.body, {
