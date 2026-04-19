@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils";
 
 const navItems = [
   { href: "/dashboard", label: "Overview", description: "Dashboard home" },
-  { href: "/analysis", label: "My Analysis", description: "AI recommendations" },
+  { href: "/dashboard/analysis", label: "My Analysis", description: "AI recommendations" },
   { href: "/dashboard/profile", label: "Profile", description: "Immigration profile" },
   { href: "/dashboard/cases", label: "My Cases", description: "Your immigration cases" },
 ];
@@ -46,7 +46,7 @@ export function DashboardSidebar({ pathname }: DashboardSidebarProps) {
           {navItems.map((item) => {
             const active =
               pathname === item.href ||
-              (item.href !== "/dashboard" && item.href !== "/analysis" && pathname.startsWith(`${item.href}/`));
+              (item.href !== "/dashboard" && item.href !== "/dashboard/analysis" && pathname.startsWith(`${item.href}/`));
 
             return (
               <Link href={item.href} key={item.href}>

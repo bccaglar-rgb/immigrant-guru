@@ -103,7 +103,7 @@ const LOCKED_ITEMS = [
 
 const TIER_ORDER = ["free", "starter", "plus", "premium"];
 
-export function AIAnalysisPage() {
+export function AIAnalysisPage({ compact = false }: { compact?: boolean }) {
   const searchParams = useSearchParams();
   const upgraded = searchParams.get("upgraded") === "true";
   const canceled = searchParams.get("canceled") === "true";
@@ -215,7 +215,7 @@ export function AIAnalysisPage() {
   const upsellPlans = PLANS.filter((p) => TIER_ORDER.indexOf(p.key) > effectiveTierIdx);
 
   return (
-    <div className="mx-auto max-w-3xl px-6 py-10 md:py-14">
+    <div className={cn("mx-auto max-w-3xl", compact ? "px-0 py-0" : "px-6 py-10 md:py-14")}>
 
       {/* HEADER */}
       <Animate animation="fade-up" duration={600}>
