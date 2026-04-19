@@ -1,0 +1,71 @@
+name: Deploy to Production
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-prod
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.DROPLET_IP }}
+          username: root
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script_stop: true
+          command_timeout: 20m
+          script: |
+            set -e
+            cd /opt/app/immigrant-guru
+
+            echo "::group::Pull latest"
+            git fetch --all --prune
+            git reset --hard origin/main
+            echo "::endgroup::"
+
+            echo "::group::Web build"
+            cd apps/web
+            npm ci --no-audit --no-fund
+            npm run build
+            cd ../..
+            echo "::endgroup::"
+
+            echo "::group::API deps"
+            cd apps/api
+            if [ ! -d .venv ]; then python3.12 -m venv .venv; fi
+            . .venv/bin/activate
+            pip install -q --upgrade pip
+            pip install -q -e .
+            deactivate
+            cd ../..
+            echo "::endgroup::"
+
+            echo "::group::Worker deps"
+            cd apps/worker
+            if [ ! -d .venv ]; then python3.12 -m venv .venv; fi
+            . .venv/bin/activate
+            pip install -q --upgrade pip
+            pip install -q -e .
+            deactivate
+            cd ../..
+            echo "::endgroup::"
+
+            echo "::group::Reload"
+            pm2 reload ecosystem.config.cjs --update-env
+            pm2 save
+            echo "::endgroup::"
+
+            echo "::group::Health check"
+            sleep 8
+            curl -fsS http://127.0.0.1:3000/ > /dev/null && echo "web OK"
+            curl -fsS https://immigrant.guru/api/v1/health -k > /dev/null && echo "api OK"
+            echo "::endgroup::"
