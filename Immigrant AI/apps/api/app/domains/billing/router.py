@@ -42,9 +42,11 @@ def _normalize_plan(plan: str) -> str:
     return plan.strip().lower()
 
 
-def _build_checkout_redirect_url(base_url: str, *, upgraded: bool) -> str:
-    query = urlencode({"upgraded" if upgraded else "canceled": "true"})
-    return f"{base_url.rstrip('/')}/analysis?{query}"
+def _build_checkout_redirect_url(base_url: str, *, upgraded: bool, plan: str = "") -> str:
+    params: dict[str, str] = {"upgraded" if upgraded else "canceled": "true"}
+    if not upgraded and plan:
+        params["plan"] = plan
+    return f"{base_url.rstrip('/')}/analysis?{urlencode(params)}"
 
 
 def _parse_stripe_signature_header(value: str) -> tuple[int | None, list[str]]:
@@ -205,7 +207,7 @@ async def create_checkout(
                     "metadata[plan]": normalized_plan,
                     "metadata[user_id]": str(current_user.id),
                     "success_url": _build_checkout_redirect_url(settings.frontend_app_url, upgraded=True),
-                    "cancel_url": _build_checkout_redirect_url(settings.frontend_app_url, upgraded=False),
+                    "cancel_url": _build_checkout_redirect_url(settings.frontend_app_url, upgraded=False, plan=normalized_plan),
                 },
             )
             checkout: dict[str, Any] = resp.json()

@@ -85,6 +85,8 @@ const TIER_ORDER = ["free", "starter", "plus", "premium"];
 export function AIAnalysisPage() {
   const searchParams = useSearchParams();
   const canceled = searchParams.get("canceled") === "true";
+  // Plan user had selected before canceling checkout (passed in cancel_url)
+  const canceledPlan = searchParams.get("plan") ?? "";
   const { session } = useAuthSession();
   const [status, setStatus] = useState<Status>("loading");
   const [result, setResult] = useState<ProfileAnalysisResult | null>(null);
@@ -176,7 +178,10 @@ export function AIAnalysisPage() {
   const isPremium = result.is_premium === true;
   const { profile_summary, visa_matches, recommendation, challenges } = result;
   const currentTierIdx = TIER_ORDER.indexOf(currentPlan);
-  const upsellPlans = PLANS.filter((p) => TIER_ORDER.indexOf(p.key) > currentTierIdx);
+  // If user canceled a checkout, treat the canceled plan as the minimum already "seen"
+  const canceledTierIdx = TIER_ORDER.indexOf(canceledPlan);
+  const effectiveTierIdx = Math.max(currentTierIdx, canceledTierIdx);
+  const upsellPlans = PLANS.filter((p) => TIER_ORDER.indexOf(p.key) > effectiveTierIdx);
 
   return (
     <div className="mx-auto max-w-3xl px-6 py-10 md:py-14">
