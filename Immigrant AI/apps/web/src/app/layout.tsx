@@ -130,9 +130,14 @@ export default function RootLayout({ children }: RootLayoutProps) {
       </head>
       <body className={`${bodyFont.variable} font-sans`}>
         <GoogleAnalytics />
-        <LocaleProvider>
-          <AuthProvider>{children}</AuthProvider>
-        </LocaleProvider>
+        <div className="aurora-bg" aria-hidden="true">
+          <div className="orb-3" />
+        </div>
+        <div className="anim-page-enter relative z-[1]">
+          <LocaleProvider>
+            <AuthProvider>{children}</AuthProvider>
+          </LocaleProvider>
+        </div>
       </body>
     </html>
   );

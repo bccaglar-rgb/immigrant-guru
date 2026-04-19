@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 type AnimateProps = {
   children: ReactNode;
   className?: string;
-  animation?: "fade-up" | "fade-in" | "scale-in" | "slide-left" | "slide-right";
+  animation?: "fade-up" | "fade-in" | "scale-in" | "slide-left" | "slide-right" | "blur-up" | "rotate-in" | "zoom-in" | "slide-up-big" | "flip-up";
   delay?: number;
   duration?: number;
   once?: boolean;
@@ -28,7 +28,12 @@ export function Animate({
     "fade-in": "anim-fade-in",
     "scale-in": "anim-scale-in",
     "slide-left": "anim-slide-left",
-    "slide-right": "anim-slide-right"
+    "slide-right": "anim-slide-right",
+    "blur-up": "anim-blur-up",
+    "rotate-in": "anim-rotate-in",
+    "zoom-in": "anim-zoom-in",
+    "slide-up-big": "anim-slide-up-big",
+    "flip-up": "anim-flip-up"
   }[animation];
 
   return (
@@ -49,7 +54,7 @@ type StaggerProps = {
   children: ReactNode[];
   className?: string;
   childClassName?: string;
-  animation?: "fade-up" | "fade-in" | "scale-in";
+  animation?: "fade-up" | "fade-in" | "scale-in" | "blur-up" | "zoom-in" | "flip-up";
   staggerDelay?: number;
   duration?: number;
 };
@@ -67,7 +72,10 @@ export function Stagger({
   const animationClass = {
     "fade-up": "anim-fade-up",
     "fade-in": "anim-fade-in",
-    "scale-in": "anim-scale-in"
+    "scale-in": "anim-scale-in",
+    "blur-up": "anim-blur-up",
+    "zoom-in": "anim-zoom-in",
+    "flip-up": "anim-flip-up"
   }[animation];
 
   return (

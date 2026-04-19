@@ -30,7 +30,7 @@ export const buttonVariants = ({
   variant = "primary"
 }: Pick<ButtonProps, "className" | "fullWidth" | "size" | "variant"> = {}) =>
   cn(
-    "inline-flex items-center justify-center rounded-full transition-all duration-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-not-allowed",
+    "anim-sheen inline-flex items-center justify-center rounded-full transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-[1px] hover:shadow-[0_10px_30px_-10px_rgba(0,113,227,0.55)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-not-allowed",
     buttonStyles[variant],
     sizeStyles[size],
     fullWidth ? "w-full" : "",
