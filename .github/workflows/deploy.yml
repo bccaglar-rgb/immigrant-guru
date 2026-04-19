@@ -21,11 +21,9 @@ jobs:
           host: ${{ secrets.DROPLET_IP }}
           username: root
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          script_stop: true
+          script_stop: false
           command_timeout: 20m
           script: |
-            set -e
-
             REPO=/opt/app/immigrant-guru
             cd "$REPO"
 
@@ -33,38 +31,9 @@ jobs:
             git fetch --all --prune
             git reset --hard origin/main
 
-            echo "==> Detect app root"
-            APP=$(find "$REPO" -maxdepth 2 -name "ecosystem.config.cjs" -not -path "*/.git/*" | head -1 | xargs -I{} dirname {})
-            echo "App root: $APP"
-
-            echo "==> Web build"
-            cd "$APP/apps/web"
-            npm ci --no-audit --no-fund
-            npm run build
-
-            echo "==> API deps"
-            cd "$APP/apps/api"
-            test -d .venv || python3.12 -m venv .venv
-            . .venv/bin/activate
-            pip install -q --upgrade pip
-            pip install -q -e .
-            deactivate
-
-            echo "==> Worker deps"
-            cd "$APP/apps/worker"
-            test -d .venv || python3.12 -m venv .venv
-            . .venv/bin/activate
-            pip install -q --upgrade pip
-            pip install -q -e .
-            deactivate
-
-            echo "==> Reload"
-            cd "$APP"
-            pm2 reload ecosystem.config.cjs --update-env
-            pm2 save
-
-            echo "==> Health check"
-            sleep 8
-            curl -fsS http://127.0.0.1:3000/ > /dev/null && echo "web OK"
-            curl -fsS https://immigrant.guru/api/v1/health -k > /dev/null && echo "api OK"
-            echo "Done."
+            echo "==> Debug: directory listing"
+            ls -la "$REPO/"
+            echo "---"
+            ls -la "$REPO/apps/" 2>/dev/null && echo "flat apps/ exists" || echo "flat apps/ missing"
+            ls -la "$REPO/Immigrant AI/" 2>/dev/null && echo "nested Immigrant AI/ exists" || echo "nested Immigrant AI/ missing"
+            echo "==> End debug"
