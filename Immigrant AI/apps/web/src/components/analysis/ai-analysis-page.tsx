@@ -189,30 +189,36 @@ export function AIAnalysisPage() {
       {/* HEADER */}
       <Animate animation="fade-up" duration={600}>
         <div className="text-center">
-          <p className="text-sm font-medium text-accent">
-            {isPremium ? "Your full immigration plan" : "Your first immigration analysis is ready"}
-          </p>
-          <h1 className="mt-2 text-3xl font-semibold tracking-tight text-ink md:text-4xl">
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-accent/20 bg-accent/[0.07] px-3.5 py-1 text-xs font-semibold text-accent">
+            <span className="h-1.5 w-1.5 rounded-full bg-accent anim-breathe" />
+            {isPremium ? "Full immigration plan ready" : "Analysis complete"}
+          </span>
+          <h1 className="mt-4 text-3xl font-semibold tracking-tight text-ink md:text-[2.6rem] md:leading-[1.15]">
             {isPremium ? "Your full immigration plan" : "Here\u2019s what we found for you."}
           </h1>
+          {!isPremium && visa_matches.length > 0 && (
+            <p className="mt-2 text-base text-muted">
+              We evaluated {visa_matches.length} visa paths against your profile.
+            </p>
+          )}
         </div>
       </Animate>
 
       {/* ABOUT YOU */}
       <Animate animation="fade-up" delay={100} duration={600}>
         <div className="mt-8 glass-card rounded-2xl p-6 md:p-8">
-          <p className="text-xs font-medium uppercase tracking-[0.08em] text-accent">About you</p>
-          <p className="mt-3 text-lg leading-relaxed text-ink">{profile_summary.text}</p>
-          {profile_summary.target_country && (
-            <p className="mt-2 text-base text-muted">
-              Target: <span className="font-medium text-ink">{profile_summary.target_country}</span>
-            </p>
-          )}
-          {!isPremium && (
-            <p className="mt-4 text-sm leading-relaxed text-muted/80">
-              Based on the information you provided, these are the immigration paths that currently look most relevant.
-            </p>
-          )}
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <p className="text-xs font-medium uppercase tracking-[0.08em] text-accent">Your profile</p>
+              <p className="mt-2 text-lg leading-relaxed text-ink">{profile_summary.text}</p>
+            </div>
+            {profile_summary.target_country && (
+              <div className="shrink-0 rounded-xl border border-accent/15 bg-accent/[0.06] px-3 py-2 text-right">
+                <p className="text-[10px] font-medium uppercase tracking-wide text-accent/70">Target</p>
+                <p className="mt-0.5 text-sm font-semibold text-ink">{profile_summary.target_country}</p>
+              </div>
+            )}
+          </div>
         </div>
       </Animate>
 
@@ -229,22 +235,29 @@ export function AIAnalysisPage() {
           <Stagger className="mt-4 space-y-3" animation="fade-up" staggerDelay={100} duration={500}>
             {visa_matches.map((match) => {
               const colors = MATCH_COLORS[match.match_level];
+              const barColor = match.match_level === "high" ? "bg-green" : match.match_level === "medium" ? "bg-accent" : "bg-muted/50";
               return (
                 <div key={match.visa_type} className={cn("rounded-xl border p-5", colors.border, colors.bg)}>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <h3 className="text-lg font-semibold text-ink">{match.visa_type}</h3>
-                        <span className={cn("rounded-full px-2 py-0.5 text-xs font-semibold", colors.text, "bg-white/60")}>
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <h3 className="text-base font-semibold text-ink">{match.visa_type}</h3>
+                        <span className={cn("rounded-full px-2 py-0.5 text-xs font-semibold", colors.text, "bg-white/70")}>
                           {colors.label}
                         </span>
                       </div>
-                      <p className="mt-1 text-sm text-muted">{match.country}</p>
+                      <p className="mt-0.5 text-sm text-muted">{match.country}</p>
                       {isPremium && match.description && (
                         <p className="mt-2 text-sm leading-relaxed text-ink/60">{match.description}</p>
                       )}
                     </div>
-                    <p className={cn("text-2xl font-semibold", colors.text)}>{match.match_score}%</p>
+                    <p className={cn("text-2xl font-semibold tabular-nums shrink-0", colors.text)}>{match.match_score}%</p>
+                  </div>
+                  <div className="mt-3 h-1 w-full overflow-hidden rounded-full bg-black/[0.06]">
+                    <div
+                      className={cn("h-full rounded-full", barColor)}
+                      style={{ width: `${Math.max(match.match_score, 3)}%`, transition: "width 1s ease-out" }}
+                    />
                   </div>
                 </div>
               );
@@ -305,13 +318,17 @@ export function AIAnalysisPage() {
         <Animate animation="fade-up" delay={650} duration={700}>
           <div className="mt-10">
             <h2 className="text-xl font-semibold tracking-tight text-ink">Your step-by-step roadmap</h2>
-            <div className="mt-4 space-y-3">
-              {result.premium_roadmap.map((step) => (
-                <div key={step.step} className="flex gap-4 rounded-xl border border-line bg-white/60 p-4">
-                  <div className={cn("flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-sm font-semibold text-white", step.status === "done" ? "bg-green" : "bg-accent")}>
-                    {step.step}
+            <div className="mt-5">
+              {result.premium_roadmap.map((step, idx) => (
+                <div key={step.step} className="relative flex gap-4">
+                  {/* Connector line */}
+                  {idx < result.premium_roadmap!.length - 1 && (
+                    <div className="absolute left-4 top-10 bottom-0 w-px bg-line" />
+                  )}
+                  <div className={cn("relative z-10 flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-sm font-bold text-white shadow-sm", step.status === "done" ? "bg-green" : "bg-accent")}>
+                    {step.status === "done" ? "✓" : step.step}
                   </div>
-                  <div>
+                  <div className={cn("mb-4 flex-1 rounded-xl border p-4", step.status === "done" ? "border-green/20 bg-green/[0.04]" : "border-line bg-white/60")}>
                     <p className="text-sm font-semibold text-ink">{step.title}</p>
                     <p className="mt-0.5 text-sm text-muted">{step.description}</p>
                   </div>
@@ -351,11 +368,14 @@ export function AIAnalysisPage() {
             <div className="mt-4 space-y-2">
               {result.premium_documents.map((doc) => (
                 <div key={doc.document} className="flex items-start gap-3 rounded-xl border border-line bg-white/60 p-3.5">
-                  <span className={cn("mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-xs", doc.required ? "bg-accent/10 text-accent" : "bg-ink/5 text-muted")}>
-                    {doc.required ? "!" : "?"}
+                  <span className={cn("mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10px] font-bold", doc.required ? "bg-accent/10 text-accent" : "bg-ink/5 text-muted")}>
+                    {doc.required ? "✓" : "–"}
                   </span>
                   <div>
-                    <p className="text-sm font-medium text-ink">{doc.document} {doc.required && <span className="text-xs text-accent">(required)</span>}</p>
+                    <p className="text-sm font-medium text-ink">
+                      {doc.document}
+                      {doc.required && <span className="ml-2 rounded-full bg-accent/10 px-1.5 py-0.5 text-[10px] font-semibold text-accent">Required</span>}
+                    </p>
                     <p className="mt-0.5 text-xs text-muted">{doc.notes}</p>
                   </div>
                 </div>
