@@ -111,12 +111,6 @@ export function CompleteStep({ formValues }: CompleteStepProps) {
           >
             See your AI analysis
           </Link>
-          <Link
-            className={cn(buttonVariants({ size: "lg", variant: "secondary" }))}
-            href="/dashboard"
-          >
-            Go to Dashboard
-          </Link>
         </div>
       </Animate>
     </div>
