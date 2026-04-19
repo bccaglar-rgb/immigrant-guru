@@ -27,7 +27,7 @@ export function SiteHeader() {
             alt="Immigrant Guru"
             width={320}
             height={112}
-            className="h-auto w-[42px] object-contain md:w-[48px]"
+            className="h-auto w-[42px] object-contain mix-blend-multiply md:w-[48px]"
             priority
           />
           <span className="select-none text-[1.05rem] font-black tracking-[-0.045em] text-ink md:text-[1.22rem]">

@@ -33,7 +33,7 @@ export function DashboardSidebar({ pathname }: DashboardSidebarProps) {
             alt="Immigrant Guru"
             width={320}
             height={112}
-            className="h-auto w-[40px] object-contain"
+            className="h-auto w-[40px] object-contain mix-blend-multiply"
             priority
           />
           <span className="select-none text-[1.05rem] font-black tracking-[-0.045em] text-ink">

@@ -21,7 +21,7 @@ export function WelcomeStep({ firstName, onNext }: WelcomeStepProps) {
             alt="Immigrant Guru"
             width={320}
             height={112}
-            className="h-auto w-[88px] object-contain anim-pulse-glow"
+            className="h-auto w-[88px] object-contain mix-blend-multiply anim-pulse-glow"
             priority
           />
           <span className="select-none text-3xl font-black tracking-[-0.045em] text-ink md:text-4xl">
