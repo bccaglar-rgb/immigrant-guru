@@ -10,12 +10,12 @@ from fastapi import HTTPException, Request, status
 from fastapi.testclient import TestClient
 
 from app.api.routes import ai as ai_routes
-from app.api.routes import ai_feedback as ai_feedback_routes
+from app.domains.admin import ai_feedback as ai_feedback_routes
 from app.domains.auth import router as auth_routes
 from app.api.routes import cases as case_routes
-from app.api.routes import case_outcomes as case_outcome_routes
+from app.domains.admin import case_outcomes as case_outcome_routes
 from app.api.routes import comparison as comparison_routes
-from app.api.routes import profile as profile_routes
+from app.domains.profile import router as profile_routes
 from app.core.security import get_current_user
 from app.db.session import get_db_session
 from app.main import app
