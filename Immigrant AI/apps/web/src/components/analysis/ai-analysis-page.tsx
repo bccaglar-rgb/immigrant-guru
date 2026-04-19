@@ -15,15 +15,36 @@ import type { ProfileAnalysisResult } from "@/types/analysis";
 type Status = "loading" | "ready" | "error";
 
 const MATCH_COLORS = {
-  high: { bg: "bg-green/10", text: "text-green", border: "border-green/20", label: "Strong match" },
-  medium: { bg: "bg-accent/8", text: "text-accent", border: "border-accent/20", label: "Possible match" },
-  low: { bg: "bg-ink/[0.04]", text: "text-muted", border: "border-line", label: "Needs work" },
+  high: { score: "text-green", badge: "bg-green/10 text-green", border: "border-green/25", card: "from-green/[0.06] to-transparent", ring: "bg-green/[0.08] ring-1 ring-green/20", bar: "bg-green", label: "Strong match" },
+  medium: { score: "text-accent", badge: "bg-accent/10 text-accent", border: "border-accent/25", card: "from-accent/[0.05] to-transparent", ring: "bg-accent/[0.07] ring-1 ring-accent/20", bar: "bg-accent", label: "Possible match" },
+  low: { score: "text-muted", badge: "bg-ink/5 text-muted", border: "border-line/70", card: "from-ink/[0.02] to-transparent", ring: "bg-ink/[0.04] ring-1 ring-line", bar: "bg-muted/40", label: "Needs work" },
 };
 
 const SEVERITY_COLORS = {
-  high: { bg: "bg-red/8", dot: "bg-red" },
-  medium: { bg: "bg-amber/8", dot: "bg-amber" },
-  low: { bg: "bg-ink/5", dot: "bg-muted" },
+  high: { bg: "bg-red/[0.07] border border-red/15", dot: "bg-red", icon: "⚠️", label: "High priority" },
+  medium: { bg: "bg-amber/[0.07] border border-amber/15", dot: "bg-amber", icon: "⚡", label: "Worth addressing" },
+  low: { bg: "bg-ink/[0.04] border border-line/60", dot: "bg-muted", icon: "ℹ️", label: "Minor factor" },
+};
+
+// Brief descriptions of common visa types shown to all users
+const VISA_INFO: Record<string, string> = {
+  "H-1B": "Specialty occupation visa for skilled professionals sponsored by a US employer. Requires at least a bachelor's degree in a relevant field.",
+  "DV Lottery": "Diversity Visa program — an annual lottery that awards 50,000 green cards to applicants from underrepresented countries.",
+  "EB-1": "Employment-based green card for individuals with extraordinary ability, outstanding professors, or multinational executives.",
+  "EB-2 NIW": "Green card for professionals with advanced degrees or exceptional ability who can prove their work benefits the United States.",
+  "EB-3": "Employment-based green card for skilled workers, professionals, and other workers with a permanent US job offer.",
+  "O-1": "Visa for individuals with extraordinary ability or achievement in their field — science, arts, education, business, or athletics.",
+  "L-1": "Intracompany transfer visa for managers, executives, or specialized employees moving to a US branch of their company.",
+  "E-2": "Treaty investor visa allowing nationals of treaty countries to invest in and manage a US business.",
+  "F-1": "Academic student visa for full-time study at a US university, college, or accredited academic institution.",
+  "B-1/B-2": "Temporary visitor visa for business meetings (B-1) or tourism and medical treatment (B-2).",
+  "TN Visa": "NAFTA/USMCA professional visa for Canadian and Mexican citizens in specific professional categories.",
+  "Express Entry": "Canada's points-based immigration system for skilled workers. Score is based on age, education, work experience, and language skills.",
+  "Skilled Worker": "Points-based visa for skilled professionals. Eligibility assessed on qualifications, experience, and language ability.",
+  "Global Talent": "Fast-track visa for exceptional talent in tech, science, arts, and humanities sponsored by a recognized organization.",
+  "Startup Visa": "Visa for entrepreneurs launching innovative businesses with backing from accredited investors or business incubators.",
+  "Student Visa": "Visa for international students accepted to an accredited educational institution.",
+  "Work Permit": "Authorization to work legally in the destination country, typically tied to a job offer or specific occupation.",
 };
 
 const PLANS = [
@@ -242,31 +263,37 @@ export function AIAnalysisPage() {
             </h2>
           </Animate>
 
-          <Stagger className="mt-4 space-y-3" animation="fade-up" staggerDelay={100} duration={500}>
+          <Stagger className="mt-4 space-y-3" animation="fade-up" staggerDelay={120} duration={500}>
             {visa_matches.map((match) => {
-              const colors = MATCH_COLORS[match.match_level];
-              const barColor = match.match_level === "high" ? "bg-green" : match.match_level === "medium" ? "bg-accent" : "bg-muted/50";
+              const c = MATCH_COLORS[match.match_level];
+              const info = match.description ?? VISA_INFO[match.visa_type];
               return (
-                <div key={match.visa_type} className={cn("rounded-xl border p-5", colors.border, colors.bg)}>
-                  <div className="flex items-start justify-between gap-4">
+                <div key={match.visa_type} className={cn(
+                  "group relative overflow-hidden rounded-2xl border-2 bg-gradient-to-br p-5 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg",
+                  c.border, c.card
+                )}>
+                  <div className="flex items-start gap-4">
+                    {/* Score badge */}
+                    <div className={cn("flex h-16 w-16 shrink-0 flex-col items-center justify-center rounded-2xl", c.ring)}>
+                      <p className={cn("text-[1.6rem] font-black tabular-nums leading-none", c.score)}>{match.match_score}%</p>
+                      <p className="mt-0.5 text-[9px] font-bold uppercase tracking-widest text-muted/70">match</p>
+                    </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <h3 className="text-base font-semibold text-ink">{match.visa_type}</h3>
-                        <span className={cn("rounded-full px-2 py-0.5 text-xs font-semibold", colors.text, "bg-white/70")}>
-                          {colors.label}
-                        </span>
+                        <h3 className="text-base font-bold text-ink">{match.visa_type}</h3>
+                        <span className={cn("rounded-full px-2.5 py-0.5 text-[11px] font-bold", c.badge)}>{c.label}</span>
                       </div>
-                      <p className="mt-0.5 text-sm text-muted">{match.country}</p>
-                      {isPremium && match.description && (
-                        <p className="mt-2 text-sm leading-relaxed text-ink/60">{match.description}</p>
+                      <p className="mt-0.5 text-xs font-medium text-muted">{match.country}</p>
+                      {info && (
+                        <p className="mt-2 text-sm leading-relaxed text-ink/65">{info}</p>
                       )}
                     </div>
-                    <p className={cn("text-2xl font-semibold tabular-nums shrink-0", colors.text)}>{match.match_score}%</p>
                   </div>
-                  <div className="mt-3 h-1 w-full overflow-hidden rounded-full bg-black/[0.06]">
+                  {/* Animated progress bar */}
+                  <div className="mt-4 h-1.5 w-full overflow-hidden rounded-full bg-black/[0.06]">
                     <div
-                      className={cn("h-full rounded-full", barColor)}
-                      style={{ width: `${Math.max(match.match_score, 3)}%`, transition: "width 1s ease-out" }}
+                      className={cn("h-full rounded-full", c.bar)}
+                      style={{ width: `${Math.max(match.match_score, 3)}%`, transition: "width 1.2s ease-out" }}
                     />
                   </div>
                 </div>
@@ -279,12 +306,27 @@ export function AIAnalysisPage() {
       {/* RECOMMENDATION */}
       {recommendation && (
         <Animate animation="fade-up" delay={450} duration={600}>
-          <div className={cn("mt-8 rounded-2xl p-6", isPremium ? "border border-accent/15 bg-accent/5" : "bg-ink/[0.02] border border-line")}>
-            <p className="text-xs font-medium uppercase tracking-[0.08em] text-accent">
-              {isPremium ? "Our recommendation" : "Preview"}
-            </p>
-            <p className="mt-3 text-base leading-relaxed text-ink">{recommendation.reason}</p>
-          </div>
+          {isPremium ? (
+            <div className="mt-8 rounded-2xl border border-accent/20 bg-gradient-to-br from-accent/[0.07] to-transparent p-6">
+              <p className="text-xs font-bold uppercase tracking-[0.1em] text-accent">Our recommendation</p>
+              <p className="mt-3 text-base leading-relaxed text-ink">{recommendation.reason}</p>
+            </div>
+          ) : (
+            <div className="relative mt-8 overflow-hidden rounded-2xl border border-accent/20 bg-gradient-to-br from-accent/[0.04] to-transparent p-6">
+              <p className="text-xs font-bold uppercase tracking-[0.1em] text-accent">Best path preview</p>
+              <p className="mt-3 text-base leading-relaxed text-ink">{recommendation.reason}</p>
+              {/* Blurred teaser row */}
+              <div className="mt-4 flex items-center gap-3 rounded-xl border border-accent/10 bg-white/60 p-3">
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-accent text-xs font-bold text-white">1</div>
+                <div className="flex-1">
+                  <div className="h-2.5 w-2/3 rounded-full bg-ink/10 blur-[3px]" />
+                  <div className="mt-1.5 h-2 w-1/2 rounded-full bg-ink/7 blur-[3px]" />
+                </div>
+                <span className="text-muted/50">🔒</span>
+              </div>
+              <p className="mt-3 text-xs text-muted/60 text-center">Upgrade to see your personalized step-by-step plan</p>
+            </div>
+          )}
         </Animate>
       )}
 
@@ -292,19 +334,29 @@ export function AIAnalysisPage() {
       {challenges.length > 0 && (
         <Animate animation="fade-up" delay={550} duration={600}>
           <div className="mt-8">
-            <h2 className="text-lg font-semibold tracking-tight text-ink">
-              {isPremium ? "Areas to be aware of" : "What may need improvement"}
-            </h2>
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-semibold tracking-tight text-ink">
+                {isPremium ? "Areas to be aware of" : "What may need improvement"}
+              </h2>
+              <span className="rounded-full bg-ink/5 px-2.5 py-0.5 text-xs font-semibold text-muted">
+                {challenges.length} factor{challenges.length !== 1 ? "s" : ""}
+              </span>
+            </div>
             <div className="mt-3 space-y-2">
               {challenges.map((ch) => {
                 const c = SEVERITY_COLORS[ch.severity];
                 return (
                   <div key={ch.title} className={cn("rounded-xl p-4", c.bg)}>
-                    <div className="flex items-center gap-2">
-                      <span className={cn("h-2 w-2 rounded-full", c.dot)} />
-                      <p className="text-sm font-semibold text-ink">{ch.title}</p>
+                    <div className="flex items-start gap-3">
+                      <span className="mt-0.5 text-base leading-none">{c.icon}</span>
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2">
+                          <p className="text-sm font-bold text-ink">{ch.title}</p>
+                          <span className="text-[10px] font-semibold uppercase tracking-wide text-muted/60">{c.label}</span>
+                        </div>
+                        <p className="mt-1 text-sm leading-relaxed text-ink/60">{ch.description}</p>
+                      </div>
                     </div>
-                    <p className="mt-1 text-sm text-ink/55">{ch.description}</p>
                   </div>
                 );
               })}
