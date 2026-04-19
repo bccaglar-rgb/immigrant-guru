@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import type { ReactNode } from "react";
 
 import "@/app/globals.css";
+import { GoogleAnalytics } from "@/components/analytics/google-analytics";
 import { AuthProvider } from "@/components/auth/auth-provider";
 import { LocaleProvider } from "@/components/providers/locale-provider";
 
@@ -128,6 +129,7 @@ export default function RootLayout({ children }: RootLayoutProps) {
         <link rel="preconnect" href="https://fonts.googleapis.com" crossOrigin="anonymous" />
       </head>
       <body className={`${bodyFont.variable} font-sans`}>
+        <GoogleAnalytics />
         <LocaleProvider>
           <AuthProvider>{children}</AuthProvider>
         </LocaleProvider>
