@@ -1,13 +1,14 @@
 "use client";
 
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useEffectEvent, useState } from "react";
 
 import { Animate, Stagger } from "@/components/ui/animate";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { useAuthSession } from "@/hooks/use-auth-session";
 import { getProfileAnalysis } from "@/lib/analysis-client";
-import { checkout } from "@/lib/billing-client";
+import { checkout, getBillingStatus } from "@/lib/billing-client";
 import { cn } from "@/lib/utils";
 import type { ProfileAnalysisResult } from "@/types/analysis";
 
@@ -30,34 +31,47 @@ const PLANS = [
     key: "starter",
     name: "Starter",
     price: 19,
-    tagline: "One clear path",
+    tagline: "A clear starting point",
+    description: "Best if you want one realistic path and a simple action plan.",
     features: ["Full plan for 1 country", "Best visa recommendation", "Step-by-step roadmap", "Cost estimate", "Timeline estimate", "Document checklist"],
     popular: false,
+    cta: "See My Next Steps",
   },
   {
     key: "plus",
     name: "Plus",
     price: 29,
-    tagline: "Compare your options",
+    tagline: "Compare smarter options",
+    description: "Best if you want to evaluate alternatives before making a decision.",
     features: ["Everything in Starter", "3 country comparisons", "Multiple visa alternatives", "Deeper analysis", "Expanded document guidance", "Better case preparation"],
     popular: true,
+    cta: "Unlock My Best Strategy",
   },
   {
     key: "premium",
     name: "Premium",
     price: 49,
-    tagline: "Full strategic experience",
+    tagline: "Your full strategic roadmap",
+    description: "Best if you want the deepest guidance and the most complete plan.",
     features: ["Everything in Plus", "Full strategic recommendation", "Priority AI guidance", "Advanced action plan", "Full path comparison", "Premium dashboard"],
     popular: false,
+    cta: "Build My Immigration Plan",
   },
 ];
 
+const ADVISOR_MESSAGE = "Your current profile has some limitations, but that does not mean your options are closed. The right strategy is rarely about forcing the wrong visa — it is about understanding what can be improved, what is realistic today, and which steps move you closer to a path that actually fits you.";
+
+const TIER_ORDER = ["free", "starter", "plus", "premium"];
+
 export function AIAnalysisPage() {
+  const searchParams = useSearchParams();
+  const canceled = searchParams.get("canceled") === "true";
   const { session } = useAuthSession();
   const [status, setStatus] = useState<Status>("loading");
   const [result, setResult] = useState<ProfileAnalysisResult | null>(null);
   const [error, setError] = useState("");
   const [upgrading, setUpgrading] = useState<string | null>(null);
+  const [currentPlan, setCurrentPlan] = useState<string>("free");
 
   const loadAnalysis = useCallback(async () => {
     if (!session) return;
@@ -77,6 +91,9 @@ export function AIAnalysisPage() {
       return;
     }
     void handleLoadAnalysis();
+    void getBillingStatus(session.accessToken).then((res) => {
+      if (res.ok) setCurrentPlan(res.data.plan);
+    });
   }, [session?.accessToken]);
 
   const handleUpgrade = useCallback(async (plan: string) => {
@@ -139,6 +156,8 @@ export function AIAnalysisPage() {
 
   const isPremium = result.is_premium === true;
   const { profile_summary, visa_matches, recommendation, challenges } = result;
+  const currentTierIdx = TIER_ORDER.indexOf(currentPlan);
+  const upsellPlans = PLANS.filter((p) => TIER_ORDER.indexOf(p.key) > currentTierIdx);
 
   return (
     <div className="mx-auto max-w-3xl px-6 py-10 md:py-14">
@@ -166,13 +185,12 @@ export function AIAnalysisPage() {
         </div>
       </Animate>
 
-      {/* AI SHORT COMMENT (free) */}
-      {!isPremium && result.ai_upsell_message && (
-        <Animate animation="fade-up" delay={200} duration={600}>
-          <div className="mt-6 rounded-2xl border border-accent/10 bg-accent/[0.03] p-6">
-            <p className="text-base leading-relaxed text-ink/80 italic">
-              &ldquo;{result.ai_upsell_message}&rdquo;
-            </p>
+      {/* CANCELED CHECKOUT BANNER */}
+      {!isPremium && canceled && (
+        <Animate animation="fade-up" delay={150} duration={500}>
+          <div className="mt-6 rounded-2xl border border-amber/20 bg-amber/5 p-5">
+            <p className="text-sm font-semibold text-ink">No worries — you can continue whenever you&apos;re ready.</p>
+            <p className="mt-1 text-sm text-muted">Your analysis is saved. Your plan is one click away when you want to unlock it.</p>
           </div>
         </Animate>
       )}
@@ -313,12 +331,18 @@ export function AIAnalysisPage() {
         </Animate>
       )}
 
-      {/* ============ PAYWALL (only for free users) ============ */}
-      {!isPremium && (
+      {/* ============ PAYWALL (only for non-premium / upsell-eligible users) ============ */}
+      {!isPremium && upsellPlans.length > 0 && (
         <Animate animation="scale-in" delay={600} duration={800}>
           <div className="mt-12">
+            {/* Advisor message */}
+            <div className="rounded-2xl border border-accent/15 bg-accent/[0.04] p-6 md:p-7">
+              <p className="text-xs font-medium uppercase tracking-[0.08em] text-accent">Advisor note</p>
+              <p className="mt-3 text-base leading-relaxed text-ink">{ADVISOR_MESSAGE}</p>
+            </div>
+
             {/* Locked preview */}
-            <div className="rounded-2xl border border-line bg-white/40 p-6 text-center">
+            <div className="mt-6 rounded-2xl border border-line bg-white/40 p-6 text-center">
               <div className="mx-auto grid max-w-md grid-cols-2 gap-3">
                 {["Full roadmap", "Cost breakdown", "Document checklist", "Risk analysis"].map((item) => (
                   <div key={item} className="rounded-xl bg-ink/[0.03] px-4 py-3 text-sm text-muted">
@@ -331,17 +355,16 @@ export function AIAnalysisPage() {
             {/* Upsell */}
             <div className="mt-8 text-center">
               <h2 className="text-2xl font-semibold tracking-tight text-ink">
-                Unlock your full immigration plan
+                Unlock your personalized immigration roadmap
               </h2>
               <p className="mx-auto mt-3 max-w-lg text-base leading-relaxed text-muted">
-                I found promising paths for you. Upgrade to see your complete strategy,
-                documents, timeline, and next steps.
+                Your next step is not guesswork — it is strategy. Choose the depth of guidance that fits you.
               </p>
             </div>
 
             {/* Pricing cards */}
-            <div className="mt-8 grid gap-4 md:grid-cols-3">
-              {PLANS.map((plan) => (
+            <div className={cn("mt-8 grid gap-4", upsellPlans.length === 1 ? "max-w-md mx-auto" : upsellPlans.length === 2 ? "md:grid-cols-2 max-w-2xl mx-auto" : "md:grid-cols-3")}>
+              {upsellPlans.map((plan) => (
                 <div
                   key={plan.key}
                   className={cn(
@@ -362,6 +385,7 @@ export function AIAnalysisPage() {
                     ${plan.price}
                   </p>
                   <p className="text-xs text-muted">one-time</p>
+                  <p className="mt-3 text-sm leading-relaxed text-ink/70">{plan.description}</p>
 
                   <div className="mt-4 flex-1 space-y-2">
                     {plan.features.map((f) => (
@@ -378,7 +402,7 @@ export function AIAnalysisPage() {
                     onClick={() => void handleUpgrade(plan.key)}
                     disabled={upgrading !== null}
                   >
-                    {upgrading === plan.key ? "Processing..." : `Get ${plan.name}`}
+                    {upgrading === plan.key ? "Processing..." : plan.cta}
                   </Button>
                 </div>
               ))}
