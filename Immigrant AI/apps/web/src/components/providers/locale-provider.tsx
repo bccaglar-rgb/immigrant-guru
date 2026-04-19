@@ -86,14 +86,14 @@ export function LocaleProvider({ children }: LocaleProviderProps) {
       }
 
       const translated = translateText(locale, trimmed);
-      if (translated === trimmed) {
-        node.nodeValue = rawValue;
-        return;
-      }
-
       const leadingWhitespace = rawValue.match(/^\s*/)?.[0] ?? "";
       const trailingWhitespace = rawValue.match(/\s*$/)?.[0] ?? "";
-      node.nodeValue = `${leadingWhitespace}${translated}${trailingWhitespace}`;
+      const nextValue = translated === trimmed
+        ? rawValue
+        : `${leadingWhitespace}${translated}${trailingWhitespace}`;
+      if (node.nodeValue !== nextValue) {
+        node.nodeValue = nextValue;
+      }
     },
     [locale]
   );
@@ -131,10 +131,9 @@ export function LocaleProvider({ children }: LocaleProviderProps) {
         }
 
         const translated = translateText(locale, sourceValue);
-        if (translated !== sourceValue) {
-          element.setAttribute(attributeName, translated);
-        } else {
-          element.setAttribute(attributeName, sourceValue);
+        const nextAttrValue = translated !== sourceValue ? translated : sourceValue;
+        if (element.getAttribute(attributeName) !== nextAttrValue) {
+          element.setAttribute(attributeName, nextAttrValue);
         }
       }
     },
