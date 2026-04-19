@@ -1,5 +1,5 @@
 from app.schemas.knowledge import KnowledgeStructuringRequest
-from app.services.knowledge_structuring_service import KnowledgeStructuringService
+from app.services.knowledge.knowledge_structuring_service import KnowledgeStructuringService
 
 
 def test_knowledge_structuring_extracts_rules_exceptions_and_visas() -> None:

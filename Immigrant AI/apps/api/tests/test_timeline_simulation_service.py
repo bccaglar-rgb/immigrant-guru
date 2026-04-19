@@ -7,10 +7,10 @@ from app.models.enums import (
     ImmigrationCaseStatus,
     RelocationTimeline,
 )
-from app.services.case_service import CaseService
-from app.services.missing_information_service import MissingInformationService
-from app.services.profile_service import ProfileService
-from app.services.timeline_simulation_service import TimelineSimulationService
+from app.services.cases.case_service import CaseService
+from app.services.ai.missing_information_service import MissingInformationService
+from app.services.profile.profile_service import ProfileService
+from app.services.ai.timeline_simulation_service import TimelineSimulationService
 
 
 def _build_service() -> TimelineSimulationService:

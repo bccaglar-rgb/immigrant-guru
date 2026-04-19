@@ -14,13 +14,13 @@ from app.models.enums import (
 from app.models.immigration_case import ImmigrationCase
 from app.models.user_profile import UserProfile
 from app.schemas.simulation import CaseSimulationRequest, ScenarioSimulationProfileOverrides
-from app.services.case_service import CaseService
-from app.services.pathway_probability_service import PathwayProbabilityService
-from app.services.profile_service import ProfileService
-from app.services.scenario_simulation_service import ScenarioSimulationService
-from app.services.scoring_service import ScoringService
-from app.services.timeline_simulation_service import TimelineSimulationService
-from app.services.missing_information_service import MissingInformationService
+from app.services.cases.case_service import CaseService
+from app.services.ai.pathway_probability_service import PathwayProbabilityService
+from app.services.profile.profile_service import ProfileService
+from app.services.ai.scenario_simulation_service import ScenarioSimulationService
+from app.services.ai.scoring_service import ScoringService
+from app.services.ai.timeline_simulation_service import TimelineSimulationService
+from app.services.ai.missing_information_service import MissingInformationService
 
 
 class _StubCaseService(CaseService):

@@ -26,25 +26,25 @@ from app.schemas.scoring import ImmigrationScoreRead
 from app.schemas.simulation import CaseSimulationRequest, CaseSimulationResponse
 from app.schemas.timeline import CaseTimelineRead
 from app.schemas.workspace import CaseWorkspaceRead
-from app.services.case_service import CaseService
-from app.services.copilot_chat_service import CopilotChatService
-from app.services.context_assembler_service import ContextAssemblerService
-from app.services.missing_information_service import MissingInformationService
-from app.services.pathway_probability_service import PathwayProbabilityService
-from app.services.case_workspace_service import CaseWorkspaceService
-from app.services.document_service import DocumentService
-from app.services.document_audit_service import DocumentAuditService
-from app.services.document_job_dispatcher import DocumentJobDispatcher
-from app.services.document_storage import LocalDocumentStorage
-from app.services.profile_service import ProfileService
-from app.services.scoring_service import ScoringService
-from app.services.scenario_simulation_service import ScenarioSimulationService
-from app.services.timeline_simulation_service import TimelineSimulationService
-from app.services.ai_client import build_ai_client
-from app.services.ai_prompt_builder import CopilotPromptBuilder
-from app.services.action_roadmap_service import ActionRoadmapService
-from app.services.document_checklist_service import DocumentChecklistService
-from app.services.next_best_action_service import NextBestActionService
+from app.services.cases.case_service import CaseService
+from app.services.ai.copilot_chat_service import CopilotChatService
+from app.services.ai.context_assembler_service import ContextAssemblerService
+from app.services.ai.missing_information_service import MissingInformationService
+from app.services.ai.pathway_probability_service import PathwayProbabilityService
+from app.services.cases.case_workspace_service import CaseWorkspaceService
+from app.services.documents.document_service import DocumentService
+from app.services.documents.document_audit_service import DocumentAuditService
+from app.services.documents.document_job_dispatcher import DocumentJobDispatcher
+from app.services.documents.document_storage import LocalDocumentStorage
+from app.services.profile.profile_service import ProfileService
+from app.services.ai.scoring_service import ScoringService
+from app.services.ai.scenario_simulation_service import ScenarioSimulationService
+from app.services.ai.timeline_simulation_service import TimelineSimulationService
+from app.services.ai.ai_client import build_ai_client
+from app.services.ai.ai_prompt_builder import CopilotPromptBuilder
+from app.services.ai.action_roadmap_service import ActionRoadmapService
+from app.services.documents.document_checklist_service import DocumentChecklistService
+from app.services.ai.next_best_action_service import NextBestActionService
 
 router = APIRouter(prefix="/cases", tags=["cases"])
 settings = get_settings()

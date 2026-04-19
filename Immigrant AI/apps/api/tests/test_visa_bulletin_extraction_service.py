@@ -1,7 +1,7 @@
 from fastapi import HTTPException
 
 from app.schemas.ai import VisaBulletinBacklogStatus, VisaBulletinExtractionRequest
-from app.services.visa_bulletin_extraction_service import VisaBulletinExtractionService
+from app.services.knowledge.visa_bulletin_extraction_service import VisaBulletinExtractionService
 
 
 def test_visa_bulletin_extraction_extracts_structured_fields() -> None:

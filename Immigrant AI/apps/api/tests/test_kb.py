@@ -12,8 +12,8 @@ from app.models.enums import (
 from app.models.knowledge_chunk import KnowledgeChunk
 from app.models.knowledge_source import KnowledgeSource
 from app.schemas.knowledge import KnowledgeSearchRequest
-from app.services.knowledge_embedding_service import HashingKnowledgeEmbeddingProvider
-from app.services.knowledge_retrieval_service import (
+from app.services.knowledge.knowledge_embedding_service import HashingKnowledgeEmbeddingProvider
+from app.services.knowledge.knowledge_retrieval_service import (
     HybridKnowledgeRetriever,
     LexicalKnowledgeRetriever,
 )

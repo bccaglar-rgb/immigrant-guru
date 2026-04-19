@@ -2,7 +2,7 @@ from app.schemas.ai import (
     TimelineCalculatorRequest,
     TimelineCalculatorRiskLevel,
 )
-from app.services.timeline_calculator_service import TimelineCalculatorService
+from app.services.ai.timeline_calculator_service import TimelineCalculatorService
 
 
 def test_timeline_calculator_extends_wait_for_backlog() -> None:

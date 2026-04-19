@@ -7,11 +7,11 @@ from app.models.enums import (
     ImmigrationCaseStatus,
     PathwayProbabilityConfidenceLevel,
 )
-from app.services.case_service import CaseService
-from app.services.missing_information_service import MissingInformationService
-from app.services.pathway_probability_service import PathwayProbabilityService
-from app.services.profile_service import ProfileService
-from app.services.scoring_service import ScoringService
+from app.services.cases.case_service import CaseService
+from app.services.ai.missing_information_service import MissingInformationService
+from app.services.ai.pathway_probability_service import PathwayProbabilityService
+from app.services.profile.profile_service import ProfileService
+from app.services.ai.scoring_service import ScoringService
 
 
 def _build_service() -> PathwayProbabilityService:

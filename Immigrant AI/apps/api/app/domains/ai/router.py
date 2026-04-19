@@ -46,14 +46,14 @@ from app.schemas.knowledge import (
     USVisaKnowledgeExtractionResponse,
 )
 from app.schemas.visa_match import VisaMatchRequest, VisaMatchResponse
-from app.services.ai_client import build_ai_client
-from app.services.ai_pathway_probability_service import AIPathwayProbabilityService
-from app.services.action_prioritization_service import ActionPrioritizationService
-from app.services.alternative_strategies_service import AlternativeStrategiesService
-from app.services.ai_orchestrator import AIOrchestrator
-from app.services.ai_response_normalizer import AIStrategyResponseNormalizer
-from app.services.audit_service import AuditService
-from app.services.ai_prompt_builder import (
+from app.services.ai.ai_client import build_ai_client
+from app.services.ai.ai_pathway_probability_service import AIPathwayProbabilityService
+from app.services.ai.action_prioritization_service import ActionPrioritizationService
+from app.services.ai.alternative_strategies_service import AlternativeStrategiesService
+from app.services.ai.ai_orchestrator import AIOrchestrator
+from app.services.ai.ai_response_normalizer import AIStrategyResponseNormalizer
+from app.services.shared.audit_service import AuditService
+from app.services.ai.ai_prompt_builder import (
     ActionPrioritizationPromptBuilder,
     AlternativeStrategiesPromptBuilder,
     CopilotPromptBuilder,
@@ -64,29 +64,29 @@ from app.services.ai_prompt_builder import (
     StrategyPromptBuilder,
     TimelineSimulationPromptBuilder,
 )
-from app.services.case_service import CaseService
-from app.services.country_comparison_service import CountryComparisonService
-from app.services.copilot_service import CopilotService
-from app.services.document_analysis_service import DocumentAnalysisService
-from app.services.eligibility_engine_service import EligibilityEngineService
-from app.services.final_decision_service import FinalDecisionService
-from app.services.knowledge_base_service import KnowledgeBaseService
-from app.services.knowledge_structuring_service import KnowledgeStructuringService
-from app.services.knowledge_retrieval_service import build_knowledge_retrieval_service
-from app.services.missing_information_service import MissingInformationService
-from app.services.profile_service import ProfileService
-from app.services.profile_weakness_service import ProfileWeaknessService
-from app.services.risk_detection_service import RiskDetectionService
-from app.services.strategy_confidence_service import StrategyConfidenceService
-from app.services.timeline_calculator_service import TimelineCalculatorService
-from app.services.ai_timeline_simulation_service import AITimelineSimulationService
-from app.services.visa_bulletin_extraction_service import (
+from app.services.cases.case_service import CaseService
+from app.services.ai.country_comparison_service import CountryComparisonService
+from app.services.ai.copilot_service import CopilotService
+from app.services.documents.document_analysis_service import DocumentAnalysisService
+from app.services.ai.eligibility_engine_service import EligibilityEngineService
+from app.services.ai.final_decision_service import FinalDecisionService
+from app.services.knowledge.knowledge_base_service import KnowledgeBaseService
+from app.services.knowledge.knowledge_structuring_service import KnowledgeStructuringService
+from app.services.knowledge.knowledge_retrieval_service import build_knowledge_retrieval_service
+from app.services.ai.missing_information_service import MissingInformationService
+from app.services.profile.profile_service import ProfileService
+from app.services.ai.profile_weakness_service import ProfileWeaknessService
+from app.services.ai.risk_detection_service import RiskDetectionService
+from app.services.ai.strategy_confidence_service import StrategyConfidenceService
+from app.services.ai.timeline_calculator_service import TimelineCalculatorService
+from app.services.ai.ai_timeline_simulation_service import AITimelineSimulationService
+from app.services.knowledge.visa_bulletin_extraction_service import (
     VisaBulletinExtractionService,
 )
-from app.services.us_visa_knowledge_extraction_service import (
+from app.services.knowledge.us_visa_knowledge_extraction_service import (
     USVisaKnowledgeExtractionService,
 )
-from app.services.visa_matching_service import VisaMatchingService
+from app.services.ai.visa_matching_service import VisaMatchingService
 
 router = APIRouter(prefix="/ai", tags=["ai"])
 logger = logging.getLogger("immigrant-ai-api.ai_route")

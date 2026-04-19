@@ -4,8 +4,8 @@ from types import SimpleNamespace
 from uuid import uuid4
 
 from app.models.enums import DocumentUploadStatus
-from app.services.document_audit_service import DocumentAuditService
-from app.services.document_checklist_service import DocumentChecklistService
+from app.services.documents.document_audit_service import DocumentAuditService
+from app.services.documents.document_checklist_service import DocumentChecklistService
 
 
 def _document(

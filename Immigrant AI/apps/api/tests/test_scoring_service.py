@@ -2,7 +2,7 @@ from types import SimpleNamespace
 from uuid import uuid4
 
 from app.models.enums import EducationLevel, EnglishLevel, ImmigrationCaseStatus
-from app.services.scoring_service import ScoringService
+from app.services.ai.scoring_service import ScoringService
 
 
 def test_scoring_service_returns_interpretable_breakdown() -> None:

@@ -10,8 +10,8 @@ from app.schemas.knowledge import (
     KnowledgeSourceCreate,
     KnowledgeSourceRead,
 )
-from app.services.knowledge_base_service import KnowledgeBaseService
-from app.services.knowledge_ingestion_service import KnowledgeIngestionService
+from app.services.knowledge.knowledge_base_service import KnowledgeBaseService
+from app.services.knowledge.knowledge_ingestion_service import KnowledgeIngestionService
 
 router = APIRouter(prefix="/admin/kb", tags=["admin", "knowledge-base"])
 

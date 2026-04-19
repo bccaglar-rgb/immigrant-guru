@@ -12,7 +12,7 @@ from app.schemas.case_outcome import (
     CaseOutcomeSummaryRead,
     CaseOutcomeUpdate,
 )
-from app.services.case_outcome_service import CaseOutcomeService
+from app.services.cases.case_outcome_service import CaseOutcomeService
 
 router = APIRouter(tags=["case-outcomes"])
 

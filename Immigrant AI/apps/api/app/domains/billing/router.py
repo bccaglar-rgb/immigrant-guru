@@ -163,7 +163,7 @@ async def create_checkout(
         await session.commit()
         await session.refresh(current_user)
         try:
-            from app.services.email_service import send_upgrade_email
+            from app.services.shared.email_service import send_upgrade_email
             first_name = current_user.profile.first_name if current_user.profile else None
             await send_upgrade_email(current_user.email, plan_name, first_name)
         except Exception:
@@ -284,7 +284,7 @@ async def stripe_webhook(
 
                 # Send upgrade email
                 try:
-                    from app.services.email_service import send_upgrade_email
+                    from app.services.shared.email_service import send_upgrade_email
                     plan_name = str(PLANS.get(str(plan), {}).get("name", plan))
                     first_name = user.profile.first_name if user.profile else None
                     await send_upgrade_email(user.email, plan_name, first_name)

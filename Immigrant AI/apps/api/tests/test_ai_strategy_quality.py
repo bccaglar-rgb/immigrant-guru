@@ -2,9 +2,9 @@ from types import SimpleNamespace
 from uuid import uuid4
 
 from app.schemas.ai import AIStrategyModelOutput, ConfidenceLabel
-from app.services.ai_response_normalizer import AIStrategyResponseNormalizer
-from app.services.missing_information_service import MissingInformationService
-from app.services.strategy_confidence_service import StrategyConfidenceService
+from app.services.ai.ai_response_normalizer import AIStrategyResponseNormalizer
+from app.services.ai.missing_information_service import MissingInformationService
+from app.services.ai.strategy_confidence_service import StrategyConfidenceService
 
 
 def test_missing_information_service_groups_critical_and_helpful_gaps() -> None:

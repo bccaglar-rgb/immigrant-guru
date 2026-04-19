@@ -5,7 +5,7 @@ from app.core.security import get_current_user
 from app.db.session import get_db_session
 from app.models.user import User
 from app.schemas.user_profile import UserProfileRead, UserProfileUpdate
-from app.services.profile_service import ProfileService
+from app.services.profile.profile_service import ProfileService
 
 router = APIRouter(prefix="/profile", tags=["profile"])
 profile_service = ProfileService()

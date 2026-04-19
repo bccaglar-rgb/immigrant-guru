@@ -9,7 +9,7 @@ from app.models.enums import (
     AuditTargetEntityType,
     ImmigrationCaseStatus,
 )
-from app.services.audit_service import AuditService
+from app.services.shared.audit_service import AuditService
 
 
 class FakeSession:

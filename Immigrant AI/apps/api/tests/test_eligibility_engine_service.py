@@ -1,5 +1,5 @@
 from app.schemas.eligibility import DeterministicEligibilityRequest
-from app.services.eligibility_engine_service import EligibilityEngineService
+from app.services.ai.eligibility_engine_service import EligibilityEngineService
 
 
 def test_eligibility_engine_marks_profile_eligible_when_all_required_rules_match() -> None:

@@ -3,8 +3,8 @@ from fastapi.testclient import TestClient
 import pytest
 
 from app.main import app
-from app.services.knowledge_base_service import KnowledgeBaseService
-from app.services.knowledge_ingestion_service import KnowledgeIngestionService
+from app.services.knowledge.knowledge_base_service import KnowledgeBaseService
+from app.services.knowledge.knowledge_ingestion_service import KnowledgeIngestionService
 
 client = TestClient(app)
 

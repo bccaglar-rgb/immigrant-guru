@@ -6,13 +6,13 @@ from app.core.security import get_current_user
 from app.db.session import get_db_session
 from app.models.user import User
 from app.schemas.comparison import CountryComparisonRequest, CountryComparisonResponse
-from app.services.case_service import CaseService
-from app.services.comparison_service import CountryComparisonService
-from app.services.missing_information_service import MissingInformationService
-from app.services.pathway_probability_service import PathwayProbabilityService
-from app.services.profile_service import ProfileService
-from app.services.scoring_service import ScoringService
-from app.services.timeline_simulation_service import TimelineSimulationService
+from app.services.cases.case_service import CaseService
+from app.services.cases.comparison_service import CountryComparisonService
+from app.services.ai.missing_information_service import MissingInformationService
+from app.services.ai.pathway_probability_service import PathwayProbabilityService
+from app.services.profile.profile_service import ProfileService
+from app.services.ai.scoring_service import ScoringService
+from app.services.ai.timeline_simulation_service import TimelineSimulationService
 
 router = APIRouter(prefix="/comparison", tags=["comparison"])
 

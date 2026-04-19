@@ -12,7 +12,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.security import get_password_hash
 from app.db.session import get_db_session
 from app.models.user import User
-from app.services.email_service import send_password_reset_email
+from app.services.shared.email_service import send_password_reset_email
 
 logger = logging.getLogger(__name__)
 

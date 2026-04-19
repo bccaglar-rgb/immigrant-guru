@@ -15,7 +15,7 @@ from app.schemas.ai import (
     TimelineSimulationResponse,
     StrategyContextMode,
 )
-from app.services.ai_prompt_builder import (
+from app.services.ai.ai_prompt_builder import (
     ActionPrioritizationPromptBuilder,
     AlternativeStrategiesPromptBuilder,
     CopilotPromptBuilder,

@@ -6,8 +6,8 @@ from app.core.security import get_current_user
 from app.db.session import get_db_session
 from app.models.user import User
 from app.schemas.knowledge import KnowledgeSearchRequest, KnowledgeSearchResponse
-from app.services.knowledge_base_service import KnowledgeBaseService
-from app.services.knowledge_retrieval_service import (
+from app.services.knowledge.knowledge_base_service import KnowledgeBaseService
+from app.services.knowledge.knowledge_retrieval_service import (
     KnowledgeRetrievalService,
     build_knowledge_retrieval_service,
 )

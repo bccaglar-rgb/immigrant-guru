@@ -8,8 +8,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.security import get_current_user
 from app.db.session import get_db_session
 from app.models.user import User
-from app.services.profile_service import ProfileService
-from app.services.profile_analysis_service import analyze_profile
+from app.services.profile.profile_service import ProfileService
+from app.services.ai.profile_analysis_service import analyze_profile
 
 logger = logging.getLogger(__name__)
 

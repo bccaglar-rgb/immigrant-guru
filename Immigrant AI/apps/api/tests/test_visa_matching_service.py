@@ -7,8 +7,8 @@ from app.schemas.visa_match import (
     VisaMatchRequest,
     VisaQuotaPressure,
 )
-from app.services.eligibility_engine_service import EligibilityEngineService
-from app.services.visa_matching_service import VisaMatchingService
+from app.services.ai.eligibility_engine_service import EligibilityEngineService
+from app.services.ai.visa_matching_service import VisaMatchingService
 
 
 def build_service() -> VisaMatchingService:

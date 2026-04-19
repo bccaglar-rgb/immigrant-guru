@@ -1,5 +1,5 @@
 from app.schemas.ai import FinalDecisionRequest, RiskDetectionSeverity
-from app.services.final_decision_service import FinalDecisionService
+from app.services.ai.final_decision_service import FinalDecisionService
 
 
 def test_final_decision_never_contradicts_ineligibility() -> None:

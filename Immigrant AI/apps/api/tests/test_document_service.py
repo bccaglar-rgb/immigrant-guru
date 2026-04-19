@@ -4,7 +4,7 @@ import pytest
 from fastapi import HTTPException
 from starlette.datastructures import Headers, UploadFile
 
-from app.services.document_service import DocumentService
+from app.services.documents.document_service import DocumentService
 
 
 def build_upload_file(filename: str, content_type: str) -> UploadFile:

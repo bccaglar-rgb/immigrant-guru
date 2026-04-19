@@ -9,12 +9,12 @@ from app.models.enums import (
     ImmigrationCaseStatus,
     RelocationTimeline,
 )
-from app.services.action_roadmap_service import ActionRoadmapService
-from app.services.context_assembler_service import ContextAssemblerService
-from app.services.document_checklist_service import DocumentChecklistService
-from app.services.missing_information_service import MissingInformationService
-from app.services.next_best_action_service import NextBestActionService
-from app.services.scoring_service import ScoringService
+from app.services.ai.action_roadmap_service import ActionRoadmapService
+from app.services.ai.context_assembler_service import ContextAssemblerService
+from app.services.documents.document_checklist_service import DocumentChecklistService
+from app.services.ai.missing_information_service import MissingInformationService
+from app.services.ai.next_best_action_service import NextBestActionService
+from app.services.ai.scoring_service import ScoringService
 
 
 def test_context_assembler_builds_structured_snapshot() -> None:

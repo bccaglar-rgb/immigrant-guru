@@ -5,7 +5,7 @@ from app.core.security import get_admin_user, get_current_user
 from app.db.session import get_db_session
 from app.models.user import User
 from app.schemas.ai_feedback import AIFeedbackCreate, AIFeedbackRead, AIFeedbackSummaryRead
-from app.services.ai_feedback_service import AIFeedbackService
+from app.services.ai.ai_feedback_service import AIFeedbackService
 
 router = APIRouter(tags=["ai-feedback"])
 

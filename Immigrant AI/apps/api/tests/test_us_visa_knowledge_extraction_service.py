@@ -1,5 +1,5 @@
 from app.schemas.knowledge import USVisaKnowledgeExtractionRequest
-from app.services.us_visa_knowledge_extraction_service import (
+from app.services.knowledge.us_visa_knowledge_extraction_service import (
     USVisaKnowledgeExtractionService,
 )
 

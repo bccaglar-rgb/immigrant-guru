@@ -1,5 +1,5 @@
 from app.schemas.ai import RiskDetectionRequest
-from app.services.risk_detection_service import RiskDetectionService
+from app.services.ai.risk_detection_service import RiskDetectionService
 
 
 def test_risk_detection_identifies_high_risk_profile_conditions() -> None:

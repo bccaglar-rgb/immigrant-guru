@@ -12,7 +12,7 @@ from app.models.enums import (
 )
 from app.models.immigration_case import ImmigrationCase
 from app.models.user_profile import UserProfile
-from app.services.case_workspace_service import CaseWorkspaceService
+from app.services.cases.case_workspace_service import CaseWorkspaceService
 
 
 def make_profile() -> UserProfile:
