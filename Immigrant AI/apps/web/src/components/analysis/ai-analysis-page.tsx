@@ -15,9 +15,9 @@ import type { ProfileAnalysisResult } from "@/types/analysis";
 type Status = "loading" | "ready" | "error";
 
 const MATCH_COLORS = {
-  high: { bg: "bg-green/10", text: "text-green", border: "border-green/20", label: "High match" },
-  medium: { bg: "bg-amber/10", text: "text-amber", border: "border-amber/20", label: "Medium match" },
-  low: { bg: "bg-red/10", text: "text-red", border: "border-red/20", label: "Low match" },
+  high: { bg: "bg-green/10", text: "text-green", border: "border-green/20", label: "Strong match" },
+  medium: { bg: "bg-accent/8", text: "text-accent", border: "border-accent/20", label: "Possible match" },
+  low: { bg: "bg-ink/[0.04]", text: "text-muted", border: "border-line", label: "Needs work" },
 };
 
 const SEVERITY_COLORS = {
@@ -59,7 +59,26 @@ const PLANS = [
   },
 ];
 
-const ADVISOR_MESSAGE = "Your current profile has some limitations, but that does not mean your options are closed. The right strategy is rarely about forcing the wrong visa — it is about understanding what can be improved, what is realistic today, and which steps move you closer to a path that actually fits you.";
+const ADVISOR_MESSAGE = "You may not be in your strongest position yet — and that is okay. Many immigration journeys begin with a profile that needs improvement in a few key areas. What matters most is knowing which options are still realistic, which weaknesses can be addressed, and what steps are worth taking next. Unlock your roadmap to see where to focus first.";
+
+const LOCKED_ITEMS = [
+  {
+    title: "Your personalized roadmap",
+    description: "A practical step-by-step path built around your specific profile",
+  },
+  {
+    title: "Expected costs",
+    description: "Understand filing, legal, and relocation costs before you commit",
+  },
+  {
+    title: "Document checklist",
+    description: "Know exactly what to prepare — and what can wait",
+  },
+  {
+    title: "Risk review",
+    description: "Spot weak points early and avoid wasting time on the wrong path",
+  },
+];
 
 const TIER_ORDER = ["free", "starter", "plus", "premium"];
 
@@ -165,9 +184,11 @@ export function AIAnalysisPage() {
       {/* HEADER */}
       <Animate animation="fade-up" duration={600}>
         <div className="text-center">
-          <p className="text-sm font-medium text-accent">Your first immigration analysis</p>
+          <p className="text-sm font-medium text-accent">
+            {isPremium ? "Your full immigration plan" : "Your first immigration analysis is ready"}
+          </p>
           <h1 className="mt-2 text-3xl font-semibold tracking-tight text-ink md:text-4xl">
-            {isPremium ? "Your full immigration plan" : "Here's what we found for you."}
+            {isPremium ? "Your full immigration plan" : "Here\u2019s what we found for you."}
           </h1>
         </div>
       </Animate>
@@ -180,6 +201,11 @@ export function AIAnalysisPage() {
           {profile_summary.target_country && (
             <p className="mt-2 text-base text-muted">
               Target: <span className="font-medium text-ink">{profile_summary.target_country}</span>
+            </p>
+          )}
+          {!isPremium && (
+            <p className="mt-4 text-sm leading-relaxed text-muted/80">
+              Based on the information you provided, these are the immigration paths that currently look most relevant.
             </p>
           )}
         </div>
@@ -238,7 +264,9 @@ export function AIAnalysisPage() {
       {challenges.length > 0 && (
         <Animate animation="fade-up" delay={550} duration={600}>
           <div className="mt-8">
-            <h2 className="text-lg font-semibold tracking-tight text-ink">Things to watch</h2>
+            <h2 className="text-lg font-semibold tracking-tight text-ink">
+              {isPremium ? "Areas to be aware of" : "What may need improvement"}
+            </h2>
             <div className="mt-3 space-y-2">
               {challenges.map((ch) => {
                 const c = SEVERITY_COLORS[ch.severity];
@@ -253,6 +281,16 @@ export function AIAnalysisPage() {
                 );
               })}
             </div>
+          </div>
+        </Animate>
+      )}
+
+      {/* ADVISOR NOTE — shown after challenges for free users, before paywall */}
+      {!isPremium && upsellPlans.length > 0 && (
+        <Animate animation="fade-up" delay={650} duration={600}>
+          <div className="mt-8 rounded-2xl border border-accent/15 bg-accent/[0.04] p-6 md:p-7">
+            <p className="text-xs font-medium uppercase tracking-[0.08em] text-accent">Advisor note</p>
+            <p className="mt-3 text-base leading-relaxed text-ink">{ADVISOR_MESSAGE}</p>
           </div>
         </Animate>
       )}
@@ -324,32 +362,31 @@ export function AIAnalysisPage() {
 
       {/* ============ PAYWALL (only for non-premium / upsell-eligible users) ============ */}
       {!isPremium && upsellPlans.length > 0 && (
-        <Animate animation="scale-in" delay={600} duration={800}>
-          <div className="mt-12">
-            {/* Advisor message */}
-            <div className="rounded-2xl border border-accent/15 bg-accent/[0.04] p-6 md:p-7">
-              <p className="text-xs font-medium uppercase tracking-[0.08em] text-accent">Advisor note</p>
-              <p className="mt-3 text-base leading-relaxed text-ink">{ADVISOR_MESSAGE}</p>
-            </div>
-
-            {/* Locked preview */}
-            <div className="mt-6 rounded-2xl border border-line bg-white/40 p-6 text-center">
-              <div className="mx-auto grid max-w-md grid-cols-2 gap-3">
-                {["Full roadmap", "Cost breakdown", "Document checklist", "Risk analysis"].map((item) => (
-                  <div key={item} className="rounded-xl bg-ink/[0.03] px-4 py-3 text-sm text-muted">
-                    {item} <span className="ml-1">🔒</span>
+        <Animate animation="scale-in" delay={700} duration={800}>
+          <div className="mt-10">
+            {/* Locked benefit mini-cards */}
+            <p className="text-xs font-medium uppercase tracking-[0.08em] text-muted">
+              Your preview shows the direction. Your full plan shows what to do next.
+            </p>
+            <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
+              {LOCKED_ITEMS.map((item) => (
+                <div key={item.title} className="flex items-start gap-3 rounded-xl border border-line bg-white/50 p-4">
+                  <span className="mt-0.5 text-base leading-none">🔒</span>
+                  <div>
+                    <p className="text-sm font-semibold text-ink">{item.title}</p>
+                    <p className="mt-0.5 text-xs leading-relaxed text-muted">{item.description}</p>
                   </div>
-                ))}
-              </div>
+                </div>
+              ))}
             </div>
 
-            {/* Upsell */}
-            <div className="mt-8 text-center">
+            {/* Upsell bridge */}
+            <div className="mt-10 text-center">
               <h2 className="text-2xl font-semibold tracking-tight text-ink">
-                Unlock your personalized immigration roadmap
+                Turn this result into a real plan
               </h2>
               <p className="mx-auto mt-3 max-w-lg text-base leading-relaxed text-muted">
-                Your next step is not guesswork — it is strategy. Choose the depth of guidance that fits you.
+                See the best path to focus on, the steps that matter most, and what to improve next.
               </p>
             </div>
 
