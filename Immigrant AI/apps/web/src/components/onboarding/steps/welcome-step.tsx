@@ -15,14 +15,20 @@ export function WelcomeStep({ firstName, onNext }: WelcomeStepProps) {
   return (
     <div className="flex flex-col items-center justify-center text-center py-12 md:py-20">
       <Animate animation="scale-in" duration={800}>
-        <Image
-          src="/logo.png"
-          alt="Immigrant Guru"
-          width={320}
-          height={112}
-          className="h-auto w-[220px] object-contain anim-pulse-glow"
-          priority
-        />
+        <div className="flex items-center justify-center gap-3">
+          <Image
+            src="/logo.png"
+            alt="Immigrant Guru"
+            width={320}
+            height={112}
+            className="h-auto w-[88px] object-contain anim-pulse-glow"
+            priority
+          />
+          <span className="select-none text-3xl font-black tracking-[-0.045em] text-ink md:text-4xl">
+            <span>Immigrant</span>
+            <span className="text-accent">Guru</span>
+          </span>
+        </div>
       </Animate>
 
       <Animate animation="fade-up" delay={300} duration={800}>

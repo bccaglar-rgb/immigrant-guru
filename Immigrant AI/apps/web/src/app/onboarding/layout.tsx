@@ -15,15 +15,19 @@ export default function OnboardingLayout({ children }: OnboardingLayoutProps) {
       <div className="absolute inset-0 bg-gradient-mesh pointer-events-none" />
 
       <header className="relative z-10 flex items-center justify-between px-6 py-4 md:px-10">
-        <Link href="/" className="flex items-center">
+        <Link href="/" className="flex items-center gap-2.5">
           <Image
             src="/logo.png"
             alt="Immigrant Guru"
             width={320}
             height={112}
-            className="h-auto w-[168px] object-contain md:w-[196px]"
+            className="h-auto w-[42px] object-contain md:w-[48px]"
             priority
           />
+          <span className="select-none text-[1.05rem] font-black tracking-[-0.045em] text-ink md:text-[1.22rem]">
+            <span>Immigrant</span>
+            <span className="text-accent">Guru</span>
+          </span>
         </Link>
 
         <div className="flex items-center gap-3">
