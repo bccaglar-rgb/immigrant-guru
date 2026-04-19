@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 
@@ -78,26 +77,14 @@ export default function PricingPage() {
                 Find the plan that fits your journey
               </h1>
               <p className="mt-4 text-lg leading-relaxed text-muted">
-                Start free. Upgrade when you&apos;re ready for your full immigration plan.
+                One-time payment. Unlock your full personalized immigration plan.
               </p>
-            </div>
-          </Animate>
-
-          {/* Free tier */}
-          <Animate animation="fade-up" delay={100} duration={600}>
-            <div className="mx-auto mt-10 max-w-md rounded-2xl border border-line bg-canvas/50 p-6 text-center">
-              <p className="text-lg font-semibold text-ink">Free</p>
-              <p className="mt-1 text-3xl font-semibold tracking-tight text-ink">$0</p>
-              <p className="mt-2 text-sm text-muted">Profile builder, short AI analysis, preview recommendations</p>
-              <Link className={cn(buttonVariants({ size: "lg", variant: "secondary" }), "mt-4 w-full")} href={session ? "/analysis" : "/sign-up"}>
-                {session ? "Continue with Free" : "Start free"}
-              </Link>
             </div>
           </Animate>
 
           {/* Paid plans */}
           <Stagger
-            className="mx-auto mt-8 grid max-w-4xl gap-5 md:grid-cols-3 items-stretch"
+            className="mx-auto mt-10 grid max-w-4xl gap-5 md:grid-cols-3 items-stretch"
             childClassName="h-full"
             animation="fade-up"
             staggerDelay={100}
