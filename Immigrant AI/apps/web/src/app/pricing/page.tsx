@@ -1,9 +1,14 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useState } from "react";
+
 import { Animate, Stagger } from "@/components/ui/animate";
 import { AppShell } from "@/components/layout/app-shell";
 import { buttonVariants } from "@/components/ui/button";
+import { useAuthSession } from "@/hooks/use-auth-session";
+import { checkout } from "@/lib/billing-client";
 import { cn } from "@/lib/utils";
 
 const PLANS = [
@@ -34,6 +39,34 @@ const PLANS = [
 ];
 
 export default function PricingPage() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const next = searchParams.get("next") || "/analysis";
+  const { session } = useAuthSession();
+  const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  async function handleSelect(planKey: string) {
+    if (!session?.accessToken) {
+      router.push(`/sign-up?next=${encodeURIComponent(`/pricing?next=${next}`)}`);
+      return;
+    }
+    setError(null);
+    setLoadingPlan(planKey);
+    const res = await checkout(session.accessToken, planKey);
+    setLoadingPlan(null);
+    if (!res.ok) {
+      setError(res.errorMessage ?? "Checkout failed");
+      return;
+    }
+    if (res.data.checkout_url) {
+      window.location.href = res.data.checkout_url;
+      return;
+    }
+    // Demo mode — already upgraded
+    router.push(next);
+  }
+
   return (
     <AppShell>
       <section className="py-16 md:py-24">
@@ -56,8 +89,8 @@ export default function PricingPage() {
               <p className="text-lg font-semibold text-ink">Free</p>
               <p className="mt-1 text-3xl font-semibold tracking-tight text-ink">$0</p>
               <p className="mt-2 text-sm text-muted">Profile builder, short AI analysis, preview recommendations</p>
-              <Link className={cn(buttonVariants({ size: "lg", variant: "secondary" }), "mt-4 w-full")} href="/sign-up">
-                Start free
+              <Link className={cn(buttonVariants({ size: "lg", variant: "secondary" }), "mt-4 w-full")} href={session ? "/analysis" : "/sign-up"}>
+                {session ? "Continue with Free" : "Start free"}
               </Link>
             </div>
           </Animate>
@@ -99,18 +132,24 @@ export default function PricingPage() {
                   ))}
                 </div>
 
-                <Link
+                <button
+                  type="button"
+                  onClick={() => handleSelect(plan.key)}
+                  disabled={loadingPlan !== null}
                   className={cn(
                     buttonVariants({ size: "lg", variant: plan.popular ? "primary" : "secondary" }),
-                    "mt-5 w-full"
+                    "mt-5 w-full disabled:opacity-60"
                   )}
-                  href="/sign-up"
                 >
-                  Get {plan.name}
-                </Link>
+                  {loadingPlan === plan.key ? "Redirecting…" : `Get ${plan.name}`}
+                </button>
               </div>
             ))}
           </Stagger>
+
+          {error ? (
+            <p className="mt-6 text-center text-sm text-red">{error}</p>
+          ) : null}
 
           {/* Bottom note */}
           <Animate animation="fade-in" delay={400} duration={500}>

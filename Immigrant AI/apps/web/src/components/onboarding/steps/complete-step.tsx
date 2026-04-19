@@ -107,7 +107,7 @@ export function CompleteStep({ formValues }: CompleteStepProps) {
         <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
           <Link
             className={cn(buttonVariants({ size: "lg", variant: "primary" }), "px-8 shadow-glow")}
-            href="/analysis"
+            href="/pricing?next=/analysis"
           >
             See your AI analysis
           </Link>

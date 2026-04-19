@@ -1,6 +1,7 @@
 "use client";
 
 import { Animate } from "@/components/ui/animate";
+import { CountrySelect } from "@/components/ui/country-select";
 import { Input } from "@/components/ui/input";
 import { PillSelector } from "@/components/onboarding/pill-selector";
 import { StepperInput } from "@/components/onboarding/stepper-input";
@@ -27,20 +28,20 @@ export function PersonalStep({ formValues, onChange }: PersonalStepProps) {
 
       <div className="mx-auto max-w-lg space-y-5">
         <Animate animation="fade-up" delay={100} duration={500}>
-          <Input
+          <CountrySelect
             label="Nationality"
-            placeholder="e.g. Turkish, Brazilian, Indian..."
             value={formValues.nationality}
-            onChange={(e) => onChange("nationality", e.target.value)}
+            onChange={(name) => onChange("nationality", name)}
+            placeholder="Select your nationality"
           />
         </Animate>
 
         <Animate animation="fade-up" delay={200} duration={500}>
-          <Input
+          <CountrySelect
             label="Where do you live now?"
-            placeholder="e.g. Istanbul, Sao Paulo, Mumbai..."
             value={formValues.current_country}
-            onChange={(e) => onChange("current_country", e.target.value)}
+            onChange={(name) => onChange("current_country", name)}
+            placeholder="Select current country"
           />
         </Animate>
 
