@@ -8,7 +8,7 @@ import { Animate, Stagger } from "@/components/ui/animate";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { useAuthSession } from "@/hooks/use-auth-session";
 import { getProfileAnalysis } from "@/lib/analysis-client";
-import { checkout, getBillingStatus } from "@/lib/billing-client";
+import { checkout, getBillingStatus, verifyUpgrade } from "@/lib/billing-client";
 import { cn } from "@/lib/utils";
 import type { ProfileAnalysisResult } from "@/types/analysis";
 
@@ -32,20 +32,20 @@ const PLANS = [
     name: "Starter",
     price: 19,
     tagline: "A clear starting point",
-    description: "Best if you want one realistic path and a simple action plan.",
-    features: ["Full plan for 1 country", "Best visa recommendation", "Step-by-step roadmap", "Cost estimate", "Timeline estimate", "Document checklist"],
+    description: "Best if you want to understand your options before committing.",
+    features: ["Full plan for 1 country", "Best visa recommendation", "Detailed eligibility breakdown", "Top path explanation", "Basic next steps"],
     popular: false,
-    cta: "See My Next Steps",
+    cta: "See My Best Path",
   },
   {
     key: "plus",
     name: "Plus",
     price: 29,
-    tagline: "Compare smarter options",
-    description: "Best if you want to evaluate alternatives before making a decision.",
-    features: ["Everything in Starter", "3 country comparisons", "Multiple visa alternatives", "Deeper analysis", "Expanded document guidance", "Better case preparation"],
+    tagline: "Your complete action plan",
+    description: "Best if you want a full roadmap and everything you need to start moving.",
+    features: ["Everything in Starter", "Step-by-step roadmap", "Cost estimate", "Timeline estimate", "Document checklist", "3 country comparisons"],
     popular: true,
-    cta: "Unlock My Best Strategy",
+    cta: "Unlock My Full Plan",
   },
   {
     key: "premium",
@@ -84,6 +84,7 @@ const TIER_ORDER = ["free", "starter", "plus", "premium"];
 
 export function AIAnalysisPage() {
   const searchParams = useSearchParams();
+  const upgraded = searchParams.get("upgraded") === "true";
   const canceled = searchParams.get("canceled") === "true";
   // Plan user had selected before canceling checkout (passed in cancel_url)
   const canceledPlan = searchParams.get("plan") ?? "";
@@ -108,13 +109,22 @@ export function AIAnalysisPage() {
   });
 
   useEffect(() => {
-    if (!session?.accessToken) {
-      return;
-    }
-    void handleLoadAnalysis();
-    void getBillingStatus(session.accessToken).then((res) => {
-      if (res.ok) setCurrentPlan(res.data.plan);
-    });
+    if (!session?.accessToken) return;
+    const token = session.accessToken;
+
+    const init = async () => {
+      // If Stripe redirected back after payment, verify the session and upgrade plan if paid
+      if (upgraded) {
+        await verifyUpgrade(token);
+      }
+      const [billingRes] = await Promise.all([
+        getBillingStatus(token),
+        handleLoadAnalysis(),
+      ]);
+      if (billingRes.ok) setCurrentPlan(billingRes.data.plan);
+    };
+
+    void init();
   }, [session?.accessToken]);
 
   const handleUpgrade = useCallback(async (plan: string) => {

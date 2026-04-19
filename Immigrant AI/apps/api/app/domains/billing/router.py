@@ -28,8 +28,8 @@ router = APIRouter(prefix="/billing", tags=["billing"])
 
 PLANS = {
     "free": {"name": "Free", "price": 0, "countries": 0, "features": ["Profile builder", "Short AI analysis", "Preview recommendations"]},
-    "starter": {"name": "Starter", "price": 19, "countries": 1, "features": ["Full plan for 1 country", "Best visa recommendation", "Step-by-step roadmap", "Cost estimate", "Timeline estimate", "Basic document checklist"]},
-    "plus": {"name": "Plus", "price": 29, "countries": 3, "popular": True, "features": ["Everything in Starter", "Up to 3 country comparisons", "Multiple visa alternatives", "Deeper analysis", "Expanded document guidance", "Better case preparation"]},
+    "starter": {"name": "Starter", "price": 19, "countries": 1, "features": ["Full plan for 1 country", "Best visa recommendation", "Detailed eligibility breakdown", "Top path explanation", "Basic next steps"]},
+    "plus": {"name": "Plus", "price": 29, "countries": 3, "popular": True, "features": ["Everything in Starter", "Step-by-step roadmap", "Cost estimate", "Timeline estimate", "Document checklist", "3 country comparisons"]},
     "premium": {"name": "Premium", "price": 49, "countries": 999, "features": ["Everything in Plus", "Full strategic recommendation", "Priority AI guidance", "Advanced action plan", "Full path comparison", "Stronger case support", "Premium dashboard"]},
 }
 
@@ -136,6 +136,62 @@ async def get_billing_status(
         "features": plan_info["features"],
         "is_premium": plan_key != "free",
     }
+
+
+@router.post("/verify-upgrade")
+async def verify_upgrade(
+    session: AsyncSession = Depends(get_db_session),
+    current_user: User = Depends(get_current_user),
+):
+    """Verify a pending Stripe checkout session and upgrade plan if paid.
+
+    Called after Stripe redirects to success_url (?upgraded=true).
+    Falls back gracefully when Stripe is not configured.
+    """
+    settings = get_settings()
+
+    if not settings.stripe_secret_key or not current_user.stripe_session_id:
+        plan_key = current_user.plan or "free"
+        return {"upgraded": False, "plan": plan_key}
+
+    try:
+        async with httpx.AsyncClient(timeout=10) as client:
+            resp = await client.get(
+                f"https://api.stripe.com/v1/checkout/sessions/{current_user.stripe_session_id}",
+                auth=(settings.stripe_secret_key, ""),
+            )
+            checkout_session = resp.json()
+
+        if resp.status_code != 200:
+            logger.warning("billing.verify_upgrade_stripe_error session=%s", current_user.stripe_session_id)
+            return {"upgraded": False, "plan": current_user.plan or "free"}
+
+        payment_status = checkout_session.get("payment_status")
+        metadata = checkout_session.get("metadata", {})
+        plan = _normalize_plan(str(metadata.get("plan", "")))
+
+        if payment_status == "paid" and plan in _PAID_PLANS and (current_user.plan or "free") == "free":
+            current_user.plan = plan
+            current_user.stripe_customer_id = checkout_session.get("customer") or current_user.stripe_customer_id
+            await session.commit()
+            await session.refresh(current_user)
+            logger.info("billing.verify_upgrade_success user=%s plan=%s", current_user.id, plan)
+
+            try:
+                from app.services.shared.email_service import send_upgrade_email
+                plan_name = str(PLANS.get(plan, {}).get("name", plan))
+                first_name = current_user.profile.first_name if current_user.profile else None
+                await send_upgrade_email(current_user.email, plan_name, first_name)
+            except Exception:
+                logger.exception("billing.verify_upgrade_email_error user=%s", current_user.id)
+
+            return {"upgraded": True, "plan": plan}
+
+        return {"upgraded": False, "plan": current_user.plan or "free"}
+
+    except httpx.HTTPError as e:
+        logger.error("billing.verify_upgrade_http_error error=%s", str(e))
+        return {"upgraded": False, "plan": current_user.plan or "free"}
 
 
 @router.post("/checkout")

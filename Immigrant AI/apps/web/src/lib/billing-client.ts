@@ -49,3 +49,11 @@ export async function checkout(accessToken: string, plan: string): Promise<ApiRe
   if (!response.ok) return { ok: false, errorMessage: response.errorMessage, status: response.status };
   return { ok: true, data: response.data as CheckoutResult, status: response.status };
 }
+
+export type VerifyUpgradeResult = { upgraded: boolean; plan: string };
+
+export async function verifyUpgrade(accessToken: string): Promise<ApiRequestResult<VerifyUpgradeResult>> {
+  const response = await apiRequest({ authToken: accessToken, method: "POST", path: "/billing/verify-upgrade", retries: 0, timeoutMs: 10000 });
+  if (!response.ok) return { ok: false, errorMessage: response.errorMessage, status: response.status };
+  return { ok: true, data: response.data as VerifyUpgradeResult, status: response.status };
+}
