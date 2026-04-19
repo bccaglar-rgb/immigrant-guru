@@ -10,7 +10,7 @@ from uuid import uuid4
 import pytest
 from fastapi import HTTPException
 
-from app.api.routes import billing
+from app.domains.billing import router as billing
 
 
 class DummySession:

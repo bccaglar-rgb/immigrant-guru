@@ -4,7 +4,7 @@ from app.api.routes.ai import router as ai_router
 from app.api.routes.ai_feedback import router as ai_feedback_router
 from app.api.routes.admin_kb import router as admin_kb_router
 from app.api.routes.auth import router as auth_router
-from app.api.routes.billing import router as billing_router
+from app.domains.billing.router import router as billing_router
 from app.api.routes.cases import router as cases_router
 from app.api.routes.case_outcomes import router as case_outcomes_router
 from app.api.routes.comparison import router as comparison_router
