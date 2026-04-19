@@ -34,11 +34,7 @@ jobs:
             git reset --hard origin/main
 
             echo "==> Detect app root"
-            if [ -d "$REPO/Immigrant AI" ]; then
-              APP="$REPO/Immigrant AI"
-            else
-              APP="$REPO"
-            fi
+            APP=$(find "$REPO" -maxdepth 2 -name "ecosystem.config.cjs" -not -path "*/.git/*" | head -1 | xargs -I{} dirname {})
             echo "App root: $APP"
 
             echo "==> Web build"
@@ -48,7 +44,7 @@ jobs:
 
             echo "==> API deps"
             cd "$APP/apps/api"
-            [ ! -d .venv ] && python3.12 -m venv .venv
+            test -d .venv || python3.12 -m venv .venv
             . .venv/bin/activate
             pip install -q --upgrade pip
             pip install -q -e .
@@ -56,7 +52,7 @@ jobs:
 
             echo "==> Worker deps"
             cd "$APP/apps/worker"
-            [ ! -d .venv ] && python3.12 -m venv .venv
+            test -d .venv || python3.12 -m venv .venv
             . .venv/bin/activate
             pip install -q --upgrade pip
             pip install -q -e .
