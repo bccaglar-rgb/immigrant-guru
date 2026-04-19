@@ -185,15 +185,6 @@ export function AIAnalysisPage() {
         </div>
       </Animate>
 
-      {/* CANCELED CHECKOUT BANNER */}
-      {!isPremium && canceled && (
-        <Animate animation="fade-up" delay={150} duration={500}>
-          <div className="mt-6 rounded-2xl border border-amber/20 bg-amber/5 p-5">
-            <p className="text-sm font-semibold text-ink">No worries — you can continue whenever you&apos;re ready.</p>
-            <p className="mt-1 text-sm text-muted">Your analysis is saved. Your plan is one click away when you want to unlock it.</p>
-          </div>
-        </Animate>
-      )}
 
       {/* TOP MATCHES */}
       {visa_matches.length > 0 && (
