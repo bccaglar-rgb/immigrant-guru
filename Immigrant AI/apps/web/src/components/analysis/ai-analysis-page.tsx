@@ -87,7 +87,7 @@ export function AIAnalysisPage() {
   const canceled = searchParams.get("canceled") === "true";
   // Plan user had selected before canceling checkout (passed in cancel_url)
   const canceledPlan = searchParams.get("plan") ?? "";
-  const { session } = useAuthSession();
+  const { session, status: authStatus } = useAuthSession();
   const [status, setStatus] = useState<Status>("loading");
   const [result, setResult] = useState<ProfileAnalysisResult | null>(null);
   const [error, setError] = useState("");
@@ -138,7 +138,7 @@ export function AIAnalysisPage() {
   }, [session, loadAnalysis]);
 
   // Not logged in — redirect to sign-up
-  if (!session && status !== "loading") {
+  if (!session && authStatus !== "loading") {
     return (
       <div className="flex min-h-[60vh] flex-col items-center justify-center text-center px-6">
         <h2 className="text-2xl font-semibold tracking-tight text-ink">Sign in to see your analysis</h2>
@@ -151,8 +151,8 @@ export function AIAnalysisPage() {
     );
   }
 
-  // Loading
-  if (status === "loading") {
+  // Loading (auth resolving or analysis fetching)
+  if (authStatus === "loading" || status === "loading") {
     return (
       <div className="flex min-h-[70vh] flex-col items-center justify-center text-center">
         <div className="h-12 w-12 rounded-full border-4 border-accent/20 border-t-accent animate-spin" />
