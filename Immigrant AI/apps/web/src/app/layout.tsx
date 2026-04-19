@@ -107,7 +107,13 @@ export const metadata: Metadata = {
   alternates: {
     canonical: SITE_URL
   },
-  category: "technology"
+  category: "technology",
+  verification: {
+    google: process.env.NEXT_PUBLIC_GSC_VERIFICATION,
+    other: process.env.NEXT_PUBLIC_BING_VERIFICATION
+      ? { "msvalidate.01": process.env.NEXT_PUBLIC_BING_VERIFICATION }
+      : undefined
+  }
 };
 
 type RootLayoutProps = Readonly<{
