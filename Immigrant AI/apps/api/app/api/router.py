@@ -2,7 +2,7 @@ from fastapi import APIRouter
 
 from app.api.routes.ai import router as ai_router
 from app.api.routes.ai_feedback import router as ai_feedback_router
-from app.api.routes.admin_kb import router as admin_kb_router
+from app.domains.knowledge.admin import router as admin_kb_router
 from app.domains.auth.router import router as auth_router
 from app.domains.billing.router import router as billing_router
 from app.api.routes.cases import router as cases_router
@@ -10,7 +10,7 @@ from app.api.routes.case_outcomes import router as case_outcomes_router
 from app.api.routes.comparison import router as comparison_router
 from app.api.routes.database import router as database_router
 from app.api.routes.health import router as health_router
-from app.api.routes.kb import router as kb_router
+from app.domains.knowledge.router import router as kb_router
 from app.domains.auth.password_reset import router as password_reset_router
 from app.api.routes.profile import router as profile_router
 from app.api.routes.profile_analysis import router as profile_analysis_router
