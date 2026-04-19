@@ -25,53 +25,50 @@ jobs:
           command_timeout: 20m
           script: |
             set -e
-            cd /opt/app/immigrant-guru
 
-            echo "::group::Pull latest"
+            REPO=/opt/app/immigrant-guru
+            cd "$REPO"
+
+            echo "==> Pull latest"
             git fetch --all --prune
             git reset --hard origin/main
-            # Resolve app root: support both flat and nested repo structures
-            if [ -d "Immigrant AI" ]; then
-              APP_ROOT="/opt/app/immigrant-guru/Immigrant AI"
-            else
-              APP_ROOT="/opt/app/immigrant-guru"
-            fi
-            cd "$APP_ROOT"
-            echo "App root: $APP_ROOT"
-            echo "::endgroup::"
 
-            echo "::group::Web build"
-            cd "$APP_ROOT/apps/web"
+            echo "==> Detect app root"
+            if [ -d "$REPO/Immigrant AI" ]; then
+              APP="$REPO/Immigrant AI"
+            else
+              APP="$REPO"
+            fi
+            echo "App root: $APP"
+
+            echo "==> Web build"
+            cd "$APP/apps/web"
             npm ci --no-audit --no-fund
             npm run build
-            echo "::endgroup::"
 
-            echo "::group::API deps"
-            cd "$APP_ROOT/apps/api"
-            if [ ! -d .venv ]; then python3.12 -m venv .venv; fi
+            echo "==> API deps"
+            cd "$APP/apps/api"
+            [ ! -d .venv ] && python3.12 -m venv .venv
             . .venv/bin/activate
             pip install -q --upgrade pip
             pip install -q -e .
             deactivate
-            echo "::endgroup::"
 
-            echo "::group::Worker deps"
-            cd "$APP_ROOT/apps/worker"
-            if [ ! -d .venv ]; then python3.12 -m venv .venv; fi
+            echo "==> Worker deps"
+            cd "$APP/apps/worker"
+            [ ! -d .venv ] && python3.12 -m venv .venv
             . .venv/bin/activate
             pip install -q --upgrade pip
             pip install -q -e .
             deactivate
-            echo "::endgroup::"
 
-            echo "::group::Reload"
-            cd "$APP_ROOT"
+            echo "==> Reload"
+            cd "$APP"
             pm2 reload ecosystem.config.cjs --update-env
             pm2 save
-            echo "::endgroup::"
 
-            echo "::group::Health check"
+            echo "==> Health check"
             sleep 8
             curl -fsS http://127.0.0.1:3000/ > /dev/null && echo "web OK"
             curl -fsS https://immigrant.guru/api/v1/health -k > /dev/null && echo "api OK"
-            echo "::endgroup::"
+            echo "Done."
