@@ -37,6 +37,7 @@ jobs:
             git reset --hard origin/main
 
             echo "==> Sync app files from Immigrant AI/ subtree (rsync --delete removes stale files)"
+            rm -rf /tmp/immigrant-ai-sync && mkdir -p /tmp/immigrant-ai-sync
             git archive HEAD "Immigrant AI/" | tar -x --strip-components=1 -C /tmp/immigrant-ai-sync/
             rsync -a --delete \
               --exclude='.next' --exclude='node_modules' --exclude='.venv' \
