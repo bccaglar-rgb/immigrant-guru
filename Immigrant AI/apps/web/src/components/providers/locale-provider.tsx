@@ -1,6 +1,5 @@
 "use client";
 
-import { useTransition } from "react";
 import {
   createContext,
   useCallback,
@@ -11,7 +10,6 @@ import {
 } from "react";
 import type { ReactNode } from "react";
 
-import { usePathname, useRouter } from "@/i18n/navigation";
 import {
   queueTranslation,
   shouldTranslate,
@@ -35,13 +33,7 @@ type LocaleProviderProps = Readonly<{
 const ATTRIBUTE_NAMES = ["placeholder", "aria-label", "title"] as const;
 
 export function LocaleProvider({ children, locale: localeProp = "en" }: LocaleProviderProps) {
-  // Locale is passed as a prop from [locale]/layout (always available
-  // server-side). Avoids calling useIntlLocale() which throws an empty error
-  // when NextIntlClientProvider is absent (e.g. /_not-found SSR prerender).
   const locale = localeProp;
-  const router = useRouter();
-  const pathname = usePathname();
-  const [, startTransition] = useTransition();
 
   const textNodeSources = useRef(
     new WeakMap<Text, { source: string }>()
@@ -51,14 +43,16 @@ export function LocaleProvider({ children, locale: localeProp = "en" }: LocalePr
   );
   const titleSource = useRef<string | null>(null);
 
-  const setLocale = useCallback(
-    (nextLocale: LanguageCode) => {
-      startTransition(() => {
-        router.replace(pathname, { locale: nextLocale });
-      });
-    },
-    [pathname, router]
-  );
+  const setLocale = useCallback((nextLocale: LanguageCode) => {
+    // LanguageSwitcher handles routing directly via next-intl's useRouter.
+    // This path is legacy — navigate via window.location to avoid calling
+    // next-intl's useRouter/usePathname hooks which throw outside routing context.
+    if (typeof window !== "undefined") {
+      const current = window.location.pathname;
+      const prefix = nextLocale === "en" ? "" : `/${nextLocale}`;
+      window.location.assign(`${prefix}${current}`);
+    }
+  }, []);
 
   const translateTextNode = useCallback(
     (node: Text) => {
