@@ -157,10 +157,11 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
 }
 
 export default async function LocaleLayout({ children, params }: LayoutProps) {
-  const { locale } = await params;
-  if (!hasLocale(routing.locales, locale)) {
-    notFound();
-  }
+  const { locale: rawLocale } = await params;
+  // Fall back to English instead of calling notFound() — calling notFound()
+  // before providers mount causes /_not-found to render [locale]/not-found.tsx
+  // without AuthProvider, crashing on useAuthSession. Providers always render.
+  const locale = hasLocale(routing.locales, rawLocale) ? rawLocale : routing.defaultLocale;
 
   setRequestLocale(locale);
   const messages = await getMessages();
