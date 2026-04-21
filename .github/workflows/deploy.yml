@@ -36,13 +36,11 @@ jobs:
             git fetch --all --prune
             git reset --hard origin/main
 
-            echo "==> Sync app files from Immigrant AI/ subtree (rsync --delete removes stale files)"
-            rm -rf /tmp/immigrant-ai-sync && mkdir -p /tmp/immigrant-ai-sync
-            git archive HEAD "Immigrant AI/" | tar -x --strip-components=1 -C /tmp/immigrant-ai-sync/
-            rsync -a --delete \
-              --exclude='.next' --exclude='node_modules' --exclude='.venv' \
-              /tmp/immigrant-ai-sync/ "$REPO/"
-            rm -rf /tmp/immigrant-ai-sync
+            echo "==> Sync app files from Immigrant AI/ subtree"
+            # Purge stale web source files that tar -x cannot delete (only adds/overwrites).
+            # Only src/ is removed — .env.local, node_modules, .next, storage stay intact.
+            rm -rf "$REPO/apps/web/src"
+            git archive HEAD "Immigrant AI/" | tar -x --strip-components=1 -C "$REPO"
 
             echo "==> Web build"
             cd "$REPO/apps/web"
