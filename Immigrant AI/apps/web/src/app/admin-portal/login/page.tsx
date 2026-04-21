@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "/api/v1";
+const API_URL = `${process.env.NEXT_PUBLIC_API_URL ?? ""}/api/v1`;
 
 export default function AdminLoginPage() {
   const [email, setEmail] = useState("");
