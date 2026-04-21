@@ -12,15 +12,12 @@ const navItems = [
   { href: "/dashboard/cases", label: "My Cases", description: "Your immigration cases" },
 ];
 
-const ADMIN_EMAILS = ["burakcagdascaglar@gmail.com", "bccaglar@gmail.com"];
-
 type DashboardSidebarProps = Readonly<{
   pathname: string;
   userEmail?: string;
 }>;
 
-export function DashboardSidebar({ pathname, userEmail }: DashboardSidebarProps) {
-  const isAdmin = !!userEmail && ADMIN_EMAILS.includes(userEmail.toLowerCase());
+export function DashboardSidebar({ pathname }: DashboardSidebarProps) {
 
   return (
     <aside className="border-b border-line px-4 py-4 lg:min-h-screen lg:w-[260px] lg:border-b-0 lg:border-r lg:px-5 lg:py-6">
@@ -67,17 +64,6 @@ export function DashboardSidebar({ pathname, userEmail }: DashboardSidebarProps)
             );
           })}
 
-          {isAdmin && (
-            <Link href="/dashboard/admin">
-              <div className={cn(
-                "rounded-xl px-4 py-3 transition-all duration-200",
-                pathname === "/dashboard/admin" ? "bg-accent text-white shadow-glow" : "text-ink hover:bg-ink/5"
-              )}>
-                <p className={cn("text-base font-semibold", pathname === "/dashboard/admin" ? "text-white" : "text-ink")}>Admin</p>
-                <p className={cn("mt-0.5 text-xs", pathname === "/dashboard/admin" ? "text-white/70" : "text-muted")}>Platform yönetimi</p>
-              </div>
-            </Link>
-          )}
         </nav>
       </div>
     </aside>

@@ -549,8 +549,20 @@ function KnowledgeTab({ accessToken, canAdmin }: { accessToken: string; canAdmin
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 
-export function DashboardAdminPage() {
+export function DashboardAdminPage({ overrideToken }: { overrideToken?: string } = {}) {
+  if (overrideToken) {
+    return <DashboardAdminCore accessToken={overrideToken} />;
+  }
+  return <DashboardAdminPageInner />;
+}
+
+function DashboardAdminPageInner() {
   const { session } = useAuthSession();
+  if (!session) return null;
+  return <DashboardAdminCore accessToken={session.accessToken} />;
+}
+
+function DashboardAdminCore({ accessToken }: { accessToken: string }) {
   const [tab, setTab] = useState<Tab>("overview");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -562,15 +574,14 @@ export function DashboardAdminPage() {
   const [users, setUsers] = useState<AdminUserDirectoryEntry[]>([]);
 
   const load = useCallback(async () => {
-    if (!session) return;
     setLoading(true);
     setError("");
 
     const [versionRes, dbRes, usersRes, statsRes] = await Promise.all([
       getServiceVersion(),
       getDatabaseCheck(),
-      listUsers(session.accessToken),
-      getAdminStats(session.accessToken)
+      listUsers(accessToken),
+      getAdminStats(accessToken)
     ]);
 
     if (versionRes.ok) setVersion(versionRes.data);
@@ -580,15 +591,13 @@ export function DashboardAdminPage() {
 
     if (!versionRes.ok && !dbRes.ok) setError("Could not load system status.");
     setLoading(false);
-  }, [session]);
+  }, [accessToken]);
 
   useEffect(() => { void load(); }, [load]);
 
   const handleUserUpdated = useCallback((updated: AdminUserDirectoryEntry) => {
     setUsers((prev) => prev.map((u) => u.id === updated.id ? updated : u));
   }, []);
-
-  if (!session) return null;
 
   return (
     <div className="space-y-6">
@@ -619,9 +628,9 @@ export function DashboardAdminPage() {
       ) : (
         <>
           {tab === "overview" && <OverviewTab stats={stats} db={db} version={version} users={users} />}
-          {tab === "users" && <UsersTab users={users} accessToken={session.accessToken} onUserUpdated={handleUserUpdated} />}
-          {tab === "knowledge" && <KnowledgeTab accessToken={session.accessToken} canAdmin={canAdmin} />}
-          {tab === "feedback" && <FeedbackTab accessToken={session.accessToken} />}
+          {tab === "users" && <UsersTab users={users} accessToken={accessToken} onUserUpdated={handleUserUpdated} />}
+          {tab === "knowledge" && <KnowledgeTab accessToken={accessToken} canAdmin={canAdmin} />}
+          {tab === "feedback" && <FeedbackTab accessToken={accessToken} />}
         </>
       )}
     </div>

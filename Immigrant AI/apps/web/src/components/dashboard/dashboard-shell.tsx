@@ -33,7 +33,7 @@ export function DashboardShell({ children }: DashboardShellProps) {
         ) : (
           <div className="min-h-screen bg-canvas">
             <div className="mx-auto flex min-h-screen w-full max-w-[1440px] flex-col lg:flex-row">
-              <DashboardSidebar pathname={pathname} userEmail={user?.email} />
+              <DashboardSidebar pathname={pathname} />
               <div className="min-w-0 flex-1 px-4 pb-8 pt-4 md:px-8 md:pb-10 md:pt-6">
                 <DashboardTopbar
                   clearSession={clearSession}
