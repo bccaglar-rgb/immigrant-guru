@@ -14,7 +14,10 @@ import type { ReactNode } from "react";
 import {
   getDocumentDirection,
   getInitialLanguage,
+  queueTranslation,
+  shouldTranslate,
   STORAGE_KEY,
+  TRANSLATION_BATCH_READY_EVENT,
   translateText,
   type LanguageCode
 } from "@/lib/i18n";
@@ -94,6 +97,9 @@ export function LocaleProvider({ children }: LocaleProviderProps) {
       if (node.nodeValue !== nextValue) {
         node.nodeValue = nextValue;
       }
+      if (translated === trimmed && shouldTranslate(trimmed)) {
+        queueTranslation(locale, trimmed);
+      }
     },
     [locale]
   );
@@ -134,6 +140,9 @@ export function LocaleProvider({ children }: LocaleProviderProps) {
         const nextAttrValue = translated !== sourceValue ? translated : sourceValue;
         if (element.getAttribute(attributeName) !== nextAttrValue) {
           element.setAttribute(attributeName, nextAttrValue);
+        }
+        if (translated === sourceValue && shouldTranslate(sourceValue)) {
+          queueTranslation(locale, sourceValue);
         }
       }
     },
@@ -245,9 +254,21 @@ export function LocaleProvider({ children }: LocaleProviderProps) {
       });
     }
 
+    const handleBatchReady = (event: Event) => {
+      const detail = (event as CustomEvent<{ locale?: LanguageCode }>).detail;
+      if (detail?.locale && detail.locale !== locale) return;
+      runTranslation(() => {
+        applyTitleTranslation();
+        translateTree(document.body);
+      });
+    };
+
+    window.addEventListener(TRANSLATION_BATCH_READY_EVENT, handleBatchReady);
+
     return () => {
       observer.disconnect();
       titleObserver.disconnect();
+      window.removeEventListener(TRANSLATION_BATCH_READY_EVENT, handleBatchReady);
     };
   }, [locale, translateTextNode, translateTree]);
 

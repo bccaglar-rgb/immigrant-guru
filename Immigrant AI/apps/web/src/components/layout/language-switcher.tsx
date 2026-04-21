@@ -92,18 +92,18 @@ export function LanguageSwitcher({
       {isOpen ? (
         <div
           className={cn(
-            "absolute top-[calc(100%+0.75rem)] z-50 w-[220px] overflow-hidden rounded-[24px] border border-line bg-white shadow-[0_24px_60px_rgba(15,23,42,0.18)]",
+            "absolute top-[calc(100%+0.5rem)] z-50 w-[320px] overflow-hidden rounded-2xl border border-line bg-white shadow-[0_20px_50px_rgba(15,23,42,0.18)]",
             align === "right" ? "right-0" : "left-0"
           )}
           role="menu"
         >
-          <div className="px-5 pb-3 pt-5">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted">
+          <div className="border-b border-line/70 px-4 py-2.5">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted">
               Language
             </p>
           </div>
 
-          <div className="pb-3">
+          <div className="grid max-h-[320px] grid-cols-2 gap-0.5 overflow-y-auto p-1.5">
             {LANGUAGE_OPTIONS.map((language) => {
               const active = language.code === locale;
 
@@ -115,22 +115,15 @@ export function LanguageSwitcher({
                   aria-checked={active}
                   onClick={() => handleSelect(language.code)}
                   className={cn(
-                    "flex w-full items-center gap-3 px-5 py-3 text-left transition-colors duration-150",
-                    active ? "bg-[#eef4ff] text-[#13376b]" : "text-ink hover:bg-canvas"
+                    "flex items-center gap-2 rounded-lg px-2.5 py-2 text-left text-sm transition-colors duration-150",
+                    active
+                      ? "bg-accent/10 font-semibold text-accent"
+                      : "text-ink hover:bg-canvas"
                   )}
                 >
-                  <span className="text-xl leading-none">{language.flag}</span>
-                  <span className="flex-1 truncate text-base font-medium">
-                    {language.label}
-                  </span>
-                  <span
-                    className={cn(
-                      "text-base font-semibold text-accent transition-opacity",
-                      active ? "opacity-100" : "opacity-0"
-                    )}
-                  >
-                    ✓
-                  </span>
+                  <span className="text-base leading-none">{language.flag}</span>
+                  <span className="flex-1 truncate">{language.label}</span>
+                  {active ? <span className="text-xs">✓</span> : null}
                 </button>
               );
             })}

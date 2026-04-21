@@ -779,10 +779,166 @@ const TRANSLATIONS: TranslationCatalog = {
   }
 };
 
+const RUNTIME_CACHE_PREFIX = "ig-i18n-cache:";
+const runtimeMemoryCache = new Map<string, string>();
+
+function runtimeCacheKey(locale: LanguageCode, source: string): string {
+  return `${RUNTIME_CACHE_PREFIX}${locale}:${source}`;
+}
+
+function readRuntimeCache(locale: LanguageCode, source: string): string | null {
+  const key = runtimeCacheKey(locale, source);
+  const inMemory = runtimeMemoryCache.get(key);
+  if (inMemory !== undefined) return inMemory;
+  if (typeof window === "undefined") return null;
+  try {
+    const stored = window.localStorage.getItem(key);
+    if (stored !== null) {
+      runtimeMemoryCache.set(key, stored);
+      return stored;
+    }
+  } catch {
+    // localStorage blocked — ignore
+  }
+  return null;
+}
+
+export function writeRuntimeCache(
+  locale: LanguageCode,
+  source: string,
+  translated: string
+): void {
+  const key = runtimeCacheKey(locale, source);
+  runtimeMemoryCache.set(key, translated);
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(key, translated);
+  } catch {
+    // quota — silently drop
+  }
+}
+
+// Strings that shouldn't be translated at runtime (brand, addresses, code-like tokens).
+const TRANSLATION_SKIP_PATTERN =
+  /^(\s*|[\d\W_]+|https?:\/\/\S+|[A-Z0-9_-]{1,8}|Immigrant\s*Guru)$/i;
+
+export function shouldTranslate(source: string): boolean {
+  const trimmed = source.trim();
+  if (trimmed.length < 2 || trimmed.length > 500) return false;
+  if (TRANSLATION_SKIP_PATTERN.test(trimmed)) return false;
+  return true;
+}
+
 export function translateText(locale: LanguageCode, source: string): string {
-  if (locale === "en") {
+  if (locale === "en" || !source) {
     return source;
   }
 
-  return TRANSLATIONS[locale]?.[source] ?? source;
+  const dictHit = TRANSLATIONS[locale]?.[source];
+  if (dictHit) return dictHit;
+
+  const cached = readRuntimeCache(locale, source);
+  if (cached) return cached;
+
+  return source;
 }
+
+// ───────────────────── Runtime translation queue ─────────────────────
+// When a string isn't in the static dict or localStorage cache, we POST it to
+// the API (which caches in Redis and fetches from an upstream translator).
+// Strings are batched to minimize round-trips, and a single event is fired
+// after a batch lands so the DOM walker can re-apply translations.
+
+const TRANSLATION_READY_EVENT = "ig-i18n:batch-ready";
+const BATCH_FLUSH_DELAY_MS = 250;
+const MAX_BATCH_SIZE = 200;
+
+const pendingByLocale = new Map<LanguageCode, Set<string>>();
+const inFlightByLocale = new Map<LanguageCode, Set<string>>();
+const flushTimers = new Map<LanguageCode, ReturnType<typeof setTimeout>>();
+
+function resolveApiBase(): string {
+  const envBase =
+    typeof process !== "undefined"
+      ? process.env.NEXT_PUBLIC_API_URL
+      : undefined;
+  return `${(envBase ?? "").replace(/\/$/, "")}/api/v1`;
+}
+
+async function flushBatch(locale: LanguageCode): Promise<void> {
+  flushTimers.delete(locale);
+  const pending = pendingByLocale.get(locale);
+  if (!pending || pending.size === 0) return;
+
+  const batch = Array.from(pending).slice(0, MAX_BATCH_SIZE);
+  pending.clear();
+
+  const inFlight = inFlightByLocale.get(locale) ?? new Set<string>();
+  batch.forEach((text) => inFlight.add(text));
+  inFlightByLocale.set(locale, inFlight);
+
+  try {
+    const response = await fetch(`${resolveApiBase()}/i18n/translate`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ target: locale, texts: batch })
+    });
+    if (!response.ok) {
+      return;
+    }
+    const payload = (await response.json()) as {
+      target: string;
+      translations: Record<string, string>;
+    };
+    let applied = 0;
+    for (const [source, translated] of Object.entries(payload.translations ?? {})) {
+      if (translated && translated.trim() && translated !== source) {
+        writeRuntimeCache(locale, source, translated);
+        applied++;
+      }
+    }
+    if (applied > 0 && typeof window !== "undefined") {
+      window.dispatchEvent(
+        new CustomEvent(TRANSLATION_READY_EVENT, { detail: { locale } })
+      );
+    }
+  } catch {
+    // network error — strings stay in English until next attempt
+  } finally {
+    batch.forEach((text) => inFlight.delete(text));
+    // If more items arrived while we were in flight, schedule another flush.
+    if (pending.size > 0 && !flushTimers.has(locale)) {
+      flushTimers.set(
+        locale,
+        setTimeout(() => void flushBatch(locale), BATCH_FLUSH_DELAY_MS)
+      );
+    }
+  }
+}
+
+export function queueTranslation(locale: LanguageCode, source: string): void {
+  if (locale === "en") return;
+  if (!shouldTranslate(source)) return;
+  if (TRANSLATIONS[locale]?.[source]) return;
+  if (readRuntimeCache(locale, source) !== null) return;
+
+  const inFlight = inFlightByLocale.get(locale);
+  if (inFlight?.has(source)) return;
+
+  let pending = pendingByLocale.get(locale);
+  if (!pending) {
+    pending = new Set<string>();
+    pendingByLocale.set(locale, pending);
+  }
+  if (pending.has(source)) return;
+  pending.add(source);
+
+  if (!flushTimers.has(locale)) {
+    flushTimers.set(
+      locale,
+      setTimeout(() => void flushBatch(locale), BATCH_FLUSH_DELAY_MS)
+    );
+  }
+}
+
+export const TRANSLATION_BATCH_READY_EVENT = TRANSLATION_READY_EVENT;

@@ -14,6 +14,7 @@ from app.domains.auth.router import router as auth_router
 from app.domains.billing.router import router as billing_router
 from app.domains.cases.comparison import router as comparison_router
 from app.domains.cases.router import router as cases_router
+from app.domains.i18n.router import router as i18n_router
 from app.domains.knowledge.admin import router as admin_kb_router
 from app.domains.knowledge.router import router as kb_router
 from app.domains.profile.router import router as profile_router
@@ -30,6 +31,7 @@ api_router.include_router(case_outcomes_router)
 api_router.include_router(comparison_router)
 api_router.include_router(database_router)
 api_router.include_router(health_router)
+api_router.include_router(i18n_router)
 api_router.include_router(kb_router)
 api_router.include_router(password_reset_router)
 api_router.include_router(profile_router)

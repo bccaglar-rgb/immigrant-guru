@@ -77,6 +77,8 @@ app.add_middleware(
         {"path_prefix": "/api/v1/billing/checkout",      "per_ip": (10, 3600), "per_user": (10, 3600)},
         # Stripe webhook — per-IP DoS guard. Limits are generous enough for legit Stripe bursts.
         {"path_prefix": "/api/v1/billing/webhook",        "per_ip": (300, 60),  "per_user": None},
+        # i18n runtime translation — upstream API is rate-limited, guard our proxy too.
+        {"path_prefix": "/api/v1/i18n/",                  "per_ip": (120, 60),  "per_user": None},
         # AI endpoints — cost-sensitive
         {"path_prefix": "/api/v1/ai/",                   "per_ip": (60, 3600), "per_user": (60, 3600)},
         # Documents
