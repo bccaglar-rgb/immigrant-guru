@@ -6,6 +6,7 @@ import { useState } from "react";
 
 import { useAuthSession } from "@/hooks/use-auth-session";
 import { HeaderAuthActions } from "@/components/layout/header-auth-actions";
+import { LanguageSwitcher } from "@/components/layout/language-switcher";
 
 export function SiteHeader() {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -49,6 +50,7 @@ export function SiteHeader() {
         </nav>
 
         <div className="flex items-center gap-3">
+          <LanguageSwitcher compact />
           <HeaderAuthActions />
           <button
             className="flex h-9 w-9 items-center justify-center rounded-lg text-muted hover:bg-ink/5 lg:hidden"
