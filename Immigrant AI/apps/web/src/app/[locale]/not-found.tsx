@@ -1,38 +1,26 @@
-"use client";
-
 import Link from "next/link";
 
-import { Animate } from "@/components/ui/animate";
-import { AppShell } from "@/components/layout/app-shell";
-
+// Kept dependency-free: when [locale]/layout calls notFound() (invalid
+// locale param), providers haven't mounted yet so AppShell → SiteHeader
+// → useAuthSession crashes. A plain page is safe in all render contexts.
 export default function NotFound() {
   return (
-    <AppShell>
-      <section className="flex flex-1 items-center justify-center py-24">
-        <div className="text-center">
-          <Animate animation="scale-in" duration={800}>
-            <p className="text-9xl font-bold tracking-tight text-gradient">404</p>
-          </Animate>
-          <Animate animation="fade-up" delay={300} duration={600}>
-            <h1 className="mt-4 text-2xl font-semibold tracking-tight text-ink">
-              Page not found
-            </h1>
-          </Animate>
-          <Animate animation="fade-up" delay={450} duration={600}>
-            <p className="mt-3 max-w-md text-sm leading-relaxed text-muted">
-              The page you&apos;re looking for doesn&apos;t exist or hasn&apos;t been built yet.
-            </p>
-          </Animate>
-          <Animate animation="fade-up" delay={600} duration={600}>
-            <Link
-              className="mt-8 inline-flex h-11 items-center rounded-full bg-accent px-6 text-sm font-semibold text-white transition-all hover:bg-accent-hover active:scale-[0.98]"
-              href="/"
-            >
-              Return home
-            </Link>
-          </Animate>
-        </div>
-      </section>
-    </AppShell>
+    <html lang="en">
+      <body style={{ margin: 0, fontFamily: "system-ui, sans-serif", background: "#f5f5f7", color: "#1d1d1f", minHeight: "100vh", display: "grid", placeItems: "center" }}>
+        <main style={{ textAlign: "center", padding: "2rem" }}>
+          <p style={{ fontSize: "6rem", fontWeight: 700, margin: "0 0 0.5rem", lineHeight: 1, background: "linear-gradient(135deg, #4f46e5, #7c3aed)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>404</p>
+          <h1 style={{ fontSize: "1.5rem", fontWeight: 700, margin: "0 0 0.75rem" }}>Page not found</h1>
+          <p style={{ fontSize: "0.95rem", color: "#6e6e73", margin: "0 0 1.5rem" }}>
+            The page you&apos;re looking for doesn&apos;t exist.
+          </p>
+          <Link
+            href="/"
+            style={{ display: "inline-block", padding: "0.65rem 1.5rem", borderRadius: "9999px", background: "#1d1d1f", color: "white", textDecoration: "none", fontWeight: 600, fontSize: "0.9rem" }}
+          >
+            Go home
+          </Link>
+        </main>
+      </body>
+    </html>
   );
 }
