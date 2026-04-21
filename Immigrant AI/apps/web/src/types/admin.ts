@@ -52,10 +52,10 @@ export type DatabaseCheck = {
 export type AdminUserDirectoryEntry = {
   created_at: string;
   email: string;
-  email_verified: boolean;
+  email_verified?: boolean;
   id: string;
   immigration_cases: ImmigrationCaseSummary[];
-  plan: string;
+  plan?: string;
   profile: UserProfile | null;
   status: string;
   updated_at: string;

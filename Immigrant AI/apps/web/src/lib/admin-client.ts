@@ -64,10 +64,10 @@ const knowledgeSourceSummarySchema = z.object({
 const adminUserDirectoryEntrySchema = z.object({
   created_at: z.string().datetime(),
   email: z.string().email(),
-  email_verified: z.boolean().default(false),
+  email_verified: z.boolean().optional(),
   id: z.string().uuid(),
   immigration_cases: z.array(immigrationCaseSummarySchema),
-  plan: z.string().default("free"),
+  plan: z.string().optional(),
   profile: userProfileSchema.nullable(),
   status: z.string().min(1),
   updated_at: z.string().datetime()

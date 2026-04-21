@@ -175,7 +175,7 @@ function OverviewTab({ stats, db, version, users }: { stats: AdminStats | null; 
                   <p className="text-xs text-muted mt-0.5">{fmt(u.created_at)}</p>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Badge text={PLAN_LABELS[u.plan] ?? u.plan} className={PLAN_COLORS[u.plan] ?? ""} />
+                  <Badge text={PLAN_LABELS[u.plan ?? "free"] ?? u.plan} className={PLAN_COLORS[u.plan ?? "free"] ?? ""} />
                   {u.email_verified ? (
                     <Badge text="Verified" className="bg-green/10 border-green/20 text-green-700" />
                   ) : (
@@ -277,10 +277,10 @@ function UsersTab({ users, accessToken, onUserUpdated }: { users: AdminUserDirec
                   </td>
                   <td className="px-5 py-4">
                     <select
-                      className={`rounded-full border px-2.5 py-1 text-xs font-semibold focus:outline-none ${PLAN_COLORS[u.plan] ?? "bg-canvas border-line text-ink"}`}
+                      className={`rounded-full border px-2.5 py-1 text-xs font-semibold focus:outline-none ${PLAN_COLORS[u.plan ?? "free"] ?? "bg-canvas border-line text-ink"}`}
                       disabled={updating === u.id}
                       onChange={(e) => void handlePlanChange(u.id, e.target.value)}
-                      value={u.plan}
+                      value={u.plan ?? "free"}
                     >
                       {["free", "starter", "plus", "premium"].map((p) => (
                         <option key={p} value={p}>{PLAN_LABELS[p]}</option>
