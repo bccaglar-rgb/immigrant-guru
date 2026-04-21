@@ -80,7 +80,28 @@ const PLANS = [
   },
 ];
 
-const ADVISOR_MESSAGE = "You may not be in your strongest position yet — and that is okay. Many immigration journeys begin with a profile that needs improvement in a few key areas. What matters most is knowing which options are still realistic, which weaknesses can be addressed, and what steps are worth taking next. Unlock your roadmap to see where to focus first.";
+const ADVISOR_SECTIONS = [
+  {
+    icon: "📍",
+    title: "Where you stand — and why that's okay",
+    body: "Not every profile is ready on the first assessment. Your score reflects today's snapshot, not your ceiling. Most applicants who start in the mid-range reach qualifying status within 6–12 months by fixing two or three targeted gaps.",
+  },
+  {
+    icon: "🌍",
+    title: "Pathways still open to you",
+    body: "Skilled worker routes like US EB-2 NIW, Canada Express Entry, and Germany's Skilled Immigration Act reward strong professional profiles. Startup visas in Portugal, Netherlands, and UAE are accessible without a perfect history. Digital nomad visas in Spain, Greece, and Costa Rica have low barriers for remote workers. Family and spousal routes remain among the fastest options in the US, UK, and Australia.",
+  },
+  {
+    icon: "🔧",
+    title: "What you can fix right now",
+    body: "Language scores, credential recognition, work experience gaps, and reference letters are all addressable. A targeted 3–6 month preparation period can move a borderline profile into a strong qualifying range for multiple pathways simultaneously.",
+  },
+  {
+    icon: "🗺️",
+    title: "Your next step",
+    body: "Unlock your full roadmap to see a prioritized action plan, your top visa matches with likelihood scores, real cost estimates, and the exact documents to prepare first — personalized to your profile.",
+  },
+];
 
 const TIER_ORDER = ["free", "starter", "plus", "premium"];
 
@@ -377,9 +398,19 @@ export function AIAnalysisPage({ compact = false }: { compact?: boolean }) {
       {/* ADVISOR NOTE — shown after challenges for free users, before paywall */}
       {!isPremium && upsellPlans.length > 0 && (
         <Animate animation="fade-up" delay={650} duration={600}>
-          <div className="mt-8 rounded-2xl border border-accent/15 bg-accent/[0.04] p-6 md:p-7">
-            <p className="text-xs font-medium uppercase tracking-[0.08em] text-accent">Advisor note</p>
-            <p className="mt-3 text-base leading-relaxed text-ink">{ADVISOR_MESSAGE}</p>
+          <div className="mt-8 rounded-2xl border border-accent/15 bg-accent/[0.04] p-6 md:p-8">
+            <p className="text-xs font-semibold uppercase tracking-[0.1em] text-accent">Advisor note</p>
+            <div className="mt-5 space-y-5">
+              {ADVISOR_SECTIONS.map((s) => (
+                <div key={s.title} className="flex gap-4">
+                  <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-accent/10 text-lg">{s.icon}</span>
+                  <div>
+                    <p className="text-sm font-semibold text-ink">{s.title}</p>
+                    <p className="mt-1 text-sm leading-relaxed text-muted">{s.body}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         </Animate>
       )}
@@ -485,17 +516,17 @@ export function AIAnalysisPage({ compact = false }: { compact?: boolean }) {
             </div>
 
             {/* Feature preview — real sample content so users see the actual value */}
-            <div className="mt-8 grid gap-4 md:grid-cols-2">
+            <div className="mt-8 grid gap-4">
               {/* Roadmap */}
-              <div className="relative overflow-hidden rounded-2xl border border-accent/15 bg-white/70 p-5">
-                <div className="flex items-start gap-3">
+              <div className="relative overflow-hidden rounded-2xl border border-accent/15 bg-white/70 p-5 md:flex md:gap-8">
+                <div className="flex items-start gap-3 md:w-48 md:shrink-0 md:flex-col md:gap-2">
                   <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-accent/10 text-xl">🗺️</span>
-                  <div className="flex-1">
+                  <div>
                     <p className="text-sm font-semibold text-ink">Step-by-step roadmap</p>
                     <p className="mt-0.5 text-xs text-muted">Every action in order, tailored to your profile.</p>
                   </div>
                 </div>
-                <div className="mt-4 space-y-2.5">
+                <div className="mt-4 flex-1 space-y-2.5 md:mt-0">
                   {[
                     { n: 1, title: "Collect evidence & references", sub: "Publications, awards, letters, salary records." },
                     { n: 2, title: "Prepare petition package", sub: "Draft brief, exhibit index, supporting docs." },
@@ -509,100 +540,107 @@ export function AIAnalysisPage({ compact = false }: { compact?: boolean }) {
                       </div>
                     </div>
                   ))}
+                  <p className="border-t border-line/60 pt-2.5 text-[10px] italic leading-snug text-muted/80">
+                    Sample — your actual roadmap is personalized to your visa and profile.
+                  </p>
                 </div>
-                <p className="mt-3 border-t border-line/60 pt-2.5 text-[10px] italic leading-snug text-muted/80">
-                  Sample — your actual roadmap is personalized to your visa and profile.
-                </p>
               </div>
 
               {/* Cost */}
-              <div className="relative overflow-hidden rounded-2xl border border-accent/15 bg-white/70 p-5">
-                <div className="flex items-start gap-3">
+              <div className="relative overflow-hidden rounded-2xl border border-accent/15 bg-white/70 p-5 md:flex md:gap-8">
+                <div className="flex items-start gap-3 md:w-48 md:shrink-0 md:flex-col md:gap-2">
                   <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-accent/10 text-xl">💵</span>
-                  <div className="flex-1">
+                  <div>
                     <p className="text-sm font-semibold text-ink">Cost estimate</p>
                     <p className="mt-0.5 text-xs text-muted">Filing, legal, medical, and other fees.</p>
                   </div>
                 </div>
-                <div className="mt-4 grid grid-cols-2 gap-3">
-                  {[
-                    { label: "Filing", val: "$715" },
-                    { label: "Legal", val: "$4,500" },
-                    { label: "Medical", val: "$350" },
-                    { label: "Other", val: "$420" },
-                  ].map(({ label, val }) => (
-                    <div key={label}>
-                      <p className="text-[10px] uppercase tracking-wide text-muted">{label}</p>
-                      <p className="mt-1 text-sm font-semibold text-ink">{val}</p>
-                    </div>
-                  ))}
+                <div className="mt-4 flex-1 md:mt-0">
+                  <div className="grid grid-cols-4 gap-3">
+                    {[
+                      { label: "Filing", val: "$715" },
+                      { label: "Legal", val: "$4,500" },
+                      { label: "Medical", val: "$350" },
+                      { label: "Other", val: "$420" },
+                    ].map(({ label, val }) => (
+                      <div key={label} className="rounded-xl bg-ink/[0.03] p-3">
+                        <p className="text-[10px] uppercase tracking-wide text-muted">{label}</p>
+                        <p className="mt-1 text-sm font-semibold text-ink">{val}</p>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="mt-3 flex items-baseline justify-between border-t border-line pt-3">
+                    <p className="text-xs text-muted">Total estimated range</p>
+                    <p className="text-lg font-semibold text-accent">$5,900 – $8,200</p>
+                  </div>
+                  <p className="mt-1 text-[10px] italic leading-snug text-muted/80">
+                    Sample — your real estimate reflects your visa, attorney region, and dependents.
+                  </p>
                 </div>
-                <div className="mt-4 border-t border-line pt-3">
-                  <p className="text-[10px] uppercase tracking-wide text-muted">Total range</p>
-                  <p className="mt-1 text-lg font-semibold text-accent">$5,900 – $8,200</p>
-                </div>
-                <p className="mt-3 text-[10px] italic leading-snug text-muted/80">
-                  Sample — your real estimate reflects your visa, attorney region, and dependents.
-                </p>
               </div>
 
               {/* Timeline */}
-              <div className="relative overflow-hidden rounded-2xl border border-accent/15 bg-white/70 p-5">
-                <div className="flex items-start gap-3">
+              <div className="relative overflow-hidden rounded-2xl border border-accent/15 bg-white/70 p-5 md:flex md:gap-8">
+                <div className="flex items-start gap-3 md:w-48 md:shrink-0 md:flex-col md:gap-2">
                   <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-accent/10 text-xl">⏱️</span>
-                  <div className="flex-1">
+                  <div>
                     <p className="text-sm font-semibold text-ink">Timeline estimate</p>
                     <p className="mt-0.5 text-xs text-muted">How long each stage takes, realistically.</p>
                   </div>
                 </div>
-                <div className="mt-4 space-y-2.5">
+                <div className="mt-4 flex-1 space-y-3 md:mt-0">
                   {[
-                    { stage: "Prep", width: "30%", months: "2–3 mo" },
-                    { stage: "Filing", width: "55%", months: "4–6 mo" },
-                    { stage: "Decision", width: "85%", months: "6–9 mo" },
+                    { stage: "Preparation", width: "30%", months: "2–3 months" },
+                    { stage: "Filing", width: "55%", months: "4–6 months" },
+                    { stage: "Decision", width: "85%", months: "6–9 months" },
                   ].map(({ stage, width, months }) => (
-                    <div key={stage} className="flex items-center gap-3">
-                      <span className="w-20 text-[11px] font-medium text-ink">{stage}</span>
-                      <div className="h-2 flex-1 overflow-hidden rounded-full bg-ink/5">
-                        <div className="h-full bg-accent/70" style={{ width }} />
+                    <div key={stage}>
+                      <div className="mb-1 flex justify-between">
+                        <span className="text-xs font-medium text-ink">{stage}</span>
+                        <span className="text-xs text-muted">{months}</span>
                       </div>
-                      <span className="w-16 text-right text-[10px] font-medium text-muted">{months}</span>
+                      <div className="h-2 w-full overflow-hidden rounded-full bg-ink/5">
+                        <div className="h-full rounded-full bg-accent/70" style={{ width }} />
+                      </div>
                     </div>
                   ))}
+                  <p className="border-t border-line/60 pt-2.5 text-[10px] italic leading-snug text-muted/80">
+                    Sample — actual timing depends on processing queues and your specific path.
+                  </p>
                 </div>
-                <p className="mt-3 border-t border-line/60 pt-2.5 text-[10px] italic leading-snug text-muted/80">
-                  Sample — actual timing depends on processing queues and your specific path.
-                </p>
               </div>
 
               {/* Documents */}
-              <div className="relative overflow-hidden rounded-2xl border border-accent/15 bg-white/70 p-5">
-                <div className="flex items-start gap-3">
+              <div className="relative overflow-hidden rounded-2xl border border-accent/15 bg-white/70 p-5 md:flex md:gap-8">
+                <div className="flex items-start gap-3 md:w-48 md:shrink-0 md:flex-col md:gap-2">
                   <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-accent/10 text-xl">📄</span>
-                  <div className="flex-1">
+                  <div>
                     <p className="text-sm font-semibold text-ink">Document checklist</p>
                     <p className="mt-0.5 text-xs text-muted">Exactly what to prepare — and what can wait.</p>
                   </div>
                 </div>
-                <div className="mt-4 space-y-2">
-                  {[
-                    { doc: "Passport (6+ months validity)", required: true },
-                    { doc: "Degree & transcripts (translated)", required: true },
-                    { doc: "Employment letters & pay stubs", required: true },
-                    { doc: "Reference letters (3–5)", required: false },
-                    { doc: "Medical examination (I-693)", required: true },
-                  ].map(({ doc, required }) => (
-                    <div key={doc} className="flex items-center gap-2.5">
-                      <span className={cn("flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10px] font-bold", required ? "bg-accent/10 text-accent" : "bg-ink/5 text-muted")}>
-                        {required ? "✓" : "–"}
-                      </span>
-                      <p className="text-xs leading-tight text-ink/80">{doc}</p>
-                    </div>
-                  ))}
+                <div className="mt-4 flex-1 md:mt-0">
+                  <div className="grid grid-cols-1 gap-1.5 sm:grid-cols-2">
+                    {[
+                      { doc: "Passport (6+ months validity)", required: true },
+                      { doc: "Degree & transcripts (translated)", required: true },
+                      { doc: "Employment letters & pay stubs", required: true },
+                      { doc: "Reference letters (3–5)", required: false },
+                      { doc: "Medical examination (I-693)", required: true },
+                      { doc: "Financial statements", required: false },
+                    ].map(({ doc, required }) => (
+                      <div key={doc} className="flex items-center gap-2.5 rounded-lg bg-ink/[0.02] px-3 py-2">
+                        <span className={cn("flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10px] font-bold", required ? "bg-accent/10 text-accent" : "bg-ink/5 text-muted")}>
+                          {required ? "✓" : "–"}
+                        </span>
+                        <p className="text-xs leading-tight text-ink/80">{doc}</p>
+                      </div>
+                    ))}
+                  </div>
+                  <p className="mt-3 border-t border-line/60 pt-2.5 text-[10px] italic leading-snug text-muted/80">
+                    Sample — full list is tailored to the visa you pursue.
+                  </p>
                 </div>
-                <p className="mt-3 border-t border-line/60 pt-2.5 text-[10px] italic leading-snug text-muted/80">
-                  Sample — full list is tailored to the visa you pursue.
-                </p>
               </div>
             </div>
 
