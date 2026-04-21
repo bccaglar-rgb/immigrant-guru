@@ -26,7 +26,6 @@ jobs:
           host: ${{ secrets.DROPLET_IP }}
           username: root
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          fingerprint: ${{ secrets.DROPLET_SSH_FINGERPRINT }}
           script_stop: true
           command_timeout: 20m
           script: |
