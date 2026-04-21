@@ -19,6 +19,18 @@ export type VisaMatch = {
   requires_employer: boolean;
 };
 
+export type CountryVisaOption = {
+  visa_type: string;
+  country: string;
+  category: string;
+  description: string;
+  requires_employer: boolean;
+  eligible: boolean;
+  match_score: number | null;
+  match_level: "high" | "medium" | "low" | null;
+  issues: string[];
+};
+
 export type Recommendation = {
   visa_type: string;
   country: string;
@@ -57,6 +69,7 @@ export type DocumentItem = {
 export type ProfileAnalysisResult = {
   profile_summary: ProfileSummary;
   visa_matches: VisaMatch[];
+  all_country_visas: CountryVisaOption[];
   recommendation: Recommendation | null;
   challenges: Challenge[];
   next_step: string;

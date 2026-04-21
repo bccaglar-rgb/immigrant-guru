@@ -151,6 +151,32 @@ _DV_INELIGIBLE_COUNTRIES = {
     "bangladesh", "nigeria",
 }
 
+# Map common aliases/short forms to the canonical country name used in _VISA_PATHS.
+_COUNTRY_ALIASES: dict[str, str] = {
+    "us": "united states", "u.s.": "united states", "u.s": "united states",
+    "usa": "united states", "u.s.a.": "united states", "u.s.a": "united states",
+    "america": "united states", "united states of america": "united states",
+    "united states": "united states",
+    "uk": "united kingdom", "u.k.": "united kingdom", "u.k": "united kingdom",
+    "britain": "united kingdom", "great britain": "united kingdom",
+    "england": "united kingdom", "united kingdom": "united kingdom",
+    "canada": "canada", "ca": "canada",
+    "germany": "germany", "deutschland": "germany", "de": "germany",
+}
+
+
+def _normalize_country(value: str | None) -> str:
+    if not value:
+        return ""
+    key = value.strip().lower()
+    return _COUNTRY_ALIASES.get(key, key)
+
+
+def _country_matches(target: str, visa_country: str) -> bool:
+    if not target:
+        return True
+    return _normalize_country(target) == _normalize_country(visa_country)
+
 
 def _education_meets(user_level: str | None, required: str | None) -> bool:
     if required is None:
@@ -160,15 +186,43 @@ def _education_meets(user_level: str | None, required: str | None) -> bool:
     return _EDUCATION_RANK.get(user_level, 0) >= _EDUCATION_RANK.get(required, 0)
 
 
+def _eligibility_issues(profile: UserProfile, visa: dict) -> list[str]:
+    """Return human-readable issues that would disqualify or weaken the match."""
+    issues: list[str] = []
+
+    req_edu = visa.get("min_education")
+    if req_edu and not _education_meets(profile.education_level, req_edu):
+        labels = {
+            "high_school": "high school diploma",
+            "bachelor": "bachelor's degree",
+            "master": "master's degree",
+            "doctorate": "doctorate",
+        }
+        issues.append(f"Requires {labels.get(req_edu, req_edu)} or higher")
+
+    exp = profile.years_of_experience or 0
+    min_exp = visa.get("min_experience", 0)
+    if min_exp and exp < min_exp:
+        issues.append(f"Requires {min_exp}+ years of experience (you have {exp})")
+
+    capital = float(profile.available_capital or 0)
+    min_cap = visa.get("min_capital", 0) or 0
+    if min_cap > 0 and capital < min_cap:
+        issues.append(f"Requires ${min_cap:,.0f}+ in available capital")
+
+    if visa["visa_type"] == "DV Lottery":
+        nat = (profile.nationality or "").strip().lower()
+        if nat in _DV_INELIGIBLE_COUNTRIES:
+            issues.append(f"{profile.nationality} is not eligible for DV Lottery this year")
+
+    if visa.get("requires_employer"):
+        issues.append("Requires employer sponsorship / job offer")
+
+    return issues
+
+
 def _score_visa(profile: UserProfile, visa: dict) -> dict | None:
-    """Return a match dict or None if disqualified."""
-
-    target = (profile.target_country or "").strip().lower()
-    visa_country = visa["country"].lower()
-
-    # Filter by target country if user specified one
-    if target and visa_country not in target and target not in visa_country:
-        return None
+    """Return a match dict or None if hard-disqualified."""
 
     score = 50  # base
     user_rank = _EDUCATION_RANK.get(profile.education_level or "", 0)
@@ -333,17 +387,52 @@ def analyze_profile(profile: UserProfile) -> dict:
     """Run deterministic profile analysis and return structured result."""
 
     summary = _build_profile_summary(profile)
+    target = (profile.target_country or "").strip()
 
-    # Score all visas
+    # Step 1: filter visa pool by user's target country (if any).
+    country_pool = [v for v in _VISA_PATHS if _country_matches(target, v["country"])]
+    # Fallback: if the target country is set but we have no visas for it in the
+    # static dataset, surface the full global list instead of an empty screen.
+    if target and not country_pool:
+        country_pool = list(_VISA_PATHS)
+
+    # Step 2: score eligible visas from that pool.
     matches = []
-    for visa in _VISA_PATHS:
+    for visa in country_pool:
         result = _score_visa(profile, visa)
         if result:
             matches.append(result)
-
-    # Sort by score descending, take top 3
     matches.sort(key=lambda m: m["match_score"], reverse=True)
-    top_matches = matches[:3]
+    top_matches = matches
+
+    # Step 3: build the full "all options for this country" list — includes
+    # visas the user does not yet qualify for, each annotated with issues so
+    # the UI can show why it's out of reach and what to fix.
+    all_country_visas = []
+    for visa in country_pool:
+        issues = _eligibility_issues(profile, visa)
+        scored = _score_visa(profile, visa)
+        all_country_visas.append({
+            "visa_type": visa["visa_type"],
+            "country": visa["country"],
+            "category": visa["category"],
+            "description": visa["description"],
+            "requires_employer": visa["requires_employer"],
+            "eligible": scored is not None and not any(
+                i.startswith("Requires $") for i in issues
+            ),
+            "match_score": scored["match_score"] if scored else None,
+            "match_level": scored["match_level"] if scored else None,
+            "issues": issues,
+        })
+    # Eligible first, then by score desc; ineligible at the bottom alphabetical.
+    all_country_visas.sort(
+        key=lambda v: (
+            0 if v["eligible"] else 1,
+            -(v["match_score"] or 0),
+            v["visa_type"],
+        )
+    )
 
     # Build recommendation
     recommendation = None
@@ -372,6 +461,7 @@ def analyze_profile(profile: UserProfile) -> dict:
     return {
         "profile_summary": summary,
         "visa_matches": top_matches,
+        "all_country_visas": all_country_visas,
         "recommendation": recommendation,
         "challenges": challenges,
         "next_step": "Create your case to start this path. We'll guide you through documents, timeline, and strategy.",

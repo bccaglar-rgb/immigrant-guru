@@ -117,6 +117,7 @@ export function AIAnalysisPage({ compact = false }: { compact?: boolean }) {
   const [error, setError] = useState("");
   const [upgrading, setUpgrading] = useState<string | null>(null);
   const [currentPlan, setCurrentPlan] = useState<string>("free");
+  const [showAllVisas, setShowAllVisas] = useState(false);
 
   const loadAnalysis = useCallback(async () => {
     if (!session) return;
@@ -210,6 +211,7 @@ export function AIAnalysisPage({ compact = false }: { compact?: boolean }) {
 
   const isPremium = result.is_premium === true;
   const { profile_summary, visa_matches, recommendation, challenges } = result;
+  const allCountryVisas = result.all_country_visas ?? [];
   const currentTierIdx = TIER_ORDER.indexOf(currentPlan);
   // If user canceled a checkout, treat the canceled plan as the minimum already "seen"
   const canceledTierIdx = TIER_ORDER.indexOf(canceledPlan);
@@ -332,6 +334,91 @@ export function AIAnalysisPage({ compact = false }: { compact?: boolean }) {
           </>
         );
       })()}
+
+      {/* ALL VISA OPTIONS FOR TARGET COUNTRY */}
+      {allCountryVisas.length > 0 && profile_summary.target_country && (
+        <Animate animation="fade-up" delay={420} duration={600}>
+          <div className="mt-8">
+            <button
+              type="button"
+              onClick={() => setShowAllVisas((v) => !v)}
+              className="flex w-full items-center justify-between gap-3 rounded-2xl border border-accent/15 bg-accent/[0.04] p-4 text-left transition-all hover:border-accent/30 hover:bg-accent/[0.07] md:p-5"
+              aria-expanded={showAllVisas}
+            >
+              <div className="min-w-0">
+                <p className="text-xs font-semibold uppercase tracking-[0.1em] text-accent">Explore every path</p>
+                <p className="mt-1 text-sm font-semibold text-ink md:text-base">
+                  See all {allCountryVisas.length} visa options for {profile_summary.target_country}
+                </p>
+                <p className="mt-0.5 text-xs leading-snug text-muted">
+                  Including paths you don&apos;t qualify for yet — and what to fix.
+                </p>
+              </div>
+              <span
+                className={cn(
+                  "flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-accent text-white transition-transform duration-300",
+                  showAllVisas && "rotate-180",
+                )}
+                aria-hidden="true"
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="6 9 12 15 18 9" />
+                </svg>
+              </span>
+            </button>
+
+            {showAllVisas && (
+              <div className="mt-3 space-y-2.5">
+                {allCountryVisas.map((opt) => {
+                  const levelClr = opt.eligible
+                    ? (opt.match_level && MATCH_COLORS[opt.match_level]) || MATCH_COLORS.medium
+                    : null;
+                  return (
+                    <div
+                      key={opt.visa_type}
+                      className={cn(
+                        "rounded-xl border bg-white/70 p-4 transition-colors",
+                        opt.eligible ? "border-accent/15" : "border-line/70 bg-ink/[0.02]",
+                      )}
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0 flex-1">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <h4 className="text-sm font-bold text-ink">{opt.visa_type}</h4>
+                            {opt.eligible && levelClr && opt.match_score !== null ? (
+                              <span className={cn("rounded-full px-2 py-0.5 text-[10px] font-bold", levelClr.badge)}>
+                                {opt.match_score}% match
+                              </span>
+                            ) : (
+                              <span className="rounded-full bg-ink/5 px-2 py-0.5 text-[10px] font-semibold text-muted">
+                                Not eligible yet
+                              </span>
+                            )}
+                            <span className="text-[10px] font-medium uppercase tracking-wide text-muted/70">
+                              {opt.category}
+                            </span>
+                          </div>
+                          <p className="mt-1.5 text-xs leading-relaxed text-ink/70">{opt.description}</p>
+                          {opt.issues.length > 0 && (
+                            <ul className="mt-2 space-y-1">
+                              {opt.issues.map((issue) => (
+                                <li key={issue} className="flex items-start gap-1.5 text-[11px] leading-snug text-muted">
+                                  <span className="mt-0.5 text-amber">•</span>
+                                  <span>{issue}</span>
+                                </li>
+                              ))}
+                            </ul>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </Animate>
+      )}
 
       {/* RECOMMENDATION */}
       {recommendation && (
