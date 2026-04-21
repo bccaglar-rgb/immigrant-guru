@@ -29,6 +29,14 @@ export function generateStaticParams() {
   return [{ locale: routing.defaultLocale }];
 }
 
+// Force dynamic rendering for every descendant route. Pre-migration, most
+// routes were implicitly SSR (due to client-only auth hooks reading
+// localStorage); moving them under [locale] made them SSG-eligible and the
+// prerender crashed because `useAuthSession` returns null in the server
+// renderer. SEO per-locale URLs still work; we just give up static HTML for
+// now. Phase 2 can selectively re-enable prerender for truly public pages.
+export const dynamic = "force-dynamic";
+
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
