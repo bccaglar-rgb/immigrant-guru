@@ -82,25 +82,6 @@ const PLANS = [
 
 const ADVISOR_MESSAGE = "You may not be in your strongest position yet — and that is okay. Many immigration journeys begin with a profile that needs improvement in a few key areas. What matters most is knowing which options are still realistic, which weaknesses can be addressed, and what steps are worth taking next. Unlock your roadmap to see where to focus first.";
 
-const LOCKED_ITEMS = [
-  {
-    title: "Your personalized roadmap",
-    description: "A practical step-by-step path built around your specific profile",
-  },
-  {
-    title: "Expected costs",
-    description: "Understand filing, legal, and relocation costs before you commit",
-  },
-  {
-    title: "Document checklist",
-    description: "Know exactly what to prepare — and what can wait",
-  },
-  {
-    title: "Risk review",
-    description: "Spot weak points early and avoid wasting time on the wrong path",
-  },
-];
-
 const TIER_ORDER = ["free", "starter", "plus", "premium"];
 
 export function AIAnalysisPage({ compact = false }: { compact?: boolean }) {
@@ -450,35 +431,144 @@ export function AIAnalysisPage({ compact = false }: { compact?: boolean }) {
       {/* ============ PAYWALL (only for non-premium / upsell-eligible users) ============ */}
       {!isPremium && upsellPlans.length > 0 && (
         <Animate animation="scale-in" delay={700} duration={800}>
-          <div className="mt-10">
-            {/* Locked benefit mini-cards */}
-            <p className="text-xs font-medium uppercase tracking-[0.08em] text-muted">
-              Your preview shows the direction. Your full plan shows what to do next.
-            </p>
-            <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
-              {LOCKED_ITEMS.map((item) => (
-                <div key={item.title} className="flex items-start gap-3 rounded-xl border border-line bg-white/50 p-4">
-                  <span className="mt-0.5 text-base leading-none">🔒</span>
-                  <div>
-                    <p className="text-sm font-semibold text-ink">{item.title}</p>
-                    <p className="mt-0.5 text-xs leading-relaxed text-muted">{item.description}</p>
-                  </div>
+          <div className="mt-12">
+            {/* Canceled-checkout acknowledgment */}
+            {canceled && (
+              <div className="mb-6 flex items-start gap-3 rounded-2xl border border-amber/25 bg-amber/[0.06] p-4 md:p-5">
+                <span className="mt-0.5 text-lg leading-none">ℹ️</span>
+                <div className="flex-1">
+                  <p className="text-sm font-semibold text-ink">No charge — your payment was canceled.</p>
+                  <p className="mt-1 text-sm text-muted">
+                    You can pick up where you left off whenever you are ready.
+                  </p>
                 </div>
-              ))}
-            </div>
+              </div>
+            )}
 
-            {/* Upsell bridge */}
-            <div className="mt-10 text-center">
-              <h2 className="text-2xl font-semibold tracking-tight text-ink">
-                Turn this result into a real plan
+            {/* Headline */}
+            <div className="text-center">
+              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-accent">What you unlock</p>
+              <h2 className="mt-2 text-2xl font-semibold tracking-tight text-ink md:text-3xl">
+                Your full immigration plan — no matter your match score
               </h2>
-              <p className="mx-auto mt-3 max-w-lg text-base leading-relaxed text-muted">
-                See the best path to focus on, the steps that matter most, and what to improve next.
+              <p className="mx-auto mt-3 max-w-xl text-base leading-relaxed text-muted">
+                Even when options look limited today, you get a concrete roadmap, real costs, realistic timelines, and the exact documents to prepare.
               </p>
             </div>
 
+            {/* Feature preview cards (blurred sample content) */}
+            <div className="mt-8 grid gap-4 md:grid-cols-2">
+              {/* Roadmap */}
+              <div className="relative overflow-hidden rounded-2xl border border-accent/15 bg-white/70 p-5">
+                <div className="flex items-start gap-3">
+                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-accent/10 text-xl">🗺️</span>
+                  <div className="flex-1">
+                    <p className="text-sm font-semibold text-ink">Step-by-step roadmap</p>
+                    <p className="mt-0.5 text-xs text-muted">Every action in order, tailored to your profile.</p>
+                  </div>
+                </div>
+                <div className="mt-4 space-y-2.5">
+                  {[1, 2, 3].map((i) => (
+                    <div key={i} className="flex items-center gap-2.5">
+                      <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-accent/10 text-[11px] font-bold text-accent">{i}</div>
+                      <div className="flex-1 space-y-1">
+                        <div className="h-2 w-4/5 rounded-full bg-ink/12 blur-[2.5px]" />
+                        <div className="h-1.5 w-3/5 rounded-full bg-ink/8 blur-[2.5px]" />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Cost */}
+              <div className="relative overflow-hidden rounded-2xl border border-accent/15 bg-white/70 p-5">
+                <div className="flex items-start gap-3">
+                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-accent/10 text-xl">💵</span>
+                  <div className="flex-1">
+                    <p className="text-sm font-semibold text-ink">Cost estimate</p>
+                    <p className="mt-0.5 text-xs text-muted">Filing, legal, medical, and other fees.</p>
+                  </div>
+                </div>
+                <div className="mt-4 grid grid-cols-2 gap-3">
+                  {["Filing", "Legal", "Medical", "Other"].map((label) => (
+                    <div key={label}>
+                      <p className="text-[10px] uppercase tracking-wide text-muted">{label}</p>
+                      <div className="mt-1 h-4 w-16 rounded bg-ink/12 blur-[3px]" />
+                    </div>
+                  ))}
+                </div>
+                <div className="mt-4 border-t border-line pt-3">
+                  <p className="text-[10px] uppercase tracking-wide text-muted">Total range</p>
+                  <div className="mt-1 h-5 w-32 rounded bg-accent/25 blur-[3px]" />
+                </div>
+              </div>
+
+              {/* Timeline */}
+              <div className="relative overflow-hidden rounded-2xl border border-accent/15 bg-white/70 p-5">
+                <div className="flex items-start gap-3">
+                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-accent/10 text-xl">⏱️</span>
+                  <div className="flex-1">
+                    <p className="text-sm font-semibold text-ink">Timeline estimate</p>
+                    <p className="mt-0.5 text-xs text-muted">How long each stage takes, realistically.</p>
+                  </div>
+                </div>
+                <div className="mt-4 space-y-2.5">
+                  {[
+                    { stage: "Prep", width: "30%" },
+                    { stage: "Filing", width: "55%" },
+                    { stage: "Decision", width: "80%" },
+                  ].map(({ stage, width }) => (
+                    <div key={stage} className="flex items-center gap-3">
+                      <span className="w-20 text-[11px] font-medium text-ink">{stage}</span>
+                      <div className="h-2 flex-1 overflow-hidden rounded-full bg-ink/5">
+                        <div className="h-full bg-accent/60 blur-[2px]" style={{ width }} />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Documents */}
+              <div className="relative overflow-hidden rounded-2xl border border-accent/15 bg-white/70 p-5">
+                <div className="flex items-start gap-3">
+                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-accent/10 text-xl">📄</span>
+                  <div className="flex-1">
+                    <p className="text-sm font-semibold text-ink">Document checklist</p>
+                    <p className="mt-0.5 text-xs text-muted">Exactly what to prepare — and what can wait.</p>
+                  </div>
+                </div>
+                <div className="mt-4 space-y-2">
+                  {[true, true, false, true].map((required, i) => (
+                    <div key={i} className="flex items-center gap-2.5">
+                      <span className={cn("flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10px] font-bold", required ? "bg-accent/10 text-accent" : "bg-ink/5 text-muted")}>
+                        {required ? "✓" : "–"}
+                      </span>
+                      <div className="h-2 w-3/4 rounded-full bg-ink/12 blur-[2.5px]" />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Reassurance for low-match users */}
+            <div className="mt-8 flex items-start gap-3 rounded-2xl border border-green/20 bg-green/[0.04] p-5 md:p-6">
+              <span className="mt-0.5 text-lg leading-none">💡</span>
+              <div className="flex-1">
+                <p className="text-sm font-semibold text-ink">A low match does not mean the door is closed.</p>
+                <p className="mt-1.5 text-sm leading-relaxed text-ink/70">
+                  Your full plan still shows the costs, timeline, and documents for the paths available to you — plus the specific weaknesses to fix first, so you can raise your match score and try again.
+                </p>
+              </div>
+            </div>
+
+            {/* Pricing lead-in */}
+            <div className="mt-10 text-center">
+              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted">Pick your plan</p>
+              <p className="mt-2 text-lg font-semibold tracking-tight text-ink">One-time payment. Lifetime access.</p>
+            </div>
+
             {/* Pricing cards */}
-            <div className={cn("mt-8 grid gap-4", upsellPlans.length === 1 ? "max-w-md mx-auto" : upsellPlans.length === 2 ? "md:grid-cols-2 max-w-2xl mx-auto" : "md:grid-cols-3")}>
+            <div className={cn("mt-5 grid gap-4", upsellPlans.length === 1 ? "max-w-md mx-auto" : upsellPlans.length === 2 ? "md:grid-cols-2 max-w-2xl mx-auto" : "md:grid-cols-3")}>
               {upsellPlans.map((plan) => (
                 <div
                   key={plan.key}
