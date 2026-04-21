@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
 import { cn } from "@/lib/utils";
 import type { AdminUserDirectoryEntry } from "@/types/admin";
@@ -10,12 +10,20 @@ import { PLAN_COLORS, PLAN_LABELS, STATUS_COLORS, fmtDate } from "./shared";
 export function UserDetailDrawer({
   user,
   onClose,
+  onDelete,
 }: {
   user: AdminUserDirectoryEntry | null;
   onClose: () => void;
+  onDelete?: (userId: string) => Promise<void>;
 }) {
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+
   useEffect(() => {
     if (!user) return;
+    setConfirmDelete(false);
+    setDeleteError(null);
     const handler = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
     };
@@ -29,6 +37,18 @@ export function UserDetailDrawer({
   }, [user, onClose]);
 
   if (!user) return null;
+
+  const handleDelete = async () => {
+    if (!onDelete) return;
+    setIsDeleting(true);
+    setDeleteError(null);
+    try {
+      await onDelete(user.id);
+    } catch (err) {
+      setDeleteError(err instanceof Error ? err.message : "Delete failed.");
+      setIsDeleting(false);
+    }
+  };
 
   const plan = user.plan ?? "free";
   const fullName = [user.profile?.first_name, user.profile?.last_name]
@@ -56,17 +76,29 @@ export function UserDetailDrawer({
               <p className="mt-0.5 font-mono text-[10px] text-muted">{user.id}</p>
             </div>
           </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded-lg p-1.5 text-muted hover:bg-canvas hover:text-ink"
-            aria-label="Close drawer"
-          >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-              <line x1="18" y1="6" x2="6" y2="18" />
-              <line x1="6" y1="6" x2="18" y2="18" />
-            </svg>
-          </button>
+          <div className="flex items-center gap-1.5">
+            {onDelete && (
+              <button
+                type="button"
+                onClick={() => setConfirmDelete(true)}
+                className="rounded-lg px-2.5 py-1.5 text-xs font-semibold text-red hover:bg-red/5 transition-colors"
+                aria-label="Delete user"
+              >
+                Delete
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={onClose}
+              className="rounded-lg p-1.5 text-muted hover:bg-canvas hover:text-ink"
+              aria-label="Close drawer"
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18" />
+                <line x1="6" y1="6" x2="18" y2="18" />
+              </svg>
+            </button>
+          </div>
         </div>
 
         <div className="flex-1 space-y-6 px-6 py-6">
@@ -173,6 +205,36 @@ export function UserDetailDrawer({
             </div>
           </section>
         </div>
+
+        {confirmDelete && (
+          <div className="border-t border-line bg-red/5 px-6 py-5">
+            <p className="text-sm font-semibold text-red">Delete this account?</p>
+            <p className="mt-1 text-xs text-muted">
+              This permanently removes <span className="font-medium text-ink">{user.email}</span> and all associated data. This cannot be undone.
+            </p>
+            {deleteError && (
+              <p className="mt-2 text-xs text-red">{deleteError}</p>
+            )}
+            <div className="mt-4 flex gap-2">
+              <button
+                type="button"
+                onClick={handleDelete}
+                disabled={isDeleting}
+                className="rounded-lg bg-red px-4 py-2 text-xs font-bold text-white hover:bg-red/80 disabled:opacity-50 transition-colors"
+              >
+                {isDeleting ? "Deleting…" : "Yes, delete"}
+              </button>
+              <button
+                type="button"
+                onClick={() => setConfirmDelete(false)}
+                disabled={isDeleting}
+                className="rounded-lg border border-line bg-white px-4 py-2 text-xs font-semibold text-ink hover:bg-canvas transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        )}
       </aside>
     </div>
   );

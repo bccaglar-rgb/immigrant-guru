@@ -7,6 +7,7 @@ import { useAuthSession } from "@/hooks/use-auth-session";
 import {
   createKnowledgeChunk,
   createKnowledgeSource,
+  deleteUser,
   getAdminStats,
   getAiFeedback,
   getDatabaseCheck,
@@ -188,7 +189,7 @@ function OverviewTab({ stats, db, version, users }: { stats: AdminStats | null; 
 
 // ─── Users Tab ────────────────────────────────────────────────────────────────
 
-function UsersTab({ users, accessToken, onUserUpdated }: { users: AdminUserDirectoryEntry[]; accessToken: string; onUserUpdated: (u: AdminUserDirectoryEntry) => void }) {
+function UsersTab({ users, accessToken, onUserUpdated, onUserDeleted }: { users: AdminUserDirectoryEntry[]; accessToken: string; onUserUpdated: (u: AdminUserDirectoryEntry) => void; onUserDeleted: (userId: string) => void }) {
   const [search, setSearch] = useState("");
   const [planFilter, setPlanFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
@@ -233,6 +234,13 @@ function UsersTab({ users, accessToken, onUserUpdated }: { users: AdminUserDirec
     setUpdating(null);
     if (!result.ok) { setError(result.errorMessage); return; }
     onUserUpdated(result.data);
+  };
+
+  const handleDelete = async (userId: string) => {
+    const result = await deleteUser(accessToken, userId);
+    if (!result.ok) throw new Error(result.errorMessage);
+    setSelected(null);
+    onUserDeleted(userId);
   };
 
   return (
@@ -346,7 +354,7 @@ function UsersTab({ users, accessToken, onUserUpdated }: { users: AdminUserDirec
 
       <p className="text-xs text-muted">{filtered.length} of {users.length} users</p>
 
-      <UserDetailDrawer user={selected} onClose={() => setSelected(null)} />
+      <UserDetailDrawer user={selected} onClose={() => setSelected(null)} onDelete={handleDelete} />
     </div>
   );
 }
@@ -703,6 +711,10 @@ function DashboardAdminCore({ accessToken, userEmail, onSignOut }: AdminCoreProp
     setUsers((prev) => prev.map((u) => u.id === updated.id ? updated : u));
   }, []);
 
+  const handleUserDeleted = useCallback((userId: string) => {
+    setUsers((prev) => prev.filter((u) => u.id !== userId));
+  }, []);
+
   const navGroups: {
     heading: string;
     items: { value: Tab; label: string; icon: typeof IconHome; count?: number }[];
@@ -884,7 +896,7 @@ function DashboardAdminCore({ accessToken, userEmail, onSignOut }: AdminCoreProp
             <>
               {tab === "overview" && <OverviewTab stats={stats} db={db} version={version} users={users} />}
               {tab === "revenue" && <RevenueTab accessToken={accessToken} />}
-              {tab === "users" && <UsersTab users={users} accessToken={accessToken} onUserUpdated={handleUserUpdated} />}
+              {tab === "users" && <UsersTab users={users} accessToken={accessToken} onUserUpdated={handleUserUpdated} onUserDeleted={handleUserDeleted} />}
               {tab === "cases" && <CasesTab accessToken={accessToken} />}
               {tab === "knowledge" && <KnowledgeTab accessToken={accessToken} canAdmin={canAdmin} />}
               {tab === "feedback" && <FeedbackTab accessToken={accessToken} />}

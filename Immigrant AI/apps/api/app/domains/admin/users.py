@@ -105,6 +105,25 @@ async def get_admin_stats(
     )
 
 
+@router.delete("/admin/users/{user_id}", status_code=status.HTTP_204_NO_CONTENT, summary="Delete user")
+async def delete_user(
+    user_id: UUID,
+    admin: User = Depends(get_admin_user),
+    session: AsyncSession = Depends(get_db_session),
+) -> None:
+    if user_id == admin.id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Cannot delete your own admin account.",
+        )
+    result = await session.execute(select(User).where(User.id == user_id))
+    user = result.scalar_one_or_none()
+    if not user:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found.")
+    await session.delete(user)
+    await session.commit()
+
+
 @router.patch("/admin/users/{user_id}", response_model=UserRead, summary="Update user plan or status")
 async def update_user(
     user_id: UUID,

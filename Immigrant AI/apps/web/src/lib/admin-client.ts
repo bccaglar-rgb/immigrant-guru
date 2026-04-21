@@ -286,6 +286,21 @@ export async function updateUser(
   );
 }
 
+export async function deleteUser(
+  accessToken: string,
+  userId: string
+): Promise<ApiRequestResult<null>> {
+  const response = await apiRequest({
+    authToken: accessToken,
+    method: "DELETE",
+    path: `/admin/users/${userId}`,
+    retries: 0,
+    timeoutMs: 8000
+  });
+  if (!response.ok) return response;
+  return { ok: true, data: null, status: response.status };
+}
+
 export async function getAiFeedback(
   accessToken: string,
   limit = 20
