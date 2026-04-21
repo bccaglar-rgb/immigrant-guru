@@ -149,10 +149,15 @@ function buildRequestSignal(
 }
 
 async function parseResponseBody(response: Response): Promise<unknown> {
+  if (response.status === 204 || response.headers.get("content-length") === "0") {
+    return null;
+  }
+
   const contentType = response.headers.get("content-type") ?? "";
 
   if (contentType.includes("application/json")) {
-    return response.json();
+    const text = await response.text();
+    return text.length > 0 ? JSON.parse(text) : null;
   }
 
   const text = await response.text();
