@@ -1,11 +1,5 @@
-import type { Metadata } from "next";
-
-import { DashboardAdminPage } from "@/components/dashboard/dashboard-admin-page";
-
-export const metadata: Metadata = {
-  title: "Admin"
-};
+import { permanentRedirect } from "next/navigation";
 
 export default function AdminPage() {
-  return <DashboardAdminPage />;
+  permanentRedirect("/admin-portal");
 }
