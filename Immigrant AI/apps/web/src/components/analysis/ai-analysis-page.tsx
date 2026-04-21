@@ -235,54 +235,82 @@ export function AIAnalysisPage({ compact = false }: { compact?: boolean }) {
       </Animate>
 
 
-      {/* TOP MATCHES */}
-      {visa_matches.length > 0 && (
-        <>
-          <Animate animation="fade-up" delay={300} duration={600}>
-            <h2 className="mt-10 text-xl font-semibold tracking-tight text-ink">
-              {isPremium ? "Your best immigration paths" : "Top matches"}
-            </h2>
-          </Animate>
+      {/* MATCHES — split into primary (top 3) and alternatives (next 5) */}
+      {(() => {
+        const sorted = [...visa_matches].sort((a, b) => b.match_score - a.match_score);
+        const primary = sorted.slice(0, 3);
+        const alternatives = sorted.slice(3, 8);
 
-          <Stagger className="mt-4 space-y-3" animation="fade-up" staggerDelay={120} duration={500}>
-            {visa_matches.map((match) => {
-              const c = MATCH_COLORS[match.match_level];
-              const info = match.description ?? VISA_INFO[match.visa_type];
-              return (
-                <div key={match.visa_type} className={cn(
-                  "group relative overflow-hidden rounded-2xl border-2 bg-gradient-to-br p-5 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg",
-                  c.border, c.card
-                )}>
-                  <div className="flex items-start gap-4">
-                    {/* Score badge */}
-                    <div className={cn("flex h-16 w-16 shrink-0 flex-col items-center justify-center rounded-2xl", c.ring)}>
-                      <p className={cn("text-[1.6rem] font-black tabular-nums leading-none", c.score)}>{match.match_score}%</p>
-                      <p className="mt-0.5 text-[9px] font-bold uppercase tracking-widest text-muted/70">match</p>
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <h3 className="text-base font-bold text-ink">{match.visa_type}</h3>
-                        <span className={cn("rounded-full px-2.5 py-0.5 text-[11px] font-bold", c.badge)}>{c.label}</span>
-                      </div>
-                      <p className="mt-0.5 text-xs font-medium text-muted">{match.country}</p>
-                      {info && (
-                        <p className="mt-2 text-sm leading-relaxed text-ink/65">{info}</p>
-                      )}
-                    </div>
-                  </div>
-                  {/* Animated progress bar */}
-                  <div className="mt-4 h-1.5 w-full overflow-hidden rounded-full bg-black/[0.06]">
-                    <div
-                      className={cn("h-full rounded-full", c.bar)}
-                      style={{ width: `${Math.max(match.match_score, 3)}%`, transition: "width 1.2s ease-out" }}
-                    />
-                  </div>
+        const renderCard = (match: typeof sorted[number]) => {
+          const c = MATCH_COLORS[match.match_level];
+          const info = match.description ?? VISA_INFO[match.visa_type];
+          return (
+            <div key={match.visa_type} className={cn(
+              "group relative overflow-hidden rounded-2xl border-2 bg-gradient-to-br p-5 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg",
+              c.border, c.card
+            )}>
+              <div className="flex items-start gap-4">
+                <div className={cn("flex h-16 w-16 shrink-0 flex-col items-center justify-center rounded-2xl", c.ring)}>
+                  <p className={cn("text-[1.6rem] font-black tabular-nums leading-none", c.score)}>{match.match_score}%</p>
+                  <p className="mt-0.5 text-[9px] font-bold uppercase tracking-widest text-muted/70">match</p>
                 </div>
-              );
-            })}
-          </Stagger>
-        </>
-      )}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h3 className="text-base font-bold text-ink">{match.visa_type}</h3>
+                    <span className={cn("rounded-full px-2.5 py-0.5 text-[11px] font-bold", c.badge)}>{c.label}</span>
+                  </div>
+                  <p className="mt-0.5 text-xs font-medium text-muted">{match.country}</p>
+                  {info && (
+                    <p className="mt-2 text-sm leading-relaxed text-ink/65">{info}</p>
+                  )}
+                </div>
+              </div>
+              <div className="mt-4 h-1.5 w-full overflow-hidden rounded-full bg-black/[0.06]">
+                <div
+                  className={cn("h-full rounded-full", c.bar)}
+                  style={{ width: `${Math.max(match.match_score, 3)}%`, transition: "width 1.2s ease-out" }}
+                />
+              </div>
+            </div>
+          );
+        };
+
+        return (
+          <>
+            {primary.length > 0 && (
+              <>
+                <Animate animation="fade-up" delay={300} duration={600}>
+                  <div className="mt-10 flex items-baseline justify-between gap-3">
+                    <h2 className="text-xl font-semibold tracking-tight text-ink">
+                      {isPremium ? "Your best immigration paths" : "Your strongest paths"}
+                    </h2>
+                    <span className="text-xs font-medium text-muted">Top {primary.length} of {sorted.length}</span>
+                  </div>
+                </Animate>
+                <Stagger className="mt-4 space-y-3" animation="fade-up" staggerDelay={120} duration={500}>
+                  {primary.map(renderCard)}
+                </Stagger>
+              </>
+            )}
+
+            {alternatives.length > 0 && (
+              <>
+                <Animate animation="fade-up" delay={400} duration={600}>
+                  <div className="mt-10">
+                    <h2 className="text-xl font-semibold tracking-tight text-ink">Other paths worth considering</h2>
+                    <p className="mt-1.5 text-sm leading-relaxed text-muted">
+                      Lower match scores today, but still viable — often a small profile change (more experience, a job offer, a sponsor) can move you into a qualifying range.
+                    </p>
+                  </div>
+                </Animate>
+                <Stagger className="mt-4 space-y-3" animation="fade-up" staggerDelay={100} duration={500}>
+                  {alternatives.map(renderCard)}
+                </Stagger>
+              </>
+            )}
+          </>
+        );
+      })()}
 
       {/* RECOMMENDATION */}
       {recommendation && (
@@ -456,7 +484,7 @@ export function AIAnalysisPage({ compact = false }: { compact?: boolean }) {
               </p>
             </div>
 
-            {/* Feature preview cards (blurred sample content) */}
+            {/* Feature preview — real sample content so users see the actual value */}
             <div className="mt-8 grid gap-4 md:grid-cols-2">
               {/* Roadmap */}
               <div className="relative overflow-hidden rounded-2xl border border-accent/15 bg-white/70 p-5">
@@ -468,16 +496,23 @@ export function AIAnalysisPage({ compact = false }: { compact?: boolean }) {
                   </div>
                 </div>
                 <div className="mt-4 space-y-2.5">
-                  {[1, 2, 3].map((i) => (
-                    <div key={i} className="flex items-center gap-2.5">
-                      <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-accent/10 text-[11px] font-bold text-accent">{i}</div>
-                      <div className="flex-1 space-y-1">
-                        <div className="h-2 w-4/5 rounded-full bg-ink/12 blur-[2.5px]" />
-                        <div className="h-1.5 w-3/5 rounded-full bg-ink/8 blur-[2.5px]" />
+                  {[
+                    { n: 1, title: "Collect evidence & references", sub: "Publications, awards, letters, salary records." },
+                    { n: 2, title: "Prepare petition package", sub: "Draft brief, exhibit index, supporting docs." },
+                    { n: 3, title: "File with USCIS & track", sub: "Premium processing available for faster decision." },
+                  ].map((step) => (
+                    <div key={step.n} className="flex items-start gap-2.5">
+                      <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-accent/10 text-[11px] font-bold text-accent">{step.n}</div>
+                      <div className="flex-1">
+                        <p className="text-xs font-semibold text-ink leading-tight">{step.title}</p>
+                        <p className="mt-0.5 text-[11px] leading-snug text-muted">{step.sub}</p>
                       </div>
                     </div>
                   ))}
                 </div>
+                <p className="mt-3 border-t border-line/60 pt-2.5 text-[10px] italic leading-snug text-muted/80">
+                  Sample — your actual roadmap is personalized to your visa and profile.
+                </p>
               </div>
 
               {/* Cost */}
@@ -490,17 +525,25 @@ export function AIAnalysisPage({ compact = false }: { compact?: boolean }) {
                   </div>
                 </div>
                 <div className="mt-4 grid grid-cols-2 gap-3">
-                  {["Filing", "Legal", "Medical", "Other"].map((label) => (
+                  {[
+                    { label: "Filing", val: "$715" },
+                    { label: "Legal", val: "$4,500" },
+                    { label: "Medical", val: "$350" },
+                    { label: "Other", val: "$420" },
+                  ].map(({ label, val }) => (
                     <div key={label}>
                       <p className="text-[10px] uppercase tracking-wide text-muted">{label}</p>
-                      <div className="mt-1 h-4 w-16 rounded bg-ink/12 blur-[3px]" />
+                      <p className="mt-1 text-sm font-semibold text-ink">{val}</p>
                     </div>
                   ))}
                 </div>
                 <div className="mt-4 border-t border-line pt-3">
                   <p className="text-[10px] uppercase tracking-wide text-muted">Total range</p>
-                  <div className="mt-1 h-5 w-32 rounded bg-accent/25 blur-[3px]" />
+                  <p className="mt-1 text-lg font-semibold text-accent">$5,900 – $8,200</p>
                 </div>
+                <p className="mt-3 text-[10px] italic leading-snug text-muted/80">
+                  Sample — your real estimate reflects your visa, attorney region, and dependents.
+                </p>
               </div>
 
               {/* Timeline */}
@@ -514,18 +557,22 @@ export function AIAnalysisPage({ compact = false }: { compact?: boolean }) {
                 </div>
                 <div className="mt-4 space-y-2.5">
                   {[
-                    { stage: "Prep", width: "30%" },
-                    { stage: "Filing", width: "55%" },
-                    { stage: "Decision", width: "80%" },
-                  ].map(({ stage, width }) => (
+                    { stage: "Prep", width: "30%", months: "2–3 mo" },
+                    { stage: "Filing", width: "55%", months: "4–6 mo" },
+                    { stage: "Decision", width: "85%", months: "6–9 mo" },
+                  ].map(({ stage, width, months }) => (
                     <div key={stage} className="flex items-center gap-3">
                       <span className="w-20 text-[11px] font-medium text-ink">{stage}</span>
                       <div className="h-2 flex-1 overflow-hidden rounded-full bg-ink/5">
-                        <div className="h-full bg-accent/60 blur-[2px]" style={{ width }} />
+                        <div className="h-full bg-accent/70" style={{ width }} />
                       </div>
+                      <span className="w-16 text-right text-[10px] font-medium text-muted">{months}</span>
                     </div>
                   ))}
                 </div>
+                <p className="mt-3 border-t border-line/60 pt-2.5 text-[10px] italic leading-snug text-muted/80">
+                  Sample — actual timing depends on processing queues and your specific path.
+                </p>
               </div>
 
               {/* Documents */}
@@ -538,15 +585,24 @@ export function AIAnalysisPage({ compact = false }: { compact?: boolean }) {
                   </div>
                 </div>
                 <div className="mt-4 space-y-2">
-                  {[true, true, false, true].map((required, i) => (
-                    <div key={i} className="flex items-center gap-2.5">
+                  {[
+                    { doc: "Passport (6+ months validity)", required: true },
+                    { doc: "Degree & transcripts (translated)", required: true },
+                    { doc: "Employment letters & pay stubs", required: true },
+                    { doc: "Reference letters (3–5)", required: false },
+                    { doc: "Medical examination (I-693)", required: true },
+                  ].map(({ doc, required }) => (
+                    <div key={doc} className="flex items-center gap-2.5">
                       <span className={cn("flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10px] font-bold", required ? "bg-accent/10 text-accent" : "bg-ink/5 text-muted")}>
                         {required ? "✓" : "–"}
                       </span>
-                      <div className="h-2 w-3/4 rounded-full bg-ink/12 blur-[2.5px]" />
+                      <p className="text-xs leading-tight text-ink/80">{doc}</p>
                     </div>
                   ))}
                 </div>
+                <p className="mt-3 border-t border-line/60 pt-2.5 text-[10px] italic leading-snug text-muted/80">
+                  Sample — full list is tailored to the visa you pursue.
+                </p>
               </div>
             </div>
 

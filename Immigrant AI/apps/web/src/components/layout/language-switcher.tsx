@@ -69,17 +69,32 @@ export function LanguageSwitcher({
     LANGUAGE_OPTIONS[0];
 
   function handleSelect(code: LanguageCode) {
-    setLocale(code);
+    // Persist the choice, then hard-reload. The MutationObserver-based
+    // translator fights React reconciliation when switching in place; a fresh
+    // page load sidesteps the race entirely and the observer runs cleanly
+    // against the post-hydration DOM.
+    if (code === locale) {
+      setIsOpen(false);
+      return;
+    }
     setIsOpen(false);
+    if (typeof window === "undefined") {
+      return;
+    }
+    window.localStorage.setItem(STORAGE_KEY, code);
+    // Do NOT call setLocale — a React re-render would re-run the observer
+    // effect against the already-translated DOM and crash before reload fires.
+    window.location.reload();
   }
 
   return (
-    <div className="relative" ref={containerRef}>
+    <div className="relative" ref={containerRef} data-no-translate="true">
       <button
         type="button"
         aria-expanded={isOpen}
         aria-haspopup="menu"
         aria-label="Select language"
+        translate="no"
         className={cn(
           "inline-flex items-center justify-center rounded-full border border-line bg-white/85 text-ink shadow-soft transition-all duration-200 hover:border-accent/35 hover:bg-white",
           compact ? "h-10 min-w-10 px-3" : "h-11 min-w-11 px-3.5"

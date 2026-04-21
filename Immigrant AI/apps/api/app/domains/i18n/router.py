@@ -7,6 +7,7 @@ so the same string is only translated once for the whole user base.
 """
 
 import asyncio
+import hashlib
 import logging
 from typing import Literal
 
@@ -31,6 +32,12 @@ SUPPORTED_LANGUAGES = {
 MAX_BATCH_SIZE = 200
 MAX_TEXT_LENGTH = 500
 CACHE_TTL_SECONDS = 60 * 60 * 24 * 90  # 90 days
+
+
+def _cache_key(target: str, text: str) -> str:
+    """Hash user input into Redis key so newlines/controls can't poison keyspace."""
+    digest = hashlib.sha256(f"{target}\x1f{text}".encode("utf-8")).hexdigest()
+    return f"i18n:{digest}"
 
 
 class TranslateRequest(BaseModel):
@@ -105,7 +112,7 @@ async def translate(body: TranslateRequest) -> TranslateResponse:
             decode_responses=True,
             health_check_interval=30,
         )
-        keys = [f"i18n:{target}:{text}" for text in unique_texts]
+        keys = [_cache_key(target, text) for text in unique_texts]
         cached_values = await redis_client.mget(keys)
         for text, cached in zip(unique_texts, cached_values, strict=True):
             if cached is not None:
@@ -138,7 +145,7 @@ async def translate(body: TranslateRequest) -> TranslateResponse:
             if translated and translated.strip() and translated.strip() != text:
                 translations[text] = translated
                 if pipeline is not None:
-                    pipeline.set(f"i18n:{target}:{text}", translated, ex=CACHE_TTL_SECONDS)
+                    pipeline.set(_cache_key(target, text), translated, ex=CACHE_TTL_SECONDS)
 
         if pipeline is not None:
             try:

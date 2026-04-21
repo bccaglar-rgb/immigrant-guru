@@ -319,10 +319,21 @@ async def stripe_webhook(
         data = event.get("data", {}).get("object", {})
         payment_status = data.get("payment_status", "")
         user_id = data.get("metadata", {}).get("user_id")
+        client_ref = data.get("client_reference_id")
         plan = _normalize_plan(str(data.get("metadata", {}).get("plan", "")))
 
         if payment_status != "paid":
             logger.warning("stripe.webhook_unpaid_session event_id=%s payment_status=%s", event_id, payment_status)
+            return {"status": "ok"}
+
+        # Defense-in-depth: metadata.user_id must match client_reference_id
+        # (both set by our server at checkout creation; mismatch means tampering
+        # or a malformed event we should not act on).
+        if not user_id or not client_ref or str(user_id) != str(client_ref):
+            logger.warning(
+                "stripe.webhook_user_id_mismatch event_id=%s user_id=%s client_ref=%s",
+                event_id, user_id, client_ref,
+            )
             return {"status": "ok"}
 
         if user_id and plan in _PAID_PLANS:

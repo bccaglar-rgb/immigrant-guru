@@ -83,7 +83,8 @@ export function LocaleProvider({ children }: LocaleProviderProps) {
       if (
         !parentElement ||
         ["SCRIPT", "STYLE", "NOSCRIPT"].includes(parentElement.tagName) ||
-        parentElement.closest("svg")
+        parentElement.closest("svg") ||
+        parentElement.closest("[data-no-translate], [translate='no']")
       ) {
         return;
       }
@@ -106,6 +107,9 @@ export function LocaleProvider({ children }: LocaleProviderProps) {
 
   const translateElementAttributes = useCallback(
     (element: Element) => {
+      if (element.closest("[data-no-translate], [translate='no']")) {
+        return;
+      }
       let sourceMap = attributeSources.current.get(element);
       if (!sourceMap) {
         sourceMap = new Map();
@@ -179,9 +183,40 @@ export function LocaleProvider({ children }: LocaleProviderProps) {
     document.documentElement.lang = locale;
     document.documentElement.dir = getDocumentDirection(locale);
 
-    // English is the source language — no translation needed,
-    // so skip the DOM observer entirely to avoid any loop risk.
+    // English is the source language. When switching back to English, walk the
+    // tree once to restore text/attributes to the stored source values —
+    // otherwise content translated into the previous locale would stay on screen.
+    // Wrapped in try/catch so a DOM race (React reconciliation vs our writes)
+    // never takes down the page.
     if (locale === "en") {
+      try {
+        const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+        let node: Node | null = walker.nextNode();
+        while (node) {
+          if (node instanceof Text) {
+            const tracked = textNodeSources.current.get(node);
+            if (tracked && node.nodeValue !== tracked.source) {
+              node.nodeValue = tracked.source;
+            }
+          }
+          node = walker.nextNode();
+        }
+        document.body.querySelectorAll("*").forEach((el) => {
+          if (el.closest("[data-no-translate], [translate='no']")) return;
+          const attrMap = attributeSources.current.get(el);
+          if (!attrMap) return;
+          for (const [attr, src] of attrMap.entries()) {
+            if (el.getAttribute(attr) !== src) {
+              el.setAttribute(attr, src);
+            }
+          }
+        });
+        if (titleSource.current && document.title !== titleSource.current) {
+          document.title = titleSource.current;
+        }
+      } catch {
+        // Swallow: a stale DOM reference is not worth crashing the app over.
+      }
       return;
     }
 
@@ -203,17 +238,26 @@ export function LocaleProvider({ children }: LocaleProviderProps) {
     // nodeValue write, so without this flag translateTextNode would observe
     // its own writes and loop until the tab hangs.
     let isTranslating = false;
+    let disposed = false;
     const runTranslation = (fn: () => void) => {
-      if (isTranslating) return;
+      if (isTranslating || disposed) return;
       isTranslating = true;
       try {
         fn();
+      } catch {
+        // DOM race between React reconciliation and our MutationObserver —
+        // swallowing keeps the page usable; next batch/event will retry.
       } finally {
         isTranslating = false;
       }
     };
 
-    runTranslation(() => translateTree(document.body));
+    // Defer the initial pass by a frame so React hydration can finish first.
+    // Running synchronously here would race with hydration on slow devices
+    // and occasionally blank the page.
+    const initialPassHandle = window.requestAnimationFrame(() => {
+      runTranslation(() => translateTree(document.body));
+    });
 
     const observer = new MutationObserver((mutations) => {
       if (isTranslating) return;
@@ -266,6 +310,8 @@ export function LocaleProvider({ children }: LocaleProviderProps) {
     window.addEventListener(TRANSLATION_BATCH_READY_EVENT, handleBatchReady);
 
     return () => {
+      disposed = true;
+      window.cancelAnimationFrame(initialPassHandle);
       observer.disconnect();
       titleObserver.disconnect();
       window.removeEventListener(TRANSLATION_BATCH_READY_EVENT, handleBatchReady);
