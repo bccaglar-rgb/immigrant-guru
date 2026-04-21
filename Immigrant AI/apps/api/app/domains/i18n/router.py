@@ -22,9 +22,10 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/i18n", tags=["i18n"])
 
 SUPPORTED_LANGUAGES = {
-    "en", "tr", "de", "fr", "es", "pt", "ar", "tl", "vi", "ht",
-    "pa", "gu", "ur", "bn", "te", "ta", "fa", "zh", "ja", "ko",
-    "ru", "hi",
+    "ar", "bn", "cs", "de", "el", "en", "es", "fa", "fr", "he",
+    "hi", "hu", "id", "it", "ja", "ko", "ms", "nl", "pl", "ps",
+    "pt", "ro", "ru", "sw", "th", "tl", "tr", "uk", "ur", "vi",
+    "zh",
 }
 
 MAX_BATCH_SIZE = 200
