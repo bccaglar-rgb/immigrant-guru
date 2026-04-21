@@ -22,18 +22,31 @@ export function MetricCard({
         : tone === "accent"
           ? "text-accent"
           : "text-ink";
+  const ring =
+    tone === "good"
+      ? "before:bg-gradient-to-b before:from-emerald-400/60 before:to-emerald-400/0"
+      : tone === "warn"
+        ? "before:bg-gradient-to-b before:from-red/60 before:to-red/0"
+        : tone === "accent"
+          ? "before:bg-gradient-to-b before:from-accent before:to-accent/0"
+          : "before:bg-gradient-to-b before:from-ink/20 before:to-ink/0";
   return (
-    <Card className="p-5">
+    <Card className={cn(
+      "relative overflow-hidden p-5 transition-all",
+      "before:absolute before:left-0 before:top-0 before:h-full before:w-[3px] before:content-['']",
+      "hover:-translate-y-0.5 hover:shadow-lg",
+      ring,
+    )}>
       <div className="flex items-start justify-between gap-3">
-        <p className="text-xs font-semibold uppercase tracking-widest text-muted">{label}</p>
+        <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted">{label}</p>
         {accent ? (
           <span className="rounded-full bg-accent/10 px-2 py-0.5 text-[10px] font-bold text-accent">
             {accent}
           </span>
         ) : null}
       </div>
-      <p className={cn("mt-2 text-2xl font-bold tracking-tight", color)}>{value}</p>
-      {sub ? <p className="mt-1 text-xs text-muted">{sub}</p> : null}
+      <p className={cn("mt-2.5 text-[26px] font-bold leading-none tracking-tight tabular-nums", color)}>{value}</p>
+      {sub ? <p className="mt-2 text-xs text-muted">{sub}</p> : null}
     </Card>
   );
 }

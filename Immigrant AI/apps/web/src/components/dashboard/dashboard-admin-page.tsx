@@ -703,114 +703,176 @@ function DashboardAdminCore({ accessToken, userEmail, onSignOut }: AdminCoreProp
     setUsers((prev) => prev.map((u) => u.id === updated.id ? updated : u));
   }, []);
 
-  const navItems: { value: Tab; label: string; icon: typeof IconHome; count?: number }[] = [
-    { value: "overview", label: "Overview", icon: IconHome },
-    { value: "revenue", label: "Revenue", icon: IconDollar },
-    { value: "users", label: "Users", icon: IconUsers, count: users.length },
-    { value: "cases", label: "Cases", icon: IconBriefcase },
-    { value: "knowledge", label: "Knowledge", icon: IconBook },
-    { value: "feedback", label: "Feedback", icon: IconChat },
-    { value: "system", label: "System", icon: IconServer },
+  const navGroups: {
+    heading: string;
+    items: { value: Tab; label: string; icon: typeof IconHome; count?: number }[];
+  }[] = [
+    {
+      heading: "Analytics",
+      items: [
+        { value: "overview", label: "Overview", icon: IconHome },
+        { value: "revenue", label: "Revenue", icon: IconDollar },
+        { value: "cases", label: "Cases", icon: IconBriefcase },
+      ],
+    },
+    {
+      heading: "Platform",
+      items: [
+        { value: "users", label: "Users", icon: IconUsers, count: users.length },
+        { value: "knowledge", label: "Knowledge", icon: IconBook },
+      ],
+    },
+    {
+      heading: "Operations",
+      items: [
+        { value: "feedback", label: "Feedback", icon: IconChat },
+        { value: "system", label: "System", icon: IconServer },
+      ],
+    },
   ];
 
   const meta = SECTION_META[tab];
   const initials = userEmail ? userEmail.slice(0, 2).toUpperCase() : "AD";
+  const healthOk = Boolean(version) && db?.status === "ok";
 
   return (
-    <div className="flex min-h-screen bg-canvas">
-      <aside className="flex w-60 shrink-0 flex-col border-r border-line bg-white">
-        <div className="flex items-center gap-2 border-b border-line px-5 py-5">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent text-white font-black text-sm">
-            IG
+    <div className="flex min-h-screen bg-[#0b0d12]">
+      <aside className="relative flex w-64 shrink-0 flex-col border-r border-white/5 bg-[#0b0d12]">
+        {/* subtle gradient glow in sidebar */}
+        <div className="pointer-events-none absolute inset-0 overflow-hidden">
+          <div className="absolute -top-24 -left-20 h-60 w-60 rounded-full bg-accent/20 blur-[80px]" />
+          <div className="absolute bottom-0 -right-16 h-52 w-52 rounded-full bg-indigo-500/10 blur-[80px]" />
+        </div>
+
+        <div className="relative flex items-center gap-3 border-b border-white/5 px-5 py-5">
+          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-accent to-indigo-500 shadow-[0_8px_24px_-8px_rgba(99,102,241,0.6)]">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M12 2l8 4v6c0 5-3.5 9-8 10-4.5-1-8-5-8-10V6l8-4z" />
+              <path d="M9 12l2 2 4-4" />
+            </svg>
           </div>
           <div>
-            <p className="text-[13px] font-black leading-tight tracking-tight text-ink">
+            <p className="text-[13px] font-black leading-tight tracking-tight text-white">
               Immigrant<span className="text-accent">Guru</span>
             </p>
-            <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-accent">Admin</p>
+            <p className="text-[9px] font-bold uppercase tracking-[0.22em] text-white/40">Admin Console</p>
           </div>
         </div>
 
-        <nav className="flex-1 overflow-y-auto p-3">
-          <p className="mb-2 px-3 text-[10px] font-semibold uppercase tracking-[0.18em] text-muted">
-            Sections
-          </p>
-          <div className="space-y-0.5">
-            {navItems.map((item) => {
-              const active = tab === item.value;
-              const Icon = item.icon;
-              return (
-                <button
-                  key={item.value}
-                  onClick={() => setTab(item.value)}
-                  type="button"
-                  className={cn(
-                    "flex w-full items-center justify-between gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors",
-                    active
-                      ? "bg-accent/10 text-accent"
-                      : "text-ink/75 hover:bg-canvas hover:text-ink"
-                  )}
-                >
-                  <span className="flex items-center gap-3">
-                    <Icon className={cn(active ? "text-accent" : "text-muted")} />
-                    {item.label}
-                  </span>
-                  {item.count !== undefined ? (
-                    <span className={cn(
-                      "rounded-full px-2 py-0.5 text-[10px] font-bold",
-                      active ? "bg-accent/20 text-accent" : "bg-canvas text-muted"
-                    )}>
-                      {item.count}
-                    </span>
-                  ) : null}
-                </button>
-              );
-            })}
-          </div>
+        <nav className="relative flex-1 overflow-y-auto px-3 py-4">
+          {navGroups.map((group, gi) => (
+            <div key={group.heading} className={cn(gi > 0 && "mt-5")}>
+              <p className="mb-1.5 px-3 text-[10px] font-semibold uppercase tracking-[0.18em] text-white/30">
+                {group.heading}
+              </p>
+              <div className="space-y-0.5">
+                {group.items.map((item) => {
+                  const active = tab === item.value;
+                  const Icon = item.icon;
+                  return (
+                    <button
+                      key={item.value}
+                      onClick={() => setTab(item.value)}
+                      type="button"
+                      className={cn(
+                        "group relative flex w-full items-center justify-between gap-3 rounded-xl px-3 py-2 text-sm font-medium transition-all",
+                        active
+                          ? "bg-gradient-to-r from-accent/20 to-indigo-500/10 text-white shadow-[inset_0_0_0_1px_rgba(99,102,241,0.25)]"
+                          : "text-white/60 hover:bg-white/5 hover:text-white"
+                      )}
+                    >
+                      {active ? (
+                        <span className="absolute left-0 top-1/2 h-5 w-0.5 -translate-y-1/2 rounded-r-full bg-gradient-to-b from-accent to-indigo-400" />
+                      ) : null}
+                      <span className="flex items-center gap-3">
+                        <Icon className={cn("transition-colors", active ? "text-accent" : "text-white/40 group-hover:text-white/70")} />
+                        {item.label}
+                      </span>
+                      {item.count !== undefined ? (
+                        <span className={cn(
+                          "rounded-full px-2 py-0.5 text-[10px] font-bold tabular-nums",
+                          active ? "bg-accent/25 text-accent" : "bg-white/5 text-white/50"
+                        )}>
+                          {item.count}
+                        </span>
+                      ) : null}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
         </nav>
 
-        {userEmail ? (
-          <div className="border-t border-line p-3">
-            <div className="flex items-center gap-3 rounded-xl bg-canvas/60 p-3">
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-accent text-white font-bold text-xs">
-                {initials}
-              </div>
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-[11px] font-semibold uppercase tracking-widest text-muted">Signed in</p>
-                <p className="truncate text-[13px] font-semibold text-ink">{userEmail}</p>
-              </div>
-            </div>
-            {onSignOut ? (
-              <button
-                onClick={onSignOut}
-                type="button"
-                className="mt-2 w-full rounded-lg border border-line bg-white px-3 py-2 text-xs font-semibold text-ink hover:bg-canvas"
-              >
-                Sign out
-              </button>
-            ) : null}
+        <div className="relative border-t border-white/5 p-3">
+          <div className="mb-2 flex items-center gap-2 rounded-xl border border-white/5 bg-white/[0.03] px-3 py-2">
+            <span className={cn(
+              "h-1.5 w-1.5 rounded-full",
+              healthOk ? "bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)]" : "bg-amber-400"
+            )} />
+            <p className="text-[10px] font-semibold uppercase tracking-[0.15em] text-white/60">
+              {healthOk ? "All systems green" : "Checking status…"}
+            </p>
           </div>
-        ) : null}
+
+          {userEmail ? (
+            <>
+              <div className="flex items-center gap-3 rounded-xl border border-white/5 bg-white/[0.03] p-2.5">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-accent to-indigo-500 text-xs font-bold text-white">
+                  {initials}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-[10px] font-semibold uppercase tracking-widest text-white/40">Signed in</p>
+                  <p className="truncate text-[12px] font-semibold text-white">{userEmail}</p>
+                </div>
+              </div>
+              {onSignOut ? (
+                <button
+                  onClick={onSignOut}
+                  type="button"
+                  className="mt-2 flex w-full items-center justify-center gap-2 rounded-lg border border-white/10 bg-transparent px-3 py-2 text-xs font-semibold text-white/70 transition hover:border-red-400/30 hover:bg-red-400/10 hover:text-red-200"
+                >
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4" />
+                    <polyline points="16 17 21 12 16 7" />
+                    <line x1="21" y1="12" x2="9" y2="12" />
+                  </svg>
+                  Sign out
+                </button>
+              ) : null}
+            </>
+          ) : null}
+        </div>
       </aside>
 
-      <main className="flex-1 overflow-y-auto">
-        <div className="mx-auto max-w-[1280px] px-8 py-8">
-          <div className="mb-8 flex items-start justify-between gap-4 border-b border-line pb-6">
-            <div>
-              <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-muted">Admin Console</p>
-              <h1 className="mt-1 text-[28px] font-bold tracking-tight text-ink">{meta.title}</h1>
-              <p className="mt-1.5 max-w-xl text-sm text-muted">{meta.description}</p>
+      <main className="relative flex-1 overflow-y-auto">
+        {/* light content surface with slight inset shadow from dark chrome */}
+        <div className="min-h-screen bg-canvas">
+          <div className="sticky top-0 z-10 border-b border-line bg-white/85 backdrop-blur-md">
+            <div className="mx-auto flex max-w-[1320px] items-center justify-between gap-4 px-8 py-4">
+              <div>
+                <div className="flex items-center gap-2 text-[11px] font-semibold text-muted">
+                  <span className="uppercase tracking-[0.18em] text-muted/70">Admin</span>
+                  <span className="text-muted/40">/</span>
+                  <span className="uppercase tracking-[0.18em] text-accent">{meta.title}</span>
+                </div>
+                <h1 className="mt-1 text-[24px] font-bold tracking-tight text-ink">{meta.title}</h1>
+                <p className="mt-0.5 max-w-xl text-sm text-muted">{meta.description}</p>
+              </div>
+              <button
+                onClick={() => void load()}
+                disabled={loading}
+                type="button"
+                className="inline-flex items-center gap-2 rounded-xl border border-line bg-white px-3.5 py-2 text-xs font-semibold text-ink shadow-soft transition hover:border-accent/40 hover:bg-canvas disabled:opacity-50"
+                title="Refresh data"
+              >
+                <IconRefresh className={cn(loading && "animate-spin")} />
+                <span className="hidden sm:inline">{loading ? "Refreshing…" : "Refresh"}</span>
+              </button>
             </div>
-            <button
-              onClick={() => void load()}
-              disabled={loading}
-              type="button"
-              className="inline-flex items-center gap-2 rounded-xl border border-line bg-white px-4 py-2.5 text-sm font-semibold text-ink shadow-soft transition hover:border-accent/30 hover:bg-canvas disabled:opacity-50"
-            >
-              <IconRefresh className={cn(loading && "animate-spin")} />
-              {loading ? "Refreshing…" : "Refresh"}
-            </button>
           </div>
+
+          <div className="mx-auto max-w-[1320px] px-8 py-8">
 
           {error ? <div className="mb-6"><FeedbackBanner message={error} tone="error" /></div> : null}
 
@@ -829,6 +891,7 @@ function DashboardAdminCore({ accessToken, userEmail, onSignOut }: AdminCoreProp
               {tab === "system" && <SystemTab accessToken={accessToken} />}
             </>
           )}
+          </div>
         </div>
       </main>
     </div>
