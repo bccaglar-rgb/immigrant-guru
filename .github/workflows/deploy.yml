@@ -24,7 +24,7 @@ jobs:
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.DROPLET_IP }}
-          username: root
+          username: appuser
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script_stop: true
           command_timeout: 20m
@@ -80,5 +80,5 @@ jobs:
             echo "==> Health check"
             sleep 8
             curl -fsS http://127.0.0.1:3000/ > /dev/null && echo "web OK" || echo "web FAIL"
-            curl -fsS https://immigrant.guru/api/v1/health -k > /dev/null && echo "api OK" || echo "api FAIL"
+            curl -fsS http://127.0.0.1:8000/api/v1/health > /dev/null && echo "api OK" || echo "api FAIL"
             echo "Done."
