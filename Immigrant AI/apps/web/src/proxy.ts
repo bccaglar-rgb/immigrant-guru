@@ -6,7 +6,8 @@ import { routing } from "@/i18n/routing";
 
 const intlMiddleware = createIntlMiddleware(routing);
 
-export function middleware(request: NextRequest) {
+// Next 16 renamed "middleware" to "proxy". Export must be named `proxy` or default.
+export default function proxy(request: NextRequest) {
   const host =
     request.headers.get("x-forwarded-host") ??
     request.headers.get("host") ??
@@ -39,6 +40,5 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  // Exclude api, next internals, admin-portal (handled above), and static files.
   matcher: ["/((?!api|_next|admin-portal|.*\\..*).*)"]
 };
