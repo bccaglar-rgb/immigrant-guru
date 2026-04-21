@@ -21,8 +21,12 @@ const SITE_URL = "https://immigrant.guru";
 const SITE_NAME = "Immigrant Guru";
 const SITE_DESCRIPTION = "AI-powered immigration strategy platform. Compare visa pathways, build your profile, score your readiness, and get personalized Plan A/B/C recommendations.";
 
+// Only prerender the default locale at build time. Other locales are
+// server-rendered on demand so the deploy-time build doesn't multiply
+// (static routes × 31 locales) into six-figure page counts that OOM the
+// droplet. Subsequent requests cache at the CDN layer anyway.
 export function generateStaticParams() {
-  return routing.locales.map((locale) => ({ locale }));
+  return [{ locale: routing.defaultLocale }];
 }
 
 export const viewport: Viewport = {
