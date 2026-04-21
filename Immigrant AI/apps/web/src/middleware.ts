@@ -1,5 +1,10 @@
+import createIntlMiddleware from "next-intl/middleware";
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+
+import { routing } from "@/i18n/routing";
+
+const intlMiddleware = createIntlMiddleware(routing);
 
 export function middleware(request: NextRequest) {
   const host =
@@ -26,11 +31,14 @@ export function middleware(request: NextRequest) {
         new URL(`/admin-portal${pathname}`, request.url)
       );
     }
+
+    return NextResponse.next();
   }
 
-  return NextResponse.next();
+  return intlMiddleware(request);
 }
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon\\.ico).*)"]
+  // Exclude api, next internals, admin-portal (handled above), and static files.
+  matcher: ["/((?!api|_next|admin-portal|.*\\..*).*)"]
 };

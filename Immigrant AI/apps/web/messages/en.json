@@ -1,0 +1,5 @@
+{
+  "_meta": {
+    "note": "Source-of-truth English strings. Non-English locale files are generated from this via scripts/gen-locale-messages.mjs using the /api/v1/i18n/translate proxy."
+  }
+}

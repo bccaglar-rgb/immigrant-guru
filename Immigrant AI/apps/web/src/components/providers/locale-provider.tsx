@@ -1,22 +1,21 @@
 "use client";
 
+import { useLocale as useIntlLocale } from "next-intl";
+import { useTransition } from "react";
 import {
   createContext,
   useCallback,
   useContext,
   useEffect,
   useMemo,
-  useRef,
-  useState
+  useRef
 } from "react";
 import type { ReactNode } from "react";
 
+import { usePathname, useRouter } from "@/i18n/navigation";
 import {
-  getDocumentDirection,
-  getInitialLanguage,
   queueTranslation,
   shouldTranslate,
-  STORAGE_KEY,
   TRANSLATION_BATCH_READY_EVENT,
   translateText,
   type LanguageCode
@@ -36,7 +35,15 @@ type LocaleProviderProps = Readonly<{
 const ATTRIBUTE_NAMES = ["placeholder", "aria-label", "title"] as const;
 
 export function LocaleProvider({ children }: LocaleProviderProps) {
-  const [locale, setLocaleState] = useState<LanguageCode>(() => getInitialLanguage());
+  // Locale is now URL-driven (next-intl [locale] segment). This provider keeps
+  // the same `{ locale, setLocale }` contract for legacy consumers, but the
+  // MutationObserver below only runs as a fallback translator for strings that
+  // haven't been extracted to next-intl message files yet.
+  const locale = useIntlLocale() as LanguageCode;
+  const router = useRouter();
+  const pathname = usePathname();
+  const [, startTransition] = useTransition();
+
   const textNodeSources = useRef(
     new WeakMap<Text, { source: string }>()
   );
@@ -45,9 +52,14 @@ export function LocaleProvider({ children }: LocaleProviderProps) {
   );
   const titleSource = useRef<string | null>(null);
 
-  const setLocale = useCallback((nextLocale: LanguageCode) => {
-    setLocaleState(nextLocale);
-  }, []);
+  const setLocale = useCallback(
+    (nextLocale: LanguageCode) => {
+      startTransition(() => {
+        router.replace(pathname, { locale: nextLocale });
+      });
+    },
+    [pathname, router]
+  );
 
   const translateTextNode = useCallback(
     (node: Text) => {
@@ -179,9 +191,8 @@ export function LocaleProvider({ children }: LocaleProviderProps) {
   );
 
   useEffect(() => {
-    window.localStorage.setItem(STORAGE_KEY, locale);
-    document.documentElement.lang = locale;
-    document.documentElement.dir = getDocumentDirection(locale);
+    // `<html lang>` and `dir` are now set server-side in `[locale]/layout.tsx`,
+    // and locale persistence lives in the URL itself — no localStorage needed.
 
     // English is the source language. When switching back to English, walk the
     // tree once to restore text/attributes to the stored source values —

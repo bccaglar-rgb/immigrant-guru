@@ -1,0 +1,20 @@
+import { hasLocale } from "next-intl";
+import { getRequestConfig } from "next-intl/server";
+
+import { routing } from "./routing";
+
+// Server-side per-request locale config. Messages are loaded dynamically so
+// build output doesn't balloon; falls back to English on missing locale.
+export default getRequestConfig(async ({ requestLocale }) => {
+  const requested = await requestLocale;
+  const locale = hasLocale(routing.locales, requested) ? requested : routing.defaultLocale;
+
+  let messages: Record<string, unknown> = {};
+  try {
+    messages = (await import(`../../messages/${locale}.json`)).default;
+  } catch {
+    messages = (await import(`../../messages/${routing.defaultLocale}.json`)).default;
+  }
+
+  return { locale, messages };
+});

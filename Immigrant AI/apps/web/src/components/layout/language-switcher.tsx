@@ -1,15 +1,11 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useLocale as useIntlLocale } from "next-intl";
+import { useEffect, useRef, useState, useTransition } from "react";
 
-import { useLocale } from "@/components/providers/locale-provider";
+import { usePathname, useRouter } from "@/i18n/navigation";
 import { cn } from "@/lib/utils";
-import {
-  LANGUAGE_OPTIONS,
-  STORAGE_KEY,
-  type LanguageCode,
-  resolvePreferredLanguage
-} from "@/lib/i18n";
+import { LANGUAGE_OPTIONS, type LanguageCode } from "@/lib/i18n";
 
 type LanguageSwitcherProps = Readonly<{
   align?: "left" | "right";
@@ -21,23 +17,11 @@ export function LanguageSwitcher({
   compact = false
 }: LanguageSwitcherProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const { locale, setLocale } = useLocale();
+  const activeLocale = useIntlLocale();
+  const router = useRouter();
+  const pathname = usePathname();
+  const [, startTransition] = useTransition();
   const containerRef = useRef<HTMLDivElement | null>(null);
-
-  useEffect(() => {
-    if (typeof window === "undefined") {
-      return;
-    }
-
-    const nextLanguage = resolvePreferredLanguage(
-      window.localStorage.getItem(STORAGE_KEY),
-      window.navigator.language
-    );
-
-    if (nextLanguage !== locale) {
-      setLocale(nextLanguage);
-    }
-  }, [locale, setLocale]);
 
   useEffect(() => {
     function handlePointerDown(event: MouseEvent) {
@@ -65,26 +49,20 @@ export function LanguageSwitcher({
   }, []);
 
   const selectedLanguage =
-    LANGUAGE_OPTIONS.find((language) => language.code === locale) ??
+    LANGUAGE_OPTIONS.find((language) => language.code === activeLocale) ??
     LANGUAGE_OPTIONS[0];
 
   function handleSelect(code: LanguageCode) {
-    // Persist the choice, then hard-reload. The MutationObserver-based
-    // translator fights React reconciliation when switching in place; a fresh
-    // page load sidesteps the race entirely and the observer runs cleanly
-    // against the post-hydration DOM.
-    if (code === locale) {
-      setIsOpen(false);
-      return;
-    }
     setIsOpen(false);
-    if (typeof window === "undefined") {
+    if (code === activeLocale) {
       return;
     }
-    window.localStorage.setItem(STORAGE_KEY, code);
-    // Do NOT call setLocale — a React re-render would re-run the observer
-    // effect against the already-translated DOM and crash before reload fires.
-    window.location.reload();
+    // Route-level locale switch: next-intl rewrites the URL (e.g. /pricing →
+    // /tr/pricing) and re-renders with the new server-side translations.
+    // No MutationObserver race because each locale is its own crawl-indexable page.
+    startTransition(() => {
+      router.replace(pathname, { locale: code });
+    });
   }
 
   return (
@@ -120,7 +98,7 @@ export function LanguageSwitcher({
 
           <div className="grid max-h-[320px] grid-cols-2 gap-0.5 overflow-y-auto p-1.5">
             {LANGUAGE_OPTIONS.map((language) => {
-              const active = language.code === locale;
+              const active = language.code === activeLocale;
 
               return (
                 <button

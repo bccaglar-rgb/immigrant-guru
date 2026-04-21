@@ -3,77 +3,74 @@ import type { MetadataRoute } from "next";
 import { PROFILES } from "@/data/profiles";
 import { COMPARISONS, buildMoveToPairs, buildVisaMatchPairs } from "@/data/seo-pairs";
 import { VISAS } from "@/data/visa-catalog";
+import { routing } from "@/i18n/routing";
 
 const SITE_URL = "https://immigrant.guru";
 
-export default function sitemap(): MetadataRoute.Sitemap {
-  const now = new Date();
+type SitemapEntry = MetadataRoute.Sitemap[number];
 
-  const staticRoutes: MetadataRoute.Sitemap = [
-    { url: SITE_URL, lastModified: now, changeFrequency: "weekly", priority: 1.0 },
-    { url: `${SITE_URL}/pricing`, lastModified: now, changeFrequency: "monthly", priority: 0.9 },
-    { url: `${SITE_URL}/sign-up`, lastModified: now, changeFrequency: "monthly", priority: 0.8 },
-    { url: `${SITE_URL}/sign-in`, lastModified: now, changeFrequency: "monthly", priority: 0.5 },
-    {
-      url: `${SITE_URL}/tools/eligibility-checker`,
-      lastModified: now,
-      changeFrequency: "weekly",
-      priority: 0.85
-    },
-    {
-      url: `${SITE_URL}/tools/cost-estimator`,
-      lastModified: now,
-      changeFrequency: "weekly",
-      priority: 0.85
-    },
-    {
-      url: `${SITE_URL}/tools/timeline-calculator`,
-      lastModified: now,
-      changeFrequency: "weekly",
-      priority: 0.85
-    },
-    { url: `${SITE_URL}/visa`, lastModified: now, changeFrequency: "weekly", priority: 0.8 },
-    { url: `${SITE_URL}/visa-match`, lastModified: now, changeFrequency: "weekly", priority: 0.8 },
-    { url: `${SITE_URL}/compare`, lastModified: now, changeFrequency: "weekly", priority: 0.8 },
-    { url: `${SITE_URL}/move-to`, lastModified: now, changeFrequency: "weekly", priority: 0.8 },
-    { url: `${SITE_URL}/best-countries`, lastModified: now, changeFrequency: "weekly", priority: 0.8 },
-    { url: `${SITE_URL}/tools`, lastModified: now, changeFrequency: "weekly", priority: 0.8 }
+// Build a URL + its per-language alternates. `as-needed` localePrefix means
+// English lives at bare `/path`, other locales at `/<locale>/path`. Google
+// uses the `alternates.languages` field to pick the right variant per user.
+function localizedEntry(path: string, opts: { changeFrequency?: SitemapEntry["changeFrequency"]; priority?: number }): SitemapEntry {
+  const now = new Date();
+  const languages: Record<string, string> = {};
+  for (const code of routing.locales) {
+    languages[code] = code === routing.defaultLocale
+      ? `${SITE_URL}${path || "/"}`
+      : `${SITE_URL}/${code}${path}`;
+  }
+  languages["x-default"] = `${SITE_URL}${path || "/"}`;
+
+  return {
+    url: `${SITE_URL}${path || "/"}`,
+    lastModified: now,
+    changeFrequency: opts.changeFrequency ?? "weekly",
+    priority: opts.priority ?? 0.7,
+    alternates: { languages }
+  };
+}
+
+export default function sitemap(): MetadataRoute.Sitemap {
+  const staticPaths: Array<{ path: string; priority: number; changeFrequency: SitemapEntry["changeFrequency"] }> = [
+    { path: "", priority: 1.0, changeFrequency: "weekly" },
+    { path: "/pricing", priority: 0.9, changeFrequency: "monthly" },
+    { path: "/sign-up", priority: 0.8, changeFrequency: "monthly" },
+    { path: "/sign-in", priority: 0.5, changeFrequency: "monthly" },
+    { path: "/tools/eligibility-checker", priority: 0.85, changeFrequency: "weekly" },
+    { path: "/tools/cost-estimator", priority: 0.85, changeFrequency: "weekly" },
+    { path: "/tools/timeline-calculator", priority: 0.85, changeFrequency: "weekly" },
+    { path: "/visa", priority: 0.8, changeFrequency: "weekly" },
+    { path: "/visa-match", priority: 0.8, changeFrequency: "weekly" },
+    { path: "/compare", priority: 0.8, changeFrequency: "weekly" },
+    { path: "/move-to", priority: 0.8, changeFrequency: "weekly" },
+    { path: "/best-countries", priority: 0.8, changeFrequency: "weekly" },
+    { path: "/tools", priority: 0.8, changeFrequency: "weekly" }
   ];
 
-  const visaRoutes: MetadataRoute.Sitemap = VISAS.map((v) => ({
-    url: `${SITE_URL}/visa/${v.slug}`,
-    lastModified: now,
-    changeFrequency: "weekly",
-    priority: 0.8
-  }));
+  const staticRoutes: MetadataRoute.Sitemap = staticPaths.map((p) =>
+    localizedEntry(p.path, { priority: p.priority, changeFrequency: p.changeFrequency })
+  );
 
-  const bestCountriesRoutes: MetadataRoute.Sitemap = PROFILES.map((p) => ({
-    url: `${SITE_URL}/best-countries/${p.slug}`,
-    lastModified: now,
-    changeFrequency: "weekly",
-    priority: 0.75
-  }));
+  const visaRoutes: MetadataRoute.Sitemap = VISAS.map((v) =>
+    localizedEntry(`/visa/${v.slug}`, { priority: 0.8, changeFrequency: "weekly" })
+  );
 
-  const visaMatchRoutes: MetadataRoute.Sitemap = buildVisaMatchPairs().map((p) => ({
-    url: `${SITE_URL}/visa-match/${p.destination}/${p.profile}`,
-    lastModified: now,
-    changeFrequency: "weekly",
-    priority: 0.75
-  }));
+  const bestCountriesRoutes: MetadataRoute.Sitemap = PROFILES.map((p) =>
+    localizedEntry(`/best-countries/${p.slug}`, { priority: 0.75, changeFrequency: "weekly" })
+  );
 
-  const compareRoutes: MetadataRoute.Sitemap = COMPARISONS.map((c) => ({
-    url: `${SITE_URL}/compare/${c.slug}`,
-    lastModified: now,
-    changeFrequency: "weekly",
-    priority: 0.7
-  }));
+  const visaMatchRoutes: MetadataRoute.Sitemap = buildVisaMatchPairs().map((p) =>
+    localizedEntry(`/visa-match/${p.destination}/${p.profile}`, { priority: 0.75, changeFrequency: "weekly" })
+  );
 
-  const moveToRoutes: MetadataRoute.Sitemap = buildMoveToPairs().map((p) => ({
-    url: `${SITE_URL}/move-to/${p.from}/to/${p.to}`,
-    lastModified: now,
-    changeFrequency: "weekly",
-    priority: 0.7
-  }));
+  const compareRoutes: MetadataRoute.Sitemap = COMPARISONS.map((c) =>
+    localizedEntry(`/compare/${c.slug}`, { priority: 0.7, changeFrequency: "weekly" })
+  );
+
+  const moveToRoutes: MetadataRoute.Sitemap = buildMoveToPairs().map((p) =>
+    localizedEntry(`/move-to/${p.from}/to/${p.to}`, { priority: 0.7, changeFrequency: "weekly" })
+  );
 
   return [
     ...staticRoutes,
