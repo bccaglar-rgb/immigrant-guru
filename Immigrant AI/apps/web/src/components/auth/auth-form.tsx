@@ -123,18 +123,15 @@ export function AuthForm({ mode }: AuthFormProps) {
           return;
         }
 
-        // Verify succeeded — the account is now verified and we hold a valid
-        // access token. Try to hydrate the session, but if that post-verify
-        // bootstrap stumbles (network blip, /auth/me slow) we still navigate:
-        // the worst case is the dashboard re-auths on load, far better than
-        // stranding the user on the verify screen with a consumed code.
         const established = await establishSession(result.data);
         if (!established.ok) {
           console.warn("verify-email: post-verify session hydrate failed", established.errorMessage);
         }
 
-        router.replace(nextPath);
-        router.refresh();
+        // Full navigation so the server-side auth context is fresh.
+        window.location.href = nextPath;
+      } catch (err) {
+        setFormError(err instanceof Error ? err.message : "Something went wrong. Please try again.");
       } finally {
         setIsSubmitting(false);
       }
