@@ -1,6 +1,5 @@
 import type { Metadata, Viewport } from "next";
 import { hasLocale, NextIntlClientProvider } from "next-intl";
-import { getMessages, setRequestLocale } from "next-intl/server";
 import { Inter } from "next/font/google";
 import { notFound } from "next/navigation";
 import type { ReactNode } from "react";
@@ -163,8 +162,16 @@ export default async function LocaleLayout({ children, params }: LayoutProps) {
   // without AuthProvider, crashing on useAuthSession. Providers always render.
   const locale = hasLocale(routing.locales, rawLocale) ? rawLocale : routing.defaultLocale;
 
-  setRequestLocale(locale);
-  const messages = await getMessages();
+  let messages: Record<string, unknown> = {};
+  try {
+    messages = (await import(`../../../messages/${locale}.json`)).default;
+  } catch {
+    try {
+      messages = (await import(`../../../messages/en.json`)).default;
+    } catch {
+      // no messages available; NextIntlClientProvider still works with empty object
+    }
+  }
   const dir = getDocumentDirection(locale as LanguageCode);
 
   return (
