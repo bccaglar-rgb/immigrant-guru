@@ -41,6 +41,7 @@ jobs:
 
             echo "==> Web build"
             cd "$REPO/apps/web"
+            rm -rf .next
             npm ci --no-audit --no-fund
             npm run build
 
