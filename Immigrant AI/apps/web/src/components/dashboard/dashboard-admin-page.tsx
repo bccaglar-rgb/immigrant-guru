@@ -41,6 +41,7 @@ import { cn } from "@/lib/utils";
 import { CasesTab } from "./admin/cases-tab";
 import { RevenueTab } from "./admin/revenue-tab";
 import { SystemTab } from "./admin/system-tab";
+import { UserDetailDrawer } from "./admin/user-detail-drawer";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -190,17 +191,30 @@ function OverviewTab({ stats, db, version, users }: { stats: AdminStats | null; 
 function UsersTab({ users, accessToken, onUserUpdated }: { users: AdminUserDirectoryEntry[]; accessToken: string; onUserUpdated: (u: AdminUserDirectoryEntry) => void }) {
   const [search, setSearch] = useState("");
   const [planFilter, setPlanFilter] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
   const [updating, setUpdating] = useState<string | null>(null);
   const [error, setError] = useState("");
+  const [selected, setSelected] = useState<AdminUserDirectoryEntry | null>(null);
 
   const filtered = useMemo(() => {
+    const term = search.trim().toLowerCase();
     return users.filter((u) => {
-      const matchSearch = !search || u.email.toLowerCase().includes(search.toLowerCase()) ||
-        (u.profile?.first_name ?? "").toLowerCase().includes(search.toLowerCase());
+      const matchSearch =
+        !term ||
+        u.email.toLowerCase().includes(term) ||
+        (u.profile?.first_name ?? "").toLowerCase().includes(term) ||
+        (u.profile?.last_name ?? "").toLowerCase().includes(term);
       const matchPlan = !planFilter || u.plan === planFilter;
-      return matchSearch && matchPlan;
+      const matchStatus = !statusFilter || u.status === statusFilter;
+      return matchSearch && matchPlan && matchStatus;
     });
-  }, [users, search, planFilter]);
+  }, [users, search, planFilter, statusFilter]);
+
+  useEffect(() => {
+    if (!selected) return;
+    const refreshed = users.find((u) => u.id === selected.id);
+    if (refreshed && refreshed !== selected) setSelected(refreshed);
+  }, [users, selected]);
 
   const handlePlanChange = async (userId: string, plan: string) => {
     setUpdating(userId);
@@ -240,6 +254,15 @@ function UsersTab({ users, accessToken, onUserUpdated }: { users: AdminUserDirec
             <option key={p} value={p}>{PLAN_LABELS[p]}</option>
           ))}
         </select>
+        <select
+          className="rounded-xl border border-line bg-canvas px-4 py-2.5 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-accent/30"
+          onChange={(e) => setStatusFilter(e.target.value)}
+          value={statusFilter}
+        >
+          <option value="">All statuses</option>
+          <option value="active">Active</option>
+          <option value="suspended">Suspended</option>
+        </select>
       </div>
 
       {error ? <FeedbackBanner message={error} tone="error" /> : null}
@@ -262,10 +285,16 @@ function UsersTab({ users, accessToken, onUserUpdated }: { users: AdminUserDirec
               {filtered.map((u) => (
                 <tr key={u.id} className="hover:bg-canvas/40 transition-colors">
                   <td className="px-5 py-4">
-                    <p className="font-semibold text-ink">{u.email}</p>
-                    {u.profile?.first_name || u.profile?.last_name ? (
-                      <p className="text-xs text-muted mt-0.5">{[u.profile.first_name, u.profile.last_name].filter(Boolean).join(" ")}</p>
-                    ) : null}
+                    <button
+                      type="button"
+                      onClick={() => setSelected(u)}
+                      className="text-left hover:text-accent"
+                    >
+                      <p className="font-semibold text-ink group-hover:text-accent">{u.email}</p>
+                      {u.profile?.first_name || u.profile?.last_name ? (
+                        <p className="text-xs text-muted mt-0.5">{[u.profile.first_name, u.profile.last_name].filter(Boolean).join(" ")}</p>
+                      ) : null}
+                    </button>
                   </td>
                   <td className="px-5 py-4">
                     <select
@@ -316,6 +345,8 @@ function UsersTab({ users, accessToken, onUserUpdated }: { users: AdminUserDirec
       </Card>
 
       <p className="text-xs text-muted">{filtered.length} of {users.length} users</p>
+
+      <UserDetailDrawer user={selected} onClose={() => setSelected(null)} />
     </div>
   );
 }
