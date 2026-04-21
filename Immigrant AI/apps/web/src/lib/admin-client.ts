@@ -9,7 +9,9 @@ import {
   knowledgeSourceTypeValues
 } from "@/types/admin";
 import type {
+  AdminStats,
   AdminUserDirectoryEntry,
+  AiFeedbackSummary,
   DatabaseCheck,
   KnowledgeChunkCreatePayload,
   KnowledgeChunkRecord,
@@ -62,11 +64,45 @@ const knowledgeSourceSummarySchema = z.object({
 const adminUserDirectoryEntrySchema = z.object({
   created_at: z.string().datetime(),
   email: z.string().email(),
+  email_verified: z.boolean().default(false),
   id: z.string().uuid(),
   immigration_cases: z.array(immigrationCaseSummarySchema),
+  plan: z.string().default("free"),
   profile: userProfileSchema.nullable(),
   status: z.string().min(1),
   updated_at: z.string().datetime()
+});
+
+const adminStatsSchema = z.object({
+  active_users: z.number().int(),
+  by_plan: z.record(z.string(), z.number()),
+  registered_today: z.number().int(),
+  registered_this_week: z.number().int(),
+  suspended_users: z.number().int(),
+  total_users: z.number().int(),
+  unverified_users: z.number().int(),
+  verified_users: z.number().int()
+});
+
+const aiFeedbackEntrySchema = z.object({
+  case_id: z.string().uuid(),
+  comment: z.string().nullable(),
+  created_at: z.string().datetime(),
+  feature: z.string(),
+  id: z.string().uuid(),
+  rating: z.string(),
+  target_id: z.string().nullable(),
+  updated_at: z.string().datetime(),
+  user_id: z.string().uuid()
+});
+
+const aiFeedbackSummarySchema = z.object({
+  by_feature: z.record(z.string(), z.number()),
+  generated_at: z.string().datetime(),
+  negative_feedback: z.number().int(),
+  positive_feedback: z.number().int(),
+  recent_feedback: z.array(aiFeedbackEntrySchema),
+  total_feedback: z.number().int()
 });
 
 const knowledgeSearchResultSchema = z.object({
@@ -208,5 +244,57 @@ export async function createKnowledgeChunk(
     }),
     knowledgeChunkSchema,
     "Knowledge chunk response was invalid."
+  );
+}
+
+export async function getAdminStats(
+  accessToken: string
+): Promise<ApiRequestResult<AdminStats>> {
+  return parseResponse(
+    await apiRequest({
+      authToken: accessToken,
+      method: "GET",
+      path: "/admin/stats",
+      retries: 0,
+      timeoutMs: 8000
+    }),
+    adminStatsSchema,
+    "Admin stats response was invalid."
+  );
+}
+
+export async function updateUser(
+  accessToken: string,
+  userId: string,
+  payload: { plan?: string; status?: string }
+): Promise<ApiRequestResult<AdminUserDirectoryEntry>> {
+  return parseResponse(
+    await apiRequest({
+      authToken: accessToken,
+      body: payload,
+      method: "PATCH",
+      path: `/admin/users/${userId}`,
+      retries: 0,
+      timeoutMs: 8000
+    }),
+    adminUserDirectoryEntrySchema,
+    "User update response was invalid."
+  );
+}
+
+export async function getAiFeedback(
+  accessToken: string,
+  limit = 20
+): Promise<ApiRequestResult<AiFeedbackSummary>> {
+  return parseResponse(
+    await apiRequest({
+      authToken: accessToken,
+      method: "GET",
+      path: `/admin/ai/feedback?limit=${limit}`,
+      retries: 0,
+      timeoutMs: 8000
+    }),
+    aiFeedbackSummarySchema,
+    "AI feedback response was invalid."
   );
 }

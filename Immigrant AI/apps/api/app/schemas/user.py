@@ -27,5 +27,7 @@ class UserSummary(BaseModel):
 
 
 class UserRead(UserSummary):
+    plan: str = "free"
+    email_verified: bool = False
     profile: UserProfileRead | None = None
     immigration_cases: list[ImmigrationCaseSummary] = Field(default_factory=list)

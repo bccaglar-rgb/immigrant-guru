@@ -52,11 +52,45 @@ export type DatabaseCheck = {
 export type AdminUserDirectoryEntry = {
   created_at: string;
   email: string;
+  email_verified: boolean;
   id: string;
   immigration_cases: ImmigrationCaseSummary[];
+  plan: string;
   profile: UserProfile | null;
   status: string;
   updated_at: string;
+};
+
+export type AdminStats = {
+  active_users: number;
+  by_plan: Record<string, number>;
+  registered_today: number;
+  registered_this_week: number;
+  suspended_users: number;
+  total_users: number;
+  unverified_users: number;
+  verified_users: number;
+};
+
+export type AiFeedbackEntry = {
+  case_id: string;
+  comment: string | null;
+  created_at: string;
+  feature: string;
+  id: string;
+  rating: string;
+  target_id: string | null;
+  updated_at: string;
+  user_id: string;
+};
+
+export type AiFeedbackSummary = {
+  by_feature: Record<string, number>;
+  generated_at: string;
+  negative_feedback: number;
+  positive_feedback: number;
+  recent_feedback: AiFeedbackEntry[];
+  total_feedback: number;
 };
 
 export type KnowledgeSourceSummary = {
