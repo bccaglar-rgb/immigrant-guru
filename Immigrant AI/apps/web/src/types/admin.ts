@@ -166,3 +166,67 @@ export type KnowledgeChunkCreatePayload = {
   metadata?: Record<string, unknown>;
   source_id: string;
 };
+
+// ─── Analytics ────────────────────────────────────────────────────────────────
+
+export type RevenueByPlan = {
+  plan: string;
+  price_usd: number;
+  user_count: number;
+  revenue_usd: number;
+};
+
+export type RevenueAnalytics = {
+  total_revenue_usd: number;
+  paid_user_count: number;
+  free_user_count: number;
+  arpu_usd: number;
+  by_plan: RevenueByPlan[];
+};
+
+export type CaseStatusBreakdown = {
+  status: string;
+  count: number;
+};
+
+export type RecentCaseEntry = {
+  id: string;
+  title: string | null;
+  status: string;
+  user_email: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type CaseAnalytics = {
+  total_cases: number;
+  active_cases: number;
+  by_status: CaseStatusBreakdown[];
+  recent: RecentCaseEntry[];
+};
+
+export type DailySignup = {
+  date: string;
+  signups: number;
+};
+
+export type GrowthAnalytics = {
+  range_days: number;
+  total_in_range: number;
+  daily: DailySignup[];
+};
+
+export type DocumentQueueSummary = {
+  pending: number;
+  uploaded: number;
+  processing: number;
+  failed: number;
+};
+
+export type SystemHealth = {
+  total_users: number;
+  total_cases: number;
+  total_documents: number;
+  document_queue: DocumentQueueSummary;
+  generated_at: string;
+};

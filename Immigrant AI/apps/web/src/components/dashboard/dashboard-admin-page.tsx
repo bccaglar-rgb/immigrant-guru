@@ -38,9 +38,13 @@ import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 
+import { CasesTab } from "./admin/cases-tab";
+import { RevenueTab } from "./admin/revenue-tab";
+import { SystemTab } from "./admin/system-tab";
+
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-type Tab = "overview" | "users" | "knowledge" | "feedback";
+type Tab = "overview" | "revenue" | "users" | "cases" | "knowledge" | "feedback" | "system";
 type LoadStatus = "idle" | "loading" | "ready" | "error";
 
 type SearchFormState = {
@@ -566,9 +570,12 @@ function DashboardAdminPageInner() {
 
 const SECTION_META: Record<Tab, { title: string; description: string }> = {
   overview: { title: "Overview", description: "Platform health, usage stats, and recent signups." },
+  revenue: { title: "Revenue & growth", description: "Paid conversions, ARPU, and daily signup trends." },
   users: { title: "Users", description: "Manage user accounts, plans, and access status." },
+  cases: { title: "Cases", description: "Immigration case volume, statuses, and recent activity." },
   knowledge: { title: "Knowledge base", description: "Search and curate sources and chunks." },
   feedback: { title: "AI feedback", description: "Review positive and negative feedback on AI responses." },
+  system: { title: "System health", description: "Document processing queue, totals, and operational state." },
 };
 
 function IconHome({ className }: { className?: string }) {
@@ -596,6 +603,27 @@ function IconChat({ className }: { className?: string }) {
   return (
     <svg className={className} width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z" />
+    </svg>
+  );
+}
+function IconDollar({ className }: { className?: string }) {
+  return (
+    <svg className={className} width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <line x1="12" y1="1" x2="12" y2="23" /><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6" />
+    </svg>
+  );
+}
+function IconBriefcase({ className }: { className?: string }) {
+  return (
+    <svg className={className} width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="2" y="7" width="20" height="14" rx="2" /><path d="M16 21V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v16" />
+    </svg>
+  );
+}
+function IconServer({ className }: { className?: string }) {
+  return (
+    <svg className={className} width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="2" y="2" width="20" height="8" rx="2" /><rect x="2" y="14" width="20" height="8" rx="2" /><line x1="6" y1="6" x2="6.01" y2="6" /><line x1="6" y1="18" x2="6.01" y2="18" />
     </svg>
   );
 }
@@ -646,9 +674,12 @@ function DashboardAdminCore({ accessToken, userEmail, onSignOut }: AdminCoreProp
 
   const navItems: { value: Tab; label: string; icon: typeof IconHome; count?: number }[] = [
     { value: "overview", label: "Overview", icon: IconHome },
+    { value: "revenue", label: "Revenue", icon: IconDollar },
     { value: "users", label: "Users", icon: IconUsers, count: users.length },
+    { value: "cases", label: "Cases", icon: IconBriefcase },
     { value: "knowledge", label: "Knowledge", icon: IconBook },
     { value: "feedback", label: "Feedback", icon: IconChat },
+    { value: "system", label: "System", icon: IconServer },
   ];
 
   const meta = SECTION_META[tab];
@@ -759,9 +790,12 @@ function DashboardAdminCore({ accessToken, userEmail, onSignOut }: AdminCoreProp
           ) : (
             <>
               {tab === "overview" && <OverviewTab stats={stats} db={db} version={version} users={users} />}
+              {tab === "revenue" && <RevenueTab accessToken={accessToken} />}
               {tab === "users" && <UsersTab users={users} accessToken={accessToken} onUserUpdated={handleUserUpdated} />}
+              {tab === "cases" && <CasesTab accessToken={accessToken} />}
               {tab === "knowledge" && <KnowledgeTab accessToken={accessToken} canAdmin={canAdmin} />}
               {tab === "feedback" && <FeedbackTab accessToken={accessToken} />}
+              {tab === "system" && <SystemTab accessToken={accessToken} />}
             </>
           )}
         </div>

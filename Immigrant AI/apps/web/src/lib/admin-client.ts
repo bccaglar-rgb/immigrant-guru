@@ -12,14 +12,18 @@ import type {
   AdminStats,
   AdminUserDirectoryEntry,
   AiFeedbackSummary,
+  CaseAnalytics,
   DatabaseCheck,
+  GrowthAnalytics,
   KnowledgeChunkCreatePayload,
   KnowledgeChunkRecord,
   KnowledgeSearchPayload,
   KnowledgeSearchResponse,
   KnowledgeSourceCreatePayload,
   KnowledgeSourceSummary,
-  ServiceVersion
+  RevenueAnalytics,
+  ServiceVersion,
+  SystemHealth
 } from "@/types/admin";
 
 const metadataSchema = z.record(z.string(), z.unknown());
@@ -296,5 +300,127 @@ export async function getAiFeedback(
     }),
     aiFeedbackSummarySchema,
     "AI feedback response was invalid."
+  );
+}
+
+// ─── Analytics ────────────────────────────────────────────────────────────────
+
+const revenueByPlanSchema = z.object({
+  plan: z.string(),
+  price_usd: z.number().int(),
+  user_count: z.number().int(),
+  revenue_usd: z.number().int()
+});
+
+const revenueAnalyticsSchema = z.object({
+  total_revenue_usd: z.number().int(),
+  paid_user_count: z.number().int(),
+  free_user_count: z.number().int(),
+  arpu_usd: z.number(),
+  by_plan: z.array(revenueByPlanSchema)
+});
+
+const caseStatusBreakdownSchema = z.object({
+  status: z.string(),
+  count: z.number().int()
+});
+
+const recentCaseEntrySchema = z.object({
+  id: z.string(),
+  title: z.string().nullable(),
+  status: z.string(),
+  user_email: z.string().nullable(),
+  created_at: z.string(),
+  updated_at: z.string()
+});
+
+const caseAnalyticsSchema = z.object({
+  total_cases: z.number().int(),
+  active_cases: z.number().int(),
+  by_status: z.array(caseStatusBreakdownSchema),
+  recent: z.array(recentCaseEntrySchema)
+});
+
+const growthAnalyticsSchema = z.object({
+  range_days: z.number().int(),
+  total_in_range: z.number().int(),
+  daily: z.array(z.object({ date: z.string(), signups: z.number().int() }))
+});
+
+const systemHealthSchema = z.object({
+  total_users: z.number().int(),
+  total_cases: z.number().int(),
+  total_documents: z.number().int(),
+  document_queue: z.object({
+    pending: z.number().int(),
+    uploaded: z.number().int(),
+    processing: z.number().int(),
+    failed: z.number().int()
+  }),
+  generated_at: z.string()
+});
+
+export async function getRevenueAnalytics(
+  accessToken: string
+): Promise<ApiRequestResult<RevenueAnalytics>> {
+  return parseResponse(
+    await apiRequest({
+      authToken: accessToken,
+      method: "GET",
+      path: "/admin/analytics/revenue",
+      retries: 0,
+      timeoutMs: 8000
+    }),
+    revenueAnalyticsSchema,
+    "Revenue analytics response was invalid."
+  );
+}
+
+export async function getCaseAnalytics(
+  accessToken: string
+): Promise<ApiRequestResult<CaseAnalytics>> {
+  return parseResponse(
+    await apiRequest({
+      authToken: accessToken,
+      method: "GET",
+      path: "/admin/analytics/cases",
+      retries: 0,
+      timeoutMs: 8000
+    }),
+    caseAnalyticsSchema,
+    "Case analytics response was invalid."
+  );
+}
+
+export async function getGrowthAnalytics(
+  accessToken: string,
+  days = 30
+): Promise<ApiRequestResult<GrowthAnalytics>> {
+  return parseResponse(
+    await apiRequest({
+      authToken: accessToken,
+      method: "GET",
+      path: `/admin/analytics/growth?days=${days}`,
+      retries: 0,
+      timeoutMs: 8000
+    }),
+    growthAnalyticsSchema,
+    "Growth analytics response was invalid."
+  );
+}
+
+export async function getSystemHealth(
+  accessToken: string
+): Promise<ApiRequestResult<SystemHealth>> {
+  return parseResponse(
+    await apiRequest({
+      authToken: accessToken,
+      method: "GET",
+      path: "/admin/analytics/system",
+      retries: 0,
+      timeoutMs: 8000
+    }),
+    systemHealthSchema,
+    "System health response was invalid."
   );
 }
