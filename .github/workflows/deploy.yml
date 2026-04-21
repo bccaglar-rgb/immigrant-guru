@@ -30,7 +30,15 @@ jobs:
           command_timeout: 20m
           script: |
             REPO=/opt/app/immigrant-guru
+            mkdir -p "$REPO"
             cd "$REPO"
+
+            echo "==> Ensure git repo exists"
+            if [ ! -d .git ]; then
+              echo "WARNING: .git missing — re-initializing repo from GitHub"
+              git init
+              git remote add origin https://github.com/bccaglar-rgb/immigrant-guru.git
+            fi
 
             echo "==> Pull latest code"
             git fetch --all --prune
