@@ -1,6 +1,5 @@
 "use client";
 
-import { useLocale as useIntlLocale } from "next-intl";
 import { useTransition } from "react";
 import {
   createContext,
@@ -30,16 +29,16 @@ const LocaleContext = createContext<LocaleContextValue | null>(null);
 
 type LocaleProviderProps = Readonly<{
   children: ReactNode;
+  locale?: LanguageCode;
 }>;
 
 const ATTRIBUTE_NAMES = ["placeholder", "aria-label", "title"] as const;
 
-export function LocaleProvider({ children }: LocaleProviderProps) {
-  // Locale is now URL-driven (next-intl [locale] segment). This provider keeps
-  // the same `{ locale, setLocale }` contract for legacy consumers, but the
-  // MutationObserver below only runs as a fallback translator for strings that
-  // haven't been extracted to next-intl message files yet.
-  const locale = useIntlLocale() as LanguageCode;
+export function LocaleProvider({ children, locale: localeProp = "en" }: LocaleProviderProps) {
+  // Locale is passed as a prop from [locale]/layout (always available
+  // server-side). Avoids calling useIntlLocale() which throws an empty error
+  // when NextIntlClientProvider is absent (e.g. /_not-found SSR prerender).
+  const locale = localeProp;
   const router = useRouter();
   const pathname = usePathname();
   const [, startTransition] = useTransition();
@@ -342,12 +341,14 @@ export function LocaleProvider({ children }: LocaleProviderProps) {
   );
 }
 
+const LOCALE_DEFAULTS: LocaleContextValue = {
+  locale: "en",
+  setLocale: () => {},
+};
+
 export function useLocale() {
   const context = useContext(LocaleContext);
-
-  if (!context) {
-    throw new Error("useLocale must be used within a LocaleProvider.");
-  }
-
-  return context;
+  // Return safe English defaults when called outside a provider (e.g. during
+  // /_not-found SSR prerender where the provider tree is absent).
+  return context ?? LOCALE_DEFAULTS;
 }

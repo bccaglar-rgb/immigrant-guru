@@ -180,7 +180,7 @@ export default async function LocaleLayout({ children, params }: LayoutProps) {
         </div>
         <div className="anim-page-enter relative z-[1]">
           <NextIntlClientProvider locale={locale} messages={messages}>
-            <LocaleProvider>
+            <LocaleProvider locale={locale as import("@/lib/i18n").LanguageCode}>
               <AuthProvider>{children}</AuthProvider>
             </LocaleProvider>
           </NextIntlClientProvider>
