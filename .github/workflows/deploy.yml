@@ -41,6 +41,9 @@ jobs:
 
             echo "==> Web build"
             cd "$REPO/apps/web"
+            # Next 16: middleware.ts → proxy.ts. tar -x never deletes old files,
+            # so the renamed file lingers and causes "both detected" build error.
+            rm -f src/middleware.ts
             rm -rf .next
             npm ci --no-audit --no-fund
             npm run build
