@@ -36,14 +36,15 @@ jobs:
             git fetch --all --prune
             git reset --hard origin/main
 
-            echo "==> Sync app files from Immigrant AI/ subtree"
-            git archive HEAD "Immigrant AI/" | tar -x --strip-components=1 -C "$REPO"
+            echo "==> Sync app files from Immigrant AI/ subtree (rsync --delete removes stale files)"
+            git archive HEAD "Immigrant AI/" | tar -x --strip-components=1 -C /tmp/immigrant-ai-sync/
+            rsync -a --delete \
+              --exclude='.next' --exclude='node_modules' --exclude='.venv' \
+              /tmp/immigrant-ai-sync/ "$REPO/"
+            rm -rf /tmp/immigrant-ai-sync
 
             echo "==> Web build"
             cd "$REPO/apps/web"
-            # Next 16: middleware.ts → proxy.ts. tar -x never deletes old files,
-            # so the renamed file lingers and causes "both detected" build error.
-            rm -f src/middleware.ts
             rm -rf .next
             npm ci --no-audit --no-fund
             npm run build
