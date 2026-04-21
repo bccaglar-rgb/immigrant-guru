@@ -24,7 +24,7 @@ jobs:
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.DROPLET_IP }}
-          username: appuser
+          username: root
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script_stop: true
           command_timeout: 20m
