@@ -105,6 +105,7 @@ export function AuthForm({ mode }: AuthFormProps) {
   };
 
   const handleVerify = () => {
+    if (isSubmitting) return;
     const code = verificationCode.trim();
     if (!code) {
       setFormError("Enter the 6-digit code from your email.");
@@ -122,10 +123,14 @@ export function AuthForm({ mode }: AuthFormProps) {
           return;
         }
 
+        // Verify succeeded — the account is now verified and we hold a valid
+        // access token. Try to hydrate the session, but if that post-verify
+        // bootstrap stumbles (network blip, /auth/me slow) we still navigate:
+        // the worst case is the dashboard re-auths on load, far better than
+        // stranding the user on the verify screen with a consumed code.
         const established = await establishSession(result.data);
         if (!established.ok) {
-          setFormError(established.errorMessage);
-          return;
+          console.warn("verify-email: post-verify session hydrate failed", established.errorMessage);
         }
 
         router.replace(nextPath);
@@ -240,6 +245,12 @@ export function AuthForm({ mode }: AuthFormProps) {
               setVerificationCode(e.target.value.replace(/\D/g, "").slice(0, 6));
               setFormError(null);
             }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && verificationCode.length === 6) {
+                e.preventDefault();
+                handleVerify();
+              }
+            }}
             placeholder="123456"
             value={verificationCode}
           />
@@ -250,7 +261,13 @@ export function AuthForm({ mode }: AuthFormProps) {
             </div>
           ) : null}
 
-          <Button disabled={isSubmitting || verificationCode.length < 6} fullWidth size="lg" onClick={handleVerify}>
+          <Button
+            disabled={isSubmitting || verificationCode.length < 6}
+            fullWidth
+            size="lg"
+            onClick={handleVerify}
+            type="button"
+          >
             {isSubmitting ? "Verifying..." : "Verify email"}
           </Button>
 

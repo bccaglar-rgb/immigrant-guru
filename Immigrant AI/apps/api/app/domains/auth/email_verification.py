@@ -11,6 +11,7 @@ from pydantic import BaseModel, EmailStr
 from redis.asyncio import from_url as redis_from_url
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from app.core.config import get_settings
 from app.core.security import create_access_token
@@ -144,7 +145,9 @@ async def verify_email(
             detail="Invalid code. Please try again.",
         )
 
-    result = await session.execute(select(User).where(User.email == email))
+    result = await session.execute(
+        select(User).options(selectinload(User.profile)).where(User.email == email)
+    )
     user = result.scalar_one_or_none()
 
     if not user:
@@ -152,6 +155,12 @@ async def verify_email(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Account not found.",
         )
+
+    # Snapshot fields we need for the welcome email BEFORE commit — post-commit
+    # the user object is expired and lazy-loads would require an active
+    # greenlet context (which we lose during async-io to Resend).
+    welcome_email_address = user.email
+    welcome_first_name = user.profile.first_name if user.profile else None
 
     user.email_verified = True
     await session.commit()
@@ -165,11 +174,9 @@ async def verify_email(
 
     logger.info("email_verify.completed email=%s", email)
 
-    # Send welcome email after successful verification
     try:
         from app.services.shared.email_service import send_welcome_email
-        first_name = user.profile.first_name if user.profile else None
-        await send_welcome_email(user.email, first_name)
+        await send_welcome_email(welcome_email_address, welcome_first_name)
     except Exception:
         logger.exception("email_verify.welcome_email_failed email=%s", email)
 
