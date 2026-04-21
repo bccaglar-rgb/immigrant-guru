@@ -8,6 +8,7 @@ from app.domains.admin.case_outcomes import router as case_outcomes_router
 from app.domains.admin.users import router as users_router
 from app.domains.ai.profile_analysis import router as profile_analysis_router
 from app.domains.ai.router import router as ai_router
+from app.domains.auth.email_verification import router as email_verification_router
 from app.domains.auth.password_reset import router as password_reset_router
 from app.domains.auth.router import router as auth_router
 from app.domains.billing.router import router as billing_router
@@ -22,6 +23,7 @@ api_router.include_router(admin_kb_router)
 api_router.include_router(ai_router)
 api_router.include_router(ai_feedback_router)
 api_router.include_router(auth_router)
+api_router.include_router(email_verification_router)
 api_router.include_router(billing_router)
 api_router.include_router(cases_router)
 api_router.include_router(case_outcomes_router)

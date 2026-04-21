@@ -219,40 +219,20 @@ async def create_checkout(
     price_id = price_map.get(normalized_plan)
 
     if not price_id or not settings.stripe_secret_key:
-        if settings.app_env in {"staging", "production"}:
-            raise HTTPException(
-                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-                detail="Billing is temporarily unavailable.",
-            )
-
-        # Fallback: direct upgrade (demo mode)
-        logger.warning("billing.fallback_demo plan=%s reason=no_stripe_config", normalized_plan)
-        current_user.plan = normalized_plan
-        await session.commit()
-        await session.refresh(current_user)
-        try:
-            from app.services.shared.email_service import send_upgrade_email
-            first_name = current_user.profile.first_name if current_user.profile else None
-            result = await send_upgrade_email(current_user.email, plan_name, first_name)
-            if result is None:
-                logger.warning("billing.demo_upgrade_email_failed user=%s plan=%s", current_user.id, normalized_plan)
-        except Exception:
-            logger.exception("billing.demo_upgrade_email_error user=%s plan=%s", current_user.id, normalized_plan)
-        return {
-            "success": True,
-            "mode": "demo",
-            "plan": normalized_plan,
-            "plan_name": plan_name,
-            "price": plan_info["price"],
-            "message": f"Upgraded to {plan_name}. Your full plan is now unlocked.",
-        }
+        logger.error("billing.stripe_not_configured env=%s plan=%s", settings.app_env, normalized_plan)
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Billing is temporarily unavailable.",
+        )
 
     # Real Stripe Checkout Session
+    idempotency_key = f"checkout-{current_user.id}-{normalized_plan}"
     try:
         async with httpx.AsyncClient(timeout=15) as client:
             resp = await client.post(
                 "https://api.stripe.com/v1/checkout/sessions",
                 auth=(settings.stripe_secret_key, ""),
+                headers={"Idempotency-Key": idempotency_key},
                 data={
                     "mode": "payment",
                     "payment_method_types[]": "card",
@@ -300,20 +280,21 @@ async def stripe_webhook(
     settings = get_settings()
     body = await request.body()
 
-    if settings.stripe_webhook_secret:
-        signature_header = request.headers.get("Stripe-Signature")
-        if not signature_header or not _verify_stripe_signature(
-            body,
-            signature_header,
-            settings.stripe_webhook_secret,
-            settings.stripe_webhook_tolerance_seconds,
-        ):
-            raise HTTPException(status_code=400, detail="Invalid webhook signature")
-    elif settings.app_env in {"staging", "production"}:
+    # Signature verification is mandatory in all environments.
+    if not settings.stripe_webhook_secret:
+        logger.error("stripe.webhook_secret_missing env=%s", settings.app_env)
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail="Stripe webhook is not configured.",
         )
+    signature_header = request.headers.get("Stripe-Signature")
+    if not signature_header or not _verify_stripe_signature(
+        body,
+        signature_header,
+        settings.stripe_webhook_secret,
+        settings.stripe_webhook_tolerance_seconds,
+    ):
+        raise HTTPException(status_code=400, detail="Invalid webhook signature")
 
     try:
         event = json.loads(body)
@@ -336,8 +317,13 @@ async def stripe_webhook(
 
     if event_type == "checkout.session.completed":
         data = event.get("data", {}).get("object", {})
+        payment_status = data.get("payment_status", "")
         user_id = data.get("metadata", {}).get("user_id")
         plan = _normalize_plan(str(data.get("metadata", {}).get("plan", "")))
+
+        if payment_status != "paid":
+            logger.warning("stripe.webhook_unpaid_session event_id=%s payment_status=%s", event_id, payment_status)
+            return {"status": "ok"}
 
         if user_id and plan in _PAID_PLANS:
             from uuid import UUID

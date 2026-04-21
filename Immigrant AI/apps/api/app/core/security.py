@@ -36,7 +36,7 @@ def get_password_hash(password: str) -> str:
     return password_hash.hash(password)
 
 
-def create_access_token(subject: UUID | str) -> tuple[str, int]:
+def create_access_token(subject: UUID | str, token_version: int = 0) -> tuple[str, int]:
     """Create a signed JWT access token."""
 
     settings = get_settings()
@@ -47,6 +47,7 @@ def create_access_token(subject: UUID | str) -> tuple[str, int]:
     payload = {
         "sub": str(subject),
         "type": "access",
+        "tv": token_version,
         "iat": int(now.timestamp()),
         "exp": int(expires_at.timestamp()),
         "iss": settings.jwt_issuer,
@@ -89,6 +90,20 @@ def decode_access_token(token: str) -> dict[str, Any]:
     return payload
 
 
+async def is_token_revoked(payload: dict[str, Any]) -> bool:
+    """Check if this token has been explicitly revoked (e.g. via logout)."""
+    from redis.asyncio import from_url as redis_from_url
+    settings = get_settings()
+    jti = f"{payload.get('sub', '')}:{payload.get('iat', '')}"
+    try:
+        redis = redis_from_url(settings.redis_url, decode_responses=True)
+        result = await redis.exists(f"revoked_token:{jti}")
+        await redis.aclose()
+        return bool(result)
+    except Exception:
+        return False  # fail-open on Redis error for logout check (non-critical)
+
+
 async def get_current_user(
     credentials: HTTPAuthorizationCredentials | None = Depends(bearer_scheme),
     session: AsyncSession = Depends(get_db_session),
@@ -103,6 +118,14 @@ async def get_current_user(
         )
 
     payload = decode_access_token(credentials.credentials)
+
+    if await is_token_revoked(payload):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Token has been revoked. Please sign in again.",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
     try:
         user_id = UUID(str(payload["sub"]))
     except (TypeError, ValueError) as exc:
@@ -133,6 +156,15 @@ async def get_current_user(
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="User account is not active.",
+        )
+
+    # Reject tokens issued before a password reset (token_version mismatch).
+    token_tv = payload.get("tv", 0)
+    if token_tv != user.token_version:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Token has been invalidated. Please sign in again.",
+            headers={"WWW-Authenticate": "Bearer"},
         )
 
     return user

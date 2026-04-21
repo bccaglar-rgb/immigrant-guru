@@ -4,6 +4,18 @@ import logging
 from pathlib import Path
 from uuid import UUID
 
+# Magic bytes for allowed file types. Keyed by the extension the file claims.
+_MAGIC_BYTES: dict[str, list[bytes]] = {
+    ".pdf":  [b"%PDF"],
+    ".png":  [b"\x89PNG\r\n\x1a\n"],
+    ".jpg":  [b"\xff\xd8\xff"],
+    ".jpeg": [b"\xff\xd8\xff"],
+    ".webp": [b"RIFF"],          # RIFF....WEBP — checked further below
+    ".doc":  [b"\xd0\xcf\x11\xe0"],
+    ".docx": [b"PK\x03\x04"],   # ZIP container (OOXML)
+}
+_MAGIC_READ_BYTES = 12
+
 from fastapi import HTTPException, UploadFile, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -72,6 +84,7 @@ class DocumentService:
     ) -> Document:
         immigration_case = await self._case_service.get_case(session, user, case_id)
         self._validate_upload(upload_file=upload_file, document_type=document_type)
+        await self._validate_magic_bytes(upload_file)
 
         try:
             stored = await self._storage.save_case_file(
@@ -190,6 +203,30 @@ class DocumentService:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Document type is too long.",
+            )
+
+    @staticmethod
+    async def _validate_magic_bytes(upload_file: UploadFile) -> None:
+        """Verify the file's actual bytes match the declared extension."""
+        extension = Path(upload_file.filename or "").suffix.lower()
+        expected_signatures = _MAGIC_BYTES.get(extension)
+        if not expected_signatures:
+            return  # unknown extension already rejected by _validate_upload
+
+        header = await upload_file.read(_MAGIC_READ_BYTES)
+        await upload_file.seek(0)  # reset so the storage layer reads the full file
+
+        if not any(header.startswith(sig) for sig in expected_signatures):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="File content does not match the declared file type.",
+            )
+
+        # Extra WEBP check: bytes 8-11 must be b"WEBP"
+        if extension == ".webp" and header[8:12] != b"WEBP":
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="File content does not match the declared file type.",
             )
 
     def _cleanup_stored_file(self, storage_path: str) -> None:

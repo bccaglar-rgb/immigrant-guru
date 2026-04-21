@@ -1,7 +1,13 @@
 // PM2 ecosystem — Immigrant Guru production
-// Start:   pm2 start /opt/app/immigrant-guru/ecosystem.config.cjs
-// Save:    pm2 save  (persist across reboots)
-// Startup: pm2 startup systemd -u root --hp /root
+//
+// SECURITY: Run PM2 and all app processes as an unprivileged user, NOT root.
+// One-time server setup:
+//   useradd -r -m -s /bin/bash appuser
+//   chown -R appuser:appuser /opt/app/immigrant-guru /var/log/immigrant
+//   pm2 startup systemd -u appuser --hp /home/appuser
+//   # Then run all pm2 commands as appuser:
+//   sudo -u appuser pm2 start /opt/app/immigrant-guru/ecosystem.config.cjs
+//   sudo -u appuser pm2 save
 
 const APP_DIR = '/opt/app/immigrant-guru';
 

@@ -1,5 +1,6 @@
 """Password reset endpoints — email code verification backed by Redis."""
 
+import hmac
 import logging
 import secrets
 from datetime import datetime, timezone
@@ -26,8 +27,23 @@ _CODE_PREFIX = "pwd_reset:code:"
 _ATTEMPTS_PREFIX = "pwd_reset:attempts:"
 
 
+def _mask_email(email: str) -> str:
+    """Mask email for logs: user@example.com → u***@example.com"""
+    try:
+        local, domain = email.split("@", 1)
+        return f"{local[0]}***@{domain}"
+    except Exception:
+        return "***"
+
+
 def _generate_code() -> str:
-    return str(secrets.randbelow(900000) + 100000)  # 6-digit code
+    """Generate a 64-character URL-safe random token (cryptographically secure)."""
+    return secrets.token_urlsafe(48)
+
+
+def _codes_equal(a: str, b: str) -> bool:
+    """Constant-time comparison to prevent timing attacks."""
+    return hmac.compare_digest(a.encode(), b.encode())
 
 
 async def _get_redis():
@@ -112,9 +128,9 @@ async def forgot_password(
 
         result_email = await send_password_reset_email(email, code)
         if result_email is None:
-            logger.error("password_reset.email_failed email=%s", email)
+            logger.error("password_reset.email_failed email=%s", _mask_email(email))
         else:
-            logger.info("password_reset.code_sent email=%s", email)
+            logger.info("password_reset.code_sent email=%s", _mask_email(email))
 
     # Always return success — don't reveal if email exists
     return {"message": "If an account exists with this email, a reset code has been sent."}
@@ -144,7 +160,7 @@ async def verify_reset_code(body: VerifyCodeRequest):
         await _delete_code(email)
         raise HTTPException(status_code=status.HTTP_429_TOO_MANY_REQUESTS, detail="Too many attempts. Request a new code.")
 
-    if body.code != stored_code:
+    if not _codes_equal(body.code, stored_code):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid code. Please try again.")
 
     return {"verified": True}
@@ -164,7 +180,21 @@ async def reset_password(
         logger.exception("password_reset.redis_get_failed email=%s", email)
         raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="Service temporarily unavailable.")
 
-    if not stored_code or body.code != stored_code:
+    if not stored_code:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid or expired code.")
+
+    # Enforce attempt limit on the final reset step too
+    try:
+        attempts = await _increment_attempts(email)
+    except Exception:
+        logger.exception("password_reset.redis_attempts_failed email=%s", _mask_email(email))
+        attempts = 0
+
+    if attempts > _MAX_ATTEMPTS:
+        await _delete_code(email)
+        raise HTTPException(status_code=status.HTTP_429_TOO_MANY_REQUESTS, detail="Too many attempts. Request a new code.")
+
+    if not _codes_equal(body.code, stored_code):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid or expired code.")
 
     if len(body.new_password) < 8:
@@ -177,6 +207,7 @@ async def reset_password(
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Account not found.")
 
     user.password_hash = get_password_hash(body.new_password)
+    user.token_version = (user.token_version or 0) + 1  # invalidate all existing tokens
     await session.commit()
 
     try:
@@ -184,5 +215,5 @@ async def reset_password(
     except Exception:
         logger.warning("password_reset.redis_cleanup_failed email=%s", email)
 
-    logger.info("password_reset.completed email=%s", email)
+    logger.info("password_reset.completed email=%s", _mask_email(email))
     return {"message": "Password reset successfully. You can now sign in."}

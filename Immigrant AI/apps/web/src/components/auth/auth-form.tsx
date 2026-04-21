@@ -8,7 +8,7 @@ import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAuthSession } from "@/hooks/use-auth-session";
-import { loginWithPassword, registerUser } from "@/lib/auth-client";
+import { loginWithPassword, registerUser, sendVerificationCode, verifyEmail } from "@/lib/auth-client";
 import { resolveSafeAuthRedirectPath } from "@/lib/auth-redirect";
 import type { AuthMode, RequestResult, AuthSessionSeed } from "@/types/auth";
 
@@ -16,6 +16,7 @@ type AuthFormProps = Readonly<{
   mode: AuthMode;
 }>;
 
+type FormStep = "form" | "verify";
 type FieldErrors = Partial<Record<"email" | "firstName" | "lastName" | "password" | "confirmPassword", string>>;
 
 const signInSchema = z.object({
@@ -40,9 +41,13 @@ export function AuthForm({ mode }: AuthFormProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { establishSession, status } = useAuthSession();
+  const [step, setStep] = useState<FormStep>("form");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [formError, setFormError] = useState<string | null>(null);
+  const [pendingEmail, setPendingEmail] = useState("");
+  const [verificationCode, setVerificationCode] = useState("");
+  const [resendCooldown, setResendCooldown] = useState(0);
   const [formState, setFormState] = useState({
     firstName: "",
     lastName: "",
@@ -67,10 +72,70 @@ export function AuthForm({ mode }: AuthFormProps) {
     }
   }, [nextPath, router, status]);
 
+  // Countdown timer for resend cooldown
+  useEffect(() => {
+    if (resendCooldown <= 0) return;
+    const timer = setTimeout(() => setResendCooldown((c) => c - 1), 1000);
+    return () => clearTimeout(timer);
+  }, [resendCooldown]);
+
   const handleChange = (field: keyof typeof formState, value: string) => {
     setFormState((current) => ({ ...current, [field]: value }));
     setFieldErrors((current) => ({ ...current, [field]: undefined }));
     setFormError(null);
+  };
+
+  const enterVerifyStep = (email: string) => {
+    setPendingEmail(email);
+    setVerificationCode("");
+    setFormError(null);
+    setResendCooldown(60);
+    setStep("verify");
+  };
+
+  const handleResendCode = async () => {
+    if (resendCooldown > 0) return;
+    setFormError(null);
+    const result = await sendVerificationCode(pendingEmail);
+    if (!result.ok) {
+      setFormError(result.errorMessage);
+      return;
+    }
+    setResendCooldown(60);
+  };
+
+  const handleVerify = () => {
+    const code = verificationCode.trim();
+    if (!code) {
+      setFormError("Enter the 6-digit code from your email.");
+      return;
+    }
+
+    const submit = async () => {
+      setIsSubmitting(true);
+      setFormError(null);
+
+      try {
+        const result = await verifyEmail(pendingEmail, code);
+        if (!result.ok) {
+          setFormError(result.errorMessage);
+          return;
+        }
+
+        const established = await establishSession(result.data);
+        if (!established.ok) {
+          setFormError(established.errorMessage);
+          return;
+        }
+
+        router.replace(nextPath);
+        router.refresh();
+      } finally {
+        setIsSubmitting(false);
+      }
+    };
+
+    void submit();
   };
 
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
@@ -101,12 +166,20 @@ export function AuthForm({ mode }: AuthFormProps) {
             return;
           }
 
-          result = await registerUser({
+          const registerResult = await registerUser({
             email: validation.data.email,
             password: validation.data.password,
             firstName: validation.data.firstName?.trim() || undefined,
             lastName: validation.data.lastName?.trim() || undefined
           });
+
+          if (!registerResult.ok) {
+            setFormError(registerResult.errorMessage);
+            return;
+          }
+
+          enterVerifyStep(validation.data.email);
+          return;
         } else {
           const validation = signInSchema.safeParse(formState);
           if (!validation.success) {
@@ -115,11 +188,16 @@ export function AuthForm({ mode }: AuthFormProps) {
           }
 
           result = await loginWithPassword(validation.data);
-        }
 
-        if (!result.ok) {
-          setFormError(result.errorMessage);
-          return;
+          if (!result.ok) {
+            // Email not verified — show verification step
+            if (result.status === 403) {
+              enterVerifyStep(validation.data.email);
+              return;
+            }
+            setFormError(result.errorMessage);
+            return;
+          }
         }
 
         const established = await establishSession(result.data);
@@ -138,6 +216,69 @@ export function AuthForm({ mode }: AuthFormProps) {
     void submit();
   };
 
+  // ── Verification step ──────────────────────────────────────────────────────
+  if (step === "verify") {
+    return (
+      <div className="space-y-6">
+        <div className="space-y-2">
+          <h2 className="text-2xl font-semibold tracking-tight text-ink">Check your email</h2>
+          <p className="text-sm leading-relaxed text-muted">
+            We sent a 6-digit code to{" "}
+            <span className="font-medium text-ink">{pendingEmail}</span>. Enter it below to
+            verify your account.
+          </p>
+        </div>
+
+        <div className="space-y-4">
+          <Input
+            autoComplete="one-time-code"
+            disabled={isSubmitting}
+            inputMode="numeric"
+            label="Verification code"
+            maxLength={6}
+            onChange={(e) => {
+              setVerificationCode(e.target.value.replace(/\D/g, "").slice(0, 6));
+              setFormError(null);
+            }}
+            placeholder="123456"
+            value={verificationCode}
+          />
+
+          {formError ? (
+            <div className="rounded-xl border border-red/20 bg-red/5 px-4 py-3 text-sm text-red">
+              {formError}
+            </div>
+          ) : null}
+
+          <Button disabled={isSubmitting || verificationCode.length < 6} fullWidth size="lg" onClick={handleVerify}>
+            {isSubmitting ? "Verifying..." : "Verify email"}
+          </Button>
+
+          <button
+            className="w-full text-sm text-accent hover:text-accent-hover transition-colors disabled:opacity-40"
+            disabled={resendCooldown > 0}
+            onClick={handleResendCode}
+            type="button"
+          >
+            {resendCooldown > 0 ? `Resend code in ${resendCooldown}s` : "Resend code"}
+          </button>
+        </div>
+
+        <p className="text-sm text-muted">
+          Wrong email?{" "}
+          <button
+            className="font-semibold text-accent hover:text-accent-hover transition-colors"
+            onClick={() => { setStep("form"); setFormError(null); }}
+            type="button"
+          >
+            Go back
+          </button>
+        </p>
+      </div>
+    );
+  }
+
+  // ── Main form ──────────────────────────────────────────────────────────────
   return (
     <div className="space-y-6">
       <div className="space-y-2">

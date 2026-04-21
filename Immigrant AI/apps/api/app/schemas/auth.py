@@ -15,6 +15,10 @@ class UserRegistrationRequest(BaseModel):
     profile: UserProfileCreate | None = None
 
 
+class RegistrationInitiatedResponse(BaseModel):
+    requires_verification: bool = True
+
+
 class LoginRequest(BaseModel):
     email: EmailStr
     password: str = Field(min_length=8, max_length=128)
@@ -33,6 +37,7 @@ class AuthenticatedUserResponse(BaseModel):
     email: EmailStr
     status: UserStatus
     plan: str = "free"
+    email_verified: bool = False
     created_at: datetime
     updated_at: datetime
     profile: UserProfileRead | None = None

@@ -111,7 +111,37 @@ async def send_welcome_email(email: str, first_name: str | None = None) -> dict 
 
 
 # ============================================================
-# 2. PASSWORD RESET EMAIL
+# 2. EMAIL VERIFICATION
+# ============================================================
+
+async def send_verification_email(email: str, code: str) -> dict | None:
+    """Send 6-digit email verification code after registration."""
+    return await send_email(
+        to=email,
+        subject="Verify your email — Immigrant Guru",
+        html=f"""{_WRAPPER_START}
+  <h1 style="font-size: 22px; font-weight: 600; color: #111827; margin: 0 0 16px 0; line-height: 1.3;">
+    Verify your email address
+  </h1>
+
+  <p style="font-size: 15px; color: #4b5563; line-height: 1.7; margin: 0 0 24px 0;">
+    Enter the code below to complete your registration:
+  </p>
+
+  <div style="background: #f0f9ff; border: 2px solid #0071e3; border-radius: 12px; padding: 24px; text-align: center; margin: 0 0 24px 0;">
+    <p style="font-size: 42px; font-weight: 700; color: #0071e3; margin: 0; letter-spacing: 12px;">{code}</p>
+  </div>
+
+  <p style="font-size: 14px; color: #9ca3af; line-height: 1.6; margin: 0;">
+    This code expires in 15 minutes.<br />
+    If you didn&apos;t create an account, you can ignore this email.
+  </p>
+{_WRAPPER_END}""",
+    )
+
+
+# ============================================================
+# 3. PASSWORD RESET
 # ============================================================
 
 async def send_password_reset_email(email: str, code: str) -> dict | None:

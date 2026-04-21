@@ -42,6 +42,9 @@ class Settings(BaseSettings):
         default_factory=lambda: ["Authorization", "Content-Type", "X-Request-ID"]
     )
     admin_emails: list[str] = Field(default_factory=list)
+    # IPs of trusted reverse proxies (e.g. Nginx/load-balancer).
+    # Only when populated will X-Forwarded-For be trusted for rate limiting.
+    trusted_proxy_ips: list[str] = Field(default_factory=list)
     jwt_secret_key: SecretStr = SecretStr(DEFAULT_JWT_SECRET)
     jwt_algorithm: str = "HS256"
     jwt_issuer: str = "immigrant-ai-api"

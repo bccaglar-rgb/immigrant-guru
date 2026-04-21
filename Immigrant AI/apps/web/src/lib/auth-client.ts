@@ -69,8 +69,8 @@ export async function loginWithPassword(
 
 export async function registerUser(
   payload: RegisterPayload
-): Promise<RequestResult<AuthSessionSeed>> {
-  const registerResponse = await apiRequest({
+): Promise<RequestResult<{ requiresVerification: true }>> {
+  const response = await apiRequest({
     body: {
       email: payload.email,
       password: payload.password,
@@ -86,18 +86,42 @@ export async function registerUser(
     path: "/auth/register"
   });
 
-  if (!registerResponse.ok) {
-    return {
-      ok: false,
-      errorMessage: registerResponse.errorMessage,
-      status: registerResponse.status
-    };
+  if (!response.ok) {
+    return { ok: false, errorMessage: response.errorMessage, status: response.status };
   }
 
-  return loginWithPassword({
-    email: payload.email,
-    password: payload.password
+  return { ok: true, data: { requiresVerification: true }, status: response.status };
+}
+
+export async function sendVerificationCode(email: string): Promise<RequestResult<void>> {
+  const response = await apiRequest({
+    body: { email },
+    method: "POST",
+    path: "/auth/send-verification",
+    retries: 0,
+    timeoutMs: 10000
   });
+  if (!response.ok) {
+    return { ok: false, errorMessage: response.errorMessage, status: response.status };
+  }
+  return { ok: true, data: undefined, status: response.status };
+}
+
+export async function verifyEmail(
+  email: string,
+  code: string
+): Promise<RequestResult<AuthSessionSeed>> {
+  const response = await apiRequest({
+    body: { email, code },
+    method: "POST",
+    path: "/auth/verify-email",
+    retries: 0,
+    timeoutMs: 10000
+  });
+  if (!response.ok) {
+    return { ok: false, errorMessage: response.errorMessage, status: response.status };
+  }
+  return mapTokenResponse(response.data);
 }
 
 export async function getAuthenticatedUser(

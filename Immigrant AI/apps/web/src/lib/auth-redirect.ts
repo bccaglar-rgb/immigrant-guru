@@ -9,15 +9,36 @@ export function resolveSafeAuthRedirectPath(
     return fallback;
   }
 
-  const trimmed = value.trim();
-  if (!trimmed.startsWith("/") || trimmed.startsWith("//")) {
+  // URL-decode first to defeat encoding tricks like %2F%2Fevil.com
+  let decoded: string;
+  try {
+    decoded = decodeURIComponent(value.trim());
+  } catch {
     return fallback;
   }
 
-  const [pathname] = trimmed.split(/[?#]/, 1);
-  if (AUTH_FORM_PATHS.has(pathname)) {
+  // Must start with exactly one slash, not be protocol-relative (//)
+  if (!decoded.startsWith("/") || decoded.startsWith("//")) {
     return fallback;
   }
 
-  return trimmed;
+  // Reject backslash-based bypasses (e.g. \evil.com)
+  if (decoded.includes("\\")) {
+    return fallback;
+  }
+
+  // Use the URL API to normalise and confirm the resolved path is same-origin
+  try {
+    const base = "https://app.invalid";
+    const url = new URL(decoded, base);
+    if (url.origin !== base) {
+      return fallback;
+    }
+    if (AUTH_FORM_PATHS.has(url.pathname)) {
+      return fallback;
+    }
+    return url.pathname + url.search + url.hash;
+  } catch {
+    return fallback;
+  }
 }

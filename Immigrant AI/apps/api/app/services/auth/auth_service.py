@@ -74,16 +74,6 @@ class AuthService:
             metadata={"email": created_user.email},
         )
 
-        # Send welcome email (fire-and-forget, must never block registration)
-        try:
-            from app.services.shared.email_service import send_welcome_email
-            first_name = created_user.profile.first_name if created_user.profile else None
-            result = await send_welcome_email(created_user.email, first_name)
-            if result is None:
-                logger.warning("auth.welcome_email_failed email=%s", created_user.email)
-        except Exception:
-            logger.exception("auth.welcome_email_error email=%s", created_user.email)
-
         return created_user
 
     async def login(
@@ -107,7 +97,22 @@ class AuthService:
                 detail="User account is not active.",
             )
 
-        access_token, expires_in = create_access_token(user.id)
+        if not user.email_verified:
+            # Resend code so the user can complete verification immediately
+            try:
+                from app.domains.auth.email_verification import store_verification_code
+                from app.services.shared.email_service import send_verification_email
+                code = await store_verification_code(user.email)
+                await send_verification_email(user.email, code)
+            except Exception:
+                logger.exception("auth.login_resend_verification_failed email=%s", user.email)
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Email not verified. We've resent the verification code — check your inbox.",
+                headers={"X-Requires-Verification": "true"},
+            )
+
+        access_token, expires_in = create_access_token(user.id, token_version=user.token_version or 0)
         await self._audit_service.record_event(
             session,
             actor_user_id=user.id,

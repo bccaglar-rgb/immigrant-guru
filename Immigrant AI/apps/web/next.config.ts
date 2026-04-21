@@ -6,7 +6,8 @@ const isDev = process.env.NODE_ENV === "development";
 const CSP = [
   "default-src 'self'",
   // Scripts: self + Google Analytics + Next.js inline chunks
-  "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.googletagmanager.com https://www.google-analytics.com",
+  // unsafe-eval removed — Next.js production builds do not require it.
+  "script-src 'self' 'unsafe-inline' https://js.stripe.com https://www.googletagmanager.com https://www.google-analytics.com",
   // Styles: self + inline (Next.js requires this)
   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
   // Fonts

@@ -14,6 +14,15 @@ from app.core.logging import configure_logging
 from app.core.rate_limit import RateLimitMiddleware
 from app.db.session import dispose_engine
 
+_SECURITY_HEADERS = {
+    "X-Content-Type-Options": "nosniff",
+    "X-Frame-Options": "DENY",
+    "Referrer-Policy": "strict-origin-when-cross-origin",
+    "Permissions-Policy": "camera=(), microphone=(), geolocation=(self)",
+    "Strict-Transport-Security": "max-age=63072000; includeSubDomains; preload",
+    "Cache-Control": "no-store",
+}
+
 settings = get_settings()
 configure_logging(settings.log_level, settings.app_slug, settings.app_env)
 logger = logging.getLogger(settings.app_slug)
@@ -38,6 +47,11 @@ app = FastAPI(
 )
 
 if settings.cors_origins:
+    # Wildcard + allow_credentials is forbidden by CORS spec and a security risk.
+    if "*" in settings.cors_origins and settings.cors_allow_credentials:
+        raise RuntimeError(
+            "CORS misconfiguration: cannot combine allow_credentials=true with wildcard origin '*'."
+        )
     app.add_middleware(
         CORSMiddleware,
         allow_origins=settings.cors_origins,
@@ -54,9 +68,11 @@ app.add_middleware(
         # Auth endpoints — tight limits to prevent brute force
         {"path_prefix": "/api/v1/auth/login",           "per_ip": (10, 60),   "per_user": None},
         {"path_prefix": "/api/v1/auth/register",         "per_ip": (5, 60),    "per_user": None},
-        {"path_prefix": "/api/v1/auth/forgot-password",  "per_ip": (5, 300),   "per_user": None},
-        {"path_prefix": "/api/v1/auth/verify-reset-code","per_ip": (10, 300),  "per_user": None},
-        {"path_prefix": "/api/v1/auth/reset-password",   "per_ip": (5, 300),   "per_user": None},
+        {"path_prefix": "/api/v1/auth/forgot-password",   "per_ip": (5, 300),   "per_user": None},
+        {"path_prefix": "/api/v1/auth/verify-reset-code", "per_ip": (10, 300),  "per_user": None},
+        {"path_prefix": "/api/v1/auth/reset-password",    "per_ip": (5, 300),   "per_user": None},
+        {"path_prefix": "/api/v1/auth/send-verification", "per_ip": (5, 300),   "per_user": None},
+        {"path_prefix": "/api/v1/auth/verify-email",      "per_ip": (10, 300),  "per_user": None},
         # Billing — prevent session spam
         {"path_prefix": "/api/v1/billing/checkout",      "per_ip": (10, 3600), "per_user": (10, 3600)},
         # AI endpoints — cost-sensitive
@@ -67,6 +83,14 @@ app.add_middleware(
         {"path_prefix": "/api/v1/",                      "per_ip": (300, 60),  "per_user": None},
     ],
 )
+
+
+@app.middleware("http")
+async def add_security_headers(request: Request, call_next) -> Response:
+    response = await call_next(request)
+    for header, value in _SECURITY_HEADERS.items():
+        response.headers.setdefault(header, value)
+    return response
 
 
 @app.middleware("http")

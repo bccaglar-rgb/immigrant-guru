@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Optional
 
-from sqlalchemy import CheckConstraint, Enum, String
+from sqlalchemy import Boolean, CheckConstraint, Enum, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
@@ -33,6 +33,16 @@ class User(UUIDPrimaryKeyMixin, TimestampMixin, Base):
         default=UserStatus.ACTIVE,
         nullable=False,
     )
+
+    email_verified: Mapped[bool] = mapped_column(
+        Boolean,
+        default=False,
+        server_default="false",
+        nullable=False,
+    )
+
+    # Incremented on password change/reset to invalidate all previously issued tokens.
+    token_version: Mapped[int] = mapped_column(Integer, default=0, server_default="0", nullable=False)
 
     # Billing / Plan
     plan: Mapped[str] = mapped_column(String(32), default="free", server_default="free", nullable=False)

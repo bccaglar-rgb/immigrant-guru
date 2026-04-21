@@ -51,13 +51,18 @@ def register_exception_handlers(app: FastAPI) -> None:
     async def validation_exception_handler(
         request: Request, exc: RequestValidationError
     ) -> JSONResponse:
+        from app.core.config import get_settings
+        settings = get_settings()
+        # Expose field-level detail only in local/development to avoid leaking
+        # schema information in production.
+        details = exc.errors() if settings.app_env not in {"staging", "production"} else None
         return JSONResponse(
             status_code=422,
             content=_error_payload(
                 request=request,
                 code="validation_error",
                 message="Request validation failed.",
-                details=exc.errors(),
+                details=details,
             ),
             headers=_response_headers(request),
         )
