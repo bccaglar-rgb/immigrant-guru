@@ -66,7 +66,7 @@ export function LanguageSwitcher({
   }
 
   return (
-    <div className="relative" ref={containerRef} data-no-translate="true">
+    <div className="relative" ref={containerRef}>
       <button
         type="button"
         aria-expanded={isOpen}
@@ -96,7 +96,7 @@ export function LanguageSwitcher({
             </p>
           </div>
 
-          <div className="grid max-h-[320px] grid-cols-2 gap-0.5 overflow-y-auto p-1.5">
+          <div className="grid max-h-[320px] grid-cols-2 gap-0.5 overflow-y-auto p-1.5" data-no-translate="true">
             {LANGUAGE_OPTIONS.map((language) => {
               const active = language.code === activeLocale;
 

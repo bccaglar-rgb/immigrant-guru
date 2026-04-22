@@ -231,7 +231,11 @@ const TRANSLATIONS: TranslationCatalog = {
     "Scenario simulation": "Senaryo simülasyonu",
     "No cases yet": "Henüz vaka yok",
     "Immigrant Guru helps you evaluate pathways, compare strategies, and act with clarity.":
-      "Immigrant Guru, yolları değerlendirmenize, stratejileri karşılaştırmanıza ve netlikle hareket etmenize yardımcı olur."
+      "Immigrant Guru, yolları değerlendirmenize, stratejileri karşılaştırmanıza ve netlikle hareket etmenize yardımcı olur.",
+    "My plan": "Planım",
+    "Sign out": "Çıkış yap",
+    "Log in": "Giriş yap",
+    "Start your plan": "Planını başlat"
   },
   de: {
     "Immigrant Guru - AI Immigration Strategy Platform":
@@ -287,7 +291,11 @@ const TRANSLATIONS: TranslationCatalog = {
     "Upload document": "Dokument hochladen",
     "Scenario simulation": "Szenario-Simulation",
     "Immigrant Guru helps you evaluate pathways, compare strategies, and act with clarity.":
-      "Immigrant Guru hilft dir, Wege zu bewerten, Strategien zu vergleichen und klar zu handeln."
+      "Immigrant Guru hilft dir, Wege zu bewerten, Strategien zu vergleichen und klar zu handeln.",
+    "My plan": "Mein Plan",
+    "Sign out": "Abmelden",
+    "Log in": "Anmelden",
+    "Start your plan": "Starte deinen Plan"
   },
   fr: {
     "Immigrant Guru - AI Immigration Strategy Platform":
@@ -337,7 +345,11 @@ const TRANSLATIONS: TranslationCatalog = {
     Finish: "Terminer",
     "Generate strategy": "Générer la stratégie",
     "Upload document": "Téléverser un document",
-    "Scenario simulation": "Simulation de scénario"
+    "Scenario simulation": "Simulation de scénario",
+    "My plan": "Mon plan",
+    "Sign out": "Se déconnecter",
+    "Log in": "Se connecter",
+    "Start your plan": "Commencez votre plan"
   },
   es: {
     "Immigrant Guru - AI Immigration Strategy Platform":
@@ -387,7 +399,11 @@ const TRANSLATIONS: TranslationCatalog = {
     Finish: "Finalizar",
     "Generate strategy": "Generar estrategia",
     "Upload document": "Subir documento",
-    "Scenario simulation": "Simulación de escenario"
+    "Scenario simulation": "Simulación de escenario",
+    "My plan": "Mi plan",
+    "Sign out": "Cerrar sesión",
+    "Log in": "Iniciar sesión",
+    "Start your plan": "Inicia tu plan"
   },
   pt: {
     "Immigrant Guru - AI Immigration Strategy Platform":
@@ -437,7 +453,11 @@ const TRANSLATIONS: TranslationCatalog = {
     Finish: "Concluir",
     "Generate strategy": "Gerar estratégia",
     "Upload document": "Enviar documento",
-    "Scenario simulation": "Simulação de cenário"
+    "Scenario simulation": "Simulação de cenário",
+    "My plan": "Meu plano",
+    "Sign out": "Sair",
+    "Log in": "Entrar",
+    "Start your plan": "Inicie seu plano"
   },
   ar: {
     "Immigrant Guru - AI Immigration Strategy Platform":
@@ -578,7 +598,11 @@ const TRANSLATIONS: TranslationCatalog = {
     "Scenario simulation": "محاكاة السيناريو",
     "No cases yet": "لا توجد ملفات بعد",
     "Immigrant Guru helps you evaluate pathways, compare strategies, and act with clarity.":
-      "يساعدك Immigrant Guru على تقييم المسارات ومقارنة الاستراتيجيات واتخاذ القرار بوضوح."
+      "يساعدك Immigrant Guru على تقييم المسارات ومقارنة الاستراتيجيات واتخاذ القرار بوضوح.",
+    "My plan": "خطتي",
+    "Sign out": "تسجيل الخروج",
+    "Log in": "تسجيل الدخول",
+    "Start your plan": "ابدأ خطتك"
   },
   zh: {
     "Immigrant Guru - AI Immigration Strategy Platform":
@@ -620,7 +644,11 @@ const TRANSLATIONS: TranslationCatalog = {
     Retry: "重试",
     Back: "返回",
     Next: "下一步",
-    Finish: "完成"
+    Finish: "完成",
+    "My plan": "我的计划",
+    "Sign out": "退出登录",
+    "Log in": "登录",
+    "Start your plan": "开始你的计划"
   },
   ja: {
     "Immigrant Guru - AI Immigration Strategy Platform":
@@ -663,7 +691,11 @@ const TRANSLATIONS: TranslationCatalog = {
     Retry: "再試行",
     Back: "戻る",
     Next: "次へ",
-    Finish: "完了"
+    Finish: "完了",
+    "My plan": "マイプラン",
+    "Sign out": "ログアウト",
+    "Log in": "ログイン",
+    "Start your plan": "プランを始める"
   },
   ko: {
     "Immigrant Guru - AI Immigration Strategy Platform":
@@ -706,7 +738,11 @@ const TRANSLATIONS: TranslationCatalog = {
     Retry: "다시 시도",
     Back: "뒤로",
     Next: "다음",
-    Finish: "완료"
+    Finish: "완료",
+    "My plan": "내 플랜",
+    "Sign out": "로그아웃",
+    "Log in": "로그인",
+    "Start your plan": "플랜 시작하기"
   },
   ru: {
     "Immigrant Guru - AI Immigration Strategy Platform":
@@ -749,7 +785,11 @@ const TRANSLATIONS: TranslationCatalog = {
     Retry: "Повторить",
     Back: "Назад",
     Next: "Далее",
-    Finish: "Завершить"
+    Finish: "Завершить",
+    "My plan": "Мой план",
+    "Sign out": "Выйти",
+    "Log in": "Войти",
+    "Start your plan": "Начать план"
   },
   hi: {
     "Immigrant Guru - AI Immigration Strategy Platform":
@@ -792,7 +832,11 @@ const TRANSLATIONS: TranslationCatalog = {
     Retry: "फिर से प्रयास करें",
     Back: "वापस",
     Next: "अगला",
-    Finish: "समाप्त"
+    Finish: "समाप्त",
+    "My plan": "मेरी योजना",
+    "Sign out": "साइन आउट",
+    "Log in": "लॉग इन",
+    "Start your plan": "अपनी योजना शुरू करें"
   }
 };
 
