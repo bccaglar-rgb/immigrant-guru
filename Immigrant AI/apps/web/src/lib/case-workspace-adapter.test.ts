@@ -47,6 +47,7 @@ describe("buildCaseWorkspaceData", () => {
         user_id: "22222222-2222-2222-2222-222222222222",
         years_of_experience: 8
       },
+      plan: "starter",
       status: "active",
       updated_at: "2026-04-01T10:00:00Z"
     };

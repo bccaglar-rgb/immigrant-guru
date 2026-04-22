@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 
+import { PaywallGuard } from "@/components/auth/paywall-guard";
 import { DashboardShell } from "@/components/dashboard/dashboard-shell";
 
 type DashboardLayoutProps = Readonly<{
@@ -7,5 +8,9 @@ type DashboardLayoutProps = Readonly<{
 }>;
 
 export default function DashboardLayout({ children }: DashboardLayoutProps) {
-  return <DashboardShell>{children}</DashboardShell>;
+  return (
+    <PaywallGuard>
+      <DashboardShell>{children}</DashboardShell>
+    </PaywallGuard>
+  );
 }

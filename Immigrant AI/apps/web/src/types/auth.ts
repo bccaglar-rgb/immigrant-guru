@@ -27,6 +27,7 @@ export type AuthenticatedUser = {
   id: string;
   email: string;
   status: string;
+  plan: string;
   created_at: string;
   updated_at: string;
   profile: AuthenticatedUserProfile | null;

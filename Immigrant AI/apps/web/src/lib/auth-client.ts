@@ -20,6 +20,7 @@ export const authenticatedUserSchema = z.object({
   id: z.string().uuid(),
   email: z.string().email(),
   status: z.string().min(1),
+  plan: z.string().default("free"),
   created_at: z.string().datetime(),
   updated_at: z.string().datetime(),
   profile: userProfileSchema.nullable()
