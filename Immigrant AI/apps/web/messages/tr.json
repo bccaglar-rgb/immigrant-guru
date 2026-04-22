@@ -652,7 +652,7 @@
   "bestCountries": {
     "pageTitle": "Mesleğe göre en iyi ülkeler",
     "pageSubtitle": "Rankedlenmiş göç destinasyonlarını görmek için mesleğinizi seçin.",
-    "cardTitle": "Best countries for {profession}",
+    "cardTitle": "{profession} için en iyi ülkeler",
     "breadcrumb": "En iyi ülkeler",
     "rankedSubtitle": "Maliyet, zaman çizelgesi ve kalıcı oturuma göre sıralandı. Veri 2026 için güncel.",
     "topPathway": "En iyi yol",
@@ -679,7 +679,7 @@
   "visaMatch": {
     "pageTitle": "Vize eşleştirme",
     "pageSubtitle": "İlk 3 yolunuzu görmek için hedef ülkenizi ve profilinizi seçin.",
-    "cardSubtitle": "Best visas for {profession}",
+    "cardSubtitle": "{profession} için en iyi vizeler",
     "breadcrumb": "Vize Eşleştirme",
     "rankedSubtitle": "{profession} için {count} göçmenlik yolu sıralandı; {countryName} hedefiyle. Her seçenek uyum, maliyet, süre ve riske göre puanlandı.",
     "getPersonalizedMatch": "Kişiselleştirilmiş eşleştirmeni al",
@@ -693,8 +693,8 @@
   "moveTo": {
     "pageTitle": "Ülke taşınma rehberleri",
     "pageSubtitle": "Menşei ve hedef ülkeye göre adım adım rehberler.",
-    "fromLabel": "From {flag} {name}",
-    "cardSubtitle": "Guide for {demonym} citizens",
+    "fromLabel": "{flag} {name}'dan",
+    "cardSubtitle": "{demonym} vatandaşları için rehber",
     "h1": "{toName} şehrine {fromName} üzerinden taşın",
     "intro": "{demonym} vatandaşları için {toName} şehrine taşınmaya yönelik pratik rehber. Bir yol seçin, zaman çizelgesini ve maliyeti anlayın, kişiselleştirilmiş hazırlık skoru alın.",
     "topVisaPathways": "{toName} için en iyi vize yolları",
