@@ -149,7 +149,7 @@ export default function PricingPage() {
                     "mt-5 w-full disabled:opacity-60"
                   )}
                 >
-                  {loadingPlan === plan.key ? t("Redirecting…") : t("Get {plan}", { plan: plan.name })}
+                  {loadingPlan === plan.key ? t("Redirecting…") : `${t("Get your plan")} — ${plan.name}`}
                 </button>
               </div>
             ))}
