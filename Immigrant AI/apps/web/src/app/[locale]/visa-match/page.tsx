@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
-import Link from "next/link";
+import { getTranslations } from "next-intl/server";
 
+import { Link } from "@/i18n/navigation";
 import { AppShell } from "@/components/layout/app-shell";
 import { DESTINATION_COUNTRIES } from "@/data/countries";
 import { PROFILES } from "@/data/profiles";
@@ -14,13 +15,17 @@ export const metadata: Metadata = {
   alternates: { canonical: `${SITE_URL}/visa-match` }
 };
 
-export default function Page() {
+export default async function Page() {
+  const t = await getTranslations();
+
   return (
     <AppShell>
       <div className="mx-auto w-full max-w-5xl px-6 py-16">
-        <h1 className="text-4xl font-semibold tracking-tight text-white sm:text-5xl">Visa match</h1>
+        <h1 className="text-4xl font-semibold tracking-tight text-white sm:text-5xl">
+          {t("visaMatch.pageTitle")}
+        </h1>
         <p className="mt-4 text-lg text-white/70">
-          Pick your target country and profile to see your top 3 pathways.
+          {t("visaMatch.pageSubtitle")}
         </p>
 
         <div className="mt-10 space-y-10">
@@ -38,7 +43,7 @@ export default function Page() {
                   >
                     <div className="text-sm font-semibold text-white">{profile.title}</div>
                     <div className="mt-1 text-xs text-white/60">
-                      Best visas for {profile.shortTitle.toLowerCase()}
+                      {t("visaMatch.cardSubtitle", { profession: profile.shortTitle.toLowerCase() })}
                     </div>
                   </Link>
                 ))}

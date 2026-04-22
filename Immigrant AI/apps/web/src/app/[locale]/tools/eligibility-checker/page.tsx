@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { getTranslations } from "next-intl/server";
 
 import { AppShell } from "@/components/layout/app-shell";
 import { EligibilityChecker } from "@/components/growth/eligibility-checker";
@@ -19,21 +20,21 @@ export const metadata: Metadata = {
   }
 };
 
-export default function Page() {
+export default async function Page() {
+  const t = await getTranslations();
+
   const faqs = [
     {
-      question: "Is the eligibility checker free?",
-      answer: "Yes. It runs entirely in your browser and doesn't require an account."
+      question: t("eligibilityChecker.faq1.question"),
+      answer: t("eligibilityChecker.faq1.answer")
     },
     {
-      question: "How accurate is the check?",
-      answer:
-        "It uses public eligibility rules per pathway. It's a strong first filter but not a substitute for the AI-powered full analysis or legal advice."
+      question: t("eligibilityChecker.faq2.question"),
+      answer: t("eligibilityChecker.faq2.answer")
     },
     {
-      question: "Will it store my answers?",
-      answer:
-        "No. The tool runs locally in your browser. Sign up if you want your results saved to your profile."
+      question: t("eligibilityChecker.faq3.question"),
+      answer: t("eligibilityChecker.faq3.answer")
     }
   ];
 
@@ -55,21 +56,21 @@ export default function Page() {
 
       <div className="mx-auto w-full max-w-3xl px-6 py-16">
         <h1 className="text-4xl font-semibold tracking-tight text-white sm:text-5xl">
-          Free visa eligibility checker
+          {t("eligibilityChecker.pageTitle")}
         </h1>
         <p className="mt-4 text-lg text-white/70">
-          Answer 6 quick questions. Get a shortlist of visas you likely qualify for — no sign-up needed.
+          {t("eligibilityChecker.pageSubtitle")}
         </p>
 
         <EligibilityChecker />
 
         <EmailCapture
-          title="Full AI-powered analysis"
-          subtitle="Get a personalized Plan A/B/C and readiness score by email."
+          title={t("eligibilityChecker.emailCapture.title")}
+          subtitle={t("eligibilityChecker.emailCapture.subtitle")}
         />
 
         <section className="mt-16">
-          <h2 className="text-2xl font-semibold text-white">FAQ</h2>
+          <h2 className="text-2xl font-semibold text-white">{t("FAQ")}</h2>
           <dl className="mt-6 space-y-6">
             {faqs.map((faq) => (
               <div key={faq.question}>

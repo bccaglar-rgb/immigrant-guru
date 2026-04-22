@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { getTranslations } from "next-intl/server";
 
 import { AppShell } from "@/components/layout/app-shell";
 import { TimelineCalculator } from "@/components/growth/timeline-calculator";
@@ -19,17 +20,17 @@ export const metadata: Metadata = {
   }
 };
 
-export default function Page() {
+export default async function Page() {
+  const t = await getTranslations();
+
   const faqs = [
     {
-      question: "Why is preparation time included?",
-      answer:
-        "The clock doesn't start when you file — it starts when you begin gathering documents. We add a realistic preparation window for each pathway."
+      question: t("timelineCalculator.faq1.question"),
+      answer: t("timelineCalculator.faq1.answer")
     },
     {
-      question: "How accurate is this estimate?",
-      answer:
-        "It reflects average published processing windows. Individual cases can be faster or slower based on RFEs, country caps, and completeness of evidence."
+      question: t("timelineCalculator.faq2.question"),
+      answer: t("timelineCalculator.faq2.answer")
     }
   ];
 
@@ -51,21 +52,21 @@ export default function Page() {
 
       <div className="mx-auto w-full max-w-3xl px-6 py-16">
         <h1 className="text-4xl font-semibold tracking-tight text-white sm:text-5xl">
-          Timeline calculator
+          {t("timelineCalculator.pageTitle")}
         </h1>
         <p className="mt-4 text-lg text-white/70">
-          Pick a pathway. See when you'll arrive — including prep, filing, processing, and landing.
+          {t("timelineCalculator.pageSubtitle")}
         </p>
 
         <TimelineCalculator />
 
         <EmailCapture
-          title="Weekly timeline tracker"
-          subtitle="We'll email you a simple weekly plan until landing day."
+          title={t("timelineCalculator.emailCapture.title")}
+          subtitle={t("timelineCalculator.emailCapture.subtitle")}
         />
 
         <section className="mt-16">
-          <h2 className="text-2xl font-semibold text-white">FAQ</h2>
+          <h2 className="text-2xl font-semibold text-white">{t("FAQ")}</h2>
           <dl className="mt-6 space-y-6">
             {faqs.map((faq) => (
               <div key={faq.question}>

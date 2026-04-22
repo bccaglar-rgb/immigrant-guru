@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
-import Link from "next/link";
+import { getTranslations } from "next-intl/server";
 
+import { Link } from "@/i18n/navigation";
 import { AppShell } from "@/components/layout/app-shell";
 import { buildAlternates } from "@/lib/seo";
 
@@ -10,33 +11,35 @@ export const metadata: Metadata = {
   alternates: buildAlternates("/tools")
 };
 
-const TOOLS = [
-  {
-    href: "/tools/eligibility-checker",
-    title: "Eligibility checker",
-    description: "Answer 6 questions, see the visas you likely qualify for."
-  },
-  {
-    href: "/tools/cost-estimator",
-    title: "Cost estimator",
-    description: "Full cost of moving abroad — not just the visa fee."
-  },
-  {
-    href: "/tools/timeline-calculator",
-    title: "Timeline calculator",
-    description: "Estimate when you'll arrive, stage by stage."
-  }
-];
+export default async function Page() {
+  const t = await getTranslations();
 
-export default function Page() {
+  const TOOLS = [
+    {
+      href: "/tools/eligibility-checker",
+      title: t("tools.eligibilityChecker.title"),
+      description: t("tools.eligibilityChecker.description")
+    },
+    {
+      href: "/tools/cost-estimator",
+      title: t("tools.costEstimator.title"),
+      description: t("tools.costEstimator.description")
+    },
+    {
+      href: "/tools/timeline-calculator",
+      title: t("tools.timelineCalculator.title"),
+      description: t("tools.timelineCalculator.description")
+    }
+  ];
+
   return (
     <AppShell>
       <div className="mx-auto w-full max-w-3xl px-6 py-16">
         <h1 className="text-4xl font-semibold tracking-tight text-white sm:text-5xl">
-          Free immigration tools
+          {t("tools.pageTitle")}
         </h1>
         <p className="mt-4 text-lg text-white/70">
-          Quick answers — no sign-up required.
+          {t("tools.pageSubtitle")}
         </p>
         <div className="mt-8 grid gap-4">
           {TOOLS.map((tool) => (

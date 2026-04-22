@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
-import Link from "next/link";
+import { getTranslations } from "next-intl/server";
 
+import { Link } from "@/i18n/navigation";
 import { AppShell } from "@/components/layout/app-shell";
 import { DESTINATION_COUNTRIES, SOURCE_COUNTRIES } from "@/data/countries";
 
@@ -12,22 +13,24 @@ export const metadata: Metadata = {
   alternates: { canonical: `${SITE_URL}/move-to` }
 };
 
-export default function Page() {
+export default async function Page() {
+  const t = await getTranslations();
+
   return (
     <AppShell>
       <div className="mx-auto w-full max-w-5xl px-6 py-16">
         <h1 className="text-4xl font-semibold tracking-tight text-white sm:text-5xl">
-          Country relocation guides
+          {t("moveTo.pageTitle")}
         </h1>
         <p className="mt-4 text-lg text-white/70">
-          Step-by-step guides by origin and destination.
+          {t("moveTo.pageSubtitle")}
         </p>
 
         <div className="mt-10 space-y-10">
           {SOURCE_COUNTRIES.map((from) => (
             <section key={from.slug}>
               <h2 className="text-xl font-semibold text-white">
-                From {from.flag} {from.name}
+                {t("moveTo.fromLabel", { flag: from.flag, name: from.name })}
               </h2>
               <div className="mt-4 grid gap-3 sm:grid-cols-2 md:grid-cols-3">
                 {DESTINATION_COUNTRIES.filter((d) => d.slug !== from.slug).map((to) => (
@@ -40,7 +43,7 @@ export default function Page() {
                       {from.flag} → {to.flag} {to.name}
                     </div>
                     <div className="mt-1 text-xs text-white/60">
-                      Guide for {from.demonym} citizens
+                      {t("moveTo.cardSubtitle", { demonym: from.demonym })}
                     </div>
                   </Link>
                 ))}

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { getTranslations } from "next-intl/server";
 
 import { AppShell } from "@/components/layout/app-shell";
 import { CostEstimator } from "@/components/growth/cost-estimator";
@@ -19,17 +20,17 @@ export const metadata: Metadata = {
   }
 };
 
-export default function Page() {
+export default async function Page() {
+  const t = await getTranslations();
+
   const faqs = [
     {
-      question: "What's included in the estimate?",
-      answer:
-        "Government fees, legal/agency fees, settlement funds, airfare, initial housing, and a 10% contingency buffer."
+      question: t("costEstimator.faq1.question"),
+      answer: t("costEstimator.faq1.answer")
     },
     {
-      question: "Is this accurate for my specific case?",
-      answer:
-        "It's a good directional estimate per pathway. Your actual cost varies by family size, city, and lawyer choice. Sign up for a personalized breakdown."
+      question: t("costEstimator.faq2.question"),
+      answer: t("costEstimator.faq2.answer")
     }
   ];
 
@@ -51,21 +52,21 @@ export default function Page() {
 
       <div className="mx-auto w-full max-w-3xl px-6 py-16">
         <h1 className="text-4xl font-semibold tracking-tight text-white sm:text-5xl">
-          Immigration cost estimator
+          {t("costEstimator.pageTitle")}
         </h1>
         <p className="mt-4 text-lg text-white/70">
-          Pick a pathway, add your family size, and see a realistic total cost — not just the visa fee.
+          {t("costEstimator.pageSubtitle")}
         </p>
 
         <CostEstimator />
 
         <EmailCapture
-          title="Full cost breakdown by email"
-          subtitle="Spreadsheet with line-item costs, tailored to your target country."
+          title={t("costEstimator.emailCapture.title")}
+          subtitle={t("costEstimator.emailCapture.subtitle")}
         />
 
         <section className="mt-16">
-          <h2 className="text-2xl font-semibold text-white">FAQ</h2>
+          <h2 className="text-2xl font-semibold text-white">{t("FAQ")}</h2>
           <dl className="mt-6 space-y-6">
             {faqs.map((faq) => (
               <div key={faq.question}>

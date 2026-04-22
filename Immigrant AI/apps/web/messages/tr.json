@@ -462,5 +462,100 @@
   "one-time": "tek seferlik",
   "without confusion": {
     "": "karmaşa yaşamadan."
+  },
+  "FAQ": "SSS",
+  "tools": {
+    "pageTitle": "Ücretsiz göçmenlik araçları",
+    "pageSubtitle": "Hızlı cevaplar — kayıt gerekmez.",
+    "eligibilityChecker": {
+      "title": "Uygunluk denetleyicisi",
+      "description": "6 soruyu yanıtlayın, muhtemelen hak kazandığınız vizeleri görün."
+    },
+    "costEstimator": {
+      "title": "Maliyet tahmin aracı",
+      "description": "Yurt dışına taşınmanın tam maliyeti — sadece vize ücreti değil."
+    },
+    "timelineCalculator": {
+      "title": "Zaman çizelgesi hesaplayıcı",
+      "description": "Aşama aşama ne zaman varacağınızı tahmin edin."
+    }
+  },
+  "eligibilityChecker": {
+    "pageTitle": "Ücretsiz vize uygunluk denetleyicisi",
+    "pageSubtitle": "6 kısa soruyu yanıtlayın. Muhtemelen hak kazandığınız vizelerin kısa listesini görün — kayıt gerekmez.",
+    "faq1": {
+      "question": "Uygunluk denetleyicisi ücretsiz mi?",
+      "answer": "Evet. Tamamen tarayıcınızda çalışır ve hesap gerektirmez."
+    },
+    "faq2": {
+      "question": "Kontrol ne kadar doğru?",
+      "answer": "Her yol için herkese açık uygunluk kurallarını kullanır. Güçlü bir ilk filtredir ancak AI destekli tam analiz veya hukuki tavsiyenin yerini tutmaz."
+    },
+    "faq3": {
+      "question": "Cevaplarımı kaydeder mi?",
+      "answer": "Hayır. Araç tarayıcınızda yerel olarak çalışır. Sonuçlarınızın profilinize kaydedilmesini istiyorsanız kayıt olun."
+    },
+    "emailCapture": {
+      "title": "Tam AI destekli analiz",
+      "subtitle": "E-posta ile kişiselleştirilmiş Plan A/B/C ve hazırlık skoru alın."
+    }
+  },
+  "costEstimator": {
+    "pageTitle": "Göçmenlik maliyet tahmin aracı",
+    "pageSubtitle": "Bir yol seçin, aile büyüklüğünüzü ekleyin ve gerçekçi toplam maliyeti görün — sadece vize ücreti değil.",
+    "faq1": {
+      "question": "Tahmine neler dahil?",
+      "answer": "Devlet ücretleri, hukuki/acente ücretleri, yerleşim fonları, uçak bileti, ilk konut ve %10 beklenmedik gider tamponu."
+    },
+    "faq2": {
+      "question": "Bu benim özel durumum için doğru mu?",
+      "answer": "Her yol için iyi bir yönlendirici tahmindir. Gerçek maliyetiniz aile büyüklüğüne, şehre ve avukat seçimine göre değişir. Kişiselleştirilmiş döküm için kayıt olun."
+    },
+    "emailCapture": {
+      "title": "E-posta ile tam maliyet dökümü",
+      "subtitle": "Hedef ülkenize göre düzenlenmiş satır bazlı maliyetler içeren tablo."
+    }
+  },
+  "timelineCalculator": {
+    "pageTitle": "Zaman çizelgesi hesaplayıcı",
+    "pageSubtitle": "Bir yol seçin. Ne zaman varacağınızı görün — hazırlık, başvuru, işlem ve varış dahil.",
+    "faq1": {
+      "question": "Hazırlık süresi neden dahil?",
+      "answer": "Saat başvuru yaptığınızda başlamaz — belge toplamaya başladığınızda başlar. Her yol için gerçekçi bir hazırlık penceresi ekliyoruz."
+    },
+    "faq2": {
+      "question": "Bu tahmin ne kadar doğru?",
+      "answer": "Yayımlanan ortalama işlem sürelerini yansıtır. Bireysel vakalar RFE'lere, ülke kotalarına ve kanıtların eksiksizliğine göre daha hızlı veya yavaş olabilir."
+    },
+    "emailCapture": {
+      "title": "Haftalık zaman çizelgesi takipçisi",
+      "subtitle": "Varış gününe kadar size basit bir haftalık plan e-posta ile göndereceğiz."
+    }
+  },
+  "visaIndex": {
+    "pageTitle": "Tüm vizeler",
+    "pageSubtitle": "Kapsadığımız her yol için maliyet, zaman çizelgesi ve uygunluk.",
+    "months": "ay"
+  },
+  "bestCountries": {
+    "pageTitle": "Mesleğe göre en iyi ülkeler",
+    "pageSubtitle": "Rankedlenmiş göç destinasyonlarını görmek için mesleğinizi seçin.",
+    "cardTitle": "Best countries for {profession}"
+  },
+  "compare": {
+    "pageTitle": "Vize karşılaştırmaları",
+    "pageSubtitle": "En yaygın yol kararlarının yan yana karşılaştırmaları.",
+    "vs": "vs"
+  },
+  "visaMatch": {
+    "pageTitle": "Vize eşleştirme",
+    "pageSubtitle": "İlk 3 yolunuzu görmek için hedef ülkenizi ve profilinizi seçin.",
+    "cardSubtitle": "Best visas for {profession}"
+  },
+  "moveTo": {
+    "pageTitle": "Ülke taşınma rehberleri",
+    "pageSubtitle": "Menşei ve hedef ülkeye göre adım adım rehberler.",
+    "fromLabel": "From {flag} {name}",
+    "cardSubtitle": "Guide for {demonym} citizens"
   }
 }

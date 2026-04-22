@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
-import Link from "next/link";
+import { getTranslations } from "next-intl/server";
 
+import { Link } from "@/i18n/navigation";
 import { AppShell } from "@/components/layout/app-shell";
 import { getCountry } from "@/data/countries";
 import { VISAS } from "@/data/visa-catalog";
@@ -13,13 +14,17 @@ export const metadata: Metadata = {
   alternates: { canonical: `${SITE_URL}/visa` }
 };
 
-export default function Page() {
+export default async function Page() {
+  const t = await getTranslations();
+
   return (
     <AppShell>
       <div className="mx-auto w-full max-w-5xl px-6 py-16">
-        <h1 className="text-4xl font-semibold tracking-tight text-white sm:text-5xl">All visas</h1>
+        <h1 className="text-4xl font-semibold tracking-tight text-white sm:text-5xl">
+          {t("visaIndex.pageTitle")}
+        </h1>
         <p className="mt-4 text-lg text-white/70">
-          Cost, timeline, and eligibility for every pathway we cover.
+          {t("visaIndex.pageSubtitle")}
         </p>
         <div className="mt-10 grid gap-3 sm:grid-cols-2">
           {VISAS.map((v) => {
@@ -38,7 +43,7 @@ export default function Page() {
                   {v.code} — {v.name}
                 </div>
                 <div className="mt-1 text-xs text-white/60">
-                  ${v.typicalCostUsd.min.toLocaleString()}–${v.typicalCostUsd.max.toLocaleString()} · {v.typicalTimelineMonths.min}–{v.typicalTimelineMonths.max} mo
+                  ${v.typicalCostUsd.min.toLocaleString()}–${v.typicalCostUsd.max.toLocaleString()} · {v.typicalTimelineMonths.min}–{v.typicalTimelineMonths.max} {t("visaIndex.months")}
                 </div>
               </Link>
             );
