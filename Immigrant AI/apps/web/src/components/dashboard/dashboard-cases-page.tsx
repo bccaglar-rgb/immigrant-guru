@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 
 import { CaseForm } from "@/components/dashboard/case-form";
 import { CaseStatusBadge } from "@/components/dashboard/case-status-badge";
@@ -48,6 +49,7 @@ function CasesSkeleton() {
 }
 
 function DesktopDashboardCasesPage() {
+  const t = useTranslations();
   const router = useRouter();
   const { clearSession, session, status } = useAuthSession();
   const [pageStatus, setPageStatus] = useState<"loading" | "ready" | "error">(
@@ -100,7 +102,7 @@ function DesktopDashboardCasesPage() {
     if (!session) {
       return {
         ok: false as const,
-        errorMessage: "You are no longer authenticated."
+        errorMessage: t("You are no longer authenticated.")
       };
     }
 
@@ -120,7 +122,7 @@ function DesktopDashboardCasesPage() {
       };
     }
 
-    setFeedback("Strategy case created successfully.");
+    setFeedback(t("Strategy case created successfully."));
     setCases((current) => [result.data, ...current]);
     setIsCreateOpen(false);
     router.push(`/dashboard/cases/${result.data.id}`);
@@ -144,7 +146,7 @@ function DesktopDashboardCasesPage() {
               type="button"
               variant="secondary"
             >
-              Refresh cases
+              {t("Refresh cases")}
             </Button>
             <Button
               onClick={() => {
@@ -153,13 +155,13 @@ function DesktopDashboardCasesPage() {
               }}
               type="button"
             >
-              {isCreateOpen ? "Close new case" : "New case"}
+              {isCreateOpen ? t("Close new case") : t("New case")}
             </Button>
           </div>
         }
-        description="Manage immigration strategy records that anchor pathway evaluation, stage tracking, scoring, and later document workflows."
-        eyebrow="Cases"
-        title="Immigration strategy cases"
+        description={t("Manage immigration strategy records that anchor pathway evaluation, stage tracking, scoring, and later document workflows.")}
+        eyebrow={t("Cases")}
+        title={t("Immigration strategy cases")}
       />
 
       {feedback ? (
@@ -170,7 +172,7 @@ function DesktopDashboardCasesPage() {
 
       {isCreateOpen ? (
         <CaseForm
-          cancelLabel="Close"
+          cancelLabel={t("Close")}
           initialValues={emptyImmigrationCaseFormValues}
           isSubmitting={isCreating}
           mode="create"
@@ -184,7 +186,7 @@ function DesktopDashboardCasesPage() {
         <DashboardErrorState
           message={pageError}
           onRetry={() => void loadCases()}
-          title="The case portfolio could not be loaded."
+          title={t("The case portfolio could not be loaded.")}
         />
       ) : null}
 
@@ -193,36 +195,34 @@ function DesktopDashboardCasesPage() {
           <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
             <div>
               <p className="text-sm font-semibold uppercase tracking-[0.08em] text-accent">
-                Case portfolio
+                {t("Case portfolio")}
               </p>
               <h3 className="mt-3 text-xl font-semibold tracking-tight text-ink">
-                Track every active migration path in one workspace
+                {t("Track every active migration path in one workspace")}
               </h3>
             </div>
             <p className="text-sm text-muted">
-              {cases.length} {cases.length === 1 ? "case" : "cases"} on record
+              {cases.length} {cases.length === 1 ? t("case") : t("cases")} {t("on record")}
             </p>
           </div>
 
           {cases.length === 0 ? (
             <div className="mt-6 rounded-xl border border-dashed border-line bg-canvas/50 px-5 py-10">
               <p className="text-sm font-semibold uppercase tracking-[0.08em] text-accent">
-                No strategy cases yet
+                {t("No strategy cases yet")}
               </p>
               <h4 className="mt-3 text-xl font-semibold tracking-tight text-ink">
-                Start with a target country and pathway
+                {t("Start with a target country and pathway")}
               </h4>
               <p className="mt-3 max-w-2xl text-sm leading-7 text-muted">
-                Create a case for each migration plan you want to evaluate,
-                compare, or execute. Cases anchor strategy generation, scoring,
-                and document collection in one workspace.
+                {t("Create a case for each migration plan you want to evaluate, compare, or execute. Cases anchor strategy generation, scoring, and document collection in one workspace.")}
               </p>
               <Button
                 className="mt-6"
                 onClick={() => setIsCreateOpen(true)}
                 type="button"
               >
-                Create first case
+                {t("Create first case")}
               </Button>
             </div>
           ) : (
@@ -235,13 +235,13 @@ function DesktopDashboardCasesPage() {
                   <div className="flex items-start justify-between gap-4">
                     <div className="min-w-0">
                       <p className="text-xs font-semibold uppercase tracking-[0.08em] text-accent">
-                        {item.target_country || "Destination pending"}
+                        {item.target_country || t("Destination pending")}
                       </p>
                       <h4 className="mt-3 text-xl font-semibold text-ink">
                         {item.title}
                       </h4>
                       <p className="mt-2 text-sm text-muted">
-                        {item.target_program || "Pathway not defined yet"}
+                        {item.target_program || t("Pathway not defined yet")}
                       </p>
                     </div>
                     <CaseStatusBadge status={item.status} />
@@ -250,7 +250,7 @@ function DesktopDashboardCasesPage() {
                   <div className="mt-6 grid gap-3 sm:grid-cols-3">
                     <div className="rounded-xl border border-line bg-white px-4 py-4">
                       <p className="text-xs font-semibold uppercase tracking-[0.08em] text-muted">
-                        Stage
+                        {t("Stage")}
                       </p>
                       <p className="mt-2 text-sm text-ink">
                         {formatCaseText(item.current_stage)}
@@ -258,7 +258,7 @@ function DesktopDashboardCasesPage() {
                     </div>
                     <div className="rounded-xl border border-line bg-white px-4 py-4">
                       <p className="text-xs font-semibold uppercase tracking-[0.08em] text-muted">
-                        Score
+                        {t("Score")}
                       </p>
                       <p className="mt-2 text-sm text-ink">
                         {formatScore(item.latest_score)}
@@ -266,7 +266,7 @@ function DesktopDashboardCasesPage() {
                     </div>
                     <div className="rounded-xl border border-line bg-white px-4 py-4">
                       <p className="text-xs font-semibold uppercase tracking-[0.08em] text-muted">
-                        Risk
+                        {t("Risk")}
                       </p>
                       <p className="mt-2 text-sm text-ink">
                         {formatScore(item.risk_score)}
@@ -276,16 +276,16 @@ function DesktopDashboardCasesPage() {
 
                   <p className="mt-5 text-sm leading-7 text-muted">
                     {item.notes ||
-                      "No strategic notes recorded yet for this immigration path."}
+                      t("No strategic notes recorded yet for this immigration path.")}
                   </p>
 
                   <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                     <p className="text-xs uppercase tracking-[0.08em] text-muted">
-                      Updated {formatDate(item.updated_at)}
+                      {t("Updated")} {formatDate(item.updated_at)}
                     </p>
                     <Link href={`/dashboard/cases/${item.id}`}>
                       <Button type="button" variant="secondary">
-                        Open case
+                        {t("Open case")}
                       </Button>
                     </Link>
                   </div>

@@ -1,4 +1,117 @@
 {
+  "Active": "Aktif",
+  "Cancel": "İptal",
+  "Capture the destination, program, current stage, and risk signals that anchor strategy generation, scoring, and document workflows": {
+    "": "Strateji oluşturma, puanlama ve belge iş akışlarını destekleyen hedef ülke, program, mevcut aşama ve risk sinyallerini girin."
+  },
+  "Case Detail": "Vaka Detayı",
+  "Case planning workspace": "Vaka planlama çalışma alanı",
+  "Case portfolio": "Vaka portföyü",
+  "Case status": "Vaka durumu",
+  "Case title": "Vaka başlığı",
+  "Closed": "Kapalı",
+  "Close": "Kapat",
+  "Close new case": "Yeni vakayı kapat",
+  "Collect recommendation letters and evidence of impact": {
+    "": "Tavsiye mektupları ve etki kanıtları toplayın."
+  },
+  "Continue your immigration planning": {
+    " Keep profile and case data aligned": {
+      "": "Göçmenlik planlamanıza devam edin. Profil ve vaka verilerini güncel tutun."
+    }
+  },
+  "Create a case for each migration plan you want to evaluate, compare, or execute": {
+    " Cases anchor strategy generation, scoring, and document collection in one workspace": {
+      "": "Değerlendirmek, karşılaştırmak veya uygulamak istediğiniz her göç planı için bir vaka oluşturun. Vakalar, strateji oluşturma, puanlama ve belge toplama işlemlerini tek bir çalışma alanında merkezileştirir."
+    }
+  },
+  "Create first case": "İlk vakayı oluştur",
+  "Create strategy case": "Strateji vakası oluştur",
+  "Creating case": {
+    "": {
+      "": {
+        "": "Vaka oluşturuluyor..."
+      }
+    }
+  },
+  "Current stage": "Mevcut aşama",
+  "Data unavailable": "Veri mevcut değil",
+  "Define a migration pathway to evaluate": "Değerlendirilecek bir göç yolu tanımlayın",
+  "Destination pending": "Hedef belirlenmedi",
+  "Draft": "Taslak",
+  "Evaluation signals": "Değerlendirme sinyalleri",
+  "Example: eligibility_review, document_collection, filing_ready": "Örnek: eligibility_review, document_collection, filing_ready",
+  "Higher values should indicate higher execution or eligibility risk": {
+    "": "Yüksek değerler, daha yüksek uygulama veya uygunluk riskini göstermelidir."
+  },
+  "Immigration strategy cases": "Göçmenlik strateji vakaları",
+  "In review": "İncelemede",
+  "Internal Console": "İç Konsol",
+  "Keep notes focused on blockers, evidence gaps, and next actions": {
+    "": "Notları engelleyiciler, kanıt eksiklikleri ve sonraki adımlara odaklayın."
+  },
+  "Latest score": "Son puan",
+  "Manage immigration strategy records that anchor pathway evaluation, stage tracking, scoring, and later document workflows": {
+    "": "Yol değerlendirmesi, aşama takibi, puanlama ve belge iş akışlarını destekleyen göçmenlik strateji kayıtlarını yönetin."
+  },
+  "New case": "Yeni vaka",
+  "New strategy case": "Yeni strateji vakası",
+  "No changes to save": "Kaydedilecek değişiklik yok",
+  "No strategic notes recorded yet for this immigration path": {
+    "": "Bu göçmenlik yolu için henüz stratejik not kaydedilmemiş."
+  },
+  "No strategy cases yet": "Henüz strateji vakası yok",
+  "on record": "kayıtta",
+  "Open case": "Vakayı aç",
+  "Optional score snapshot if you want to retain a manual benchmark": {
+    "": "Manuel bir kıyaslama noktası saklamak istiyorsanız isteğe bağlı puan anlık görüntüsü."
+  },
+  "Pathway not defined yet": "Yol henüz tanımlanmadı",
+  "Refresh cases": "Vakaları yenile",
+  "Review the highlighted case fields before saving": {
+    "": "Kaydetmeden önce vurgulanan vaka alanlarını gözden geçirin."
+  },
+  "Risk score": "Risk puanı",
+  "Risk": "Risk",
+  "Save case changes": "Vaka değişikliklerini kaydet",
+  "Saving changes": {
+    "": {
+      "": {
+        "": "Değişiklikler kaydediliyor..."
+      }
+    }
+  },
+  "Score": "Puan",
+  "Session": "Oturum",
+  "Stage": "Aşama",
+  "Start with a target country and pathway": "Hedef ülke ve yol ile başlayın",
+  "Strategy case created successfully": {
+    "": "Strateji vakası başarıyla oluşturuldu."
+  },
+  "Strategy identity": "Strateji kimliği",
+  "Strategy notes": "Strateji notları",
+  "Target country": "Hedef ülke",
+  "Target pathway or program": "Hedef yol veya program",
+  "The case portfolio could not be loaded": {
+    "": "Vaka portföyü yüklenemedi."
+  },
+  "Track every active migration path in one workspace": "Tüm aktif göç yollarını tek bir çalışma alanında takip edin",
+  "U": {
+    "S": {
+      " employment-based migration plan": "ABD istihdam bazlı göç planı"
+    }
+  },
+  "United States": "Amerika Birleşik Devletleri",
+  "Update the case strategy record": "Vaka strateji kaydını güncelleyin",
+  "Updated": "Güncellendi",
+  "Workspace data could not be loaded": {
+    "": "Çalışma alanı verileri yüklenemedi."
+  },
+  "You are no longer authenticated": {
+    "": "Oturumunuz sona erdi."
+  },
+  "case": "vaka",
+  "cases": "vaka",
   "12-18 months": "12-18 ay",
   "3 country comparisons": "3 ülke karşılaştırması",
   "A focused workspace for immigration decisions": "Göç kararları için odaklı bir çalışma alanı",
@@ -333,7 +446,6 @@
   "Suggested cities": "Önerilen şehirler",
   "Suitability": "Uygunluk",
   "System health": "Sistem durumu",
-  "Target country": "Hedef ülke",
   "Tell us a bit about yourself": {
     "": "Bize biraz kendinizden bahsedin."
   },

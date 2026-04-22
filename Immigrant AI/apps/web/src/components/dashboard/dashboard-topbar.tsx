@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 
 import { LanguageSwitcher } from "@/components/layout/language-switcher";
 import { Animate } from "@/components/ui/animate";
@@ -15,15 +16,6 @@ type DashboardTopbarProps = Readonly<{
   user: AuthenticatedUser;
 }>;
 
-function getPageTitle(pathname: string): string {
-  if (pathname === "/dashboard") return "Overview";
-  if (pathname === "/dashboard/profile") return "Profile";
-  if (pathname === "/dashboard/cases") return "Cases";
-  if (pathname === "/dashboard/admin") return "Internal Console";
-  if (pathname.startsWith("/dashboard/cases/")) return "Case Detail";
-  return "Dashboard";
-}
-
 function getDisplayName(user: AuthenticatedUser): string {
   return user.profile?.first_name || user.email.split("@")[0] || "Member";
 }
@@ -34,7 +26,18 @@ export function DashboardTopbar({
   session,
   user
 }: DashboardTopbarProps) {
+  const t = useTranslations();
   const tokenMinutes = Math.max(Math.floor(session.expiresIn / 60), 1);
+
+  function getPageTitle(path: string): string {
+    if (path === "/dashboard") return t("Overview");
+    if (path === "/dashboard/profile") return t("Profile");
+    if (path === "/dashboard/cases") return t("Cases");
+    if (path === "/dashboard/admin") return t("Internal Console");
+    if (path.startsWith("/dashboard/cases/")) return t("Case Detail");
+    return t("Dashboard");
+  }
+
   const title = getPageTitle(pathname);
 
   return (
@@ -46,10 +49,10 @@ export function DashboardTopbar({
               {title}
             </p>
             <h1 className="mt-2 text-3xl font-semibold tracking-tight text-ink">
-              Welcome back, {getDisplayName(user)}
+              {t("Welcome back")}, {getDisplayName(user)}
             </h1>
             <p className="mt-2 text-sm leading-relaxed text-muted">
-              Continue your immigration planning. Keep profile and case data aligned.
+              {t("Continue your immigration planning. Keep profile and case data aligned.")}
             </p>
           </div>
 
@@ -58,21 +61,21 @@ export function DashboardTopbar({
             <div className="rounded-xl border border-line bg-canvas/60 px-4 py-2.5 text-right">
               <p className="text-xs text-muted">{user.email}</p>
               <p className="mt-0.5 text-xs text-muted">
-                Session: {tokenMinutes}m
+                {t("Session")}: {tokenMinutes}m
               </p>
             </div>
             <Link
               className={cn(buttonVariants({ size: "md", variant: "secondary" }))}
               href="/"
             >
-              Home
+              {t("Home")}
             </Link>
             <button
               className={cn(buttonVariants({ size: "md", variant: "primary" }))}
               onClick={clearSession}
               type="button"
             >
-              Log out
+              {t("Log out")}
             </button>
           </div>
         </div>

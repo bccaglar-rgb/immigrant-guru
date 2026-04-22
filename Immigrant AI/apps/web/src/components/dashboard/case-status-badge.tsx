@@ -1,12 +1,9 @@
+"use client";
+
+import { useTranslations } from "next-intl";
+
 import { cn } from "@/lib/utils";
 import type { ImmigrationCaseStatus } from "@/types/cases";
-
-const statusLabels: Record<ImmigrationCaseStatus, string> = {
-  draft: "Draft",
-  in_review: "In review",
-  active: "Active",
-  closed: "Closed"
-};
 
 const statusStyles: Record<ImmigrationCaseStatus, string> = {
   draft: "border-line bg-white text-muted",
@@ -20,6 +17,15 @@ type CaseStatusBadgeProps = Readonly<{
 }>;
 
 export function CaseStatusBadge({ status }: CaseStatusBadgeProps) {
+  const t = useTranslations();
+
+  const statusLabels: Record<ImmigrationCaseStatus, string> = {
+    draft: t("Draft"),
+    in_review: t("In review"),
+    active: t("Active"),
+    closed: t("Closed")
+  };
+
   return (
     <span
       className={cn(
@@ -31,4 +37,3 @@ export function CaseStatusBadge({ status }: CaseStatusBadgeProps) {
     </span>
   );
 }
-
