@@ -1,0 +1,386 @@
+{
+  "12-18 months": "12-18 ay",
+  "3 country comparisons": "3 ülke karşılaştırması",
+  "A focused workspace for immigration decisions": "Göç kararları için odaklı bir çalışma alanı",
+  "AI checks 47 visa categories and finds your best match": {
+    "": "Yapay zeka 47 vize kategorisini kontrol eder ve sizin için en iyi eşleşmeyi bulur."
+  },
+  "Access your immigration dashboard, decision plans, and case workspace": {
+    "": "Göç panelinize, karar planlarınıza ve vaka çalışma alanınıza erişin."
+  },
+  "Action roadmap": "Aksiyon yol haritası",
+  "Admin": "Yönetici",
+  "Advanced action plan": "Gelişmiş aksiyon planı",
+  "Already have an account?": "Zaten hesabınız var mı?",
+  "Any criminal record?": "Adli sicil kaydı var mı?",
+  "Available capital": "Kullanılabilir sermaye",
+  "Average time to first plan": "İlk plana kadar geçen ortalama süre",
+  "Back": "Geri",
+  "Benefits": "Avantajlar",
+  "Best value": "En iyi değer",
+  "Best visa option": "En iyi vize seçeneği",
+  "Best visa recommendation": "En iyi vize önerisi",
+  "Better case preparation": "Daha iyi vaka hazırlığı",
+  "Built for immigrants, by immigrants": "Göçmenler için, göçmenler tarafından",
+  "Case health": "Vaka sağlığı",
+  "Cases": "Vakalar",
+  "Checkout failed": "Ödeme başarısız",
+  "Children": "Çocuk sayısı",
+  "Comparison": "Karşılaştırma",
+  "Confirm password": "Şifreyi onayla",
+  "Confusing visa rules that change every year": "Her yıl değişen karışık vize kuralları",
+  "Copilot": "Yardımcı",
+  "Cost estimate": "Maliyet tahmini",
+  "Countries": "Ülkeler",
+  "Countries supported": "Desteklenen ülkeler",
+  "Create account": "Hesap oluştur",
+  "Create an account to start building an immigration profile, evaluate pathways, and manage your cases": {
+    "": "Göç profili oluşturmaya başlamak, yolları değerlendirmek ve vakalarınızı yönetmek için hesap oluşturun."
+  },
+  "Create one": "Bir hesap oluştur",
+  "Create your Immigrant Guru account": "Immigrant Guru hesabınızı oluşturun",
+  "Create your account": "Hesabınızı oluşturun",
+  "Creating account": {
+    "": {
+      "": {
+        "": "Hesap oluşturuluyor..."
+      }
+    }
+  },
+  "Dashboard": "Panel",
+  "Data Scientist, India to Canada": "Veri Bilimci, Hindistan'dan Kanada'ya",
+  "Deeper analysis": "Daha derin analiz",
+  "Document checklist": "Belge kontrol listesi",
+  "Document status": "Belge durumu",
+  "Documents": "Belgeler",
+  "E-2 investor, EB-5, startup visa — explore entrepreneurial immigration routes": {
+    "": "E-2 yatırımcı, EB-5, girişim vizesi — girişimci göç rotalarını keşfedin."
+  },
+  "Education level": "Eğitim seviyesi",
+  "Email": "E-posta",
+  "English level": "İngilizce seviyesi",
+  "Enter a valid email address": {
+    "": "Geçerli bir e-posta adresi girin."
+  },
+  "Error": "Hata",
+  "Est": {
+    " cost": "Tahmini maliyet"
+  },
+  "Estimated cost": "Tahmini maliyet",
+  "Even if you think you don't qualify — we'll show you what's possible": {
+    "": "Uygun olmadığınızı düşünseniz bile — size neyin mümkün olduğunu göstereceğiz."
+  },
+  "Everything in Plus": "Plus'taki her şey",
+  "Everything in Starter": "Başlangıç'taki her şey",
+  "Everything you need in one place": "İhtiyacınız olan her şey tek yerde",
+  "Expanded document guidance": "Genişletilmiş belge rehberliği",
+  "Expensive lawyers who charge $5,000+ for basic advice": "Temel danışmanlık için 5.000 $+ ücret alan pahalı avukatlar",
+  "Explainable readiness signals": "Açıklanabilir hazırlık sinyalleri",
+  "F-1, OPT, STEM extension — understand your path from student to professional": {
+    "": "F-1, OPT, STEM uzatma — öğrencilikten profesyonelliğe giden yolu anlayın."
+  },
+  "Filing + legal fees": "Başvuru + yasal ücretler",
+  "Find my best path": "En iyi yolumu bul",
+  "Find the plan that fits your journey": "Yolculuğunuza uyan planı seçin",
+  "Find the right work visa for your skills and experience": {
+    " H-1B, EB-2, O-1, and more": {
+      "": "Beceri ve deneyiminize uygun iş vizesini bulun. H-1B, EB-2, O-1 ve daha fazlası."
+    }
+  },
+  "Find your best path": "En iyi yolunuzu bulun",
+  "Find your path": "Yolunu bul",
+  "Finish": "Bitir",
+  "First name": "Ad",
+  "For comparing options": "Seçenekleri karşılaştırmak için",
+  "For every situation": "Her durum için",
+  "For one clear path": "Net tek bir yol için",
+  "Forgot your password?": "Şifrenizi mi unuttunuz?",
+  "Free": "Ücretsiz",
+  "Free to start · No credit card · Takes 2 minutes": "Ücretsiz başlayın · Kredi kartı yok · 2 dakika sürer",
+  "From filing to approval": "Başvurudan onaya kadar",
+  "Full path comparison": "Tam yol karşılaştırması",
+  "Full plan for 1 country": "1 ülke için tam plan",
+  "Full strategic experience": "Tam stratejik deneyim",
+  "Full strategic recommendation": "Tam stratejik öneri",
+  "Generate strategy": "Strateji oluştur",
+  "Get Started": "Başlayın",
+  "Get your personalized visa, readiness score, and action plan in minutes": {
+    "": "Dakikalar içinde kişisel vize yolunuzu, hazırlık skorunuzu ve aksiyon planınızı alın.",
+    " Not months": {
+      "": "Dakikalar içinde kişisel vizenizi, hazırlık skorunuzu ve aksiyon planınızı alın. Aylar değil."
+    }
+  },
+  "Get your plan": "Planınızı alın",
+  "Get {plan}": "{plan}'a başla",
+  "Go home": "Ana sayfaya git",
+  "Home": "Ana sayfa",
+  "How it works": "Nasıl çalışır",
+  "I spent months Googling visa options": {
+    " Immigrant Guru gave me a clear plan in 10 minutes": {
+      " I wish I found this earlier": {
+        "": "Vize seçenekleri için Google'da aylar harcadım. Immigrant Guru bana 10 dakikada net bir plan verdi. Keşke daha erken bulsaydım."
+      }
+    }
+  },
+  "Immigrant Guru - AI Immigration Strategy Platform": "Immigrant Guru - Yapay Zeka Göç Strateji Platformu",
+  "Immigrant Guru - Move to a New Country Without Confusion": "Immigrant Guru - Yeni Bir Ülkeye Karmaşa Yaşamadan Taşının",
+  "Immigrant Guru helps you evaluate pathways, compare strategies, and act with clarity": {
+    "": "Immigrant Guru yolları değerlendirmenize, stratejileri karşılaştırmanıza ve netlikle harekete geçmenize yardımcı olur."
+  },
+  "Immigration Plan": "Göç Planı",
+  "Immigration Score": "Göçmenlik Skoru",
+  "Immigration shouldn't feel this hard": {
+    "": "Göçmenlik bu kadar zor hissettirmemeli."
+  },
+  "Job opportunities": "İş fırsatları",
+  "Language": "Dil",
+  "Last name": "Soyad",
+  "Log in": "Giriş yap",
+  "Log out": "Çıkış yap",
+  "Minimum 8 characters": "En az 8 karakter",
+  "Months of waiting with no visibility": "Görünürlük olmadan aylarca bekleme",
+  "Move to a New Country Without Confusion": "Yeni Bir Ülkeye Karmaşa Yaşamadan Taşının",
+  "Move to a new country": "Yeni bir ülkeye taşın",
+  "Move with family": "Ailenle taşın",
+  "Multiple visa alternatives": "Birden fazla vize alternatifi",
+  "My plan": "Planım",
+  "National Interest Waiver · United States": "Ulusal Çıkar Muafiyeti · Amerika Birleşik Devletleri",
+  "Nationality": "Uyruk",
+  "Need an account?": "Bir hesaba mı ihtiyacınız var?",
+  "Next": "İleri",
+  "Next best action": "En iyi sonraki adım",
+  "Next step:": "Sonraki adım:",
+  "No cases yet": "Henüz vaka yok",
+  "No clear direction — just endless Googling": "Net yön yok — sadece bitmeyen Google aramaları",
+  "No confusion, no jargon": "Karmaşa yok, jargon yok",
+  "No employer sponsor needed — you can self-petition": {
+    "": "İşveren sponsoru gerekmez — kendi başınıza başvuru yapabilirsiniz."
+  },
+  "No matter your background, we help you find a way forward": {
+    "": "Geçmişiniz ne olursa olsun, ileriye giden bir yol bulmanıza yardımcı oluruz."
+  },
+  "No subscriptions": {
+    " Pay once, unlock your full plan": {
+      " 30-day money-back guarantee": {
+        "": "Abonelik yok. Bir kez ödeyin, tam planınızın kilidini açın. 30 gün para iade garantisi."
+      }
+    }
+  },
+  "One clear plan": {
+    " Everything you need": {
+      "": "Tek net plan. İhtiyacınız olan her şey."
+    }
+  },
+  "One-time payment": {
+    " Unlock your full personalized immigration plan": {
+      "": "Tek seferlik ödeme. Kişiselleştirilmiş tam göç planınızın kilidini açın."
+    }
+  },
+  "Overview": "Genel bakış",
+  "Page not found": "Sayfa bulunamadı",
+  "Password": "Şifre",
+  "Password must contain at least 8 characters": {
+    "": "Şifre en az 8 karakter olmalıdır."
+  },
+  "Platform Status": "Platform durumu",
+  "Plus": "Plus",
+  "Possible paths": "Olası yollar",
+  "Preferred language": "Tercih edilen dil",
+  "Premium": "Premium",
+  "Premium dashboard": "Premium panel",
+  "Pricing": "Fiyatlandırma",
+  "Prior visa refusal?": "Önceki vize reddi var mı?",
+  "Priority AI guidance": "Öncelikli yapay zeka rehberliği",
+  "Probability score": "Başarı olasılığı skoru",
+  "Professional experience and finances": {
+    "": "Profesyonel deneyim ve mali durum."
+  },
+  "Profile": "Profil",
+  "Profile, finance, case": "Profil, finans, vaka",
+  "Readiness": "Hazırlık",
+  "Readiness score": "Hazırlık skoru",
+  "Ready": "Hazır",
+  "Recommended pathway": "Önerilen yol",
+  "Redirecting…": "Yönlendiriliyor…",
+  "Relationship status": "İlişki durumu",
+  "Relocation timeline": "Taşınma zamanlaması",
+  "Repeat your password": "Şifrenizi tekrar girin",
+  "Retry": "Tekrar dene",
+  "Return home": "Ana sayfaya dön",
+  "Review and continue": "Gözden geçir ve devam et",
+  "Risks": "Riskler",
+  "Saving": {
+    "": {
+      "": {
+        "": "Kaydediliyor..."
+      }
+    }
+  },
+  "Scenario simulation": "Senaryo simülasyonu",
+  "See how it works": "Nasıl çalıştığını gör",
+  "Select language": "Dil seç",
+  "Sign in": "Giriş yap",
+  "Sign in to continue your case strategy": "Vaka stratejinize devam etmek için giriş yapın",
+  "Sign in to continue your immigration strategy": {
+    "": "Göç stratejinize devam etmek için giriş yapın."
+  },
+  "Sign out": "Çıkış yap",
+  "Sign up": "Kayıt ol",
+  "Signing in": {
+    "": {
+      "": {
+        "": "Giriş yapılıyor..."
+      }
+    }
+  },
+  "Simple pricing": "Basit fiyatlandırma",
+  "Six powerful tools working together to give you clarity, confidence, and a concrete plan": {
+    "": "Size netlik, güven ve somut bir plan sunmak için birlikte çalışan altı güçlü araç."
+  },
+  "Software Engineer, Turkey to USA": "Yazılım Mühendisi, Türkiye'den ABD'ye",
+  "Software Engineering, AI/ML, Product": "Yazılım Mühendisliği, AI/ML, Ürün",
+  "Something went wrong": "Bir şeyler yanlış gitti",
+  "Spouse, children, parents — know which family visa fits and how long it takes": {
+    "": "Eş, çocuklar, ebeveynler — hangi aile vizesinin uygun olduğunu ve ne kadar sürdüğünü öğrenin."
+  },
+  "Start a business": "İş kur",
+  "Start free": {
+    "": "Ücretsiz başla",
+    " Upgrade when you're ready for your full immigration plan": {
+      "": "Ücretsiz başlayın. Tam göç planınıza hazır olduğunuzda yükseltin."
+    }
+  },
+  "Start with the essentials and complete your immigration profile later": {
+    "": "Temel bilgilerle başlayın, göç profilinizi daha sonra tamamlayın."
+  },
+  "Start your plan": "Planını başlat",
+  "Starter": "Başlangıç",
+  "Step 1 of 4": "4 adımın 1.si",
+  "Step 2 of 4": "4 adımın 2.si",
+  "Step 3 of 4": "4 adımın 3.sü",
+  "Step 4 of 4": "4 adımın 4.sü",
+  "Step-by-step roadmap": "Adım adım yol haritası",
+  "Stop guessing": {
+    " Get a clear plan for your immigration journey — in minutes, not months": {
+      "": "Tahminlerden kurtulun. Göç yolculuğunuz için net bir plan alın — aylar değil dakikalar içinde."
+    }
+  },
+  "Strategy": "Strateji",
+  "Study abroad": "Yurt dışında oku",
+  "Suggested cities": "Önerilen şehirler",
+  "Suitability": "Uygunluk",
+  "System health": "Sistem durumu",
+  "Target country": "Hedef ülke",
+  "Tell us a bit about yourself": {
+    "": "Bize biraz kendinizden bahsedin."
+  },
+  "Tell us about you": "Bize kendinizi anlatın",
+  "Tell us about yourself": {
+    " Our AI analyzes 47 visa categories, checks your readiness, and gives you a step-by-step plan with timeline, cost, and documents — in minutes": {
+      "": "Bize kendinizden bahsedin. Yapay zekamız 47 vize kategorisini analiz eder, hazırlığınızı kontrol eder ve size zaman çizelgesi, maliyet ve belgelerle birlikte adım adım bir plan sunar — dakikalar içinde."
+    }
+  },
+  "The page hit an unexpected error while rendering": {
+    " Try again, and if it persists, check the server logs": {
+      "": "Sayfa oluşturulurken beklenmeyen bir hatayla karşılaşıldı. Tekrar deneyin; sorun sürerse sunucu kayıtlarını kontrol edin."
+    }
+  },
+  "The page you're looking for doesn't exist or hasn't been built yet": {
+    "": "Aradığınız sayfa yok veya henüz oluşturulmadı."
+  },
+  "The platform could not load your profile draft": {
+    " Retry before continuing": {
+      "": "Platform profil taslağınızı yükleyemedi. Devam etmeden önce tekrar deneyin."
+    }
+  },
+  "The problem": "Sorun",
+  "The readiness score showed me exactly what I was missing": {
+    " I uploaded 3 documents and my score jumped from 52 to 81": {
+      "": "Hazırlık skoru bana neyi kaçırdığımı tam olarak gösterdi. 3 belge yükledim ve skorum 52'den 81'e fırladı."
+    }
+  },
+  "The solution": "Çözüm",
+  "There's always a way — we help you find it": {
+    "": "Her zaman bir yol vardır — bulmanıza yardımcı oluruz."
+  },
+  "Three steps": {
+    " No confusion": {
+      "": "Üç adım. Karmaşa yok."
+    }
+  },
+  "Timeline": "Zaman çizelgesi",
+  "Timeline estimate": "Zaman çizelgesi tahmini",
+  "Toggle menu": "Menüyü aç/kapat",
+  "Try it now": "Şimdi dene",
+  "Turkey, India, Brazil": {
+    "": {
+      "": {
+        "": "Türkiye, Hindistan, Brezilya..."
+      }
+    }
+  },
+  "United States, Canada": {
+    "": {
+      "": {
+        "": "Amerika Birleşik Devletleri, Kanada..."
+      }
+    }
+  },
+  "Upload document": "Belge yükle",
+  "Upload your resume and education documents to increase your readiness score to 90+": {
+    "": "Hazırlık skorunuzu 90+ seviyesine çıkarmak için özgeçmişinizi ve eğitim belgelerinizi yükleyin."
+  },
+  "Visa categories analyzed": "Analiz edilen vize kategorileri",
+  "Visa types": "Vize türleri",
+  "Visa, timeline, documents, cost — everything in one clear view": {
+    "": "Vize, zaman çizelgesi, belgeler, maliyet — her şey tek net görünümde."
+  },
+  "We analyze multiple countries, visa types, and pathways to match you with the best option based on your profile": {
+    "": "Profilinize göre sizi en iyi seçenekle eşleştirmek için birden fazla ülkeyi, vize türünü ve yolu analiz ederiz."
+  },
+  "We analyze your options": "Seçeneklerinizi analiz ediyoruz",
+  "We show you what to do": "Size ne yapacağınızı gösteririz",
+  "We turn everything into one clear plan": {
+    "": "Her şeyi tek net plana dönüştürüyoruz."
+  },
+  "Welcome back": "Tekrar hoş geldiniz",
+  "What do you do?": "Ne iş yapıyorsunuz?",
+  "What you get": "Neler elde edeceksiniz",
+  "Whatever your reason, we can help": {
+    "": "Sebebiniz ne olursa olsun, yardımcı olabiliriz."
+  },
+  "Where are you from?": "Nerelisiniz?",
+  "Where do you live now?": "Şu anda nerede yaşıyorsunuz?",
+  "Where do you want to go?": "Nereye gitmek istiyorsunuz?",
+  "Work abroad": "Yurt dışında çalış",
+  "Years of experience": "Deneyim yılı",
+  "You're ready to see your first strategy": "İlk stratejinizi görmeye hazırsınız",
+  "Your background, education, experience, and goals": {
+    " Takes 2 minutes": {
+      "": "Geçmişiniz, eğitiminiz, deneyiminiz ve hedefleriniz. 2 dakika sürer."
+    }
+  },
+  "Your best path": "En iyi yolunuz",
+  "Your best path, ranked by fit": "Uyuma göre sıralanmış en iyi yolunuz",
+  "Your immigration goals and timing": {
+    "": "Göç hedefleriniz ve zamanlamanız."
+  },
+  "Your new life starts here": {
+    "": "Yeni hayatınız burada başlıyor."
+  },
+  "Your personalized result": "Kişiselleştirilmiş sonucunuz",
+  "Your profile could not be saved right now": {
+    " Retry before moving to the next step": {
+      "": "Profiliniz şu anda kaydedilemedi. Sonraki adıma geçmeden önce tekrar deneyin."
+    }
+  },
+  "Your session is no longer available": {
+    " Sign in again to continue onboarding": {
+      "": "Oturumunuz artık geçerli değil. Onboarding'e devam etmek için tekrar giriş yapın."
+    }
+  },
+  "one-time": "tek seferlik",
+  "without confusion": {
+    "": "karmaşa yaşamadan."
+  }
+}

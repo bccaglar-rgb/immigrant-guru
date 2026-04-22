@@ -1,22 +1,24 @@
 "use client";
 
 import Image from "next/image";
-import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { useState } from "react";
 
 import { useAuthSession } from "@/hooks/use-auth-session";
 import { HeaderAuthActions } from "@/components/layout/header-auth-actions";
 import { LanguageSwitcher } from "@/components/layout/language-switcher";
+import { Link } from "@/i18n/navigation";
 
 export function SiteHeader() {
+  const t = useTranslations();
   const [mobileOpen, setMobileOpen] = useState(false);
   const { status } = useAuthSession();
   const isLoggedIn = status === "authenticated";
 
   const navItems = [
-    { href: "/#how", label: "How it works" },
-    { href: isLoggedIn ? "/analysis" : "/sign-up", label: "Find your path" },
-    { href: "/pricing", label: "Pricing" },
+    { href: "/#how", label: t("How it works") },
+    { href: isLoggedIn ? "/analysis" : "/sign-up", label: t("Find your path") },
+    { href: "/pricing", label: t("Pricing") },
   ];
 
   return (
@@ -56,7 +58,7 @@ export function SiteHeader() {
             className="flex h-9 w-9 items-center justify-center rounded-lg text-muted hover:bg-ink/5 lg:hidden"
             onClick={() => setMobileOpen(!mobileOpen)}
             type="button"
-            aria-label="Toggle menu"
+            aria-label={t("Toggle menu")}
           >
             <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5">
               {mobileOpen ? <path d="M5 5l10 10M15 5L5 15" /> : <path d="M3 6h14M3 10h14M3 14h14" />}

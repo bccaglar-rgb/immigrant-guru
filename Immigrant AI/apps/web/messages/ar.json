@@ -1,0 +1,193 @@
+{
+  "Immigrant Guru - AI Immigration Strategy Platform": "Immigrant Guru - منصة استراتيجية الهجرة بالذكاء الاصطناعي",
+  "Immigrant Guru - Move to a New Country Without Confusion": "Immigrant Guru - انتقل إلى بلد جديد دون ارتباك",
+  "Language": "اللغة",
+  "Select language": "اختر اللغة",
+  "How it works": "كيف يعمل",
+  "Find your path": "اعثر على مسارك",
+  "Pricing": "الأسعار",
+  "Home": "الرئيسية",
+  "Sign in": "تسجيل الدخول",
+  "Sign up": "إنشاء حساب",
+  "Dashboard": "لوحة التحكم",
+  "Log out": "تسجيل الخروج",
+  "Move to a New Country Without Confusion": "انتقل إلى بلد جديد دون ارتباك",
+  "Get your personalized visa, readiness score, and action plan in minutes": {
+    "": "احصل خلال دقائق على مسار التأشيرة المخصص لك ودرجة الجاهزية وخطة العمل."
+  },
+  "Benefits": "المزايا",
+  "Everything you need in one place": "كل ما تحتاجه في مكان واحد",
+  "Simple pricing": "تسعير بسيط",
+  "Free": "مجاني",
+  "Starter": "المبتدئ",
+  "Plus": "بلس",
+  "Premium": "بريميوم",
+  "Create your account": "أنشئ حسابك",
+  "Welcome back": "مرحبًا بعودتك",
+  "First name": "الاسم الأول",
+  "Last name": "اسم العائلة",
+  "Email": "البريد الإلكتروني",
+  "Password": "كلمة المرور",
+  "Confirm password": "تأكيد كلمة المرور",
+  "Overview": "نظرة عامة",
+  "Profile": "الملف الشخصي",
+  "Cases": "الملفات",
+  "Strategy": "الاستراتيجية",
+  "Timeline": "الجدول الزمني",
+  "Documents": "المستندات",
+  "Risks": "المخاطر",
+  "Copilot": "المساعد",
+  "Comparison": "المقارنة",
+  "Retry": "أعد المحاولة",
+  "Back": "رجوع",
+  "Next": "التالي",
+  "Finish": "إنهاء",
+  "Generate strategy": "إنشاء الاستراتيجية",
+  "Upload document": "رفع مستند",
+  "Scenario simulation": "محاكاة السيناريو",
+  "My plan": "خطتي",
+  "Sign out": "تسجيل الخروج",
+  "Log in": "تسجيل الدخول",
+  "Start your plan": "ابدأ خطتك",
+  "Readiness score": "درجة الجاهزية",
+  "Probability score": "درجة الاحتمال",
+  "Recommended pathway": "المسار الموصى به",
+  "Next best action": "أفضل إجراء تالي",
+  "Immigrant Guru helps you evaluate pathways, compare strategies, and act with clarity": {
+    "": "يساعدك Immigrant Guru على تقييم المسارات ومقارنة الاستراتيجيات واتخاذ القرار بوضوح."
+  },
+  "A focused workspace for immigration decisions": "مساحة عمل مركزة لقرارات الهجرة",
+  "Six powerful tools working together to give you clarity, confidence, and a concrete plan": {
+    "": "ست أدوات قوية تعمل معًا لمنحك الوضوح والثقة وخطة عملية."
+  },
+  "Immigration Score": "درجة الهجرة",
+  "Explainable readiness signals": "مؤشرات جاهزية قابلة للتفسير",
+  "System health": "حالة النظام",
+  "Platform Status": "حالة المنصة",
+  "Work abroad": "العمل في الخارج",
+  "Study abroad": "الدراسة في الخارج",
+  "Move with family": "الانتقال مع العائلة",
+  "Start a business": "ابدأ عملاً",
+  "Tell us about you": "أخبرنا عنك",
+  "We analyze your options": "نحلل خياراتك",
+  "Get your plan": "احصل على خطتك",
+  "Find the plan that fits your journey": "اختر الخطة المناسبة لرحلتك",
+  "Start free": {
+    " Upgrade when you're ready for your full immigration plan": {
+      "": "ابدأ مجانًا. قم بالترقية عندما تكون جاهزًا لخطة الهجرة الكاملة."
+    },
+    "": "ابدأ مجانًا"
+  },
+  "Best value": "أفضل قيمة",
+  "one-time": "مرة واحدة",
+  "No subscriptions": {
+    " Pay once, unlock your full plan": {
+      " 30-day money-back guarantee": {
+        "": "لا توجد اشتراكات. ادفع مرة واحدة وافتح خطتك الكاملة. ضمان استرداد لمدة 30 يومًا."
+      }
+    }
+  },
+  "Start with the essentials and complete your immigration profile later": {
+    "": "ابدأ بالأساسيات وأكمل ملف الهجرة لاحقًا."
+  },
+  "Sign in to continue your immigration strategy": {
+    "": "سجّل الدخول لمتابعة استراتيجية الهجرة الخاصة بك."
+  },
+  "Forgot your password?": "هل نسيت كلمة المرور؟",
+  "Create account": "إنشاء حساب",
+  "Create one": "أنشئ حسابًا",
+  "Already have an account?": "هل لديك حساب بالفعل؟",
+  "Need an account?": "هل تحتاج إلى حساب؟",
+  "Creating account": {
+    "": {
+      "": {
+        "": "جارٍ إنشاء الحساب..."
+      }
+    }
+  },
+  "Signing in": {
+    "": {
+      "": {
+        "": "جارٍ تسجيل الدخول..."
+      }
+    }
+  },
+  "Minimum 8 characters": "8 أحرف على الأقل",
+  "Repeat your password": "أعد إدخال كلمة المرور",
+  "Enter a valid email address": {
+    "": "أدخل بريدًا إلكترونيًا صالحًا."
+  },
+  "Password must contain at least 8 characters": {
+    "": "يجب أن تحتوي كلمة المرور على 8 أحرف على الأقل."
+  },
+  "Page not found": "الصفحة غير موجودة",
+  "The page you're looking for doesn't exist or hasn't been built yet": {
+    "": "الصفحة التي تبحث عنها غير موجودة أو لم يتم إنشاؤها بعد."
+  },
+  "Return home": "العودة إلى الرئيسية",
+  "Error": "خطأ",
+  "Something went wrong": "حدث خطأ ما",
+  "The page hit an unexpected error while rendering": {
+    " Try again, and if it persists, check the server logs": {
+      "": "واجهت الصفحة خطأ غير متوقع أثناء العرض. حاول مرة أخرى، وإذا استمرت المشكلة فراجع سجلات الخادم."
+    }
+  },
+  "Go home": "اذهب إلى الرئيسية",
+  "Admin": "الإدارة",
+  "Step 1 of 4": "الخطوة 1 من 4",
+  "Step 2 of 4": "الخطوة 2 من 4",
+  "Step 3 of 4": "الخطوة 3 من 4",
+  "Step 4 of 4": "الخطوة 4 من 4",
+  "Tell us a bit about yourself": {
+    "": "أخبرنا قليلًا عن نفسك."
+  },
+  "Where do you want to go?": "إلى أين تريد الذهاب؟",
+  "Your immigration goals and timing": {
+    "": "أهداف الهجرة والتوقيت المناسب لك."
+  },
+  "Professional experience and finances": {
+    "": "الخبرة المهنية والوضع المالي."
+  },
+  "You're ready to see your first strategy": "أنت جاهز لرؤية أول استراتيجية لك",
+  "Nationality": "الجنسية",
+  "Where do you live now?": "أين تعيش الآن؟",
+  "Relationship status": "الحالة الاجتماعية",
+  "Children": "عدد الأطفال",
+  "Preferred language": "اللغة المفضلة",
+  "Target country": "البلد المستهدف",
+  "Relocation timeline": "الجدول الزمني للانتقال",
+  "Prior visa refusal?": "هل لديك رفض تأشيرة سابق؟",
+  "Any criminal record?": "هل لديك سجل جنائي؟",
+  "What do you do?": "ما هو عملك؟",
+  "Years of experience": "سنوات الخبرة",
+  "Education level": "المستوى التعليمي",
+  "English level": "مستوى الإنجليزية",
+  "Available capital": "رأس المال المتاح",
+  "Review and continue": "راجع وتابع",
+  "Saving": {
+    "": {
+      "": {
+        "": "جارٍ الحفظ..."
+      }
+    }
+  },
+  "Your session is no longer available": {
+    " Sign in again to continue onboarding": {
+      "": "لم تعد جلستك متاحة. سجّل الدخول مرة أخرى لمتابعة الإعداد."
+    }
+  },
+  "Your profile could not be saved right now": {
+    " Retry before moving to the next step": {
+      "": "تعذر حفظ ملفك الآن. أعد المحاولة قبل الانتقال إلى الخطوة التالية."
+    }
+  },
+  "The platform could not load your profile draft": {
+    " Retry before continuing": {
+      "": "تعذر على المنصة تحميل مسودة ملفك الشخصي. أعد المحاولة قبل المتابعة."
+    }
+  },
+  "Document status": "حالة المستندات",
+  "Case health": "حالة الملف",
+  "Action roadmap": "خارطة الإجراءات",
+  "No cases yet": "لا توجد ملفات بعد"
+}

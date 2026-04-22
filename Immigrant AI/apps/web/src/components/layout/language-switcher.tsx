@@ -1,6 +1,6 @@
 "use client";
 
-import { useLocale as useIntlLocale } from "next-intl";
+import { useLocale as useIntlLocale, useTranslations } from "next-intl";
 import { useEffect, useRef, useState, useTransition } from "react";
 
 import { usePathname, useRouter } from "@/i18n/navigation";
@@ -16,6 +16,7 @@ export function LanguageSwitcher({
   align = "right",
   compact = false
 }: LanguageSwitcherProps) {
+  const t = useTranslations();
   const [isOpen, setIsOpen] = useState(false);
   const activeLocale = useIntlLocale();
   const router = useRouter();
@@ -71,7 +72,7 @@ export function LanguageSwitcher({
         type="button"
         aria-expanded={isOpen}
         aria-haspopup="menu"
-        aria-label="Select language"
+        aria-label={t("Select language")}
         translate="no"
         className={cn(
           "inline-flex items-center justify-center rounded-full border border-line bg-white/85 text-ink shadow-soft transition-all duration-200 hover:border-accent/35 hover:bg-white",
@@ -92,7 +93,7 @@ export function LanguageSwitcher({
         >
           <div className="border-b border-line/70 px-4 py-2.5">
             <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted">
-              Language
+              {t("Language")}
             </p>
           </div>
 

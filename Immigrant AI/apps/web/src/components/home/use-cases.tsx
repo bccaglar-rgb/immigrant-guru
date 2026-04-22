@@ -1,43 +1,46 @@
 "use client";
 
+import { useTranslations } from "next-intl";
+
 import { Animate, Stagger } from "@/components/ui/animate";
 
-const cases = [
-  {
-    emoji: "W",
-    title: "Work abroad",
-    description: "Find the right work visa for your skills and experience. H-1B, EB-2, O-1, and more.",
-    color: "from-accent to-[#5e5ce6]"
-  },
-  {
-    emoji: "S",
-    title: "Study abroad",
-    description: "F-1, OPT, STEM extension — understand your path from student to professional.",
-    color: "from-[#5e5ce6] to-purple"
-  },
-  {
-    emoji: "F",
-    title: "Move with family",
-    description: "Spouse, children, parents — know which family visa fits and how long it takes.",
-    color: "from-[#059669] to-[#0d9488]"
-  },
-  {
-    emoji: "B",
-    title: "Start a business",
-    description: "E-2 investor, EB-5, startup visa — explore entrepreneurial immigration routes.",
-    color: "from-[#d97706] to-[#ea580c]"
-  }
-];
-
 export function UseCases() {
+  const t = useTranslations();
+  const cases = [
+    {
+      emoji: "W",
+      title: t("Work abroad"),
+      description: t("Find the right work visa for your skills and experience. H-1B, EB-2, O-1, and more."),
+      color: "from-accent to-[#5e5ce6]"
+    },
+    {
+      emoji: "S",
+      title: t("Study abroad"),
+      description: t("F-1, OPT, STEM extension — understand your path from student to professional."),
+      color: "from-[#5e5ce6] to-purple"
+    },
+    {
+      emoji: "F",
+      title: t("Move with family"),
+      description: t("Spouse, children, parents — know which family visa fits and how long it takes."),
+      color: "from-[#059669] to-[#0d9488]"
+    },
+    {
+      emoji: "B",
+      title: t("Start a business"),
+      description: t("E-2 investor, EB-5, startup visa — explore entrepreneurial immigration routes."),
+      color: "from-[#d97706] to-[#ea580c]"
+    }
+  ];
+
   return (
     <section className="bg-white py-16 md:py-24">
       <div className="mx-auto max-w-content px-6 md:px-10">
         <Animate animation="fade-up" duration={700}>
           <div className="mx-auto max-w-2xl text-center">
-            <p className="text-sm font-medium text-accent">For every situation</p>
+            <p className="text-sm font-medium text-accent">{t("For every situation")}</p>
             <h2 className="mt-2 text-3xl font-semibold tracking-tight text-ink md:text-4xl">
-              Whatever your reason, we can help.
+              {t("Whatever your reason, we can help.")}
             </h2>
           </div>
         </Animate>

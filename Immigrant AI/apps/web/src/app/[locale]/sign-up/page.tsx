@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { getTranslations } from "next-intl/server";
 
 import { AuthForm } from "@/components/auth/auth-form";
 import { AuthShell } from "@/components/auth/auth-shell";
@@ -21,12 +22,13 @@ export const metadata: Metadata = {
   }
 };
 
-export default function SignUpPage() {
+export default async function SignUpPage() {
+  const t = await getTranslations();
   return (
     <AuthShell
-      description="Create an account to start building an immigration profile, evaluate pathways, and manage your cases."
-      eyebrow="Get Started"
-      title="Create your Immigrant Guru account"
+      description={t("Create an account to start building an immigration profile, evaluate pathways, and manage your cases.")}
+      eyebrow={t("Get Started")}
+      title={t("Create your Immigrant Guru account")}
     >
       <AuthForm mode="sign-up" />
     </AuthShell>

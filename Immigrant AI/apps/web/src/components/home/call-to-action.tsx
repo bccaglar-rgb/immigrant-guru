@@ -1,11 +1,14 @@
 "use client";
 
-import Link from "next/link";
+import { useTranslations } from "next-intl";
+
 import { Animate } from "@/components/ui/animate";
 import { buttonVariants } from "@/components/ui/button";
+import { Link } from "@/i18n/navigation";
 import { cn } from "@/lib/utils";
 
 export function CallToAction() {
+  const t = useTranslations();
   return (
     <section className="py-16 md:py-24">
       <div className="mx-auto max-w-content px-6 md:px-10">
@@ -16,13 +19,13 @@ export function CallToAction() {
             <div className="relative">
               <Animate animation="fade-up" delay={200} duration={700}>
                 <h2 className="mx-auto max-w-xl text-3xl font-semibold tracking-tight text-white md:text-4xl">
-                  Your new life starts here.
+                  {t("Your new life starts here.")}
                 </h2>
               </Animate>
 
               <Animate animation="fade-up" delay={350} duration={700}>
                 <p className="mx-auto mt-4 max-w-lg text-lg leading-relaxed text-white/50">
-                  Stop guessing. Get a clear plan for your immigration journey — in minutes, not months.
+                  {t("Stop guessing. Get a clear plan for your immigration journey — in minutes, not months.")}
                 </p>
               </Animate>
 
@@ -35,14 +38,14 @@ export function CallToAction() {
                     )}
                     href="/sign-up"
                   >
-                    Start your plan
+                    {t("Start your plan")}
                   </Link>
                 </div>
               </Animate>
 
               <Animate animation="fade-in" delay={650} duration={500}>
                 <p className="mt-5 text-sm text-white/30">
-                  Free to start &middot; No credit card &middot; Takes 2 minutes
+                  {t("Free to start · No credit card · Takes 2 minutes")}
                 </p>
               </Animate>
             </div>

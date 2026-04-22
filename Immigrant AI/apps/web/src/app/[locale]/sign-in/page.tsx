@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { getTranslations } from "next-intl/server";
 
 import { AuthForm } from "@/components/auth/auth-form";
 import { AuthShell } from "@/components/auth/auth-shell";
@@ -15,12 +16,13 @@ export const metadata: Metadata = {
   }
 };
 
-export default function SignInPage() {
+export default async function SignInPage() {
+  const t = await getTranslations();
   return (
     <AuthShell
-      description="Access your immigration dashboard, decision plans, and case workspace."
-      eyebrow="Welcome Back"
-      title="Sign in to continue your case strategy"
+      description={t("Access your immigration dashboard, decision plans, and case workspace.")}
+      eyebrow={t("Welcome back")}
+      title={t("Sign in to continue your case strategy")}
     >
       <AuthForm mode="sign-in" />
     </AuthShell>

@@ -1,13 +1,12 @@
 import type { Metadata, Viewport } from "next";
-import { hasLocale, NextIntlClientProvider } from "next-intl";
+import { hasLocale } from "next-intl";
 import { Inter } from "next/font/google";
-import { notFound } from "next/navigation";
 import type { ReactNode } from "react";
 
 import "@/app/globals.css";
 import { GoogleAnalytics } from "@/components/analytics/google-analytics";
 import { AuthProvider } from "@/components/auth/auth-provider";
-import { LocaleProvider } from "@/components/providers/locale-provider";
+import { IntlProvider } from "@/components/providers/intl-provider";
 import { routing } from "@/i18n/routing";
 import { getDocumentDirection, type LanguageCode } from "@/lib/i18n";
 
@@ -186,11 +185,9 @@ export default async function LocaleLayout({ children, params }: LayoutProps) {
           <div className="orb-3" />
         </div>
         <div className="anim-page-enter relative z-[1]">
-          <NextIntlClientProvider locale={locale} messages={messages}>
-            <LocaleProvider locale={locale as import("@/lib/i18n").LanguageCode}>
-              <AuthProvider>{children}</AuthProvider>
-            </LocaleProvider>
-          </NextIntlClientProvider>
+          <IntlProvider locale={locale} messages={messages}>
+            <AuthProvider>{children}</AuthProvider>
+          </IntlProvider>
         </div>
       </body>
     </html>
