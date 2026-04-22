@@ -11,14 +11,13 @@ import { SocialProof } from "@/components/home/social-proof";
 import { UseCases } from "@/components/home/use-cases";
 import { AppShell } from "@/components/layout/app-shell";
 import { getPublicEnv } from "@/lib/config";
+import { buildAlternates } from "@/lib/seo";
 
 export const metadata: Metadata = {
   title: "Immigrant Guru - Move to a New Country Without Confusion",
   description:
     "Get your personalized visa, readiness score, and action plan in minutes. AI analyzes 47 visa categories to find your best path. Free to start.",
-  alternates: {
-    canonical: "https://immigrant.guru"
-  },
+  alternates: buildAlternates("/"),
   openGraph: {
     title: "Immigrant Guru - Move to a New Country Without Confusion",
     description:

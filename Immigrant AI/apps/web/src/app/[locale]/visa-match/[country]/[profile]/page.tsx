@@ -10,6 +10,7 @@ import { ArticleLd, BreadcrumbLd, FaqLd } from "@/components/seo/json-ld";
 import { getCountry } from "@/data/countries";
 import { getProfile, PROFILES } from "@/data/profiles";
 import { buildVisaMatchPairs, topVisasForProfileDestination } from "@/data/seo-pairs";
+import { buildAlternates } from "@/lib/seo";
 
 const SITE_URL = "https://immigrant.guru";
 
@@ -33,7 +34,7 @@ export async function generateMetadata({ params }: { params: PageParams }): Prom
   return {
     title,
     description,
-    alternates: { canonical: url },
+    alternates: buildAlternates(`/visa-match/${country.slug}/${profile.slug}`),
     openGraph: { title, description, url }
   };
 }

@@ -2,13 +2,12 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 import { AppShell } from "@/components/layout/app-shell";
-
-const SITE_URL = "https://immigrant.guru";
+import { buildAlternates } from "@/lib/seo";
 
 export const metadata: Metadata = {
   title: "Free immigration tools — Immigrant Guru",
   description: "Eligibility checker, cost estimator, and timeline calculator — all free.",
-  alternates: { canonical: `${SITE_URL}/tools` }
+  alternates: buildAlternates("/tools")
 };
 
 const TOOLS = [

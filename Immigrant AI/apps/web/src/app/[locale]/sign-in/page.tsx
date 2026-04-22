@@ -2,14 +2,13 @@ import type { Metadata } from "next";
 
 import { AuthForm } from "@/components/auth/auth-form";
 import { AuthShell } from "@/components/auth/auth-shell";
+import { buildAlternates } from "@/lib/seo";
 
 export const metadata: Metadata = {
   title: "Sign In",
   description:
     "Sign in to your Immigrant Guru account. Access your immigration dashboard, cases, readiness score, and AI strategy recommendations.",
-  alternates: {
-    canonical: "https://immigrant.guru/sign-in"
-  },
+  alternates: buildAlternates("/sign-in"),
   robots: {
     index: false,
     follow: true

@@ -9,6 +9,7 @@ import { RelatedPages } from "@/components/seo/related-pages";
 import { ArticleLd, BreadcrumbLd, FaqLd } from "@/components/seo/json-ld";
 import { COMPARISONS, getComparison } from "@/data/seo-pairs";
 import { getVisa } from "@/data/visa-catalog";
+import { buildAlternates } from "@/lib/seo";
 
 const SITE_URL = "https://immigrant.guru";
 
@@ -31,7 +32,7 @@ export async function generateMetadata({ params }: { params: PageParams }): Prom
   return {
     title,
     description,
-    alternates: { canonical: url },
+    alternates: buildAlternates(`/compare/${pair.slug}`),
     openGraph: { title, description, url }
   };
 }
