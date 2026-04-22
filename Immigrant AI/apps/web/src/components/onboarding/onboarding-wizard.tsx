@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useState } from "react";
+import { useTranslations } from "next-intl";
 
 import { useAuthSession } from "@/hooks/use-auth-session";
 import { useProfileForm } from "@/hooks/use-profile-form";
@@ -18,6 +19,7 @@ import { Button } from "@/components/ui/button";
 const TOTAL_STEPS = 5;
 
 export function OnboardingWizard() {
+  const t = useTranslations();
   const { session, user } = useAuthSession();
   const { formValues, handleFieldChange, loadError, refresh, status } = useProfileForm();
   const [step, setStep] = useState(0);
@@ -29,7 +31,7 @@ export function OnboardingWizard() {
 
   const saveProgress = useCallback(async () => {
     if (!session) {
-      setSaveError("Your session is no longer available. Sign in again to continue onboarding.");
+      setSaveError(t("Your session is no longer available. Sign in again to continue onboarding."));
       return false;
     }
 
@@ -37,7 +39,7 @@ export function OnboardingWizard() {
     if (!validation.success) {
       setSaveError(
         validation.error.issues[0]?.message ??
-          "Review the highlighted profile fields before continuing."
+          t("Review the highlighted profile fields before continuing.")
       );
       return false;
     }
@@ -52,13 +54,13 @@ export function OnboardingWizard() {
       return true;
     } catch {
       setSaveError(
-        "Your profile could not be saved right now. Retry before moving to the next step."
+        t("Your profile could not be saved right now. Retry before moving to the next step.")
       );
       return false;
     } finally {
       setIsSaving(false);
     }
-  }, [session, formValues]);
+  }, [session, formValues, t]);
 
   const goNext = useCallback(async () => {
     setDirection("forward");
@@ -91,15 +93,15 @@ export function OnboardingWizard() {
       <div className="mx-auto max-w-xl px-6 py-12">
         <div className="rounded-3xl border border-amber-200 bg-amber-50/80 p-8">
           <h1 className="text-2xl font-semibold tracking-tight text-ink">
-            Onboarding could not load
+            {t("Onboarding could not load")}
           </h1>
           <p className="mt-3 text-sm leading-7 text-muted">
             {loadError ??
-              "The platform could not load your profile draft. Retry before continuing."}
+              t("The platform could not load your profile draft. Retry before continuing.")}
           </p>
           <div className="mt-6">
             <Button onClick={() => void refresh()} size="lg">
-              Retry
+              {t("Retry")}
             </Button>
           </div>
         </div>
@@ -149,7 +151,7 @@ export function OnboardingWizard() {
             onClick={goBack}
             className="text-sm font-medium text-muted transition-colors hover:text-ink"
           >
-            Back
+            {t("Back")}
           </button>
 
           <div className="flex items-center gap-3">
@@ -158,14 +160,14 @@ export function OnboardingWizard() {
               onClick={goNext}
               className="text-sm font-medium text-muted transition-colors hover:text-ink"
             >
-              Skip
+              {t("Skip")}
             </button>
             <Button
               onClick={goNext}
               disabled={isSaving}
               size="lg"
             >
-              {isSaving ? "Saving..." : step === 3 ? "Finish" : "Next"}
+              {isSaving ? t("Saving...") : step === 3 ? t("Finish") : t("Next")}
             </Button>
           </div>
         </div>

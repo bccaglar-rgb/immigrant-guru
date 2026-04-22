@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { useTranslations } from "next-intl";
 
 import { Animate } from "@/components/ui/animate";
 
@@ -10,7 +11,8 @@ type WelcomeStepProps = {
 };
 
 export function WelcomeStep({ firstName, onNext }: WelcomeStepProps) {
-  const displayName = firstName || "there";
+  const t = useTranslations();
+  const displayName = firstName || t("there");
 
   return (
     <div className="flex flex-col items-center justify-center text-center py-12 md:py-20">
@@ -25,24 +27,21 @@ export function WelcomeStep({ firstName, onNext }: WelcomeStepProps) {
             priority
           />
           <span className="select-none text-3xl font-black tracking-[-0.045em] text-ink md:text-4xl">
-            <span>Immigrant</span>
-            <span className="text-accent">Guru</span>
+            <span>{t("Immigrant")}</span>
+            <span className="text-accent">{t("Guru")}</span>
           </span>
         </div>
       </Animate>
 
       <Animate animation="fade-up" delay={300} duration={800}>
         <h1 className="mt-8 text-4xl font-semibold tracking-tight text-ink md:text-5xl">
-          Hey {displayName},
-          <br />
-          <span className="text-gradient">welcome aboard!</span>
+          {t("Hey {name}, welcome aboard!", { name: displayName })}
         </h1>
       </Animate>
 
       <Animate animation="fade-up" delay={500} duration={700}>
         <p className="mt-4 max-w-md text-lg leading-relaxed text-muted">
-          Let&apos;s build your immigration profile in under 2 minutes.
-          The more we know, the better strategies we can craft for you.
+          {t("Let's build your immigration profile in under 2 minutes. The more we know, the better strategies we can craft for you.")}
         </p>
       </Animate>
 
@@ -52,13 +51,13 @@ export function WelcomeStep({ firstName, onNext }: WelcomeStepProps) {
           onClick={onNext}
           className="mt-10 inline-flex h-14 items-center rounded-full bg-accent px-10 text-base font-semibold text-white shadow-glow transition-all duration-200 hover:bg-accent-hover active:scale-[0.97] anim-pulse-glow"
         >
-          Let&apos;s go
+          {t("Let's go")}
         </button>
       </Animate>
 
       <Animate animation="fade-in" delay={900} duration={600}>
         <p className="mt-6 text-sm text-muted">
-          Takes about 2 minutes. You can skip anything.
+          {t("Takes about 2 minutes. You can skip anything.")}
         </p>
       </Animate>
     </div>

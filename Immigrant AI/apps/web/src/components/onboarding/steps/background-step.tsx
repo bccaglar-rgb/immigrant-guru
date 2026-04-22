@@ -1,5 +1,7 @@
 "use client";
 
+import { useTranslations } from "next-intl";
+
 import { Animate } from "@/components/ui/animate";
 import { Input } from "@/components/ui/input";
 import { PillSelector } from "@/components/onboarding/pill-selector";
@@ -31,23 +33,24 @@ type BackgroundStepProps = {
 };
 
 export function BackgroundStep({ formValues, onChange }: BackgroundStepProps) {
+  const t = useTranslations();
   return (
     <div className="space-y-8">
       <Animate animation="fade-up" duration={600}>
         <div className="text-center">
-          <p className="text-sm font-semibold uppercase tracking-[0.08em] text-accent">Step 3 of 4</p>
+          <p className="text-sm font-semibold uppercase tracking-[0.08em] text-accent">{t("Step 3 of 4")}</p>
           <h2 className="mt-2 text-3xl font-semibold tracking-tight text-ink">
-            Your background
+            {t("Your background")}
           </h2>
-          <p className="mt-2 text-muted">Professional experience and finances.</p>
+          <p className="mt-2 text-muted">{t("Professional experience and finances.")}</p>
         </div>
       </Animate>
 
       <div className="mx-auto max-w-lg space-y-6">
         <Animate animation="fade-up" delay={100} duration={500}>
           <Input
-            label="What do you do?"
-            placeholder="e.g. Software Engineer, Doctor, Designer..."
+            label={t("What do you do?")}
+            placeholder={t("e.g. Software Engineer, Doctor, Designer...")}
             value={formValues.profession}
             onChange={(e) => onChange("profession", e.target.value)}
           />
@@ -55,7 +58,7 @@ export function BackgroundStep({ formValues, onChange }: BackgroundStepProps) {
 
         <Animate animation="fade-up" delay={200} duration={500}>
           <StepperInput
-            label="Years of experience"
+            label={t("Years of experience")}
             value={formValues.years_of_experience ? Number(formValues.years_of_experience) : 0}
             onChange={(v) => onChange("years_of_experience", String(v))}
             max={40}
@@ -64,7 +67,7 @@ export function BackgroundStep({ formValues, onChange }: BackgroundStepProps) {
 
         <Animate animation="fade-up" delay={300} duration={500}>
           <div className="space-y-2">
-            <p className="text-sm font-medium text-ink">Education level</p>
+            <p className="text-sm font-medium text-ink">{t("Education level")}</p>
             <PillSelector
               options={educationDisplay}
               value={formValues.education_level}
@@ -76,7 +79,7 @@ export function BackgroundStep({ formValues, onChange }: BackgroundStepProps) {
 
         <Animate animation="fade-up" delay={400} duration={500}>
           <div className="space-y-2">
-            <p className="text-sm font-medium text-ink">English proficiency</p>
+            <p className="text-sm font-medium text-ink">{t("English proficiency")}</p>
             <PillSelector
               options={englishDisplay}
               value={formValues.english_level}
@@ -88,8 +91,8 @@ export function BackgroundStep({ formValues, onChange }: BackgroundStepProps) {
 
         <Animate animation="fade-up" delay={500} duration={500}>
           <Input
-            label="Available capital (USD)"
-            placeholder="e.g. 50000"
+            label={t("Available capital (USD)")}
+            placeholder={t("e.g. 50000")}
             value={formValues.available_capital}
             onChange={(e) => onChange("available_capital", e.target.value)}
           />

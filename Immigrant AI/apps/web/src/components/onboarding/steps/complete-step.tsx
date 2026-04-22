@@ -1,11 +1,12 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 
 import { Animate } from "@/components/ui/animate";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { Link } from "@/i18n/navigation";
 import type { ProfileFormValues } from "@/types/profile";
 
 type CompleteStepProps = {
@@ -34,6 +35,7 @@ function computeReadiness(values: ProfileFormValues): number {
 }
 
 export function CompleteStep({ formValues }: CompleteStepProps) {
+  const t = useTranslations();
   const readiness = computeReadiness(formValues);
   const [displayCount, setDisplayCount] = useState(0);
 
@@ -89,17 +91,17 @@ export function CompleteStep({ formValues }: CompleteStepProps) {
 
       <Animate animation="fade-up" delay={400} duration={700}>
         <h2 className="mt-8 text-3xl font-semibold tracking-tight text-ink md:text-4xl">
-          You&apos;re all set!
+          {t("You're all set!")}
         </h2>
       </Animate>
 
       <Animate animation="fade-up" delay={550} duration={600}>
         <p className="mt-3 max-w-md text-lg leading-relaxed text-muted">
           {readiness >= 80
-            ? "Amazing! Your profile is almost complete. We can build great strategies for you."
+            ? t("Amazing! Your profile is almost complete. We can build great strategies for you.")
             : readiness >= 50
-              ? "Great start! You can always complete more details from your profile page."
-              : "No worries! You can fill in more details anytime from your dashboard."}
+              ? t("Great start! You can always complete more details from your profile page.")
+              : t("No worries! You can fill in more details anytime from your dashboard.")}
         </p>
       </Animate>
 
@@ -109,7 +111,7 @@ export function CompleteStep({ formValues }: CompleteStepProps) {
             className={cn(buttonVariants({ size: "lg", variant: "primary" }), "px-8 shadow-glow")}
             href="/pricing?next=/analysis"
           >
-            See your AI analysis
+            {t("See your AI analysis")}
           </Link>
         </div>
       </Animate>

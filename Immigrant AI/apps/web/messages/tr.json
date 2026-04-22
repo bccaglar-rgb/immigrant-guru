@@ -669,5 +669,73 @@
     "pageSubtitle": "Menşei ve hedef ülkeye göre adım adım rehberler.",
     "fromLabel": "From {flag} {name}",
     "cardSubtitle": "Guide for {demonym} citizens"
+  },
+  "Onboarding could not load": "Onboarding yüklenemedi",
+  "Review the highlighted profile fields before continuing": {
+    "": "Devam etmeden önce vurgulanan profil alanlarını gözden geçirin."
+  },
+  "Skip": "Atla",
+  "Who are you?": "Sen kimsin?",
+  "Select your nationality": "Uyruğunuzu seçin",
+  "Select current country": "Mevcut ülkeyi seçin",
+  "e": {
+    "g": {
+      " English, Turkish": {
+        "": {
+          "": {
+            "": "ör. İngilizce, Türkçe..."
+          }
+        }
+      },
+      " Software Engineer, Doctor, Designer": {
+        "": {
+          "": {
+            "": "ör. Yazılım Mühendisi, Doktor, Tasarımcı..."
+          }
+        }
+      },
+      " 50000": "ör. 50000"
+    }
+  },
+  "Your background": "Geçmişiniz",
+  "English proficiency": "İngilizce yeterliliği",
+  "Available capital (USD)": "Mevcut sermaye (USD)",
+  "Your dream destination and timeline": {
+    "": "Hayalinizdeki destinasyon ve zaman çizelgesi."
+  },
+  "When do you want to move?": "Ne zaman taşınmak istiyorsunuz?",
+  "Have you had a visa refusal before?": "Daha önce vize reddi yaşadınız mı?",
+  "This helps us give accurate recommendations": {
+    " Your data is private and secure": {
+      "": "Bu, size doğru öneriler sunmamıza yardımcı olur. Verileriniz gizli ve güvende."
+    }
+  },
+  "You're all set!": "Her şey hazır!",
+  "Amazing! Your profile is almost complete": {
+    " We can build great strategies for you": {
+      "": "Harika! Profiliniz neredeyse tamamlandı. Sizin için mükemmel stratejiler oluşturabiliriz."
+    }
+  },
+  "Great start! You can always complete more details from your profile page": {
+    "": "Harika başlangıç! Daha fazla ayrıntıyı profil sayfanızdan istediğiniz zaman tamamlayabilirsiniz."
+  },
+  "No worries! You can fill in more details anytime from your dashboard": {
+    "": "Sorun değil! Daha fazla ayrıntıyı istediğiniz zaman panelinizden doldurabilirsiniz."
+  },
+  "See your AI analysis": "AI analizinizi görün",
+  "there": "orada",
+  "Immigrant": "Immigrant",
+  "Guru": "Guru",
+  "Hey {name}, welcome aboard!": "Merhaba {name}, hoş geldiniz!",
+  "Let's build your immigration profile in under 2 minutes": {
+    " The more we know, the better strategies we can craft for you": {
+      "": "2 dakikadan kısa sürede göçmenlik profilinizi oluşturalım. Ne kadar çok bilirsek, sizin için o kadar iyi stratejiler hazırlayabiliriz."
+    }
+  },
+  "Let's go": "Haydi gidelim",
+  "Takes about 2 minutes": {
+    " You can skip anything": {
+      "": "Yaklaşık 2 dakika sürer. İstediğiniz şeyi atlayabilirsiniz."
+    }
   }
 }

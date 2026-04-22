@@ -1,5 +1,7 @@
 "use client";
 
+import { useTranslations } from "next-intl";
+
 import { Animate } from "@/components/ui/animate";
 import { CountrySelect } from "@/components/ui/country-select";
 import { Input } from "@/components/ui/input";
@@ -14,40 +16,41 @@ type PersonalStepProps = {
 };
 
 export function PersonalStep({ formValues, onChange }: PersonalStepProps) {
+  const t = useTranslations();
   return (
     <div className="space-y-8">
       <Animate animation="fade-up" duration={600}>
         <div className="text-center">
-          <p className="text-sm font-semibold uppercase tracking-[0.08em] text-accent">Step 1 of 4</p>
+          <p className="text-sm font-semibold uppercase tracking-[0.08em] text-accent">{t("Step 1 of 4")}</p>
           <h2 className="mt-2 text-3xl font-semibold tracking-tight text-ink">
-            Who are you?
+            {t("Who are you?")}
           </h2>
-          <p className="mt-2 text-muted">Tell us a bit about yourself.</p>
+          <p className="mt-2 text-muted">{t("Tell us a bit about yourself.")}</p>
         </div>
       </Animate>
 
       <div className="mx-auto max-w-lg space-y-5">
         <Animate animation="fade-up" delay={100} duration={500}>
           <CountrySelect
-            label="Nationality"
+            label={t("Nationality")}
             value={formValues.nationality}
             onChange={(name) => onChange("nationality", name)}
-            placeholder="Select your nationality"
+            placeholder={t("Select your nationality")}
           />
         </Animate>
 
         <Animate animation="fade-up" delay={200} duration={500}>
           <CountrySelect
-            label="Where do you live now?"
+            label={t("Where do you live now?")}
             value={formValues.current_country}
             onChange={(name) => onChange("current_country", name)}
-            placeholder="Select current country"
+            placeholder={t("Select current country")}
           />
         </Animate>
 
         <Animate animation="fade-up" delay={300} duration={500}>
           <div className="space-y-2">
-            <p className="text-sm font-medium text-ink">Relationship status</p>
+            <p className="text-sm font-medium text-ink">{t("Relationship status")}</p>
             <PillSelector
               options={maritalStatusOptions}
               value={formValues.marital_status}
@@ -58,7 +61,7 @@ export function PersonalStep({ formValues, onChange }: PersonalStepProps) {
 
         <Animate animation="fade-up" delay={400} duration={500}>
           <StepperInput
-            label="Children"
+            label={t("Children")}
             value={formValues.children_count ? Number(formValues.children_count) : 0}
             onChange={(v) => onChange("children_count", String(v))}
             max={10}
@@ -67,8 +70,8 @@ export function PersonalStep({ formValues, onChange }: PersonalStepProps) {
 
         <Animate animation="fade-up" delay={500} duration={500}>
           <Input
-            label="Preferred language"
-            placeholder="e.g. English, Turkish..."
+            label={t("Preferred language")}
+            placeholder={t("e.g. English, Turkish...")}
             value={formValues.preferred_language}
             onChange={(e) => onChange("preferred_language", e.target.value)}
           />

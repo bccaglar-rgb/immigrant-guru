@@ -1,5 +1,7 @@
 "use client";
 
+import { useTranslations } from "next-intl";
+
 import { Animate } from "@/components/ui/animate";
 import { PillSelector } from "@/components/onboarding/pill-selector";
 import { relocationTimelineOptions } from "@/types/profile";
@@ -34,22 +36,23 @@ type GoalsStepProps = {
 };
 
 export function GoalsStep({ formValues, onChange }: GoalsStepProps) {
+  const t = useTranslations();
   return (
     <div className="space-y-8">
       <Animate animation="fade-up" duration={600}>
         <div className="text-center">
-          <p className="text-sm font-semibold uppercase tracking-[0.08em] text-accent">Step 2 of 4</p>
+          <p className="text-sm font-semibold uppercase tracking-[0.08em] text-accent">{t("Step 2 of 4")}</p>
           <h2 className="mt-2 text-3xl font-semibold tracking-tight text-ink">
-            Where do you want to go?
+            {t("Where do you want to go?")}
           </h2>
-          <p className="mt-2 text-muted">Your dream destination and timeline.</p>
+          <p className="mt-2 text-muted">{t("Your dream destination and timeline.")}</p>
         </div>
       </Animate>
 
       <div className="mx-auto max-w-lg space-y-6">
         <Animate animation="fade-up" delay={100} duration={500}>
           <div className="space-y-2">
-            <p className="text-sm font-medium text-ink">Where do you want to go?</p>
+            <p className="text-sm font-medium text-ink">{t("Where do you want to go?")}</p>
             <PillSelector
               options={countryOptions}
               value={formValues.target_country}
@@ -61,7 +64,7 @@ export function GoalsStep({ formValues, onChange }: GoalsStepProps) {
 
         <Animate animation="fade-up" delay={200} duration={500}>
           <div className="space-y-2">
-            <p className="text-sm font-medium text-ink">When do you want to move?</p>
+            <p className="text-sm font-medium text-ink">{t("When do you want to move?")}</p>
             <PillSelector
               options={timelineDisplayOptions}
               value={formValues.relocation_timeline}
@@ -73,7 +76,7 @@ export function GoalsStep({ formValues, onChange }: GoalsStepProps) {
 
         <Animate animation="fade-up" delay={300} duration={500}>
           <div className="space-y-2">
-            <p className="text-sm font-medium text-ink">Have you had a visa refusal before?</p>
+            <p className="text-sm font-medium text-ink">{t("Have you had a visa refusal before?")}</p>
             <PillSelector
               options={yesNoPills}
               value={formValues.prior_visa_refusal_flag}
@@ -84,14 +87,14 @@ export function GoalsStep({ formValues, onChange }: GoalsStepProps) {
 
         <Animate animation="fade-up" delay={400} duration={500}>
           <div className="space-y-2">
-            <p className="text-sm font-medium text-ink">Any criminal record?</p>
+            <p className="text-sm font-medium text-ink">{t("Any criminal record?")}</p>
             <PillSelector
               options={yesNoPills}
               value={formValues.criminal_record_flag}
               onChange={(v) => onChange("criminal_record_flag", v)}
             />
             <p className="text-xs text-muted mt-1">
-              This helps us give accurate recommendations. Your data is private and secure.
+              {t("This helps us give accurate recommendations. Your data is private and secure.")}
             </p>
           </div>
         </Animate>
