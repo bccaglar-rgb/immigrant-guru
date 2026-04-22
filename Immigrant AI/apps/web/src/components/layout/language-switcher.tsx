@@ -3,7 +3,7 @@
 import { useLocale as useIntlLocale, useTranslations } from "next-intl";
 import { useEffect, useRef, useState } from "react";
 
-import { usePathname } from "@/i18n/navigation";
+import { Link, usePathname } from "@/i18n/navigation";
 import { cn } from "@/lib/utils";
 import { LANGUAGE_OPTIONS, type LanguageCode } from "@/lib/i18n";
 
@@ -51,17 +51,6 @@ export function LanguageSwitcher({
     LANGUAGE_OPTIONS.find((language) => language.code === activeLocale) ??
     LANGUAGE_OPTIONS[0];
 
-  function handleSelect(code: LanguageCode) {
-    setIsOpen(false);
-    if (code === activeLocale) return;
-    // Full-page navigation ensures SSR renders the correct locale immediately.
-    // `as-needed` prefix: English lives at the bare path, others at /{locale}/path.
-    const target =
-      code === "en"
-        ? pathname
-        : `/${code}${pathname === "/" ? "" : pathname}`;
-    window.location.href = target;
-  }
 
   return (
     <div className="relative" ref={containerRef}>
@@ -99,12 +88,13 @@ export function LanguageSwitcher({
               const active = language.code === activeLocale;
 
               return (
-                <button
+                <Link
                   key={language.code}
-                  type="button"
+                  href={pathname}
+                  locale={language.code as LanguageCode}
                   role="menuitemradio"
                   aria-checked={active}
-                  onClick={() => handleSelect(language.code)}
+                  onClick={() => setIsOpen(false)}
                   className={cn(
                     "flex items-center gap-2 rounded-lg px-2.5 py-2 text-left text-sm transition-colors duration-150",
                     active
@@ -115,7 +105,7 @@ export function LanguageSwitcher({
                   <span className="text-base leading-none">{language.flag}</span>
                   <span className="flex-1 truncate">{language.label}</span>
                   {active ? <span className="text-xs">✓</span> : null}
-                </button>
+                </Link>
               );
             })}
           </div>
