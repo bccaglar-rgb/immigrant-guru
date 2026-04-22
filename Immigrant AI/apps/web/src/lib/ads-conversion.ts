@@ -10,7 +10,7 @@ export function fireConversionEvent(plan: string) {
   if (typeof window === "undefined" || typeof window.gtag !== "function") return;
 
   window.gtag("event", "conversion", {
-    send_to: `${AW_ID}/purchase`,
+    send_to: `${AW_ID}/Fh9vCLD60KAcEMHWwrxD`,
     value: planValue(plan),
     currency: "USD"
   });
