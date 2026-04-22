@@ -8,6 +8,7 @@ import { Animate, Stagger } from "@/components/ui/animate";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { useAuthSession } from "@/hooks/use-auth-session";
 import { getProfileAnalysis } from "@/lib/analysis-client";
+import { fireConversionEvent } from "@/lib/ads-conversion";
 import { checkout, getBillingStatus, verifyUpgrade } from "@/lib/billing-client";
 import { cn } from "@/lib/utils";
 import type { ProfileAnalysisResult } from "@/types/analysis";
@@ -139,7 +140,10 @@ export function AIAnalysisPage({ compact = false }: { compact?: boolean }) {
     const init = async () => {
       // If Stripe redirected back after payment, verify the session and upgrade plan if paid
       if (upgraded) {
-        await verifyUpgrade(token);
+        const upgradeRes = await verifyUpgrade(token);
+        if (upgradeRes.ok && upgradeRes.data.upgraded) {
+          fireConversionEvent(upgradeRes.data.plan);
+        }
       }
       const [billingRes] = await Promise.all([
         getBillingStatus(token),
