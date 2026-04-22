@@ -22,16 +22,38 @@ jobs:
 
       - name: Deploy via SSH
         uses: appleboy/ssh-action@v1.0.3
+        env:
+          STRIPE_SECRET_KEY: ${{ secrets.STRIPE_LIVE_SECRET_KEY }}
+          STRIPE_PUBLISHABLE_KEY: ${{ secrets.STRIPE_LIVE_PUBLISHABLE_KEY }}
+          STRIPE_STARTER_PRICE_ID: ${{ secrets.STRIPE_LIVE_STARTER_PRICE_ID }}
+          STRIPE_PLUS_PRICE_ID: ${{ secrets.STRIPE_LIVE_PLUS_PRICE_ID }}
+          STRIPE_PREMIUM_PRICE_ID: ${{ secrets.STRIPE_LIVE_PREMIUM_PRICE_ID }}
+          STRIPE_WEBHOOK_SECRET: ${{ secrets.STRIPE_LIVE_WEBHOOK_SECRET }}
         with:
           host: ${{ secrets.DROPLET_IP }}
           username: root
           key: ${{ secrets.SSH_PRIVATE_KEY }}
+          envs: STRIPE_SECRET_KEY,STRIPE_PUBLISHABLE_KEY,STRIPE_STARTER_PRICE_ID,STRIPE_PLUS_PRICE_ID,STRIPE_PREMIUM_PRICE_ID,STRIPE_WEBHOOK_SECRET
           script_stop: true
           command_timeout: 20m
           script: |
             REPO=/opt/app/immigrant-guru
             mkdir -p "$REPO"
             cd "$REPO"
+
+            echo "==> Update Stripe live keys in API .env"
+            API_ENV="$REPO/apps/api/.env"
+            if [ -f "$API_ENV" ]; then
+              sed -i "s|^STRIPE_SECRET_KEY=.*|STRIPE_SECRET_KEY=$STRIPE_SECRET_KEY|" "$API_ENV"
+              sed -i "s|^STRIPE_PUBLISHABLE_KEY=.*|STRIPE_PUBLISHABLE_KEY=$STRIPE_PUBLISHABLE_KEY|" "$API_ENV"
+              sed -i "s|^STRIPE_STARTER_PRICE_ID=.*|STRIPE_STARTER_PRICE_ID=$STRIPE_STARTER_PRICE_ID|" "$API_ENV"
+              sed -i "s|^STRIPE_PLUS_PRICE_ID=.*|STRIPE_PLUS_PRICE_ID=$STRIPE_PLUS_PRICE_ID|" "$API_ENV"
+              sed -i "s|^STRIPE_PREMIUM_PRICE_ID=.*|STRIPE_PREMIUM_PRICE_ID=$STRIPE_PREMIUM_PRICE_ID|" "$API_ENV"
+              sed -i "s|^STRIPE_WEBHOOK_SECRET=.*|STRIPE_WEBHOOK_SECRET=$STRIPE_WEBHOOK_SECRET|" "$API_ENV"
+              echo "Stripe keys updated."
+            else
+              echo "WARNING: $API_ENV not found — skipping Stripe key update"
+            fi
 
             echo "==> Ensure git repo exists"
             if [ ! -d .git ]; then
