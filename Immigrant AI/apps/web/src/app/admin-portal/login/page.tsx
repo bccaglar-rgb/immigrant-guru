@@ -1,13 +1,16 @@
 "use client";
 
-import { useSearchParams } from "next/navigation";
 import { useState } from "react";
 
 const API_URL = `${process.env.NEXT_PUBLIC_API_URL ?? ""}/api/v1`;
 
+function getReason(): string | null {
+  if (typeof window === "undefined") return null;
+  return new URLSearchParams(window.location.search).get("reason");
+}
+
 export default function AdminLoginPage() {
-  const searchParams = useSearchParams();
-  const reason = searchParams.get("reason");
+  const reason = getReason();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
