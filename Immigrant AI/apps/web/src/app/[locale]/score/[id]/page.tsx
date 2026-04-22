@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
-import Link from "next/link";
+import { getTranslations } from "next-intl/server";
+
+import { Link } from "@/i18n/navigation";
 
 import { AppShell } from "@/components/layout/app-shell";
 import { ArticleLd, BreadcrumbLd } from "@/components/seo/json-ld";
@@ -31,6 +33,7 @@ export default async function SharePage({ params }: { params: PageParams }) {
   const { id } = await params;
   const score = deriveScore(id);
   const url = `${SITE_URL}/score/${id}`;
+  const t = await getTranslations();
 
   return (
     <AppShell>
@@ -48,19 +51,19 @@ export default async function SharePage({ params }: { params: PageParams }) {
 
       <div className="mx-auto w-full max-w-2xl px-6 py-16 text-center">
         <div className="inline-flex items-center rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-white/70">
-          Immigration Score
+          {t("Immigration Score")}
         </div>
 
         <div className="mx-auto mt-6 flex h-44 w-44 items-center justify-center rounded-full border-4 border-emerald-400/80 bg-emerald-500/10">
           <div>
             <div className="text-5xl font-bold text-white">{score}</div>
-            <div className="text-xs uppercase tracking-wider text-white/60">out of 100</div>
+            <div className="text-xs uppercase tracking-wider text-white/60">{t("score.outOf100")}</div>
           </div>
         </div>
 
-        <h1 className="mt-8 text-3xl font-semibold text-white">This profile is {readiness(score)}</h1>
+        <h1 className="mt-8 text-3xl font-semibold text-white">{t("score.thisProfileIs", { readiness: readiness(score) })}</h1>
         <p className="mt-3 text-white/70">
-          Immigrant Guru scored this profile on education, work experience, language, target country fit, and 8 other dimensions.
+          {t("score.scoredOn")}
         </p>
 
         <div className="mt-8 flex flex-wrap justify-center gap-3">
@@ -68,7 +71,7 @@ export default async function SharePage({ params }: { params: PageParams }) {
             href="/sign-up"
             className="rounded-full bg-white px-5 py-2.5 text-sm font-semibold text-black hover:bg-white/90"
           >
-            Get my own score
+            {t("score.getMyOwnScore")}
           </Link>
           <a
             href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(
@@ -78,7 +81,7 @@ export default async function SharePage({ params }: { params: PageParams }) {
             rel="noreferrer"
             className="rounded-full border border-white/20 px-5 py-2.5 text-sm font-semibold text-white hover:border-white/50"
           >
-            Share on X
+            {t("score.shareOnX")}
           </a>
         </div>
 

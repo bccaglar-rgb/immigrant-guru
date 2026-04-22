@@ -652,23 +652,54 @@
   "bestCountries": {
     "pageTitle": "Mesleğe göre en iyi ülkeler",
     "pageSubtitle": "Rankedlenmiş göç destinasyonlarını görmek için mesleğinizi seçin.",
-    "cardTitle": "Best countries for {profession}"
+    "cardTitle": "Best countries for {profession}",
+    "breadcrumb": "En iyi ülkeler",
+    "rankedSubtitle": "Maliyet, zaman çizelgesi ve kalıcı oturuma göre sıralandı. Veri 2026 için güncel.",
+    "topPathway": "En iyi yol",
+    "seeAllPathways": "Tüm yolları gör",
+    "visaDetails": "{code} detayları",
+    "otherProfessions": "Diğer meslekler"
   },
   "compare": {
     "pageTitle": "Vize karşılaştırmaları",
     "pageSubtitle": "En yaygın yol kararlarının yan yana karşılaştırmaları.",
-    "vs": "vs"
+    "vs": "vs",
+    "comparingSubtitle": "{nameA} ile {nameB} maliyet, zaman ve uyum açısından karşılaştırılıyor — yanlış yola aylar harcamamanız için.",
+    "rowFullName": "Tam adı",
+    "rowCategory": "Kategori",
+    "rowDestination": "Hedef ülke",
+    "rowTypicalDuration": "Tipik süre",
+    "rowCostUsd": "Maliyet (USD)",
+    "rowLeadsToPR": "Kalıcı oturuma yol açar",
+    "yes": "Evet",
+    "no": "Hayır",
+    "bestFor": "En uygun",
+    "otherComparisons": "Diğer vize karşılaştırmaları"
   },
   "visaMatch": {
     "pageTitle": "Vize eşleştirme",
     "pageSubtitle": "İlk 3 yolunuzu görmek için hedef ülkenizi ve profilinizi seçin.",
-    "cardSubtitle": "Best visas for {profession}"
+    "cardSubtitle": "Best visas for {profession}",
+    "breadcrumb": "Vize Eşleştirme",
+    "rankedSubtitle": "{profession} için {count} göçmenlik yolu sıralandı; {countryName} hedefiyle. Her seçenek uyum, maliyet, süre ve riske göre puanlandı.",
+    "getPersonalizedMatch": "Kişiselleştirilmiş eşleştirmeni al",
+    "freeEligibilityCheck": "Ücretsiz uygunluk kontrolü",
+    "typicalTimeline": "Tipik zaman çizelgesi",
+    "typicalCost": "Tipik maliyet",
+    "duration": "Süre",
+    "strengths": "Güçlü yönler",
+    "moreVisaGuides": "{countryName} için daha fazla vize rehberi"
   },
   "moveTo": {
     "pageTitle": "Ülke taşınma rehberleri",
     "pageSubtitle": "Menşei ve hedef ülkeye göre adım adım rehberler.",
     "fromLabel": "From {flag} {name}",
-    "cardSubtitle": "Guide for {demonym} citizens"
+    "cardSubtitle": "Guide for {demonym} citizens",
+    "h1": "{toName} şehrine {fromName} üzerinden taşın",
+    "intro": "{demonym} vatandaşları için {toName} şehrine taşınmaya yönelik pratik rehber. Bir yol seçin, zaman çizelgesini ve maliyeti anlayın, kişiselleştirilmiş hazırlık skoru alın.",
+    "topVisaPathways": "{toName} için en iyi vize yolları",
+    "howToStepByStep": "Adım adım nasıl taşınılır",
+    "moreCountryGuides": "Daha fazla ülke rehberi"
   },
   "Onboarding could not load": "Onboarding yüklenemedi",
   "Review the highlighted profile fields before continuing": {
@@ -737,5 +768,21 @@
     " You can skip anything": {
       "": "Yaklaşık 2 dakika sürer. İstediğiniz şeyi atlayabilirsiniz."
     }
+  },
+  "score": {
+    "outOf100": "100 üzerinden",
+    "thisProfileIs": "Bu profil {readiness} düzeyinde",
+    "scoredOn": "Immigrant Guru bu profili eğitim, iş deneyimi, dil, hedef ülke uyumu ve 8 diğer boyut üzerinden puanladı.",
+    "getMyOwnScore": "Kendi skorumu al",
+    "shareOnX": "X'te paylaş"
+  },
+  "visa": {
+    "cost": "Maliyet",
+    "prPath": "Kalıcı oturum yolu",
+    "idealFor": "Uygun kişiler",
+    "requirements": "Gereksinimler",
+    "risksAndRejection": "Riskler ve yaygın red nedenleri",
+    "checkReadiness": "{code} hazırlığımı kontrol et",
+    "moreVisaGuides": "{countryName} için daha fazla vize rehberi"
   }
 }

@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { notFound } from "next/navigation";
+import { getTranslations } from "next-intl/server";
+
+import { Link } from "@/i18n/navigation";
 
 import { AppShell } from "@/components/layout/app-shell";
 import { LockedContent } from "@/components/growth/locked-content";
@@ -41,6 +43,7 @@ export default async function MoveToPage({ params }: { params: PageParams }) {
   const from = getCountry(fromSlug);
   const to = getCountry(toSlug);
   if (!from || !to) notFound();
+  const t = await getTranslations();
 
   const destVisas = visasByDestination(to.slug).slice(0, 6);
   const url = `${SITE_URL}/move-to/${from.slug}/to/${to.slug}`;
@@ -113,16 +116,15 @@ export default async function MoveToPage({ params }: { params: PageParams }) {
         <h1 className="text-4xl font-semibold tracking-tight text-white sm:text-5xl">
           {from.flag} → {to.flag}{" "}
           <span className="block text-3xl font-medium text-white/80 sm:text-4xl">
-            Move to {to.name} from {from.name}
+            {t("moveTo.h1", { toName: to.name, fromName: from.name })}
           </span>
         </h1>
         <p className="mt-4 text-lg text-white/70">
-          A practical guide for {from.demonym} citizens planning to relocate to {to.name}. Pick a
-          pathway, understand the timeline and cost, and get a personalized readiness score.
+          {t("moveTo.intro", { demonym: from.demonym, toName: to.name })}
         </p>
 
         <section className="mt-10">
-          <h2 className="text-2xl font-semibold text-white">Top visa pathways for {to.name}</h2>
+          <h2 className="text-2xl font-semibold text-white">{t("moveTo.topVisaPathways", { toName: to.name })}</h2>
           <div className="mt-6 grid gap-4 sm:grid-cols-2">
             {destVisas.map((v) => (
               <article
@@ -152,7 +154,7 @@ export default async function MoveToPage({ params }: { params: PageParams }) {
         </section>
 
         <section className="mt-12">
-          <h2 className="text-2xl font-semibold text-white">How to move step-by-step</h2>
+          <h2 className="text-2xl font-semibold text-white">{t("moveTo.howToStepByStep")}</h2>
           <ol className="mt-6 space-y-4">
             {steps.map((step, index) => (
               <li key={step.name} className="flex gap-4">
@@ -186,7 +188,7 @@ export default async function MoveToPage({ params }: { params: PageParams }) {
         />
 
         <section className="mt-16">
-          <h2 className="text-2xl font-semibold text-white">Frequently asked questions</h2>
+          <h2 className="text-2xl font-semibold text-white">{t("FAQ")}</h2>
           <dl className="mt-6 space-y-6">
             {faqs.map((faq) => (
               <div key={faq.question}>
@@ -198,7 +200,7 @@ export default async function MoveToPage({ params }: { params: PageParams }) {
         </section>
       </div>
 
-      <RelatedPages heading="More country guides" links={relatedLinks} />
+      <RelatedPages heading={t("moveTo.moreCountryGuides")} links={relatedLinks} />
     </AppShell>
   );
 }

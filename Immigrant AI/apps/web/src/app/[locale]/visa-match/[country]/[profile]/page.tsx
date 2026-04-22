@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { notFound } from "next/navigation";
+import { getTranslations } from "next-intl/server";
+
+import { Link } from "@/i18n/navigation";
 
 import { AppShell } from "@/components/layout/app-shell";
 import { LockedContent } from "@/components/growth/locked-content";
@@ -44,6 +46,7 @@ export default async function VisaMatchPage({ params }: { params: PageParams }) 
   const country = getCountry(countrySlug);
   const profile = getProfile(profileSlug);
   if (!country || !profile) notFound();
+  const t = await getTranslations();
 
   const topVisas = topVisasForProfileDestination(profile.slug, country.slug);
   const url = `${SITE_URL}/visa-match/${country.slug}/${profile.slug}`;
@@ -93,11 +96,11 @@ export default async function VisaMatchPage({ params }: { params: PageParams }) 
       <div className="mx-auto w-full max-w-4xl px-6 py-16">
         <nav className="mb-6 text-sm text-white/60">
           <Link href="/" className="hover:text-white">
-            Home
+            {t("Home")}
           </Link>
           <span className="mx-2">/</span>
           <Link href="/visa-match" className="hover:text-white">
-            Visa Match
+            {t("visaMatch.breadcrumb")}
           </Link>
           <span className="mx-2">/</span>
           <span>
@@ -111,8 +114,7 @@ export default async function VisaMatchPage({ params }: { params: PageParams }) 
           Best visa for {profile.shortTitle.toLowerCase()} moving to {country.name}
         </h1>
         <p className="mt-4 text-lg text-white/70">
-          We ranked {topVisas.length} immigration pathways for {profile.shortTitle.toLowerCase()}
-          {" "}relocating to {country.name}. Each option is scored on fit, cost, time, and risk.
+          {t("visaMatch.rankedSubtitle", { count: topVisas.length, profession: profile.shortTitle.toLowerCase(), countryName: country.name })}
         </p>
 
         <div className="mt-8 flex flex-wrap gap-3">
@@ -120,13 +122,13 @@ export default async function VisaMatchPage({ params }: { params: PageParams }) 
             href="/sign-up"
             className="rounded-full bg-white px-5 py-2.5 text-sm font-semibold text-black hover:bg-white/90"
           >
-            Get your personalized match
+            {t("visaMatch.getPersonalizedMatch")}
           </Link>
           <Link
             href="/tools/eligibility-checker"
             className="rounded-full border border-white/20 px-5 py-2.5 text-sm font-semibold text-white hover:border-white/50"
           >
-            Free eligibility check
+            {t("visaMatch.freeEligibilityCheck")}
           </Link>
         </div>
 
@@ -147,38 +149,38 @@ export default async function VisaMatchPage({ params }: { params: PageParams }) 
 
               <dl className="mt-5 grid grid-cols-2 gap-4 text-sm sm:grid-cols-4">
                 <div>
-                  <dt className="text-white/50">Typical timeline</dt>
+                  <dt className="text-white/50">{t("visaMatch.typicalTimeline")}</dt>
                   <dd className="mt-1 font-medium text-white">
                     {visa.typicalTimelineMonths.min}–{visa.typicalTimelineMonths.max} months
                   </dd>
                 </div>
                 <div>
-                  <dt className="text-white/50">Typical cost</dt>
+                  <dt className="text-white/50">{t("visaMatch.typicalCost")}</dt>
                   <dd className="mt-1 font-medium text-white">
                     ${visa.typicalCostUsd.min.toLocaleString()}–${visa.typicalCostUsd.max.toLocaleString()}
                   </dd>
                 </div>
                 <div>
-                  <dt className="text-white/50">Duration</dt>
+                  <dt className="text-white/50">{t("visaMatch.duration")}</dt>
                   <dd className="mt-1 font-medium text-white">{visa.typicalDuration}</dd>
                 </div>
                 <div>
-                  <dt className="text-white/50">Leads to PR</dt>
+                  <dt className="text-white/50">{t("compare.rowLeadsToPR")}</dt>
                   <dd className="mt-1 font-medium text-white">
-                    {visa.pathToPermanentResidency ? "Yes" : "No"}
+                    {visa.pathToPermanentResidency ? t("compare.yes") : t("compare.no")}
                   </dd>
                 </div>
               </dl>
 
               <div className="mt-5 grid gap-4 sm:grid-cols-2">
                 <div>
-                  <div className="text-sm font-semibold text-white">Strengths</div>
+                  <div className="text-sm font-semibold text-white">{t("visaMatch.strengths")}</div>
                   <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-white/70">
                     {visa.strengths.map((s) => <li key={s}>{s}</li>)}
                   </ul>
                 </div>
                 <div>
-                  <div className="text-sm font-semibold text-white">Risks</div>
+                  <div className="text-sm font-semibold text-white">{t("Risks")}</div>
                   <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-white/70">
                     {visa.risks.map((r) => <li key={r}>{r}</li>)}
                   </ul>
@@ -206,7 +208,7 @@ export default async function VisaMatchPage({ params }: { params: PageParams }) 
         />
 
         <section className="mt-16">
-          <h2 className="text-2xl font-semibold text-white">Frequently asked questions</h2>
+          <h2 className="text-2xl font-semibold text-white">{t("FAQ")}</h2>
           <dl className="mt-6 space-y-6">
             {faqs.map((faq) => (
               <div key={faq.question}>
@@ -219,7 +221,7 @@ export default async function VisaMatchPage({ params }: { params: PageParams }) 
       </div>
 
       <RelatedPages
-        heading={`More visa guides for ${country.name}`}
+        heading={t("visaMatch.moreVisaGuides", { countryName: country.name })}
         links={relatedLinks}
       />
     </AppShell>

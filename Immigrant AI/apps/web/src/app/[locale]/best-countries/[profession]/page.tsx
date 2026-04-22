@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { notFound } from "next/navigation";
+import { getTranslations } from "next-intl/server";
+
+import { Link } from "@/i18n/navigation";
 
 import { AppShell } from "@/components/layout/app-shell";
 import { EmailCapture } from "@/components/growth/email-capture";
@@ -47,6 +49,7 @@ export default async function BestCountriesPage({ params }: { params: PageParams
   const { profession } = await params;
   const profile = getProfile(profession);
   if (!profile) notFound();
+  const t = await getTranslations();
 
   const ranked = DESTINATION_COUNTRIES
     .map((c) => ({
@@ -96,9 +99,9 @@ export default async function BestCountriesPage({ params }: { params: PageParams
 
       <div className="mx-auto w-full max-w-4xl px-6 py-16">
         <nav className="mb-6 text-sm text-white/60">
-          <Link href="/" className="hover:text-white">Home</Link>
+          <Link href="/" className="hover:text-white">{t("Home")}</Link>
           <span className="mx-2">/</span>
-          <Link href="/best-countries" className="hover:text-white">Best countries</Link>
+          <Link href="/best-countries" className="hover:text-white">{t("bestCountries.breadcrumb")}</Link>
           <span className="mx-2">/</span>
           <span>{profile.title}</span>
         </nav>
@@ -107,7 +110,7 @@ export default async function BestCountriesPage({ params }: { params: PageParams
           Best countries for {profile.shortTitle.toLowerCase()}
         </h1>
         <p className="mt-4 text-lg text-white/70">
-          Ranked by cost, timeline, and path-to-PR. Data current for 2026.
+          {t("bestCountries.rankedSubtitle")}
         </p>
 
         <ol className="mt-10 space-y-4">
@@ -125,7 +128,7 @@ export default async function BestCountriesPage({ params }: { params: PageParams
                 </div>
                 {topVisa ? (
                   <div className="mt-3 text-sm text-white/70">
-                    Top pathway: <span className="text-white">{topVisa.code}</span> — {topVisa.typicalTimelineMonths.min}–{topVisa.typicalTimelineMonths.max} months · ${topVisa.typicalCostUsd.min.toLocaleString()}–${topVisa.typicalCostUsd.max.toLocaleString()}
+                    {t("bestCountries.topPathway")}: <span className="text-white">{topVisa.code}</span> — {topVisa.typicalTimelineMonths.min}–{topVisa.typicalTimelineMonths.max} {t("visaIndex.months")} · ${topVisa.typicalCostUsd.min.toLocaleString()}–${topVisa.typicalCostUsd.max.toLocaleString()}
                   </div>
                 ) : null}
                 <div className="mt-3 flex flex-wrap gap-2">
@@ -133,14 +136,14 @@ export default async function BestCountriesPage({ params }: { params: PageParams
                     href={`/visa-match/${row.country.slug}/${profile.slug}`}
                     className="rounded-full border border-white/20 px-4 py-1.5 text-xs font-semibold text-white hover:border-white/50"
                   >
-                    See all pathways
+                    {t("bestCountries.seeAllPathways")}
                   </Link>
                   {topVisa ? (
                     <Link
                       href={`/visa/${topVisa.slug}`}
                       className="rounded-full border border-white/20 px-4 py-1.5 text-xs font-semibold text-white hover:border-white/50"
                     >
-                      {topVisa.code} details
+                                {t("bestCountries.visaDetails", { code: topVisa.code })}
                     </Link>
                   ) : null}
                 </div>
@@ -155,7 +158,7 @@ export default async function BestCountriesPage({ params }: { params: PageParams
         />
 
         <section className="mt-16">
-          <h2 className="text-2xl font-semibold text-white">Frequently asked questions</h2>
+          <h2 className="text-2xl font-semibold text-white">{t("FAQ")}</h2>
           <dl className="mt-6 space-y-6">
             {faqs.map((f) => (
               <div key={f.question}>
@@ -167,7 +170,7 @@ export default async function BestCountriesPage({ params }: { params: PageParams
         </section>
       </div>
 
-      <RelatedPages heading="Other professions" links={related} />
+      <RelatedPages heading={t("bestCountries.otherProfessions")} links={related} />
     </AppShell>
   );
 }

@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { notFound } from "next/navigation";
+import { getTranslations } from "next-intl/server";
+
+import { Link } from "@/i18n/navigation";
 
 import { AppShell } from "@/components/layout/app-shell";
 import { LockedContent } from "@/components/growth/locked-content";
@@ -44,6 +46,7 @@ export default async function ComparePage({ params }: { params: PageParams }) {
   const a = getVisa(pair.visaA);
   const b = getVisa(pair.visaB);
   if (!a || !b) notFound();
+  const t = await getTranslations();
 
   const url = `${SITE_URL}/compare/${pair.slug}`;
   const title = `${a.code} vs ${b.code}`;
@@ -117,8 +120,7 @@ export default async function ComparePage({ params }: { params: PageParams }) {
           {a.code} vs {b.code}
         </h1>
         <p className="mt-4 text-lg text-white/70">
-          Comparing {a.name} and {b.name} on cost, timing, and fit — so you don't waste months
-          on the wrong pathway.
+          {t("compare.comparingSubtitle", { nameA: a.name, nameB: b.name })}
         </p>
 
         <div className="mt-10 overflow-hidden rounded-3xl border border-white/10 bg-white/5">
@@ -131,24 +133,24 @@ export default async function ComparePage({ params }: { params: PageParams }) {
               </tr>
             </thead>
             <tbody className="px-4">
-              <Row label="Full name" valueA={a.name} valueB={b.name} />
-              <Row label="Category" valueA={a.category} valueB={b.category} />
-              <Row label="Destination" valueA={a.destination} valueB={b.destination} />
-              <Row label="Typical duration" valueA={a.typicalDuration} valueB={b.typicalDuration} />
+              <Row label={t("compare.rowFullName")} valueA={a.name} valueB={b.name} />
+              <Row label={t("compare.rowCategory")} valueA={a.category} valueB={b.category} />
+              <Row label={t("compare.rowDestination")} valueA={a.destination} valueB={b.destination} />
+              <Row label={t("compare.rowTypicalDuration")} valueA={a.typicalDuration} valueB={b.typicalDuration} />
               <Row
-                label="Timeline"
+                label={t("Timeline")}
                 valueA={`${a.typicalTimelineMonths.min}–${a.typicalTimelineMonths.max} mo`}
                 valueB={`${b.typicalTimelineMonths.min}–${b.typicalTimelineMonths.max} mo`}
               />
               <Row
-                label="Cost (USD)"
+                label={t("compare.rowCostUsd")}
                 valueA={`$${a.typicalCostUsd.min.toLocaleString()}–$${a.typicalCostUsd.max.toLocaleString()}`}
                 valueB={`$${b.typicalCostUsd.min.toLocaleString()}–$${b.typicalCostUsd.max.toLocaleString()}`}
               />
               <Row
-                label="Leads to PR"
-                valueA={a.pathToPermanentResidency ? "Yes" : "No"}
-                valueB={b.pathToPermanentResidency ? "Yes" : "No"}
+                label={t("compare.rowLeadsToPR")}
+                valueA={a.pathToPermanentResidency ? t("compare.yes") : t("compare.no")}
+                valueB={b.pathToPermanentResidency ? t("compare.yes") : t("compare.no")}
               />
             </tbody>
           </table>
@@ -156,7 +158,7 @@ export default async function ComparePage({ params }: { params: PageParams }) {
 
         <div className="mt-10 grid gap-6 sm:grid-cols-2">
           <div className="rounded-2xl border border-white/10 bg-white/5 p-6">
-            <div className="text-xs font-semibold uppercase tracking-wider text-white/60">Best for</div>
+            <div className="text-xs font-semibold uppercase tracking-wider text-white/60">{t("compare.bestFor")}</div>
             <div className="mt-1 text-lg font-semibold text-white">{a.code}</div>
             <ul className="mt-3 list-disc space-y-1 pl-5 text-sm text-white/70">
               {a.idealFor.map((item) => (
@@ -165,7 +167,7 @@ export default async function ComparePage({ params }: { params: PageParams }) {
             </ul>
           </div>
           <div className="rounded-2xl border border-white/10 bg-white/5 p-6">
-            <div className="text-xs font-semibold uppercase tracking-wider text-white/60">Best for</div>
+            <div className="text-xs font-semibold uppercase tracking-wider text-white/60">{t("compare.bestFor")}</div>
             <div className="mt-1 text-lg font-semibold text-white">{b.code}</div>
             <ul className="mt-3 list-disc space-y-1 pl-5 text-sm text-white/70">
               {b.idealFor.map((item) => (
@@ -193,7 +195,7 @@ export default async function ComparePage({ params }: { params: PageParams }) {
         />
 
         <section className="mt-16">
-          <h2 className="text-2xl font-semibold text-white">Frequently asked questions</h2>
+          <h2 className="text-2xl font-semibold text-white">{t("FAQ")}</h2>
           <dl className="mt-6 space-y-6">
             {faqs.map((faq) => (
               <div key={faq.question}>
@@ -205,7 +207,7 @@ export default async function ComparePage({ params }: { params: PageParams }) {
         </section>
       </div>
 
-      <RelatedPages heading="Other visa comparisons" links={relatedLinks} />
+      <RelatedPages heading={t("compare.otherComparisons")} links={relatedLinks} />
     </AppShell>
   );
 }
