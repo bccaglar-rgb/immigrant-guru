@@ -1,9 +1,9 @@
 "use client";
 
 import { useLocale as useIntlLocale, useTranslations } from "next-intl";
-import { useEffect, useRef, useState, useTransition } from "react";
+import { useEffect, useRef, useState } from "react";
 
-import { usePathname, useRouter } from "@/i18n/navigation";
+import { usePathname } from "@/i18n/navigation";
 import { cn } from "@/lib/utils";
 import { LANGUAGE_OPTIONS, type LanguageCode } from "@/lib/i18n";
 
@@ -19,9 +19,7 @@ export function LanguageSwitcher({
   const t = useTranslations();
   const [isOpen, setIsOpen] = useState(false);
   const activeLocale = useIntlLocale();
-  const router = useRouter();
   const pathname = usePathname();
-  const [, startTransition] = useTransition();
   const containerRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -55,15 +53,14 @@ export function LanguageSwitcher({
 
   function handleSelect(code: LanguageCode) {
     setIsOpen(false);
-    if (code === activeLocale) {
-      return;
-    }
-    // Route-level locale switch: next-intl rewrites the URL (e.g. /pricing →
-    // /tr/pricing) and re-renders with the new server-side translations.
-    // No MutationObserver race because each locale is its own crawl-indexable page.
-    startTransition(() => {
-      router.replace(pathname, { locale: code });
-    });
+    if (code === activeLocale) return;
+    // Full-page navigation ensures SSR renders the correct locale immediately.
+    // `as-needed` prefix: English lives at the bare path, others at /{locale}/path.
+    const target =
+      code === "en"
+        ? pathname
+        : `/${code}${pathname === "/" ? "" : pathname}`;
+    window.location.href = target;
   }
 
   return (
