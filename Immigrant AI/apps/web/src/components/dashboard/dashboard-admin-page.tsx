@@ -584,19 +584,22 @@ type AdminCoreProps = {
   accessToken: string;
   userEmail?: string;
   onSignOut?: () => void;
+  onSessionExpired?: () => void;
 };
 
 export function DashboardAdminPage({
   overrideToken,
   userEmail,
   onSignOut,
+  onSessionExpired,
 }: {
   overrideToken?: string;
   userEmail?: string;
   onSignOut?: () => void;
+  onSessionExpired?: () => void;
 } = {}) {
   if (overrideToken) {
-    return <DashboardAdminCore accessToken={overrideToken} userEmail={userEmail} onSignOut={onSignOut} />;
+    return <DashboardAdminCore accessToken={overrideToken} userEmail={userEmail} onSignOut={onSignOut} onSessionExpired={onSessionExpired} />;
   }
   return <DashboardAdminPageInner />;
 }
@@ -674,7 +677,7 @@ function IconRefresh({ className }: { className?: string }) {
   );
 }
 
-function DashboardAdminCore({ accessToken, userEmail, onSignOut }: AdminCoreProps) {
+function DashboardAdminCore({ accessToken, userEmail, onSignOut, onSessionExpired }: AdminCoreProps) {
   const [tab, setTab] = useState<Tab>("overview");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -700,6 +703,11 @@ function DashboardAdminCore({ accessToken, userEmail, onSignOut }: AdminCoreProp
     if (dbRes.ok) setDb(dbRes.data);
     if (usersRes.ok) { setUsers(usersRes.data); setCanAdmin(true); }
     if (statsRes.ok) setStats(statsRes.data);
+
+    if (!usersRes.ok && usersRes.status === 401) {
+      onSessionExpired?.();
+      return;
+    }
 
     if (!versionRes.ok && !dbRes.ok) setError("Could not load system status.");
     setLoading(false);

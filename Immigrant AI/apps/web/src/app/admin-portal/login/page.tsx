@@ -1,10 +1,13 @@
 "use client";
 
+import { useSearchParams } from "next/navigation";
 import { useState } from "react";
 
 const API_URL = `${process.env.NEXT_PUBLIC_API_URL ?? ""}/api/v1`;
 
 export default function AdminLoginPage() {
+  const searchParams = useSearchParams();
+  const reason = searchParams.get("reason");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -92,6 +95,15 @@ export default function AdminLoginPage() {
             <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/70">Admin Console</p>
           </div>
         </div>
+
+        {reason === "expired" && (
+          <div className="mb-4 flex items-start gap-2.5 rounded-xl border border-amber-400/30 bg-amber-400/10 px-4 py-3 text-sm text-amber-300">
+            <svg className="mt-0.5 shrink-0" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" />
+            </svg>
+            <span>Your session has expired. Please sign in again.</span>
+          </div>
+        )}
 
         {/* Card */}
         <form
