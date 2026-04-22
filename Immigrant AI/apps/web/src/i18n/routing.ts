@@ -11,7 +11,7 @@ export const routing = defineRouting({
   // and prefixes other locales like `/tr/pricing`, `/fr/pricing`. hreflang
   // alternates in metadata give Google the per-language signal.
   localePrefix: "as-needed",
-  // Browser detection is handled client-side (legacy behavior). We don't want
-  // middleware to redirect English visitors away from their indexed URLs.
-  localeDetection: false
+  // Detect browser Accept-Language and redirect to the matching locale prefix.
+  // English stays at `/` (default), Spanish speakers go to `/es/`, etc.
+  localeDetection: true
 });
