@@ -52,6 +52,8 @@ jobs:
 
             echo "==> Web build"
             cd "$REPO/apps/web"
+            # Ensure GA tracking ID is present (public value, safe to inline)
+            grep -q 'NEXT_PUBLIC_GA_ID' .env.local 2>/dev/null || echo 'NEXT_PUBLIC_GA_ID=G-4WPW4Z3SY1' >> .env.local
             rm -rf .next
             npm ci --no-audit --no-fund
             npm run build
