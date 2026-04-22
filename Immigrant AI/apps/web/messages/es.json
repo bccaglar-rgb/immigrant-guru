@@ -1,103 +1,165 @@
 {
-  "Immigrant Guru - AI Immigration Strategy Platform": "Immigrant Guru - Plataforma de estrategia migratoria con IA",
-  "Immigrant Guru - Move to a New Country Without Confusion": "Immigrant Guru - Mudarse a un nuevo país sin confusión",
-  "Language": "Idioma",
-  "Select language": "Seleccionar idioma",
-  "How it works": "Cómo funciona",
-  "Find your path": "Encuentra tu camino",
-  "Pricing": "Precios",
-  "Home": "Inicio",
-  "Sign in": "Iniciar sesión",
-  "Sign up": "Registrarse",
-  "Dashboard": "Panel",
-  "Log out": "Cerrar sesión",
-  "Move to a New Country Without Confusion": "Mudarse a un nuevo país sin confusión",
-  "Get your personalized visa, readiness score, and action plan in minutes": {
-    "": "Obtén en minutos tu ruta de visa personalizada, puntuación de preparación y plan de acción."
+  "Active": "Activo",
+  "Cancel": "Cancelar",
+  "Capture the destination, program, current stage, and risk signals that anchor strategy generation, scoring, and document workflows": {
+    "": "Captura el destino, programa, etapa actual y señales de riesgo que anclan la generación de estrategias, puntuación y flujos de trabajo de documentos"
   },
-  "Benefits": "Beneficios",
-  "Everything you need in one place": "Todo lo que necesitas en un solo lugar",
-  "Simple pricing": "Precios simples",
-  "Free": "Gratis",
-  "Starter": "Starter",
-  "Plus": "Plus",
-  "Premium": "Premium",
-  "Create your account": "Crea tu cuenta",
-  "Welcome back": "Bienvenido de nuevo",
-  "First name": "Nombre",
-  "Last name": "Apellido",
-  "Email": "Correo electrónico",
-  "Password": "Contraseña",
-  "Confirm password": "Confirmar contraseña",
-  "Overview": "Resumen",
-  "Profile": "Perfil",
-  "Cases": "Casos",
-  "Strategy": "Estrategia",
-  "Timeline": "Cronograma",
-  "Documents": "Documentos",
-  "Risks": "Riesgos",
-  "Copilot": "Copiloto",
-  "Comparison": "Comparación",
-  "Retry": "Reintentar",
-  "Back": "Atrás",
-  "Next": "Siguiente",
-  "Finish": "Finalizar",
-  "Generate strategy": "Generar estrategia",
-  "Upload document": "Subir documento",
-  "Scenario simulation": "Simulación de escenario",
-  "My plan": "Mi plan",
-  "Sign out": "Cerrar sesión",
-  "Log in": "Iniciar sesión",
-  "Start your plan": "Inicia tu plan",
-  "Readiness score": "Readiness score",
-  "Probability score": "Probability score",
-  "Recommended pathway": "Recommended pathway",
-  "Next best action": "Next best action",
-  "Immigrant Guru helps you evaluate pathways, compare strategies, and act with clarity": {
-    "": "Immigrant Guru helps you evaluate pathways, compare strategies, and act with clarity."
+  "Case Detail": "Detalle del caso",
+  "Case planning workspace": "Espacio de trabajo de planificación de casos",
+  "Case portfolio": "Portafolio de casos",
+  "Case status": "Estado del caso",
+  "Case title": "Título del caso",
+  "Closed": "Cerrado",
+  "Close": "Cerrar",
+  "Close new case": "Cerrar nuevo caso",
+  "Collect recommendation letters and evidence of impact": {
+    "": "Recopilar cartas de recomendación y evidencia de impacto"
   },
-  "A focused workspace for immigration decisions": "A focused workspace for immigration decisions",
-  "Six powerful tools working together to give you clarity, confidence, and a concrete plan": {
-    "": "Six powerful tools working together to give you clarity, confidence, and a concrete plan."
+  "Continue your immigration planning": {
+    " Keep profile and case data aligned": {
+      "": "Continúa tu planificación de inmigración Mantén los datos del perfil y del caso alineados"
+    }
   },
-  "Immigration Score": "Immigration Score",
-  "Explainable readiness signals": "Explainable readiness signals",
-  "System health": "System health",
-  "Platform Status": "Platform Status",
-  "Work abroad": "Work abroad",
-  "Study abroad": "Study abroad",
-  "Move with family": "Move with family",
-  "Start a business": "Start a business",
-  "Tell us about you": "Tell us about you",
-  "We analyze your options": "We analyze your options",
-  "Get your plan": "Get your plan",
-  "Find the plan that fits your journey": "Find the plan that fits your journey",
-  "Start free": {
-    " Upgrade when you're ready for your full immigration plan": {
-      "": "Start free. Upgrade when you're ready for your full immigration plan."
-    },
-    "": "Start free"
+  "Create a case for each migration plan you want to evaluate, compare, or execute": {
+    " Cases anchor strategy generation, scoring, and document collection in one workspace": {
+      "": "Crea un caso para cada plan de migración que quieras evaluar, comparar o ejecutar Los casos anclan la generación de estrategias, puntuación y recopilación de documentos en un solo espacio de trabajo"
+    }
   },
-  "Best value": "Best value",
-  "one-time": "one-time",
-  "No subscriptions": {
-    " Pay once, unlock your full plan": {
-      " 30-day money-back guarantee": {
-        "": "No subscriptions. Pay once, unlock your full plan. 30-day money-back guarantee."
+  "Create first case": "Crear primer caso",
+  "Create strategy case": "Crear caso de estrategia",
+  "Creating case": {
+    "": {
+      "": {
+        "": "Creando caso"
       }
     }
   },
-  "Start with the essentials and complete your immigration profile later": {
-    "": "Start with the essentials and complete your immigration profile later."
+  "Current stage": "Etapa actual",
+  "Data unavailable": "Datos no disponibles",
+  "Define a migration pathway to evaluate": "Define un camino de migración para evaluar",
+  "Destination pending": "Destino pendiente",
+  "Draft": "Borrador",
+  "Evaluation signals": "Señales de evaluación",
+  "Example: eligibility_review, document_collection, filing_ready": "Ejemplo: eligibility_review, document_collection, filing_ready",
+  "Higher values should indicate higher execution or eligibility risk": {
+    "": "Valores más altos deberían indicar un mayor riesgo de ejecución o elegibilidad"
   },
-  "Sign in to continue your immigration strategy": {
-    "": "Sign in to continue your immigration strategy."
+  "Immigration strategy cases": "Casos de estrategia de inmigración",
+  "In review": "En revisión",
+  "Internal Console": "Consola interna",
+  "Keep notes focused on blockers, evidence gaps, and next actions": {
+    "": "Mantén notas enfocadas en bloqueadores, brechas de evidencia y próximas acciones"
   },
-  "Forgot your password?": "Forgot your password?",
-  "Create account": "Create account",
-  "Create one": "Create one",
+  "Latest score": "Última puntuación",
+  "Manage immigration strategy records that anchor pathway evaluation, stage tracking, scoring, and later document workflows": {
+    "": "Gestiona registros de estrategia de inmigración que anclan la evaluación de caminos, seguimiento de etapas, puntuación y flujos de trabajo de documentos posteriores"
+  },
+  "New case": "Nuevo caso",
+  "New strategy case": "Nuevo caso de estrategia",
+  "No changes to save": "No hay cambios que guardar",
+  "No strategic notes recorded yet for this immigration path": {
+    "": "No se han registrado notas estratégicas aún para este camino de inmigración"
+  },
+  "No strategy cases yet": "No hay casos de estrategia aún",
+  "on record": "en registro",
+  "Open case": "Abrir caso",
+  "Optional score snapshot if you want to retain a manual benchmark": {
+    "": "Captura de puntuación opcional si deseas retener un punto de referencia manual"
+  },
+  "Pathway not defined yet": "Camino no definido aún",
+  "Refresh cases": "Actualizar casos",
+  "Review the highlighted case fields before saving": {
+    "": "Revisa los campos del caso destacados antes de guardar"
+  },
+  "Risk score": "Puntuación de riesgo",
+  "Risk": "Riesgo",
+  "Save case changes": "Guardar cambios del caso",
+  "Saving changes": {
+    "": {
+      "": {
+        "": "Guardando cambios"
+      }
+    }
+  },
+  "Score": "Puntuación",
+  "Session": "Sesión",
+  "Stage": "Etapa",
+  "Start with a target country and pathway": "Comienza con un país objetivo y un camino",
+  "Strategy case created successfully": {
+    "": "Caso de estrategia creado con éxito"
+  },
+  "Strategy identity": "Identidad de estrategia",
+  "Strategy notes": "Notas de estrategia",
+  "Target country": "Target country",
+  "Target pathway or program": "Camino o programa objetivo",
+  "The case portfolio could not be loaded": {
+    "": "No se pudo cargar el portafolio de casos"
+  },
+  "Track every active migration path in one workspace": "Rastrea cada camino de migración activo en un solo espacio de trabajo",
+  "U": {
+    "S": {
+      " employment-based migration plan": "Plan de migración basado en empleo en EE. UU."
+    }
+  },
+  "United States": "Estados Unidos",
+  "Update the case strategy record": "Actualiza el registro de estrategia del caso",
+  "Updated": "Actualizado",
+  "Workspace data could not be loaded": {
+    "": "No se pudo cargar los datos del espacio de trabajo"
+  },
+  "You are no longer authenticated": {
+    "": "Ya no estás autenticado"
+  },
+  "case": "caso",
+  "cases": "casos",
+  "12-18 months": "12-18 meses",
+  "3 country comparisons": "3 comparaciones de países",
+  "A focused workspace for immigration decisions": "A focused workspace for immigration decisions",
+  "AI checks 47 visa categories and finds your best match": {
+    "": "La IA verifica 47 categorías de visa y encuentra tu mejor opción"
+  },
+  "Access your immigration dashboard, decision plans, and case workspace": {
+    "": "Accede a tu panel de inmigración, planes de decisión y espacio de trabajo de casos"
+  },
+  "Action roadmap": "Action roadmap",
+  "Admin": "Admin",
+  "Advanced action plan": "Plan de acción avanzado",
   "Already have an account?": "Already have an account?",
-  "Need an account?": "Need an account?",
+  "Any criminal record?": "Any criminal record?",
+  "Available capital": "Available capital",
+  "Average time to first plan": "Tiempo promedio hasta el primer plan",
+  "Back": "Atrás",
+  "Benefits": "Beneficios",
+  "Best value": "Best value",
+  "Best visa option": "Mejor opción de visa",
+  "Best visa recommendation": "Mejor recomendación de visa",
+  "Better case preparation": "Mejor preparación del caso",
+  "Built for immigrants, by immigrants": "Construido para inmigrantes, por inmigrantes",
+  "Case health": "Case health",
+  "Cases": "Casos",
+  "Check your email": "Revisa tu correo electrónico",
+  "Checkout failed": "Fallo en el pago",
+  "Children": "Children",
+  "Choose a new password for your account": {
+    "": "Elige una nueva contraseña para tu cuenta"
+  },
+  "Comparison": "Comparación",
+  "Confirm password": "Confirmar contraseña",
+  "Confirm your password": {
+    "": "Confirma tu contraseña"
+  },
+  "Confusing visa rules that change every year": "Reglas de visa confusas que cambian cada año",
+  "Copilot": "Copiloto",
+  "Cost estimate": "Estimación de costos",
+  "Countries": "Países",
+  "Countries supported": "Países soportados",
+  "Create account": "Create account",
+  "Create an account to start building an immigration profile, evaluate pathways, and manage your cases": {
+    "": "Crea una cuenta para comenzar a construir un perfil de inmigración, evaluar caminos y gestionar tus casos"
+  },
+  "Create one": "Create one",
+  "Create your Immigrant Guru account": "Crea tu cuenta de Immigrant Guru",
+  "Create your account": "Crea tu cuenta",
   "Creating account": {
     "": {
       "": {
@@ -105,65 +167,210 @@
       }
     }
   },
-  "Signing in": {
-    "": {
-      "": {
-        "": "Signing in..."
+  "Dashboard": "Panel",
+  "Data Scientist, India to Canada": "Científico de datos, India a Canadá",
+  "Deeper analysis": "Análisis más profundo",
+  "Document checklist": "Lista de verificación de documentos",
+  "Document status": "Document status",
+  "Documents": "Documentos",
+  "E-2 investor, EB-5, startup visa — explore entrepreneurial immigration routes": {
+    "": "Inversor E-2, EB-5, visa de inicio — explora rutas de inmigración emprendedora"
+  },
+  "Education level": "Education level",
+  "Email": "Correo electrónico",
+  "English level": "English level",
+  "Enter a valid email address": {
+    "": "Enter a valid email address."
+  },
+  "Enter it below to verify your account": {
+    "": "Ingrésalo a continuación para verificar tu cuenta"
+  },
+  "Enter the 6-digit code from your email": {
+    "": "Ingresa el código de 6 dígitos de tu correo electrónico"
+  },
+  "Enter the 6-digit code": {
+    "": "Ingresa el código de 6 dígitos"
+  },
+  "Enter your email and we'll send you a reset code": {
+    "": "Ingresa tu correo electrónico y te enviaremos un código de restablecimiento"
+  },
+  "Enter your email": {
+    "": "Ingresa tu correo electrónico"
+  },
+  "Error": "Error",
+  "Est": {
+    " cost": "Costo estimado"
+  },
+  "Estimated cost": "Costo estimado",
+  "Even if you think you don't qualify — we'll show you what's possible": {
+    "": "Incluso si piensas que no calificas — te mostraremos lo que es posible"
+  },
+  "Everything in Plus": "Todo en Plus",
+  "Everything in Starter": "Todo en Starter",
+  "Everything you need in one place": "Todo lo que necesitas en un solo lugar",
+  "Expanded document guidance": "Guía de documentos ampliada",
+  "Expensive lawyers who charge $5,000+ for basic advice": "Abogados caros que cobran más de $5,000 por asesoría básica",
+  "Explainable readiness signals": "Explainable readiness signals",
+  "F-1, OPT, STEM extension — understand your path from student to professional": {
+    "": "F-1, OPT, extensión STEM — entiende tu camino de estudiante a profesional"
+  },
+  "Filing + legal fees": "Tarifas de presentación + legales",
+  "Find my best path": "Encuentra mi mejor camino",
+  "Find the plan that fits your journey": "Find the plan that fits your journey",
+  "Find the right work visa for your skills and experience": {
+    " H-1B, EB-2, O-1, and more": {
+      "": "Encuentra la visa de trabajo adecuada para tus habilidades y experiencia H-1B, EB-2, O-1 y más"
+    }
+  },
+  "Find your best path": "Encuentra tu mejor camino",
+  "Find your path": "Encuentra tu camino",
+  "Finish": "Finalizar",
+  "First name": "Nombre",
+  "First name is too long": {
+    "": "El nombre es demasiado largo"
+  },
+  "For comparing options": "Para comparar opciones",
+  "For every situation": "Para cada situación",
+  "For one clear path": "Para un camino claro",
+  "Forgot your password?": "Forgot your password?",
+  "Free": "Gratis",
+  "Free to start · No credit card · Takes 2 minutes": "Gratis para comenzar · Sin tarjeta de crédito · Toma 2 minutos",
+  "From filing to approval": "Desde la presentación hasta la aprobación",
+  "Full path comparison": "Comparación completa de caminos",
+  "Full plan for 1 country": "Plan completo para 1 país",
+  "Full strategic experience": "Experiencia estratégica completa",
+  "Full strategic recommendation": "Recomendación estratégica completa",
+  "Generate strategy": "Generar estrategia",
+  "Get Started": "Comenzar",
+  "Get your personalized visa, readiness score, and action plan in minutes": {
+    "": "Obtén en minutos tu ruta de visa personalizada, puntuación de preparación y plan de acción.",
+    " Not months": {
+      "": "Obtén tu visa personalizada, puntaje de preparación y plan de acción en minutos No en meses"
+    }
+  },
+  "Get your plan": "Get your plan",
+  "Get {plan}": "Obtén {plan}",
+  "Go back": "Regresar",
+  "Go home": "Go home",
+  "Home": "Inicio",
+  "How it works": "Cómo funciona",
+  "I spent months Googling visa options": {
+    " Immigrant Guru gave me a clear plan in 10 minutes": {
+      " I wish I found this earlier": {
+        "": "Pasé meses buscando opciones de visa Immigrant Guru me dio un plan claro en 10 minutos desearía haber encontrado esto antes"
       }
     }
   },
+  "Immigrant Guru - AI Immigration Strategy Platform": "Immigrant Guru - Plataforma de estrategia migratoria con IA",
+  "Immigrant Guru - Move to a New Country Without Confusion": "Immigrant Guru - Mudarse a un nuevo país sin confusión",
+  "Immigrant Guru helps you evaluate pathways, compare strategies, and act with clarity": {
+    "": "Immigrant Guru helps you evaluate pathways, compare strategies, and act with clarity."
+  },
+  "Immigration Plan": "Plan de inmigración",
+  "Immigration Score": "Immigration Score",
+  "Immigration shouldn't feel this hard": {
+    "": "La inmigración no debería ser tan difícil"
+  },
+  "Job opportunities": "Oportunidades laborales",
+  "Language": "Idioma",
+  "Last name": "Apellido",
+  "Last name is too long": {
+    "": "El apellido es demasiado largo"
+  },
+  "Log in": "Iniciar sesión",
+  "Log out": "Cerrar sesión",
   "Minimum 8 characters": "Minimum 8 characters",
-  "Repeat your password": "Repeat your password",
-  "Enter a valid email address": {
-    "": "Enter a valid email address."
+  "Months of waiting with no visibility": "Meses de espera sin visibilidad",
+  "Move to a New Country Without Confusion": "Mudarse a un nuevo país sin confusión",
+  "Move to a new country": "Mudarse a un nuevo país",
+  "Move with family": "Move with family",
+  "Multiple visa alternatives": "Múltiples alternativas de visa",
+  "My plan": "Mi plan",
+  "National Interest Waiver · United States": "Exención por Interés Nacional · Estados Unidos",
+  "Nationality": "Nationality",
+  "Need an account?": "Need an account?",
+  "New password": "Nueva contraseña",
+  "Next": "Siguiente",
+  "Next best action": "Next best action",
+  "Next step:": "Siguiente paso:",
+  "No cases yet": "No cases yet",
+  "No clear direction — just endless Googling": "Sin dirección clara — solo búsqueda interminable en Google",
+  "No confusion, no jargon": "Sin confusión, sin jerga",
+  "No employer sponsor needed — you can self-petition": {
+    "": "No se necesita patrocinador empleador — puedes auto-peticionar"
+  },
+  "No matter your background, we help you find a way forward": {
+    "": "No importa tu origen, te ayudamos a encontrar un camino hacia adelante"
+  },
+  "No subscriptions": {
+    " Pay once, unlock your full plan": {
+      " 30-day money-back guarantee": {
+        "": "No subscriptions. Pay once, unlock your full plan. 30-day money-back guarantee."
+      }
+    }
+  },
+  "One clear plan": {
+    " Everything you need": {
+      "": "Un plan claro  Todo lo que necesitas"
+    }
+  },
+  "One-time payment": {
+    " Unlock your full personalized immigration plan": {
+      "": "Pago único  Desbloquea tu plan de inmigración personalizado completo"
+    }
+  },
+  "Overview": "Resumen",
+  "Page not found": "Page not found",
+  "Password": "Contraseña",
+  "Password must be at least 8 characters": {
+    "": "La contraseña debe tener al menos 8 caracteres"
   },
   "Password must contain at least 8 characters": {
     "": "Password must contain at least 8 characters."
   },
-  "Page not found": "Page not found",
-  "The page you're looking for doesn't exist or hasn't been built yet": {
-    "": "The page you're looking for doesn't exist or hasn't been built yet."
+  "Password reset!": "¡Restablecimiento de contraseña!",
+  "Passwords do not match": {
+    "": "Las contraseñas no coinciden"
   },
-  "Return home": "Return home",
-  "Error": "Error",
-  "Something went wrong": "Something went wrong",
-  "The page hit an unexpected error while rendering": {
-    " Try again, and if it persists, check the server logs": {
-      "": "The page hit an unexpected error while rendering. Try again, and if it persists, check the server logs."
-    }
-  },
-  "Go home": "Go home",
-  "Admin": "Admin",
-  "Step 1 of 4": "Step 1 of 4",
-  "Step 2 of 4": "Step 2 of 4",
-  "Step 3 of 4": "Step 3 of 4",
-  "Step 4 of 4": "Step 4 of 4",
-  "Tell us a bit about yourself": {
-    "": "Tell us a bit about yourself."
-  },
-  "Where do you want to go?": "Where do you want to go?",
-  "Your immigration goals and timing": {
-    "": "Your immigration goals and timing."
-  },
+  "Platform Status": "Platform Status",
+  "Plus": "Plus",
+  "Possible paths": "Posibles caminos",
+  "Preferred language": "Preferred language",
+  "Premium": "Premium",
+  "Premium dashboard": "Panel premium",
+  "Pricing": "Precios",
+  "Prior visa refusal?": "Prior visa refusal?",
+  "Priority AI guidance": "Orientación prioritaria de IA",
+  "Probability score": "Probability score",
   "Professional experience and finances": {
     "": "Professional experience and finances."
   },
-  "You're ready to see your first strategy": "You're ready to see your first strategy",
-  "Nationality": "Nationality",
-  "Where do you live now?": "Where do you live now?",
+  "Profile": "Perfil",
+  "Profile, finance, case": "Perfil, finanzas, caso",
+  "Readiness": "Preparación",
+  "Readiness score": "Readiness score",
+  "Ready": "Listo",
+  "Recommended pathway": "Recommended pathway",
+  "Redirecting…": "Redirigiendo…",
   "Relationship status": "Relationship status",
-  "Children": "Children",
-  "Preferred language": "Preferred language",
-  "Target country": "Target country",
   "Relocation timeline": "Relocation timeline",
-  "Prior visa refusal?": "Prior visa refusal?",
-  "Any criminal record?": "Any criminal record?",
-  "What do you do?": "What do you do?",
-  "Years of experience": "Years of experience",
-  "Education level": "Education level",
-  "English level": "English level",
-  "Available capital": "Available capital",
+  "Remember your password?": "¿Recuerdas tu contraseña?",
+  "Repeat your password": "Repeat your password",
+  "Resend code": "Reenviar código",
+  "Resend code in {n}s": "Reenviar código en {n}s",
+  "Reset code": "Restablecer código",
+  "Reset password": "Restablecer contraseña",
+  "Resetting": {
+    "": {
+      "": {
+        "": "Restableciendo"
+      }
+    }
+  },
+  "Retry": "Reintentar",
+  "Return home": "Return home",
   "Review and continue": "Review and continue",
+  "Risks": "Riesgos",
   "Saving": {
     "": {
       "": {
@@ -171,23 +378,411 @@
       }
     }
   },
-  "Your session is no longer available": {
-    " Sign in again to continue onboarding": {
-      "": "Your session is no longer available. Sign in again to continue onboarding."
+  "Scenario simulation": "Simulación de escenario",
+  "See how it works": "Ver cómo funciona",
+  "Select language": "Seleccionar idioma",
+  "Send reset code": "Enviar código de restablecimiento",
+  "Sending": {
+    "": {
+      "": {
+        "": "Enviando"
+      }
     }
   },
-  "Your profile could not be saved right now": {
-    " Retry before moving to the next step": {
-      "": "Your profile could not be saved right now. Retry before moving to the next step."
+  "Set new password": "Establecer nueva contraseña",
+  "Sign in": "Iniciar sesión",
+  "Sign in to continue your case strategy": "Inicia sesión para continuar tu estrategia de caso",
+  "Sign in to continue your immigration strategy": {
+    "": "Sign in to continue your immigration strategy."
+  },
+  "Sign out": "Cerrar sesión",
+  "Sign up": "Registrarse",
+  "Signing in": {
+    "": {
+      "": {
+        "": "Signing in..."
+      }
     }
+  },
+  "Simple pricing": "Precios simples",
+  "Six powerful tools working together to give you clarity, confidence, and a concrete plan": {
+    "": "Six powerful tools working together to give you clarity, confidence, and a concrete plan."
+  },
+  "Software Engineer, Turkey to USA": "Ingeniero de software, Turquía a EE. UU.",
+  "Software Engineering, AI/ML, Product": "Ingeniería de software, IA/ML, Producto",
+  "Something went wrong": {
+    "": "Algo salió mal",
+    " Please try again": {
+      "": "Algo salió mal  Por favor, inténtalo de nuevo"
+    }
+  },
+  "Spouse, children, parents — know which family visa fits and how long it takes": {
+    "": "Cónyuge, hijos, padres — conoce qué visa familiar se ajusta y cuánto tiempo toma"
+  },
+  "Start a business": "Start a business",
+  "Start free": {
+    "": "Start free",
+    " Upgrade when you're ready for your full immigration plan": {
+      "": "Start free. Upgrade when you're ready for your full immigration plan."
+    }
+  },
+  "Start with the essentials and complete your immigration profile later": {
+    "": "Start with the essentials and complete your immigration profile later."
+  },
+  "Start your plan": "Inicia tu plan",
+  "Starter": "Starter",
+  "Step 1 of 4": "Step 1 of 4",
+  "Step 2 of 4": "Step 2 of 4",
+  "Step 3 of 4": "Step 3 of 4",
+  "Step 4 of 4": "Step 4 of 4",
+  "Step-by-step roadmap": "Hoja de ruta paso a paso",
+  "Stop guessing": {
+    " Get a clear plan for your immigration journey — in minutes, not months": {
+      "": "Deja de adivinar  Obtén un plan claro para tu viaje de inmigración — en minutos, no en meses"
+    }
+  },
+  "Strategy": "Estrategia",
+  "Study abroad": "Study abroad",
+  "Suggested cities": "Ciudades sugeridas",
+  "Suitability": "Idoneidad",
+  "System health": "System health",
+  "Tell us a bit about yourself": {
+    "": "Tell us a bit about yourself."
+  },
+  "Tell us about you": "Tell us about you",
+  "Tell us about yourself": {
+    " Our AI analyzes 47 visa categories, checks your readiness, and gives you a step-by-step plan with timeline, cost, and documents — in minutes": {
+      "": "Cuéntanos sobre ti  Nuestra IA analiza 47 categorías de visa, verifica tu preparación y te da un plan paso a paso con cronograma, costo y documentos — en minutos"
+    }
+  },
+  "The page hit an unexpected error while rendering": {
+    " Try again, and if it persists, check the server logs": {
+      "": "The page hit an unexpected error while rendering. Try again, and if it persists, check the server logs."
+    }
+  },
+  "The page you're looking for doesn't exist or hasn't been built yet": {
+    "": "The page you're looking for doesn't exist or hasn't been built yet."
   },
   "The platform could not load your profile draft": {
     " Retry before continuing": {
       "": "The platform could not load your profile draft. Retry before continuing."
     }
   },
-  "Document status": "Document status",
-  "Case health": "Case health",
-  "Action roadmap": "Action roadmap",
-  "No cases yet": "No cases yet"
+  "The problem": "El problema",
+  "The readiness score showed me exactly what I was missing": {
+    " I uploaded 3 documents and my score jumped from 52 to 81": {
+      "": "El puntaje de preparación me mostró exactamente lo que me faltaba  Subí 3 documentos y mi puntaje saltó de 52 a 81"
+    }
+  },
+  "The solution": "La solución",
+  "There's always a way — we help you find it": {
+    "": "Siempre hay una manera — te ayudamos a encontrarla"
+  },
+  "Three steps": {
+    " No confusion": {
+      "": "Tres pasos  Sin confusión"
+    }
+  },
+  "Timeline": "Cronograma",
+  "Timeline estimate": "Estimación de cronograma",
+  "Toggle menu": "Alternar menú",
+  "Try it now": "Pruébalo ahora",
+  "Turkey, India, Brazil": {
+    "": {
+      "": {
+        "": "Turquía, India, Brasil"
+      }
+    }
+  },
+  "United States, Canada": {
+    "": {
+      "": {
+        "": "Estados Unidos, Canadá"
+      }
+    }
+  },
+  "Upload document": "Subir documento",
+  "Upload your resume and education documents to increase your readiness score to 90+": {
+    "": "Sube tu currículum y documentos educativos para aumentar tu puntaje de preparación a 90+"
+  },
+  "Verification code": "Código de verificación",
+  "Verify code": "Verificar código",
+  "Verify email": "Verificar correo electrónico",
+  "Verifying": {
+    "": {
+      "": {
+        "": "Verificando"
+      }
+    }
+  },
+  "Visa categories analyzed": "Categorías de visa analizadas",
+  "Visa types": "Tipos de visa",
+  "Visa, timeline, documents, cost — everything in one clear view": {
+    "": "Visa, cronograma, documentos, costo: todo en una vista clara"
+  },
+  "We analyze multiple countries, visa types, and pathways to match you with the best option based on your profile": {
+    "": "Analizamos múltiples países, tipos de visa y caminos para emparejarte con la mejor opción según tu perfil"
+  },
+  "We analyze your options": "We analyze your options",
+  "We sent a 6-digit code to": "Enviamos un código de 6 dígitos a",
+  "We show you what to do": "Te mostramos qué hacer",
+  "We turn everything into one clear plan": {
+    "": "Convertimos todo en un plan claro"
+  },
+  "Welcome back": "Bienvenido de nuevo",
+  "What do you do?": "What do you do?",
+  "What you get": "Lo que obtienes",
+  "Whatever your reason, we can help": {
+    "": "Cualquiera que sea tu razón, podemos ayudar"
+  },
+  "Where are you from?": "¿De dónde eres?",
+  "Where do you live now?": "Where do you live now?",
+  "Where do you want to go?": "Where do you want to go?",
+  "Work abroad": "Work abroad",
+  "Wrong email?": "¿Correo electrónico incorrecto?",
+  "Years of experience": "Years of experience",
+  "You're ready to see your first strategy": "You're ready to see your first strategy",
+  "Your background, education, experience, and goals": {
+    " Takes 2 minutes": {
+      "": "Tu historial, educación, experiencia y objetivos  Toma 2 minutos"
+    }
+  },
+  "Your best path": "Tu mejor camino",
+  "Your best path, ranked by fit": "Tu mejor camino, clasificado por ajuste",
+  "Your immigration goals and timing": {
+    "": "Your immigration goals and timing."
+  },
+  "Your new life starts here": {
+    "": "Tu nueva vida comienza aquí"
+  },
+  "Your password has been updated": {
+    " You can now sign in": {
+      "": "Tu contraseña ha sido actualizada  Ahora puedes iniciar sesión"
+    }
+  },
+  "Your personalized result": "Tu resultado personalizado",
+  "Your profile could not be saved right now": {
+    " Retry before moving to the next step": {
+      "": "Your profile could not be saved right now. Retry before moving to the next step."
+    }
+  },
+  "Your session is no longer available": {
+    " Sign in again to continue onboarding": {
+      "": "Your session is no longer available. Sign in again to continue onboarding."
+    }
+  },
+  "one-time": "one-time",
+  "without confusion": {
+    "": "sin confusión"
+  },
+  "FAQ": "Preguntas frecuentes",
+  "tools": {
+    "pageTitle": "Herramientas de inmigración gratuitas",
+    "pageSubtitle": "Respuestas rápidas — no se requiere registro.",
+    "eligibilityChecker": {
+      "title": "Verificador de elegibilidad",
+      "description": "Responde 6 preguntas y ve los visados a los que probablemente tienes derecho."
+    },
+    "costEstimator": {
+      "title": "Herramienta de estimación de costos",
+      "description": "El costo total de mudarse al extranjero — no solo la tarifa de visa."
+    },
+    "timelineCalculator": {
+      "title": "Calculadora de cronograma",
+      "description": "Predice cuándo llegarás paso a paso."
+    }
+  },
+  "eligibilityChecker": {
+    "pageTitle": "Verificador de elegibilidad de visa gratuito",
+    "pageSubtitle": "Responde 6 preguntas cortas. Probablemente veas una lista corta de los visados a los que tienes derecho — no se requiere registro.",
+    "faq1": {
+      "question": "¿Es gratuito el verificador de elegibilidad?",
+      "answer": "Sí. Funciona completamente en tu navegador y no requiere cuenta."
+    },
+    "faq2": {
+      "question": "¿Qué tan preciso es el control?",
+      "answer": "Utiliza las reglas de elegibilidad públicas para cada camino. Es un fuerte primer filtro, pero no sustituye un análisis completo respaldado por IA o asesoría legal."
+    },
+    "faq3": {
+      "question": "¿Guarda mis respuestas?",
+      "answer": "No. La herramienta funciona localmente en tu navegador. Si deseas que tus resultados se guarden en tu perfil, regístrate."
+    },
+    "emailCapture": {
+      "title": "Análisis completo respaldado por IA",
+      "subtitle": "Recibe un Plan A/B/C personalizado y un puntaje de preparación por correo electrónico."
+    }
+  },
+  "costEstimator": {
+    "pageTitle": "Herramienta de estimación de costos de inmigración",
+    "pageSubtitle": "Elige un camino, agrega el tamaño de tu familia y ve el costo total realista — no solo la tarifa de visa.",
+    "faq1": {
+      "question": "¿Qué incluye la estimación?",
+      "answer": "Tarifas gubernamentales, tarifas legales/agentes, fondos de asentamiento, billete de avión, primera vivienda y un 10% de margen para gastos imprevistos."
+    },
+    "faq2": {
+      "question": "¿Es esto correcto para mi situación particular?",
+      "answer": "Es una buena estimación orientativa para cada camino. Tu costo real varía según el tamaño de la familia, la ciudad y la elección del abogado. Regístrate para un desglose personalizado."
+    },
+    "emailCapture": {
+      "title": "Desglose de costos completo por correo electrónico",
+      "subtitle": "Tabla con costos desglosados por línea organizados según tu país objetivo."
+    }
+  },
+  "timelineCalculator": {
+    "pageTitle": "Calculadora de cronograma",
+    "pageSubtitle": "Elige un camino. Ve cuándo llegarás — incluyendo preparación, solicitud, procesamiento y llegada.",
+    "faq1": {
+      "question": "¿Por qué se incluye el tiempo de preparación?",
+      "answer": "El reloj no comienza cuando solicitas — comienza cuando comienzas a reunir documentos. Añadimos un marco de preparación realista para cada camino."
+    },
+    "faq2": {
+      "question": "¿Qué tan precisa es esta estimación?",
+      "answer": "Refleja los tiempos de procesamiento promedio publicados. Los casos individuales pueden ser más rápidos o lentos dependiendo de RFE, cuotas de país y la integridad de la evidencia."
+    },
+    "emailCapture": {
+      "title": "Seguimiento semanal del cronograma",
+      "subtitle": "Te enviaremos un plan semanal simple por correo electrónico hasta el día de llegada."
+    }
+  },
+  "visaIndex": {
+    "pageTitle": "Todas las visas",
+    "pageSubtitle": "Costos, cronograma y elegibilidad para cada camino que cubrimos.",
+    "months": "mes"
+  },
+  "bestCountries": {
+    "pageTitle": "Los mejores países según la profesión",
+    "pageSubtitle": "Selecciona tu profesión para ver destinos de inmigración clasificados.",
+    "cardTitle": "Los mejores países para {profession}",
+    "breadcrumb": "Los mejores países",
+    "rankedSubtitle": "Clasificados por costo, cronograma y residencia permanente. Datos actualizados para 2026.",
+    "topPathway": "El mejor camino",
+    "seeAllPathways": "Ver todos los caminos",
+    "visaDetails": "Detalles de {code}",
+    "otherProfessions": "Otras profesiones"
+  },
+  "compare": {
+    "pageTitle": "Comparaciones de visas",
+    "pageSubtitle": "Comparaciones lado a lado de las decisiones de camino más comunes.",
+    "vs": "vs",
+    "comparingSubtitle": "Comparación de costos, tiempo y cumplimiento entre {nameA} y {nameB} — para que no pierdas meses en el camino equivocado.",
+    "rowFullName": "Nombre completo",
+    "rowCategory": "Categoría",
+    "rowDestination": "País objetivo",
+    "rowTypicalDuration": "Duración típica",
+    "rowCostUsd": "Costo (USD)",
+    "rowLeadsToPR": "Conduce a residencia permanente",
+    "yes": "Sí",
+    "no": "No",
+    "bestFor": "Más adecuado",
+    "otherComparisons": "Otras comparaciones de visas"
+  },
+  "visaMatch": {
+    "pageTitle": "Coincidencia de visa",
+    "pageSubtitle": "Selecciona tu país objetivo y tu perfil para ver tus 3 mejores caminos.",
+    "cardSubtitle": "Las mejores visas para {profession}",
+    "breadcrumb": "Coincidencia de Visa",
+    "rankedSubtitle": "Se clasificaron {count} caminos de inmigración para {profession}; con el objetivo de {countryName}. Cada opción fue puntuado según compatibilidad, costo, duración y riesgo.",
+    "getPersonalizedMatch": "Obtén tu coincidencia personalizada",
+    "freeEligibilityCheck": "Verificación de elegibilidad gratuita",
+    "typicalTimeline": "Cronograma típico",
+    "typicalCost": "Costo típico",
+    "duration": "Duración",
+    "strengths": "Fortalezas",
+    "moreVisaGuides": "Más guías de visa para {countryName}"
+  },
+  "moveTo": {
+    "pageTitle": "Guías de mudanza por país",
+    "pageSubtitle": "Guías paso a paso según el país de origen y destino.",
+    "fromLabel": "{flag} de {name}",
+    "cardSubtitle": "Guía para ciudadanos {demonym}",
+    "h1": "Mudanza a {toName} desde {fromName}",
+    "intro": "Guía práctica para mudarse a {toName} para ciudadanos {demonym}. Elige un camino, entiende el cronograma y el costo, obtén tu puntuación de preparación personalizada.",
+    "topVisaPathways": "Las mejores vías de visa para {toName}",
+    "howToStepByStep": "Cómo mudarse paso a paso",
+    "moreCountryGuides": "Más guías de países"
+  },
+  "Onboarding could not load": "La incorporación no pudo cargar",
+  "Review the highlighted profile fields before continuing": {
+    "": "Revisa los campos de perfil destacados antes de continuar"
+  },
+  "Skip": "Saltar",
+  "Who are you?": "¿Quién eres?",
+  "Select your nationality": "Selecciona tu nacionalidad",
+  "Select current country": "Selecciona el país actual",
+  "e": {
+    "g": {
+      " English, Turkish": {
+        "": {
+          "": {
+            "": "ej. Inglés, Turco..."
+          }
+        }
+      },
+      " Software Engineer, Doctor, Designer": {
+        "": {
+          "": {
+            "": "ej. Ingeniero de Software, Doctor, Diseñador..."
+          }
+        }
+      },
+      " 50000": "ej. 50000"
+    }
+  },
+  "Your background": "Tu historial",
+  "English proficiency": "Dominio del inglés",
+  "Available capital (USD)": "Capital disponible (USD)",
+  "Your dream destination and timeline": {
+    "": "Tu destino soñado y cronograma"
+  },
+  "When do you want to move?": "¿Cuándo quieres mudarte?",
+  "Have you had a visa refusal before?": "¿Has tenido una negativa de visa antes?",
+  "This helps us give accurate recommendations": {
+    " Your data is private and secure": {
+      "": "Esto nos ayuda a dar recomendaciones precisas  Tus datos son privados y seguros"
+    }
+  },
+  "You're all set!": "¡Todo listo!",
+  "Amazing! Your profile is almost complete": {
+    " We can build great strategies for you": {
+      "": "¡Increíble! Tu perfil está casi completo  Podemos construir grandes estrategias para ti"
+    }
+  },
+  "Great start! You can always complete more details from your profile page": {
+    "": "¡Gran comienzo! Siempre puedes completar más detalles desde tu página de perfil"
+  },
+  "No worries! You can fill in more details anytime from your dashboard": {
+    "": "¡No te preocupes! Puedes llenar más detalles en cualquier momento desde tu panel de control"
+  },
+  "See your AI analysis": "Ver tu análisis de IA",
+  "there": "allí",
+  "Immigrant": "Inmigrante",
+  "Guru": "Guru",
+  "Hey {name}, welcome aboard!": "¡Hola {name}, bienvenido a bordo!",
+  "Let's build your immigration profile in under 2 minutes": {
+    " The more we know, the better strategies we can craft for you": {
+      "": "Construyamos tu perfil de inmigración en menos de 2 minutos  Cuanto más sepamos, mejores estrategias podemos crear para ti"
+    }
+  },
+  "Let's go": "Vamos",
+  "Takes about 2 minutes": {
+    " You can skip anything": {
+      "": "Toma alrededor de 2 minutos  Puedes saltar cualquier cosa"
+    }
+  },
+  "score": {
+    "outOf100": "Sobre 100",
+    "thisProfileIs": "Este perfil está en nivel {readiness}",
+    "scoredOn": "Immigrant Guru puntuó este perfil en base a educación, experiencia laboral, idioma, compatibilidad con el país objetivo y 8 dimensiones más.",
+    "getMyOwnScore": "Obtén mi propia puntuación",
+    "shareOnX": "Comparte en X"
+  },
+  "visa": {
+    "cost": "Costo",
+    "prPath": "Camino a la residencia permanente",
+    "idealFor": "Personas elegibles",
+    "requirements": "Requisitos",
+    "risksAndRejection": "Riesgos y razones comunes de rechazo",
+    "checkReadiness": "Verifica mi preparación para {code}",
+    "moreVisaGuides": "Más guías de visa para {countryName}"
+  }
 }

@@ -1,103 +1,165 @@
 {
-  "Immigrant Guru - AI Immigration Strategy Platform": "Immigrant Guru - AI Immigration Strategy Platform",
-  "Immigrant Guru - Move to a New Country Without Confusion": "Immigrant Guru - Move to a New Country Without Confusion",
-  "Language": "Language",
-  "Select language": "Select language",
-  "How it works": "How it works",
-  "Find your path": "Find your path",
-  "Pricing": "Pricing",
-  "Home": "Home",
-  "Sign in": "Sign in",
-  "Sign up": "Sign up",
-  "Dashboard": "Dashboard",
-  "Log out": "Log out",
-  "Move to a New Country Without Confusion": "Move to a New Country Without Confusion",
-  "Get your personalized visa, readiness score, and action plan in minutes": {
-    "": "Get your personalized visa, readiness score, and action plan in minutes."
+  "Active": "เปิดใช้งาน",
+  "Cancel": "ยกเลิก",
+  "Capture the destination, program, current stage, and risk signals that anchor strategy generation, scoring, and document workflows": {
+    "": "จับจุดหมายปลายทาง โปรแกรม ขั้นตอนปัจจุบัน และสัญญาณความเสี่ยงที่เป็นฐานในการสร้างกลยุทธ์ การให้คะแนน และการทำงานเอกสาร"
   },
-  "Benefits": "Benefits",
-  "Everything you need in one place": "Everything you need in one place",
-  "Simple pricing": "Simple pricing",
-  "Free": "Free",
-  "Starter": "Starter",
-  "Plus": "Plus",
-  "Premium": "Premium",
-  "Create your account": "Create your account",
-  "Welcome back": "Welcome back",
-  "First name": "First name",
-  "Last name": "Last name",
-  "Email": "Email",
-  "Password": "Password",
-  "Confirm password": "Confirm password",
-  "Overview": "Overview",
-  "Profile": "Profile",
-  "Cases": "Cases",
-  "Strategy": "Strategy",
-  "Timeline": "Timeline",
-  "Documents": "Documents",
-  "Risks": "Risks",
-  "Copilot": "Copilot",
-  "Comparison": "Comparison",
-  "Retry": "Retry",
-  "Back": "Back",
-  "Next": "Next",
-  "Finish": "Finish",
-  "Generate strategy": "Generate strategy",
-  "Upload document": "Upload document",
-  "Scenario simulation": "Scenario simulation",
-  "My plan": "My plan",
-  "Sign out": "Sign out",
-  "Log in": "Log in",
-  "Start your plan": "Start your plan",
-  "Readiness score": "Readiness score",
-  "Probability score": "Probability score",
-  "Recommended pathway": "Recommended pathway",
-  "Next best action": "Next best action",
-  "Immigrant Guru helps you evaluate pathways, compare strategies, and act with clarity": {
-    "": "Immigrant Guru helps you evaluate pathways, compare strategies, and act with clarity."
+  "Case Detail": "รายละเอียดกรณี",
+  "Case planning workspace": "พื้นที่ทำงานการวางแผนกรณี",
+  "Case portfolio": "พอร์ตโฟลิโอกรณี",
+  "Case status": "สถานะกรณี",
+  "Case title": "ชื่อกรณี",
+  "Closed": "ปิด",
+  "Close": "ปิด",
+  "Close new case": "ปิดกรณีใหม่",
+  "Collect recommendation letters and evidence of impact": {
+    "": "รวบรวมจดหมายแนะนำและหลักฐานผลกระทบ"
   },
-  "A focused workspace for immigration decisions": "A focused workspace for immigration decisions",
-  "Six powerful tools working together to give you clarity, confidence, and a concrete plan": {
-    "": "Six powerful tools working together to give you clarity, confidence, and a concrete plan."
+  "Continue your immigration planning": {
+    " Keep profile and case data aligned": {
+      "": "ดำเนินการวางแผนการเข้าเมืองของคุณ ให้ข้อมูลโปรไฟล์และกรณีสอดคล้องกัน"
+    }
   },
-  "Immigration Score": "Immigration Score",
-  "Explainable readiness signals": "Explainable readiness signals",
-  "System health": "System health",
-  "Platform Status": "Platform Status",
-  "Work abroad": "Work abroad",
-  "Study abroad": "Study abroad",
-  "Move with family": "Move with family",
-  "Start a business": "Start a business",
-  "Tell us about you": "Tell us about you",
-  "We analyze your options": "We analyze your options",
-  "Get your plan": "Get your plan",
-  "Find the plan that fits your journey": "Find the plan that fits your journey",
-  "Start free": {
-    " Upgrade when you're ready for your full immigration plan": {
-      "": "Start free. Upgrade when you're ready for your full immigration plan."
-    },
-    "": "Start free"
+  "Create a case for each migration plan you want to evaluate, compare, or execute": {
+    " Cases anchor strategy generation, scoring, and document collection in one workspace": {
+      "": "สร้างกรณีสำหรับแต่ละแผนการย้ายถิ่นที่คุณต้องการประเมิน เปรียบเทียบ หรือดำเนินการ กรณีจะเป็นฐานในการสร้างกลยุทธ์ การให้คะแนน และการรวบรวมเอกสารในพื้นที่ทำงานเดียว"
+    }
   },
-  "Best value": "Best value",
-  "one-time": "one-time",
-  "No subscriptions": {
-    " Pay once, unlock your full plan": {
-      " 30-day money-back guarantee": {
-        "": "No subscriptions. Pay once, unlock your full plan. 30-day money-back guarantee."
+  "Create first case": "สร้างกรณีแรก",
+  "Create strategy case": "สร้างกรณีกลยุทธ์",
+  "Creating case": {
+    "": {
+      "": {
+        "": "กำลังสร้างกรณี"
       }
     }
   },
-  "Start with the essentials and complete your immigration profile later": {
-    "": "Start with the essentials and complete your immigration profile later."
+  "Current stage": "ขั้นตอนปัจจุบัน",
+  "Data unavailable": "ข้อมูลไม่พร้อมใช้งาน",
+  "Define a migration pathway to evaluate": "กำหนดเส้นทางการย้ายถิ่นเพื่อประเมิน",
+  "Destination pending": "จุดหมายปลายทางรอดำเนินการ",
+  "Draft": "ร่าง",
+  "Evaluation signals": "สัญญาณการประเมิน",
+  "Example: eligibility_review, document_collection, filing_ready": "ตัวอย่าง: eligibility_review, document_collection, filing_ready",
+  "Higher values should indicate higher execution or eligibility risk": {
+    "": "ค่าที่สูงกว่าควรบ่งชี้ถึงความเสี่ยงในการดำเนินการหรือความเหมาะสมที่สูงขึ้น"
   },
-  "Sign in to continue your immigration strategy": {
-    "": "Sign in to continue your immigration strategy."
+  "Immigration strategy cases": "กรณีกลยุทธ์การเข้าเมือง",
+  "In review": "อยู่ระหว่างการตรวจสอบ",
+  "Internal Console": "คอนโซลภายใน",
+  "Keep notes focused on blockers, evidence gaps, and next actions": {
+    "": "จดบันทึกให้มุ่งเน้นไปที่อุปสรรค ช่องว่างหลักฐาน และการดำเนินการถัดไป"
   },
-  "Forgot your password?": "Forgot your password?",
-  "Create account": "Create account",
-  "Create one": "Create one",
+  "Latest score": "คะแนนล่าสุด",
+  "Manage immigration strategy records that anchor pathway evaluation, stage tracking, scoring, and later document workflows": {
+    "": "จัดการบันทึกกลยุทธ์การเข้าเมืองที่เป็นฐานในการประเมินเส้นทาง การติดตามขั้นตอน การให้คะแนน และการทำงานเอกสารในภายหลัง"
+  },
+  "New case": "กรณีใหม่",
+  "New strategy case": "กรณีกลยุทธ์ใหม่",
+  "No changes to save": "ไม่มีการเปลี่ยนแปลงที่จะบันทึก",
+  "No strategic notes recorded yet for this immigration path": {
+    "": "ยังไม่มีบันทึกกลยุทธ์สำหรับเส้นทางการเข้าเมืองนี้"
+  },
+  "No strategy cases yet": "ยังไม่มีกรณีกลยุทธ์",
+  "on record": "บันทึกไว้",
+  "Open case": "เปิดกรณี",
+  "Optional score snapshot if you want to retain a manual benchmark": {
+    "": "สแนปช็อตคะแนนแบบเลือกได้หากคุณต้องการเก็บเกณฑ์มาตรฐานด้วยตนเอง"
+  },
+  "Pathway not defined yet": "เส้นทางยังไม่ได้กำหนด",
+  "Refresh cases": "รีเฟรชกรณี",
+  "Review the highlighted case fields before saving": {
+    "": "ตรวจสอบฟิลด์กรณีที่เน้นก่อนที่จะบันทึก"
+  },
+  "Risk score": "คะแนนความเสี่ยง",
+  "Risk": "ความเสี่ยง",
+  "Save case changes": "บันทึกการเปลี่ยนแปลงกรณี",
+  "Saving changes": {
+    "": {
+      "": {
+        "": "กำลังบันทึกการเปลี่ยนแปลง"
+      }
+    }
+  },
+  "Score": "คะแนน",
+  "Session": "เซสชัน",
+  "Stage": "ขั้นตอน",
+  "Start with a target country and pathway": "เริ่มต้นด้วยประเทศเป้าหมายและเส้นทาง",
+  "Strategy case created successfully": {
+    "": "สร้างกรณีกลยุทธ์สำเร็จ"
+  },
+  "Strategy identity": "เอกลักษณ์กลยุทธ์",
+  "Strategy notes": "บันทึกกลยุทธ์",
+  "Target country": "Target country",
+  "Target pathway or program": "เส้นทางหรือโปรแกรมเป้าหมาย",
+  "The case portfolio could not be loaded": {
+    "": "ไม่สามารถโหลดพอร์ตโฟลิโอกรณีได้"
+  },
+  "Track every active migration path in one workspace": "ติดตามเส้นทางการย้ายถิ่นที่ใช้งานอยู่ทุกเส้นทางในพื้นที่ทำงานเดียว",
+  "U": {
+    "S": {
+      " employment-based migration plan": "แผนการย้ายถิ่นที่ใช้การจ้างงานในสหรัฐอเมริกา"
+    }
+  },
+  "United States": "สหรัฐอเมริกา",
+  "Update the case strategy record": "อัปเดตบันทึกกลยุทธ์กรณี",
+  "Updated": "อัปเดต",
+  "Workspace data could not be loaded": {
+    "": "ไม่สามารถโหลดข้อมูลพื้นที่ทำงานได้"
+  },
+  "You are no longer authenticated": {
+    "": "คุณไม่ได้รับการตรวจสอบสิทธิ์อีกต่อไป"
+  },
+  "case": "คดี",
+  "cases": "คดีต่างๆ",
+  "12-18 months": "12-18 เดือน",
+  "3 country comparisons": "การเปรียบเทียบ 3 ประเทศ",
+  "A focused workspace for immigration decisions": "A focused workspace for immigration decisions",
+  "AI checks 47 visa categories and finds your best match": {
+    "": "AI ตรวจสอบ 47 ประเภทวีซ่าและค้นหาตัวเลือกที่ดีที่สุดสำหรับคุณ"
+  },
+  "Access your immigration dashboard, decision plans, and case workspace": {
+    "": "เข้าถึงแดชบอร์ดการเข้าเมือง แผนการตัดสินใจ และพื้นที่ทำงานคดีของคุณ"
+  },
+  "Action roadmap": "Action roadmap",
+  "Admin": "Admin",
+  "Advanced action plan": "แผนปฏิบัติการขั้นสูง",
   "Already have an account?": "Already have an account?",
-  "Need an account?": "Need an account?",
+  "Any criminal record?": "Any criminal record?",
+  "Available capital": "Available capital",
+  "Average time to first plan": "เวลาที่เฉลี่ยในการเริ่มแผนแรก",
+  "Back": "Back",
+  "Benefits": "Benefits",
+  "Best value": "Best value",
+  "Best visa option": "ตัวเลือกวีซ่าที่ดีที่สุด",
+  "Best visa recommendation": "คำแนะนำวีซ่าที่ดีที่สุด",
+  "Better case preparation": "การเตรียมคดีที่ดีกว่า",
+  "Built for immigrants, by immigrants": "สร้างขึ้นสำหรับผู้อพยพ โดยผู้อพยพ",
+  "Case health": "Case health",
+  "Cases": "Cases",
+  "Check your email": "ตรวจสอบอีเมลของคุณ",
+  "Checkout failed": "การชำระเงินล้มเหลว",
+  "Children": "Children",
+  "Choose a new password for your account": {
+    "": "เลือกรหัสผ่านใหม่สำหรับบัญชีของคุณ"
+  },
+  "Comparison": "Comparison",
+  "Confirm password": "Confirm password",
+  "Confirm your password": {
+    "": "ยืนยันรหัสผ่านของคุณ"
+  },
+  "Confusing visa rules that change every year": "กฎวีซ่าที่สับสนซึ่งเปลี่ยนแปลงทุกปี",
+  "Copilot": "Copilot",
+  "Cost estimate": "การประมาณค่าใช้จ่าย",
+  "Countries": "ประเทศ",
+  "Countries supported": "ประเทศที่รองรับ",
+  "Create account": "Create account",
+  "Create an account to start building an immigration profile, evaluate pathways, and manage your cases": {
+    "": "สร้างบัญชีเพื่อเริ่มสร้างโปรไฟล์การเข้าเมือง ประเมินเส้นทาง และจัดการคดีของคุณ"
+  },
+  "Create one": "Create one",
+  "Create your Immigrant Guru account": "สร้างบัญชี Immigrant Guru ของคุณ",
+  "Create your account": "Create your account",
   "Creating account": {
     "": {
       "": {
@@ -105,65 +167,210 @@
       }
     }
   },
-  "Signing in": {
-    "": {
-      "": {
-        "": "Signing in..."
+  "Dashboard": "Dashboard",
+  "Data Scientist, India to Canada": "นักวิทยาศาสตร์ข้อมูล, อินเดียไปแคนาดา",
+  "Deeper analysis": "การวิเคราะห์ที่ลึกซึ้งขึ้น",
+  "Document checklist": "รายการตรวจสอบเอกสาร",
+  "Document status": "Document status",
+  "Documents": "Documents",
+  "E-2 investor, EB-5, startup visa — explore entrepreneurial immigration routes": {
+    "": "นักลงทุน E-2, EB-5, วีซ่าสตาร์ทอัพ — สำรวจเส้นทางการเข้าเมืองสำหรับผู้ประกอบการ"
+  },
+  "Education level": "Education level",
+  "Email": "Email",
+  "English level": "English level",
+  "Enter a valid email address": {
+    "": "Enter a valid email address."
+  },
+  "Enter it below to verify your account": {
+    "": "ป้อนข้อมูลด้านล่างเพื่อตรวจสอบบัญชีของคุณ"
+  },
+  "Enter the 6-digit code from your email": {
+    "": "ป้อนรหัส 6 หลักจากอีเมลของคุณ"
+  },
+  "Enter the 6-digit code": {
+    "": "ป้อนรหัส 6 หลัก"
+  },
+  "Enter your email and we'll send you a reset code": {
+    "": "ป้อนอีเมลของคุณและเราจะส่งรหัสรีเซ็ตให้คุณ"
+  },
+  "Enter your email": {
+    "": "ป้อนอีเมลของคุณ"
+  },
+  "Error": "Error",
+  "Est": {
+    " cost": "ค่าใช้จ่ายโดยประมาณ"
+  },
+  "Estimated cost": "ค่าใช้จ่ายที่ประมาณการ",
+  "Even if you think you don't qualify — we'll show you what's possible": {
+    "": "แม้ว่าคุณจะคิดว่าคุณไม่ผ่านเกณฑ์ — เราจะแสดงให้คุณเห็นว่าสิ่งใดเป็นไปได้"
+  },
+  "Everything in Plus": "ทุกอย่างใน Plus",
+  "Everything in Starter": "ทุกอย่างใน Starter",
+  "Everything you need in one place": "Everything you need in one place",
+  "Expanded document guidance": "แนวทางเอกสารที่ขยายออก",
+  "Expensive lawyers who charge $5,000+ for basic advice": "ทนายความที่มีค่าใช้จ่ายสูงซึ่งเรียกเก็บเงิน $5,000+ สำหรับคำแนะนำพื้นฐาน",
+  "Explainable readiness signals": "Explainable readiness signals",
+  "F-1, OPT, STEM extension — understand your path from student to professional": {
+    "": "F-1, OPT, การขยาย STEM — เข้าใจเส้นทางของคุณจากนักเรียนสู่มืออาชีพ"
+  },
+  "Filing + legal fees": "ค่าธรรมเนียมการยื่น + ค่าธรรมเนียมทางกฎหมาย",
+  "Find my best path": "ค้นหาเส้นทางที่ดีที่สุดของฉัน",
+  "Find the plan that fits your journey": "Find the plan that fits your journey",
+  "Find the right work visa for your skills and experience": {
+    " H-1B, EB-2, O-1, and more": {
+      "": "ค้นหาวีซ่าทำงานที่เหมาะสมสำหรับทักษะและประสบการณ์ของคุณ H-1B, EB-2, O-1 และอื่นๆ"
+    }
+  },
+  "Find your best path": "ค้นหาเส้นทางที่ดีที่สุดของคุณ",
+  "Find your path": "Find your path",
+  "Finish": "Finish",
+  "First name": "First name",
+  "First name is too long": {
+    "": "ชื่อแรกยาวเกินไป"
+  },
+  "For comparing options": "สำหรับการเปรียบเทียบตัวเลือก",
+  "For every situation": "สำหรับทุกสถานการณ์",
+  "For one clear path": "สำหรับเส้นทางที่ชัดเจนหนึ่งเส้นทาง",
+  "Forgot your password?": "Forgot your password?",
+  "Free": "Free",
+  "Free to start · No credit card · Takes 2 minutes": "เริ่มต้นฟรี · ไม่มีบัตรเครดิต · ใช้เวลา 2 นาที",
+  "From filing to approval": "จากการยื่นจนถึงการอนุมัติ",
+  "Full path comparison": "การเปรียบเทียบเส้นทางทั้งหมด",
+  "Full plan for 1 country": "แผนทั้งหมดสำหรับ 1 ประเทศ",
+  "Full strategic experience": "ประสบการณ์เชิงกลยุทธ์ทั้งหมด",
+  "Full strategic recommendation": "คำแนะนำเชิงกลยุทธ์ทั้งหมด",
+  "Generate strategy": "Generate strategy",
+  "Get Started": "เริ่มต้น",
+  "Get your personalized visa, readiness score, and action plan in minutes": {
+    "": "Get your personalized visa, readiness score, and action plan in minutes.",
+    " Not months": {
+      "": "รับวีซ่าที่ปรับแต่งเฉพาะตัว คะแนนความพร้อม และแผนปฏิบัติการในไม่กี่นาที ไม่ใช่หลายเดือน"
+    }
+  },
+  "Get your plan": "Get your plan",
+  "Get {plan}": "รับ {plan}",
+  "Go back": "กลับไป",
+  "Go home": "Go home",
+  "Home": "Home",
+  "How it works": "How it works",
+  "I spent months Googling visa options": {
+    " Immigrant Guru gave me a clear plan in 10 minutes": {
+      " I wish I found this earlier": {
+        "": "ฉันใช้เวลาหลายเดือนในการค้นหาตัวเลือกวีซ่า Immigrant Guru ให้แผนที่ชัดเจนใน 10 นาที ฉันหวังว่าฉันจะพบสิ่งนี้เร็วกว่านี้"
       }
     }
   },
+  "Immigrant Guru - AI Immigration Strategy Platform": "Immigrant Guru - AI Immigration Strategy Platform",
+  "Immigrant Guru - Move to a New Country Without Confusion": "Immigrant Guru - Move to a New Country Without Confusion",
+  "Immigrant Guru helps you evaluate pathways, compare strategies, and act with clarity": {
+    "": "Immigrant Guru helps you evaluate pathways, compare strategies, and act with clarity."
+  },
+  "Immigration Plan": "แผนการเข้าเมือง",
+  "Immigration Score": "Immigration Score",
+  "Immigration shouldn't feel this hard": {
+    "": "การเข้าเมืองไม่ควรรู้สึกยากขนาดนี้"
+  },
+  "Job opportunities": "โอกาสในการทำงาน",
+  "Language": "Language",
+  "Last name": "Last name",
+  "Last name is too long": {
+    "": "นามสกุลยาวเกินไป"
+  },
+  "Log in": "Log in",
+  "Log out": "Log out",
   "Minimum 8 characters": "Minimum 8 characters",
-  "Repeat your password": "Repeat your password",
-  "Enter a valid email address": {
-    "": "Enter a valid email address."
+  "Months of waiting with no visibility": "รอเป็นเดือนโดยไม่มีความชัดเจน",
+  "Move to a New Country Without Confusion": "Move to a New Country Without Confusion",
+  "Move to a new country": "ย้ายไปยังประเทศใหม่",
+  "Move with family": "Move with family",
+  "Multiple visa alternatives": "ทางเลือกวีซ่าหลายแบบ",
+  "My plan": "My plan",
+  "National Interest Waiver · United States": "การยกเว้นผลประโยชน์แห่งชาติ · สหรัฐอเมริกา",
+  "Nationality": "Nationality",
+  "Need an account?": "Need an account?",
+  "New password": "รหัสผ่านใหม่",
+  "Next": "Next",
+  "Next best action": "Next best action",
+  "Next step:": "ขั้นตอนถัดไป:",
+  "No cases yet": "No cases yet",
+  "No clear direction — just endless Googling": "ไม่มีทิศทางที่ชัดเจน — แค่การค้นหาที่ไม่มีที่สิ้นสุด",
+  "No confusion, no jargon": "ไม่มีความสับสน ไม่มีศัพท์เฉพาะ",
+  "No employer sponsor needed — you can self-petition": {
+    "": "ไม่ต้องการผู้สนับสนุนจากนายจ้าง — คุณสามารถยื่นคำร้องด้วยตนเอง"
+  },
+  "No matter your background, we help you find a way forward": {
+    "": "ไม่ว่าคุณจะมีพื้นฐานอย่างไร เราช่วยคุณหาทางไปข้างหน้า"
+  },
+  "No subscriptions": {
+    " Pay once, unlock your full plan": {
+      " 30-day money-back guarantee": {
+        "": "No subscriptions. Pay once, unlock your full plan. 30-day money-back guarantee."
+      }
+    }
+  },
+  "One clear plan": {
+    " Everything you need": {
+      "": "แผนที่ชัดเจนหนึ่งแผน  ทุกสิ่งที่คุณต้องการ"
+    }
+  },
+  "One-time payment": {
+    " Unlock your full personalized immigration plan": {
+      "": "การชำระเงินครั้งเดียว  ปลดล็อกแผนการเข้าเมืองที่ปรับแต่งเฉพาะของคุณ"
+    }
+  },
+  "Overview": "Overview",
+  "Page not found": "Page not found",
+  "Password": "Password",
+  "Password must be at least 8 characters": {
+    "": "รหัสผ่านต้องมีอย่างน้อย 8 ตัวอักษร"
   },
   "Password must contain at least 8 characters": {
     "": "Password must contain at least 8 characters."
   },
-  "Page not found": "Page not found",
-  "The page you're looking for doesn't exist or hasn't been built yet": {
-    "": "The page you're looking for doesn't exist or hasn't been built yet."
+  "Password reset!": "รีเซ็ตรหัสผ่าน!",
+  "Passwords do not match": {
+    "": "รหัสผ่านไม่ตรงกัน"
   },
-  "Return home": "Return home",
-  "Error": "Error",
-  "Something went wrong": "Something went wrong",
-  "The page hit an unexpected error while rendering": {
-    " Try again, and if it persists, check the server logs": {
-      "": "The page hit an unexpected error while rendering. Try again, and if it persists, check the server logs."
-    }
-  },
-  "Go home": "Go home",
-  "Admin": "Admin",
-  "Step 1 of 4": "Step 1 of 4",
-  "Step 2 of 4": "Step 2 of 4",
-  "Step 3 of 4": "Step 3 of 4",
-  "Step 4 of 4": "Step 4 of 4",
-  "Tell us a bit about yourself": {
-    "": "Tell us a bit about yourself."
-  },
-  "Where do you want to go?": "Where do you want to go?",
-  "Your immigration goals and timing": {
-    "": "Your immigration goals and timing."
-  },
+  "Platform Status": "Platform Status",
+  "Plus": "Plus",
+  "Possible paths": "เส้นทางที่เป็นไปได้",
+  "Preferred language": "Preferred language",
+  "Premium": "Premium",
+  "Premium dashboard": "แดชบอร์ดพรีเมียม",
+  "Pricing": "Pricing",
+  "Prior visa refusal?": "Prior visa refusal?",
+  "Priority AI guidance": "การแนะนำจาก AI ที่มีลำดับความสำคัญ",
+  "Probability score": "Probability score",
   "Professional experience and finances": {
     "": "Professional experience and finances."
   },
-  "You're ready to see your first strategy": "You're ready to see your first strategy",
-  "Nationality": "Nationality",
-  "Where do you live now?": "Where do you live now?",
+  "Profile": "Profile",
+  "Profile, finance, case": "โปรไฟล์, การเงิน, คดี",
+  "Readiness": "ความพร้อม",
+  "Readiness score": "Readiness score",
+  "Ready": "พร้อม",
+  "Recommended pathway": "Recommended pathway",
+  "Redirecting…": "กำลังเปลี่ยนเส้นทาง…",
   "Relationship status": "Relationship status",
-  "Children": "Children",
-  "Preferred language": "Preferred language",
-  "Target country": "Target country",
   "Relocation timeline": "Relocation timeline",
-  "Prior visa refusal?": "Prior visa refusal?",
-  "Any criminal record?": "Any criminal record?",
-  "What do you do?": "What do you do?",
-  "Years of experience": "Years of experience",
-  "Education level": "Education level",
-  "English level": "English level",
-  "Available capital": "Available capital",
+  "Remember your password?": "จำรหัสผ่านของคุณได้ไหม?",
+  "Repeat your password": "Repeat your password",
+  "Resend code": "ส่งรหัสใหม่อีกครั้ง",
+  "Resend code in {n}s": "ส่งรหัสใหม่อีกครั้งใน {n} วินาที",
+  "Reset code": "รีเซ็ตรหัส",
+  "Reset password": "รีเซ็ตรหัสผ่าน",
+  "Resetting": {
+    "": {
+      "": {
+        "": "กำลังรีเซ็ต"
+      }
+    }
+  },
+  "Retry": "Retry",
+  "Return home": "Return home",
   "Review and continue": "Review and continue",
+  "Risks": "Risks",
   "Saving": {
     "": {
       "": {
@@ -171,23 +378,411 @@
       }
     }
   },
-  "Your session is no longer available": {
-    " Sign in again to continue onboarding": {
-      "": "Your session is no longer available. Sign in again to continue onboarding."
+  "Scenario simulation": "Scenario simulation",
+  "See how it works": "ดูว่ามันทำงานอย่างไร",
+  "Select language": "Select language",
+  "Send reset code": "ส่งรหัสรีเซ็ต",
+  "Sending": {
+    "": {
+      "": {
+        "": "กำลังส่ง"
+      }
     }
   },
-  "Your profile could not be saved right now": {
-    " Retry before moving to the next step": {
-      "": "Your profile could not be saved right now. Retry before moving to the next step."
+  "Set new password": "ตั้งค่ารหัสผ่านใหม่",
+  "Sign in": "Sign in",
+  "Sign in to continue your case strategy": "ลงชื่อเข้าใช้เพื่อดำเนินกลยุทธ์คดีของคุณ",
+  "Sign in to continue your immigration strategy": {
+    "": "Sign in to continue your immigration strategy."
+  },
+  "Sign out": "Sign out",
+  "Sign up": "Sign up",
+  "Signing in": {
+    "": {
+      "": {
+        "": "Signing in..."
+      }
     }
+  },
+  "Simple pricing": "Simple pricing",
+  "Six powerful tools working together to give you clarity, confidence, and a concrete plan": {
+    "": "Six powerful tools working together to give you clarity, confidence, and a concrete plan."
+  },
+  "Software Engineer, Turkey to USA": "วิศวกรซอฟต์แวร์, ตุรกีไปสหรัฐอเมริกา",
+  "Software Engineering, AI/ML, Product": "วิศวกรรมซอฟต์แวร์, AI/ML, ผลิตภัณฑ์",
+  "Something went wrong": {
+    "": "เกิดข้อผิดพลาด",
+    " Please try again": {
+      "": "เกิดข้อผิดพลาด  กรุณาลองอีกครั้ง"
+    }
+  },
+  "Spouse, children, parents — know which family visa fits and how long it takes": {
+    "": "คู่สมรส, เด็ก, ผู้ปกครอง — รู้ว่าวีซ่าครอบครัวใดเหมาะสมและใช้เวลานานเท่าใด"
+  },
+  "Start a business": "Start a business",
+  "Start free": {
+    "": "Start free",
+    " Upgrade when you're ready for your full immigration plan": {
+      "": "Start free. Upgrade when you're ready for your full immigration plan."
+    }
+  },
+  "Start with the essentials and complete your immigration profile later": {
+    "": "Start with the essentials and complete your immigration profile later."
+  },
+  "Start your plan": "Start your plan",
+  "Starter": "Starter",
+  "Step 1 of 4": "Step 1 of 4",
+  "Step 2 of 4": "Step 2 of 4",
+  "Step 3 of 4": "Step 3 of 4",
+  "Step 4 of 4": "Step 4 of 4",
+  "Step-by-step roadmap": "แผนที่เป็นขั้นตอน",
+  "Stop guessing": {
+    " Get a clear plan for your immigration journey — in minutes, not months": {
+      "": "หยุดเดา  รับแผนที่ชัดเจนสำหรับการเดินทางเข้าเมืองของคุณ — ในไม่กี่นาที ไม่ใช่หลายเดือน"
+    }
+  },
+  "Strategy": "Strategy",
+  "Study abroad": "Study abroad",
+  "Suggested cities": "เมืองที่แนะนำ",
+  "Suitability": "ความเหมาะสม",
+  "System health": "System health",
+  "Tell us a bit about yourself": {
+    "": "Tell us a bit about yourself."
+  },
+  "Tell us about you": "Tell us about you",
+  "Tell us about yourself": {
+    " Our AI analyzes 47 visa categories, checks your readiness, and gives you a step-by-step plan with timeline, cost, and documents — in minutes": {
+      "": "บอกเราเกี่ยวกับตัวคุณ  AI ของเราวิเคราะห์ 47 หมวดหมู่วีซ่า ตรวจสอบความพร้อมของคุณ และให้แผนที่เป็นขั้นตอนพร้อมระยะเวลา ค่าใช้จ่าย และเอกสาร — ในไม่กี่นาที"
+    }
+  },
+  "The page hit an unexpected error while rendering": {
+    " Try again, and if it persists, check the server logs": {
+      "": "The page hit an unexpected error while rendering. Try again, and if it persists, check the server logs."
+    }
+  },
+  "The page you're looking for doesn't exist or hasn't been built yet": {
+    "": "The page you're looking for doesn't exist or hasn't been built yet."
   },
   "The platform could not load your profile draft": {
     " Retry before continuing": {
       "": "The platform could not load your profile draft. Retry before continuing."
     }
   },
-  "Document status": "Document status",
-  "Case health": "Case health",
-  "Action roadmap": "Action roadmap",
-  "No cases yet": "No cases yet"
+  "The problem": "ปัญหา",
+  "The readiness score showed me exactly what I was missing": {
+    " I uploaded 3 documents and my score jumped from 52 to 81": {
+      "": "คะแนนความพร้อมแสดงให้ฉันเห็นว่าฉันขาดอะไร  ฉันอัปโหลดเอกสาร 3 ฉบับและคะแนนของฉันกระโดดจาก 52 เป็น 81"
+    }
+  },
+  "The solution": "ทางออก",
+  "There's always a way — we help you find it": {
+    "": "เสมอมีทาง — เราช่วยคุณหามัน"
+  },
+  "Three steps": {
+    " No confusion": {
+      "": "สามขั้นตอน  ไม่มีความสับสน"
+    }
+  },
+  "Timeline": "Timeline",
+  "Timeline estimate": "การประมาณเวลา",
+  "Toggle menu": "สลับเมนู",
+  "Try it now": "ลองเลยตอนนี้",
+  "Turkey, India, Brazil": {
+    "": {
+      "": {
+        "": "ตุรกี, อินเดีย, บราซิล"
+      }
+    }
+  },
+  "United States, Canada": {
+    "": {
+      "": {
+        "": "สหรัฐอเมริกา, แคนาดา"
+      }
+    }
+  },
+  "Upload document": "Upload document",
+  "Upload your resume and education documents to increase your readiness score to 90+": {
+    "": "อัปโหลดเรซูเม่และเอกสารการศึกษาเพื่อเพิ่มคะแนนความพร้อมของคุณให้ถึง 90+"
+  },
+  "Verification code": "รหัสยืนยัน",
+  "Verify code": "ยืนยันรหัส",
+  "Verify email": "ยืนยันอีเมล",
+  "Verifying": {
+    "": {
+      "": {
+        "": "กำลังยืนยัน"
+      }
+    }
+  },
+  "Visa categories analyzed": "ประเภทวีซ่าที่วิเคราะห์",
+  "Visa types": "ประเภทวีซ่า",
+  "Visa, timeline, documents, cost — everything in one clear view": {
+    "": "วีซ่า, ไทม์ไลน์, เอกสาร, ค่าใช้จ่าย — ทุกอย่างในมุมมองที่ชัดเจน"
+  },
+  "We analyze multiple countries, visa types, and pathways to match you with the best option based on your profile": {
+    "": "เราวิเคราะห์หลายประเทศ ประเภทวีซ่า และเส้นทางเพื่อจับคู่คุณกับตัวเลือกที่ดีที่สุดตามโปรไฟล์ของคุณ"
+  },
+  "We analyze your options": "We analyze your options",
+  "We sent a 6-digit code to": "เราได้ส่งรหัส 6 หลักไปที่",
+  "We show you what to do": "เราจะแสดงให้คุณเห็นว่าต้องทำอะไร",
+  "We turn everything into one clear plan": {
+    "": "เราจะรวมทุกอย่างเป็นแผนที่ชัดเจน"
+  },
+  "Welcome back": "Welcome back",
+  "What do you do?": "What do you do?",
+  "What you get": "สิ่งที่คุณจะได้รับ",
+  "Whatever your reason, we can help": {
+    "": "ไม่ว่าคุณจะมีเหตุผลอะไร เราสามารถช่วยได้"
+  },
+  "Where are you from?": "คุณมาจากที่ไหน?",
+  "Where do you live now?": "Where do you live now?",
+  "Where do you want to go?": "Where do you want to go?",
+  "Work abroad": "Work abroad",
+  "Wrong email?": "อีเมลผิดหรือเปล่า?",
+  "Years of experience": "Years of experience",
+  "You're ready to see your first strategy": "You're ready to see your first strategy",
+  "Your background, education, experience, and goals": {
+    " Takes 2 minutes": {
+      "": "ประวัติการศึกษา ประสบการณ์ และเป้าหมายของคุณ ใช้เวลา 2 นาที"
+    }
+  },
+  "Your best path": "เส้นทางที่ดีที่สุดของคุณ",
+  "Your best path, ranked by fit": "เส้นทางที่ดีที่สุดของคุณ เรียงตามความเหมาะสม",
+  "Your immigration goals and timing": {
+    "": "Your immigration goals and timing."
+  },
+  "Your new life starts here": {
+    "": "ชีวิตใหม่ของคุณเริ่มต้นที่นี่"
+  },
+  "Your password has been updated": {
+    " You can now sign in": {
+      "": "รหัสผ่านของคุณได้รับการอัปเดตแล้ว คุณสามารถเข้าสู่ระบบได้แล้ว"
+    }
+  },
+  "Your personalized result": "ผลลัพธ์ที่ปรับแต่งเฉพาะของคุณ",
+  "Your profile could not be saved right now": {
+    " Retry before moving to the next step": {
+      "": "Your profile could not be saved right now. Retry before moving to the next step."
+    }
+  },
+  "Your session is no longer available": {
+    " Sign in again to continue onboarding": {
+      "": "Your session is no longer available. Sign in again to continue onboarding."
+    }
+  },
+  "one-time": "one-time",
+  "without confusion": {
+    "": "โดยไม่มีความสับสน"
+  },
+  "FAQ": "คำถามที่พบบ่อย",
+  "tools": {
+    "pageTitle": "เครื่องมือการเข้าเมืองฟรี",
+    "pageSubtitle": "คำตอบรวดเร็ว — ไม่ต้องลงทะเบียน",
+    "eligibilityChecker": {
+      "title": "ตัวตรวจสอบความเหมาะสม",
+      "description": "ตอบคำถาม 6 ข้อ ดูวีซ่าที่คุณอาจมีสิทธิ์"
+    },
+    "costEstimator": {
+      "title": "เครื่องมือประมาณการค่าใช้จ่าย",
+      "description": "ค่าใช้จ่ายทั้งหมดในการย้ายไปต่างประเทศ — ไม่ใช่แค่ค่าธรรมเนียมวีซ่า"
+    },
+    "timelineCalculator": {
+      "title": "เครื่องคำนวณระยะเวลา",
+      "description": "คาดการณ์เมื่อใดที่คุณจะมาถึงทีละขั้นตอน"
+    }
+  },
+  "eligibilityChecker": {
+    "pageTitle": "ตัวตรวจสอบความเหมาะสมวีซ่าฟรี",
+    "pageSubtitle": "ตอบคำถามสั้น ๆ 6 ข้อ ดูรายการสั้น ๆ ของวีซ่าที่คุณอาจมีสิทธิ์ — ไม่ต้องลงทะเบียน",
+    "faq1": {
+      "question": "ตัวตรวจสอบความเหมาะสมฟรีหรือไม่?",
+      "answer": "ใช่. ทำงานได้อย่างสมบูรณ์ในเบราว์เซอร์ของคุณและไม่ต้องการบัญชี"
+    },
+    "faq2": {
+      "question": "การตรวจสอบแม่นยำแค่ไหน?",
+      "answer": "ใช้กฎความเหมาะสมที่เปิดเผยต่อสาธารณะสำหรับทุกเส้นทาง เป็นตัวกรองเบื้องต้นที่แข็งแกร่ง แต่ไม่สามารถแทนที่การวิเคราะห์ที่สนับสนุนด้วย AI หรือคำแนะนำทางกฎหมายได้"
+    },
+    "faq3": {
+      "question": "มันจะบันทึกคำตอบของฉันหรือไม่?",
+      "answer": "ไม่. เครื่องมือทำงานในเบราว์เซอร์ของคุณในระดับท้องถิ่น หากคุณต้องการให้ผลลัพธ์ของคุณถูกบันทึกในโปรไฟล์ของคุณ โปรดลงทะเบียน"
+    },
+    "emailCapture": {
+      "title": "การวิเคราะห์ที่สนับสนุนด้วย AI อย่างเต็มที่",
+      "subtitle": "รับแผน A/B/C ที่ปรับแต่งตามอีเมลและคะแนนความพร้อม"
+    }
+  },
+  "costEstimator": {
+    "pageTitle": "เครื่องมือประมาณการค่าใช้จ่ายการเข้าเมือง",
+    "pageSubtitle": "เลือกเส้นทาง เพิ่มขนาดครอบครัวของคุณ และดูค่าใช้จ่ายรวมที่สมจริง — ไม่ใช่แค่ค่าธรรมเนียมวีซ่า",
+    "faq1": {
+      "question": "การประมาณการรวมอะไรบ้าง?",
+      "answer": "ค่าธรรมเนียมของรัฐ ค่าธรรมเนียมทางกฎหมาย/ตัวแทน กองทุนการตั้งถิ่นฐาน ตั๋วเครื่องบิน ที่พักแรก และเบาะกันค่าใช้จ่ายที่ไม่คาดคิด 10%"
+    },
+    "faq2": {
+      "question": "นี่ถูกต้องสำหรับสถานการณ์เฉพาะของฉันหรือไม่?",
+      "answer": "เป็นการประมาณการที่ดีสำหรับทุกเส้นทาง ค่าใช้จ่ายที่แท้จริงของคุณจะแตกต่างกันไปตามขนาดครอบครัว เมือง และการเลือกทนายความ ลงทะเบียนเพื่อรับเอกสารที่ปรับแต่ง"
+    },
+    "emailCapture": {
+      "title": "รายละเอียดค่าใช้จ่ายทั้งหมดทางอีเมล",
+      "subtitle": "ตารางที่มีค่าใช้จ่ายตามบรรทัดที่จัดเรียงตามประเทศเป้าหมายของคุณ"
+    }
+  },
+  "timelineCalculator": {
+    "pageTitle": "เครื่องคำนวณระยะเวลา",
+    "pageSubtitle": "เลือกเส้นทาง ดูเมื่อใดที่คุณจะมาถึง — รวมถึงการเตรียมตัว การสมัคร การดำเนินการ และการมาถึง",
+    "faq1": {
+      "question": "ทำไมระยะเวลาเตรียมตัวจึงรวมอยู่ด้วย?",
+      "answer": "นาฬิกาจะไม่เริ่มเมื่อคุณสมัคร — จะเริ่มเมื่อคุณเริ่มรวบรวมเอกสาร เราจะเพิ่มหน้าต่างการเตรียมตัวที่สมจริงสำหรับทุกเส้นทาง"
+    },
+    "faq2": {
+      "question": "การประมาณการนี้แม่นยำแค่ไหน?",
+      "answer": "สะท้อนเวลาการดำเนินการเฉลี่ยที่เผยแพร่ กรณีเฉพาะอาจเร็วขึ้นหรือช้าลงขึ้นอยู่กับ RFE, โควต้าประเทศ และความครบถ้วนของหลักฐาน"
+    },
+    "emailCapture": {
+      "title": "ตัวติดตามระยะเวลารายสัปดาห์",
+      "subtitle": "เราจะส่งแผนรายสัปดาห์ที่ง่ายให้คุณทางอีเมลจนถึงวันมาถึง"
+    }
+  },
+  "visaIndex": {
+    "pageTitle": "วีซ่าทั้งหมด",
+    "pageSubtitle": "ค่าใช้จ่าย ระยะเวลา และความเหมาะสมสำหรับทุกเส้นทางที่เราครอบคลุม",
+    "months": "เดือน"
+  },
+  "bestCountries": {
+    "pageTitle": "ประเทศที่ดีที่สุดตามอาชีพ",
+    "pageSubtitle": "เลือกอาชีพของคุณเพื่อดูจุดหมายการเข้าเมืองที่จัดอันดับ",
+    "cardTitle": "ประเทศที่ดีที่สุดสำหรับ {profession}",
+    "breadcrumb": "ประเทศที่ดีที่สุด",
+    "rankedSubtitle": "จัดอันดับตามค่าใช้จ่าย ระยะเวลา และการตั้งถิ่นฐานถาวร ข้อมูลอัปเดตสำหรับปี 2026",
+    "topPathway": "เส้นทางที่ดีที่สุด",
+    "seeAllPathways": "ดูเส้นทางทั้งหมด",
+    "visaDetails": "รายละเอียด {code}",
+    "otherProfessions": "อาชีพอื่น ๆ"
+  },
+  "compare": {
+    "pageTitle": "การเปรียบเทียบวีซ่า",
+    "pageSubtitle": "การเปรียบเทียบการตัดสินใจเส้นทางที่พบบ่อยที่สุดเคียงข้างกัน",
+    "vs": "เทียบกับ",
+    "comparingSubtitle": "เปรียบเทียบค่าใช้จ่าย เวลา และความเหมาะสมระหว่าง {nameA} และ {nameB} — เพื่อไม่ให้คุณใช้เวลาหลายเดือนในเส้นทางที่ผิด",
+    "rowFullName": "ชื่อเต็ม",
+    "rowCategory": "หมวดหมู่",
+    "rowDestination": "ประเทศเป้าหมาย",
+    "rowTypicalDuration": "ระยะเวลาปกติ",
+    "rowCostUsd": "ค่าใช้จ่าย (USD)",
+    "rowLeadsToPR": "นำไปสู่การตั้งถิ่นฐานถาวร",
+    "yes": "ใช่",
+    "no": "ไม่",
+    "bestFor": "เหมาะสมที่สุด",
+    "otherComparisons": "การเปรียบเทียบวีซ่าอื่น ๆ"
+  },
+  "visaMatch": {
+    "pageTitle": "การจับคู่วีซ่า",
+    "pageSubtitle": "เลือกประเทศเป้าหมายและโปรไฟล์ของคุณเพื่อดู 3 เส้นทางแรกของคุณ",
+    "cardSubtitle": "วีซ่าที่ดีที่สุดสำหรับ {profession}",
+    "breadcrumb": "การจับคู่วีซ่า",
+    "rankedSubtitle": "มีเส้นทางการเข้าเมือง {count} เส้นทางสำหรับ {profession} โดยมีเป้าหมายที่ {countryName}. ตัวเลือกแต่ละตัวได้รับคะแนนตามความสอดคล้อง, ค่าใช้จ่าย, ระยะเวลา และความเสี่ยง",
+    "getPersonalizedMatch": "รับการจับคู่ที่ปรับแต่งเฉพาะสำหรับคุณ",
+    "freeEligibilityCheck": "ตรวจสอบความเหมาะสมฟรี",
+    "typicalTimeline": "กำหนดการทั่วไป",
+    "typicalCost": "ค่าใช้จ่ายทั่วไป",
+    "duration": "ระยะเวลา",
+    "strengths": "จุดแข็ง",
+    "moreVisaGuides": "คู่มือวีซ่าเพิ่มเติมสำหรับ {countryName}"
+  },
+  "moveTo": {
+    "pageTitle": "คู่มือการย้ายประเทศ",
+    "pageSubtitle": "คู่มือทีละขั้นตอนตามประเทศต้นทางและประเทศเป้าหมาย",
+    "fromLabel": "จาก {flag} {name}",
+    "cardSubtitle": "คู่มือสำหรับพลเมือง {demonym}",
+    "h1": "ย้ายไปยังเมือง {toName} ผ่าน {fromName}",
+    "intro": "คู่มือปฏิบัติสำหรับการย้ายไปยังเมือง {toName} สำหรับพลเมือง {demonym}. เลือกเส้นทาง, เข้าใจตารางเวลาและค่าใช้จ่าย, รับคะแนนความพร้อมที่ปรับแต่งเฉพาะ",
+    "topVisaPathways": "เส้นทางวีซ่าที่ดีที่สุดสำหรับ {toName}",
+    "howToStepByStep": "วิธีการย้ายทีละขั้นตอน",
+    "moreCountryGuides": "คู่มือประเทศเพิ่มเติม"
+  },
+  "Onboarding could not load": "ไม่สามารถโหลดการเริ่มต้นได้",
+  "Review the highlighted profile fields before continuing": {
+    "": "ตรวจสอบฟิลด์โปรไฟล์ที่เน้นก่อนดำเนินการต่อ"
+  },
+  "Skip": "ข้าม",
+  "Who are you?": "คุณคือใคร?",
+  "Select your nationality": "เลือกสัญชาติของคุณ",
+  "Select current country": "เลือกประเทศปัจจุบัน",
+  "e": {
+    "g": {
+      " English, Turkish": {
+        "": {
+          "": {
+            "": "เช่น ภาษาอังกฤษ, ภาษาเตอร์ก"
+          }
+        }
+      },
+      " Software Engineer, Doctor, Designer": {
+        "": {
+          "": {
+            "": "เช่น วิศวกรซอฟต์แวร์, แพทย์, นักออกแบบ"
+          }
+        }
+      },
+      " 50000": "เช่น 50000"
+    }
+  },
+  "Your background": "ประวัติของคุณ",
+  "English proficiency": "ความสามารถในการใช้ภาษาอังกฤษ",
+  "Available capital (USD)": "ทุนที่มีอยู่ (USD)",
+  "Your dream destination and timeline": {
+    "": "จุดหมายปลายทางในฝันและไทม์ไลน์ของคุณ"
+  },
+  "When do you want to move?": "คุณต้องการย้ายเมื่อไหร่?",
+  "Have you had a visa refusal before?": "คุณเคยถูกปฏิเสธวีซ่ามาก่อนหรือไม่?",
+  "This helps us give accurate recommendations": {
+    " Your data is private and secure": {
+      "": "สิ่งนี้ช่วยให้เราสามารถให้คำแนะนำที่ถูกต้อง ข้อมูลของคุณเป็นส่วนตัวและปลอดภัย"
+    }
+  },
+  "You're all set!": "คุณพร้อมแล้ว!",
+  "Amazing! Your profile is almost complete": {
+    " We can build great strategies for you": {
+      "": "เยี่ยมมาก! โปรไฟล์ของคุณเกือบจะสมบูรณ์แล้ว เราสามารถสร้างกลยุทธ์ที่ยอดเยี่ยมสำหรับคุณ"
+    }
+  },
+  "Great start! You can always complete more details from your profile page": {
+    "": "เริ่มต้นได้ดี! คุณสามารถกรอกข้อมูลเพิ่มเติมจากหน้าโปรไฟล์ของคุณได้เสมอ"
+  },
+  "No worries! You can fill in more details anytime from your dashboard": {
+    "": "ไม่ต้องกังวล! คุณสามารถกรอกข้อมูลเพิ่มเติมได้ตลอดเวลาจากแดชบอร์ดของคุณ"
+  },
+  "See your AI analysis": "ดูการวิเคราะห์ AI ของคุณ",
+  "there": "ที่นั่น",
+  "Immigrant": "ผู้อพยพ",
+  "Guru": "กูรู",
+  "Hey {name}, welcome aboard!": "สวัสดี {name} ยินดีต้อนรับ!",
+  "Let's build your immigration profile in under 2 minutes": {
+    " The more we know, the better strategies we can craft for you": {
+      "": "มาสร้างโปรไฟล์การอพยพของคุณในเวลาไม่ถึง 2 นาที ยิ่งเรารู้มากเท่าไหร่ ยิ่งเราสามารถสร้างกลยุทธ์ที่ดีกว่าสำหรับคุณได้"
+    }
+  },
+  "Let's go": "ไปกันเถอะ",
+  "Takes about 2 minutes": {
+    " You can skip anything": {
+      "": "ใช้เวลาประมาณ 2 นาที คุณสามารถข้ามอะไรก็ได้"
+    }
+  },
+  "score": {
+    "outOf100": "จาก 100",
+    "thisProfileIs": "โปรไฟล์นี้อยู่ในระดับ {readiness}",
+    "scoredOn": "Immigrant Guru ได้ให้คะแนนโปรไฟล์นี้ตามการศึกษา, ประสบการณ์การทำงาน, ภาษา, ความสอดคล้องกับประเทศเป้าหมาย และอีก 8 มิติ",
+    "getMyOwnScore": "รับคะแนนของฉันเอง",
+    "shareOnX": "แชร์ใน X"
+  },
+  "visa": {
+    "cost": "ค่าใช้จ่าย",
+    "prPath": "เส้นทางการอยู่อาศัยถาวร",
+    "idealFor": "บุคคลที่มีสิทธิ์",
+    "requirements": "ข้อกำหนด",
+    "risksAndRejection": "ความเสี่ยงและสาเหตุการปฏิเสธที่พบบ่อย",
+    "checkReadiness": "ตรวจสอบความพร้อมของ {code}",
+    "moreVisaGuides": "คู่มือวีซ่าเพิ่มเติมสำหรับ {countryName}"
+  }
 }

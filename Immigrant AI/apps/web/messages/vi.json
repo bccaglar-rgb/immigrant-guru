@@ -1,103 +1,165 @@
 {
-  "Immigrant Guru - AI Immigration Strategy Platform": "Immigrant Guru - AI Immigration Strategy Platform",
-  "Immigrant Guru - Move to a New Country Without Confusion": "Immigrant Guru - Move to a New Country Without Confusion",
-  "Language": "Language",
-  "Select language": "Select language",
-  "How it works": "How it works",
-  "Find your path": "Find your path",
-  "Pricing": "Pricing",
-  "Home": "Home",
-  "Sign in": "Sign in",
-  "Sign up": "Sign up",
-  "Dashboard": "Dashboard",
-  "Log out": "Log out",
-  "Move to a New Country Without Confusion": "Move to a New Country Without Confusion",
-  "Get your personalized visa, readiness score, and action plan in minutes": {
-    "": "Get your personalized visa, readiness score, and action plan in minutes."
+  "Active": "Đang hoạt động",
+  "Cancel": "Hủy",
+  "Capture the destination, program, current stage, and risk signals that anchor strategy generation, scoring, and document workflows": {
+    "": "Ghi lại điểm đến, chương trình, giai đoạn hiện tại và các tín hiệu rủi ro để định hình việc tạo chiến lược, chấm điểm và quy trình tài liệu"
   },
-  "Benefits": "Benefits",
-  "Everything you need in one place": "Everything you need in one place",
-  "Simple pricing": "Simple pricing",
-  "Free": "Free",
-  "Starter": "Starter",
-  "Plus": "Plus",
-  "Premium": "Premium",
-  "Create your account": "Create your account",
-  "Welcome back": "Welcome back",
-  "First name": "First name",
-  "Last name": "Last name",
-  "Email": "Email",
-  "Password": "Password",
-  "Confirm password": "Confirm password",
-  "Overview": "Overview",
-  "Profile": "Profile",
-  "Cases": "Cases",
-  "Strategy": "Strategy",
-  "Timeline": "Timeline",
-  "Documents": "Documents",
-  "Risks": "Risks",
-  "Copilot": "Copilot",
-  "Comparison": "Comparison",
-  "Retry": "Retry",
-  "Back": "Back",
-  "Next": "Next",
-  "Finish": "Finish",
-  "Generate strategy": "Generate strategy",
-  "Upload document": "Upload document",
-  "Scenario simulation": "Scenario simulation",
-  "My plan": "My plan",
-  "Sign out": "Sign out",
-  "Log in": "Log in",
-  "Start your plan": "Start your plan",
-  "Readiness score": "Readiness score",
-  "Probability score": "Probability score",
-  "Recommended pathway": "Recommended pathway",
-  "Next best action": "Next best action",
-  "Immigrant Guru helps you evaluate pathways, compare strategies, and act with clarity": {
-    "": "Immigrant Guru helps you evaluate pathways, compare strategies, and act with clarity."
+  "Case Detail": "Chi tiết hồ sơ",
+  "Case planning workspace": "Không gian làm việc lập kế hoạch hồ sơ",
+  "Case portfolio": "Danh mục hồ sơ",
+  "Case status": "Tình trạng hồ sơ",
+  "Case title": "Tiêu đề hồ sơ",
+  "Closed": "Đã đóng",
+  "Close": "Đóng",
+  "Close new case": "Đóng hồ sơ mới",
+  "Collect recommendation letters and evidence of impact": {
+    "": "Thu thập thư giới thiệu và bằng chứng về tác động"
   },
-  "A focused workspace for immigration decisions": "A focused workspace for immigration decisions",
-  "Six powerful tools working together to give you clarity, confidence, and a concrete plan": {
-    "": "Six powerful tools working together to give you clarity, confidence, and a concrete plan."
+  "Continue your immigration planning": {
+    " Keep profile and case data aligned": {
+      "": "Tiếp tục lập kế hoạch di trú của bạn  Giữ dữ liệu hồ sơ và thông tin cá nhân đồng bộ"
+    }
   },
-  "Immigration Score": "Immigration Score",
-  "Explainable readiness signals": "Explainable readiness signals",
-  "System health": "System health",
-  "Platform Status": "Platform Status",
-  "Work abroad": "Work abroad",
-  "Study abroad": "Study abroad",
-  "Move with family": "Move with family",
-  "Start a business": "Start a business",
-  "Tell us about you": "Tell us about you",
-  "We analyze your options": "We analyze your options",
-  "Get your plan": "Get your plan",
-  "Find the plan that fits your journey": "Find the plan that fits your journey",
-  "Start free": {
-    " Upgrade when you're ready for your full immigration plan": {
-      "": "Start free. Upgrade when you're ready for your full immigration plan."
-    },
-    "": "Start free"
+  "Create a case for each migration plan you want to evaluate, compare, or execute": {
+    " Cases anchor strategy generation, scoring, and document collection in one workspace": {
+      "": "Tạo một hồ sơ cho mỗi kế hoạch di trú mà bạn muốn đánh giá, so sánh hoặc thực hiện  Các hồ sơ định hình việc tạo chiến lược, chấm điểm và thu thập tài liệu trong một không gian làm việc"
+    }
   },
-  "Best value": "Best value",
-  "one-time": "one-time",
-  "No subscriptions": {
-    " Pay once, unlock your full plan": {
-      " 30-day money-back guarantee": {
-        "": "No subscriptions. Pay once, unlock your full plan. 30-day money-back guarantee."
+  "Create first case": "Tạo hồ sơ đầu tiên",
+  "Create strategy case": "Tạo hồ sơ chiến lược",
+  "Creating case": {
+    "": {
+      "": {
+        "": "Đang tạo hồ sơ"
       }
     }
   },
-  "Start with the essentials and complete your immigration profile later": {
-    "": "Start with the essentials and complete your immigration profile later."
+  "Current stage": "Giai đoạn hiện tại",
+  "Data unavailable": "Dữ liệu không khả dụng",
+  "Define a migration pathway to evaluate": "Định nghĩa một lộ trình di trú để đánh giá",
+  "Destination pending": "Điểm đến đang chờ",
+  "Draft": "Bản nháp",
+  "Evaluation signals": "Tín hiệu đánh giá",
+  "Example: eligibility_review, document_collection, filing_ready": "Ví dụ: eligibility_review, document_collection, filing_ready",
+  "Higher values should indicate higher execution or eligibility risk": {
+    "": "Giá trị cao hơn nên chỉ ra rủi ro thực hiện hoặc đủ điều kiện cao hơn"
   },
-  "Sign in to continue your immigration strategy": {
-    "": "Sign in to continue your immigration strategy."
+  "Immigration strategy cases": "Hồ sơ chiến lược di trú",
+  "In review": "Đang xem xét",
+  "Internal Console": "Bảng điều khiển nội bộ",
+  "Keep notes focused on blockers, evidence gaps, and next actions": {
+    "": "Giữ ghi chú tập trung vào các trở ngại, khoảng trống bằng chứng và các hành động tiếp theo"
   },
-  "Forgot your password?": "Forgot your password?",
-  "Create account": "Create account",
-  "Create one": "Create one",
+  "Latest score": "Điểm số mới nhất",
+  "Manage immigration strategy records that anchor pathway evaluation, stage tracking, scoring, and later document workflows": {
+    "": "Quản lý hồ sơ chiến lược di trú định hình việc đánh giá lộ trình, theo dõi giai đoạn, chấm điểm và quy trình tài liệu sau này"
+  },
+  "New case": "Hồ sơ mới",
+  "New strategy case": "Hồ sơ chiến lược mới",
+  "No changes to save": "Không có thay đổi nào để lưu",
+  "No strategic notes recorded yet for this immigration path": {
+    "": "Chưa ghi lại ghi chú chiến lược nào cho lộ trình di trú này"
+  },
+  "No strategy cases yet": "Chưa có hồ sơ chiến lược nào",
+  "on record": "trong hồ sơ",
+  "Open case": "Mở hồ sơ",
+  "Optional score snapshot if you want to retain a manual benchmark": {
+    "": "Ảnh chụp điểm số tùy chọn nếu bạn muốn giữ một tiêu chuẩn thủ công"
+  },
+  "Pathway not defined yet": "Lộ trình chưa được định nghĩa",
+  "Refresh cases": "Làm mới hồ sơ",
+  "Review the highlighted case fields before saving": {
+    "": "Xem xét các trường hồ sơ được đánh dấu trước khi lưu"
+  },
+  "Risk score": "Điểm rủi ro",
+  "Risk": "Rủi ro",
+  "Save case changes": "Lưu thay đổi hồ sơ",
+  "Saving changes": {
+    "": {
+      "": {
+        "": "Đang lưu thay đổi"
+      }
+    }
+  },
+  "Score": "Điểm số",
+  "Session": "Phiên",
+  "Stage": "Giai đoạn",
+  "Start with a target country and pathway": "Bắt đầu với một quốc gia mục tiêu và lộ trình",
+  "Strategy case created successfully": {
+    "": "Hồ sơ chiến lược đã được tạo thành công"
+  },
+  "Strategy identity": "Danh tính chiến lược",
+  "Strategy notes": "Ghi chú chiến lược",
+  "Target country": "Target country",
+  "Target pathway or program": "Lộ trình hoặc chương trình mục tiêu",
+  "The case portfolio could not be loaded": {
+    "": "Danh mục hồ sơ không thể được tải"
+  },
+  "Track every active migration path in one workspace": "Theo dõi mọi lộ trình di trú đang hoạt động trong một không gian làm việc",
+  "U": {
+    "S": {
+      " employment-based migration plan": "Kế hoạch di trú dựa trên việc làm tại Hoa Kỳ"
+    }
+  },
+  "United States": "Hoa Kỳ",
+  "Update the case strategy record": "Cập nhật hồ sơ chiến lược",
+  "Updated": "Đã cập nhật",
+  "Workspace data could not be loaded": {
+    "": "Dữ liệu không thể được tải lên"
+  },
+  "You are no longer authenticated": {
+    "": "Bạn không còn được xác thực nữa"
+  },
+  "case": "trường hợp",
+  "cases": "các trường hợp",
+  "12-18 months": "12-18 tháng",
+  "3 country comparisons": "3 so sánh quốc gia",
+  "A focused workspace for immigration decisions": "A focused workspace for immigration decisions",
+  "AI checks 47 visa categories and finds your best match": {
+    "": "AI kiểm tra 47 loại visa và tìm ra sự phù hợp tốt nhất của bạn"
+  },
+  "Access your immigration dashboard, decision plans, and case workspace": {
+    "": "Truy cập bảng điều khiển di trú của bạn, kế hoạch quyết định và không gian làm việc của trường hợp"
+  },
+  "Action roadmap": "Action roadmap",
+  "Admin": "Admin",
+  "Advanced action plan": "Kế hoạch hành động nâng cao",
   "Already have an account?": "Already have an account?",
-  "Need an account?": "Need an account?",
+  "Any criminal record?": "Any criminal record?",
+  "Available capital": "Available capital",
+  "Average time to first plan": "Thời gian trung bình đến kế hoạch đầu tiên",
+  "Back": "Back",
+  "Benefits": "Benefits",
+  "Best value": "Best value",
+  "Best visa option": "Lựa chọn visa tốt nhất",
+  "Best visa recommendation": "Khuyến nghị visa tốt nhất",
+  "Better case preparation": "Chuẩn bị trường hợp tốt hơn",
+  "Built for immigrants, by immigrants": "Xây dựng cho người nhập cư, bởi người nhập cư",
+  "Case health": "Case health",
+  "Cases": "Cases",
+  "Check your email": "Kiểm tra email của bạn",
+  "Checkout failed": "Thanh toán không thành công",
+  "Children": "Children",
+  "Choose a new password for your account": {
+    "": "Chọn một mật khẩu mới cho tài khoản của bạn"
+  },
+  "Comparison": "Comparison",
+  "Confirm password": "Confirm password",
+  "Confirm your password": {
+    "": "Xác nhận mật khẩu của bạn"
+  },
+  "Confusing visa rules that change every year": "Quy tắc visa gây nhầm lẫn thay đổi mỗi năm",
+  "Copilot": "Copilot",
+  "Cost estimate": "Ước tính chi phí",
+  "Countries": "Các quốc gia",
+  "Countries supported": "Các quốc gia được hỗ trợ",
+  "Create account": "Create account",
+  "Create an account to start building an immigration profile, evaluate pathways, and manage your cases": {
+    "": "Tạo tài khoản để bắt đầu xây dựng hồ sơ di trú, đánh giá các lộ trình và quản lý các trường hợp của bạn"
+  },
+  "Create one": "Create one",
+  "Create your Immigrant Guru account": "Tạo tài khoản Immigrant Guru của bạn",
+  "Create your account": "Create your account",
   "Creating account": {
     "": {
       "": {
@@ -105,65 +167,210 @@
       }
     }
   },
-  "Signing in": {
-    "": {
-      "": {
-        "": "Signing in..."
+  "Dashboard": "Dashboard",
+  "Data Scientist, India to Canada": "Nhà khoa học dữ liệu, Ấn Độ đến Canada",
+  "Deeper analysis": "Phân tích sâu hơn",
+  "Document checklist": "Danh sách kiểm tra tài liệu",
+  "Document status": "Document status",
+  "Documents": "Documents",
+  "E-2 investor, EB-5, startup visa — explore entrepreneurial immigration routes": {
+    "": "Nhà đầu tư E-2, EB-5, visa khởi nghiệp — khám phá các lộ trình di trú doanh nhân"
+  },
+  "Education level": "Education level",
+  "Email": "Email",
+  "English level": "English level",
+  "Enter a valid email address": {
+    "": "Enter a valid email address."
+  },
+  "Enter it below to verify your account": {
+    "": "Nhập nó bên dưới để xác minh tài khoản của bạn"
+  },
+  "Enter the 6-digit code from your email": {
+    "": "Nhập mã 6 chữ số từ email của bạn"
+  },
+  "Enter the 6-digit code": {
+    "": "Nhập mã 6 chữ số"
+  },
+  "Enter your email and we'll send you a reset code": {
+    "": "Nhập email của bạn và chúng tôi sẽ gửi cho bạn mã đặt lại"
+  },
+  "Enter your email": {
+    "": "Nhập email của bạn"
+  },
+  "Error": "Error",
+  "Est": {
+    " cost": "Chi phí ước tính"
+  },
+  "Estimated cost": "Chi phí ước tính",
+  "Even if you think you don't qualify — we'll show you what's possible": {
+    "": "Ngay cả khi bạn nghĩ rằng bạn không đủ điều kiện — chúng tôi sẽ cho bạn thấy những gì có thể"
+  },
+  "Everything in Plus": "Mọi thứ trong Plus",
+  "Everything in Starter": "Mọi thứ trong Starter",
+  "Everything you need in one place": "Everything you need in one place",
+  "Expanded document guidance": "Hướng dẫn tài liệu mở rộng",
+  "Expensive lawyers who charge $5,000+ for basic advice": "Luật sư đắt tiền tính phí trên 5.000 đô la cho lời khuyên cơ bản",
+  "Explainable readiness signals": "Explainable readiness signals",
+  "F-1, OPT, STEM extension — understand your path from student to professional": {
+    "": "F-1, OPT, gia hạn STEM — hiểu con đường của bạn từ sinh viên đến chuyên nghiệp"
+  },
+  "Filing + legal fees": "Phí nộp đơn + phí pháp lý",
+  "Find my best path": "Tìm con đường tốt nhất của tôi",
+  "Find the plan that fits your journey": "Find the plan that fits your journey",
+  "Find the right work visa for your skills and experience": {
+    " H-1B, EB-2, O-1, and more": {
+      "": "Tìm visa làm việc phù hợp với kỹ năng và kinh nghiệm của bạn H-1B, EB-2, O-1 và nhiều hơn nữa"
+    }
+  },
+  "Find your best path": "Tìm con đường tốt nhất của bạn",
+  "Find your path": "Find your path",
+  "Finish": "Finish",
+  "First name": "First name",
+  "First name is too long": {
+    "": "Tên đầu tiên quá dài"
+  },
+  "For comparing options": "Để so sánh các tùy chọn",
+  "For every situation": "Đối với mọi tình huống",
+  "For one clear path": "Đối với một con đường rõ ràng",
+  "Forgot your password?": "Forgot your password?",
+  "Free": "Free",
+  "Free to start · No credit card · Takes 2 minutes": "Miễn phí để bắt đầu · Không cần thẻ tín dụng · Mất 2 phút",
+  "From filing to approval": "Từ nộp đơn đến phê duyệt",
+  "Full path comparison": "So sánh đầy đủ lộ trình",
+  "Full plan for 1 country": "Kế hoạch đầy đủ cho 1 quốc gia",
+  "Full strategic experience": "Kinh nghiệm chiến lược đầy đủ",
+  "Full strategic recommendation": "Khuyến nghị chiến lược đầy đủ",
+  "Generate strategy": "Generate strategy",
+  "Get Started": "Bắt đầu",
+  "Get your personalized visa, readiness score, and action plan in minutes": {
+    "": "Get your personalized visa, readiness score, and action plan in minutes.",
+    " Not months": {
+      "": "Nhận visa cá nhân hóa, điểm sẵn sàng và kế hoạch hành động của bạn trong vài phút Không phải tháng"
+    }
+  },
+  "Get your plan": "Get your plan",
+  "Get {plan}": "Nhận {plan}",
+  "Go back": "Quay lại",
+  "Go home": "Go home",
+  "Home": "Home",
+  "How it works": "How it works",
+  "I spent months Googling visa options": {
+    " Immigrant Guru gave me a clear plan in 10 minutes": {
+      " I wish I found this earlier": {
+        "": "Tôi đã dành nhiều tháng để tìm kiếm các tùy chọn visa Immigrant Guru đã cho tôi một kế hoạch rõ ràng trong 10 phút Tôi ước tôi tìm thấy điều này sớm hơn"
       }
     }
   },
+  "Immigrant Guru - AI Immigration Strategy Platform": "Immigrant Guru - AI Immigration Strategy Platform",
+  "Immigrant Guru - Move to a New Country Without Confusion": "Immigrant Guru - Move to a New Country Without Confusion",
+  "Immigrant Guru helps you evaluate pathways, compare strategies, and act with clarity": {
+    "": "Immigrant Guru helps you evaluate pathways, compare strategies, and act with clarity."
+  },
+  "Immigration Plan": "Kế hoạch di trú",
+  "Immigration Score": "Immigration Score",
+  "Immigration shouldn't feel this hard": {
+    "": "Di trú không nên khó khăn như vậy"
+  },
+  "Job opportunities": "Cơ hội việc làm",
+  "Language": "Language",
+  "Last name": "Last name",
+  "Last name is too long": {
+    "": "Họ quá dài"
+  },
+  "Log in": "Log in",
+  "Log out": "Log out",
   "Minimum 8 characters": "Minimum 8 characters",
-  "Repeat your password": "Repeat your password",
-  "Enter a valid email address": {
-    "": "Enter a valid email address."
+  "Months of waiting with no visibility": "Tháng chờ đợi mà không có thông tin",
+  "Move to a New Country Without Confusion": "Move to a New Country Without Confusion",
+  "Move to a new country": "Chuyển đến một quốc gia mới",
+  "Move with family": "Move with family",
+  "Multiple visa alternatives": "Nhiều lựa chọn visa",
+  "My plan": "My plan",
+  "National Interest Waiver · United States": "Miễn trừ lợi ích quốc gia · Hoa Kỳ",
+  "Nationality": "Nationality",
+  "Need an account?": "Need an account?",
+  "New password": "Mật khẩu mới",
+  "Next": "Next",
+  "Next best action": "Next best action",
+  "Next step:": "Bước tiếp theo:",
+  "No cases yet": "No cases yet",
+  "No clear direction — just endless Googling": "Không có hướng đi rõ ràng — chỉ là tìm kiếm vô tận trên Google",
+  "No confusion, no jargon": "Không nhầm lẫn, không thuật ngữ chuyên ngành",
+  "No employer sponsor needed — you can self-petition": {
+    "": "Không cần nhà tài trợ — bạn có thể tự nộp đơn"
+  },
+  "No matter your background, we help you find a way forward": {
+    "": "Bất kể nền tảng của bạn, chúng tôi giúp bạn tìm ra con đường phía trước"
+  },
+  "No subscriptions": {
+    " Pay once, unlock your full plan": {
+      " 30-day money-back guarantee": {
+        "": "No subscriptions. Pay once, unlock your full plan. 30-day money-back guarantee."
+      }
+    }
+  },
+  "One clear plan": {
+    " Everything you need": {
+      "": "Một kế hoạch rõ ràng  Tất cả những gì bạn cần"
+    }
+  },
+  "One-time payment": {
+    " Unlock your full personalized immigration plan": {
+      "": "Thanh toán một lần  Mở khóa kế hoạch di trú cá nhân hóa đầy đủ của bạn"
+    }
+  },
+  "Overview": "Overview",
+  "Page not found": "Page not found",
+  "Password": "Password",
+  "Password must be at least 8 characters": {
+    "": "Mật khẩu phải có ít nhất 8 ký tự"
   },
   "Password must contain at least 8 characters": {
     "": "Password must contain at least 8 characters."
   },
-  "Page not found": "Page not found",
-  "The page you're looking for doesn't exist or hasn't been built yet": {
-    "": "The page you're looking for doesn't exist or hasn't been built yet."
+  "Password reset!": "Đặt lại mật khẩu!",
+  "Passwords do not match": {
+    "": "Mật khẩu không khớp"
   },
-  "Return home": "Return home",
-  "Error": "Error",
-  "Something went wrong": "Something went wrong",
-  "The page hit an unexpected error while rendering": {
-    " Try again, and if it persists, check the server logs": {
-      "": "The page hit an unexpected error while rendering. Try again, and if it persists, check the server logs."
-    }
-  },
-  "Go home": "Go home",
-  "Admin": "Admin",
-  "Step 1 of 4": "Step 1 of 4",
-  "Step 2 of 4": "Step 2 of 4",
-  "Step 3 of 4": "Step 3 of 4",
-  "Step 4 of 4": "Step 4 of 4",
-  "Tell us a bit about yourself": {
-    "": "Tell us a bit about yourself."
-  },
-  "Where do you want to go?": "Where do you want to go?",
-  "Your immigration goals and timing": {
-    "": "Your immigration goals and timing."
-  },
+  "Platform Status": "Platform Status",
+  "Plus": "Plus",
+  "Possible paths": "Các con đường khả thi",
+  "Preferred language": "Preferred language",
+  "Premium": "Premium",
+  "Premium dashboard": "Bảng điều khiển Premium",
+  "Pricing": "Pricing",
+  "Prior visa refusal?": "Prior visa refusal?",
+  "Priority AI guidance": "Hướng dẫn AI ưu tiên",
+  "Probability score": "Probability score",
   "Professional experience and finances": {
     "": "Professional experience and finances."
   },
-  "You're ready to see your first strategy": "You're ready to see your first strategy",
-  "Nationality": "Nationality",
-  "Where do you live now?": "Where do you live now?",
+  "Profile": "Profile",
+  "Profile, finance, case": "Hồ sơ, tài chính, trường hợp",
+  "Readiness": "Sự sẵn sàng",
+  "Readiness score": "Readiness score",
+  "Ready": "Sẵn sàng",
+  "Recommended pathway": "Recommended pathway",
+  "Redirecting…": "Đang chuyển hướng…",
   "Relationship status": "Relationship status",
-  "Children": "Children",
-  "Preferred language": "Preferred language",
-  "Target country": "Target country",
   "Relocation timeline": "Relocation timeline",
-  "Prior visa refusal?": "Prior visa refusal?",
-  "Any criminal record?": "Any criminal record?",
-  "What do you do?": "What do you do?",
-  "Years of experience": "Years of experience",
-  "Education level": "Education level",
-  "English level": "English level",
-  "Available capital": "Available capital",
+  "Remember your password?": "Bạn có nhớ mật khẩu của mình không?",
+  "Repeat your password": "Repeat your password",
+  "Resend code": "Gửi lại mã",
+  "Resend code in {n}s": "Gửi lại mã trong {n}s",
+  "Reset code": "Đặt lại mã",
+  "Reset password": "Đặt lại mật khẩu",
+  "Resetting": {
+    "": {
+      "": {
+        "": "Đang đặt lại"
+      }
+    }
+  },
+  "Retry": "Retry",
+  "Return home": "Return home",
   "Review and continue": "Review and continue",
+  "Risks": "Risks",
   "Saving": {
     "": {
       "": {
@@ -171,23 +378,411 @@
       }
     }
   },
-  "Your session is no longer available": {
-    " Sign in again to continue onboarding": {
-      "": "Your session is no longer available. Sign in again to continue onboarding."
+  "Scenario simulation": "Scenario simulation",
+  "See how it works": "Xem cách hoạt động",
+  "Select language": "Select language",
+  "Send reset code": "Gửi mã đặt lại",
+  "Sending": {
+    "": {
+      "": {
+        "": "Đang gửi"
+      }
     }
   },
-  "Your profile could not be saved right now": {
-    " Retry before moving to the next step": {
-      "": "Your profile could not be saved right now. Retry before moving to the next step."
+  "Set new password": "Đặt mật khẩu mới",
+  "Sign in": "Sign in",
+  "Sign in to continue your case strategy": "Đăng nhập để tiếp tục chiến lược trường hợp của bạn",
+  "Sign in to continue your immigration strategy": {
+    "": "Sign in to continue your immigration strategy."
+  },
+  "Sign out": "Sign out",
+  "Sign up": "Sign up",
+  "Signing in": {
+    "": {
+      "": {
+        "": "Signing in..."
+      }
     }
+  },
+  "Simple pricing": "Simple pricing",
+  "Six powerful tools working together to give you clarity, confidence, and a concrete plan": {
+    "": "Six powerful tools working together to give you clarity, confidence, and a concrete plan."
+  },
+  "Software Engineer, Turkey to USA": "Kỹ sư phần mềm, Thổ Nhĩ Kỳ đến Hoa Kỳ",
+  "Software Engineering, AI/ML, Product": "Kỹ thuật phần mềm, AI/ML, Sản phẩm",
+  "Something went wrong": {
+    "": "Có điều gì đó không đúng",
+    " Please try again": {
+      "": "Có điều gì đó không đúng  Vui lòng thử lại"
+    }
+  },
+  "Spouse, children, parents — know which family visa fits and how long it takes": {
+    "": "Vợ/chồng, con cái, cha mẹ — biết visa gia đình nào phù hợp và mất bao lâu"
+  },
+  "Start a business": "Start a business",
+  "Start free": {
+    "": "Start free",
+    " Upgrade when you're ready for your full immigration plan": {
+      "": "Start free. Upgrade when you're ready for your full immigration plan."
+    }
+  },
+  "Start with the essentials and complete your immigration profile later": {
+    "": "Start with the essentials and complete your immigration profile later."
+  },
+  "Start your plan": "Start your plan",
+  "Starter": "Starter",
+  "Step 1 of 4": "Step 1 of 4",
+  "Step 2 of 4": "Step 2 of 4",
+  "Step 3 of 4": "Step 3 of 4",
+  "Step 4 of 4": "Step 4 of 4",
+  "Step-by-step roadmap": "Lộ trình từng bước",
+  "Stop guessing": {
+    " Get a clear plan for your immigration journey — in minutes, not months": {
+      "": "Đừng đoán nữa  Nhận một kế hoạch rõ ràng cho hành trình di trú của bạn — trong vài phút, không phải vài tháng"
+    }
+  },
+  "Strategy": "Strategy",
+  "Study abroad": "Study abroad",
+  "Suggested cities": "Các thành phố gợi ý",
+  "Suitability": "Tính phù hợp",
+  "System health": "System health",
+  "Tell us a bit about yourself": {
+    "": "Tell us a bit about yourself."
+  },
+  "Tell us about you": "Tell us about you",
+  "Tell us about yourself": {
+    " Our AI analyzes 47 visa categories, checks your readiness, and gives you a step-by-step plan with timeline, cost, and documents — in minutes": {
+      "": "Hãy cho chúng tôi biết về bạn  AI của chúng tôi phân tích 47 loại visa, kiểm tra sự sẵn sàng của bạn và cung cấp cho bạn một kế hoạch từng bước với thời gian, chi phí và tài liệu — trong vài phút"
+    }
+  },
+  "The page hit an unexpected error while rendering": {
+    " Try again, and if it persists, check the server logs": {
+      "": "The page hit an unexpected error while rendering. Try again, and if it persists, check the server logs."
+    }
+  },
+  "The page you're looking for doesn't exist or hasn't been built yet": {
+    "": "The page you're looking for doesn't exist or hasn't been built yet."
   },
   "The platform could not load your profile draft": {
     " Retry before continuing": {
       "": "The platform could not load your profile draft. Retry before continuing."
     }
   },
-  "Document status": "Document status",
-  "Case health": "Case health",
-  "Action roadmap": "Action roadmap",
-  "No cases yet": "No cases yet"
+  "The problem": "Vấn đề",
+  "The readiness score showed me exactly what I was missing": {
+    " I uploaded 3 documents and my score jumped from 52 to 81": {
+      "": "Điểm sẵn sàng cho tôi biết chính xác những gì tôi còn thiếu  Tôi đã tải lên 3 tài liệu và điểm của tôi đã tăng từ 52 lên 81"
+    }
+  },
+  "The solution": "Giải pháp",
+  "There's always a way — we help you find it": {
+    "": "Luôn có một cách — chúng tôi giúp bạn tìm ra nó"
+  },
+  "Three steps": {
+    " No confusion": {
+      "": "Ba bước  Không nhầm lẫn"
+    }
+  },
+  "Timeline": "Timeline",
+  "Timeline estimate": "Ước lượng thời gian",
+  "Toggle menu": "Chuyển đổi menu",
+  "Try it now": "Thử ngay bây giờ",
+  "Turkey, India, Brazil": {
+    "": {
+      "": {
+        "": "Thổ Nhĩ Kỳ, Ấn Độ, Brazil"
+      }
+    }
+  },
+  "United States, Canada": {
+    "": {
+      "": {
+        "": "Hoa Kỳ, Canada"
+      }
+    }
+  },
+  "Upload document": "Upload document",
+  "Upload your resume and education documents to increase your readiness score to 90+": {
+    "": "Tải lên sơ yếu lý lịch và tài liệu giáo dục của bạn để tăng điểm sẵn sàng lên 90+"
+  },
+  "Verification code": "Mã xác minh",
+  "Verify code": "Xác minh mã",
+  "Verify email": "Xác minh email",
+  "Verifying": {
+    "": {
+      "": {
+        "": "Đang xác minh"
+      }
+    }
+  },
+  "Visa categories analyzed": "Các loại visa đã được phân tích",
+  "Visa types": "Các loại visa",
+  "Visa, timeline, documents, cost — everything in one clear view": {
+    "": "Visa, thời gian, tài liệu, chi phí — mọi thứ trong một cái nhìn rõ ràng"
+  },
+  "We analyze multiple countries, visa types, and pathways to match you with the best option based on your profile": {
+    "": "Chúng tôi phân tích nhiều quốc gia, loại visa và lộ trình để phù hợp với bạn với lựa chọn tốt nhất dựa trên hồ sơ của bạn"
+  },
+  "We analyze your options": "We analyze your options",
+  "We sent a 6-digit code to": "Chúng tôi đã gửi mã 6 chữ số đến",
+  "We show you what to do": "Chúng tôi cho bạn biết phải làm gì",
+  "We turn everything into one clear plan": {
+    "": "Chúng tôi biến mọi thứ thành một kế hoạch rõ ràng"
+  },
+  "Welcome back": "Welcome back",
+  "What do you do?": "What do you do?",
+  "What you get": "Những gì bạn nhận được",
+  "Whatever your reason, we can help": {
+    "": "Dù lý do của bạn là gì, chúng tôi có thể giúp"
+  },
+  "Where are you from?": "Bạn đến từ đâu?",
+  "Where do you live now?": "Where do you live now?",
+  "Where do you want to go?": "Where do you want to go?",
+  "Work abroad": "Work abroad",
+  "Wrong email?": "Email sai?",
+  "Years of experience": "Years of experience",
+  "You're ready to see your first strategy": "You're ready to see your first strategy",
+  "Your background, education, experience, and goals": {
+    " Takes 2 minutes": {
+      "": "Hồ sơ, giáo dục, kinh nghiệm và mục tiêu của bạn  Mất 2 phút"
+    }
+  },
+  "Your best path": "Lộ trình tốt nhất của bạn",
+  "Your best path, ranked by fit": "Lộ trình tốt nhất của bạn, được xếp hạng theo sự phù hợp",
+  "Your immigration goals and timing": {
+    "": "Your immigration goals and timing."
+  },
+  "Your new life starts here": {
+    "": "Cuộc sống mới của bạn bắt đầu từ đây"
+  },
+  "Your password has been updated": {
+    " You can now sign in": {
+      "": "Mật khẩu của bạn đã được cập nhật  Bạn có thể đăng nhập ngay bây giờ"
+    }
+  },
+  "Your personalized result": "Kết quả cá nhân hóa của bạn",
+  "Your profile could not be saved right now": {
+    " Retry before moving to the next step": {
+      "": "Your profile could not be saved right now. Retry before moving to the next step."
+    }
+  },
+  "Your session is no longer available": {
+    " Sign in again to continue onboarding": {
+      "": "Your session is no longer available. Sign in again to continue onboarding."
+    }
+  },
+  "one-time": "one-time",
+  "without confusion": {
+    "": "không có sự nhầm lẫn"
+  },
+  "FAQ": "Câu hỏi thường gặp",
+  "tools": {
+    "pageTitle": "Công cụ di trú miễn phí",
+    "pageSubtitle": "Câu trả lời nhanh — không cần đăng ký.",
+    "eligibilityChecker": {
+      "title": "Trình kiểm tra đủ điều kiện",
+      "description": "Trả lời 6 câu hỏi, xem các loại visa bạn có khả năng đủ điều kiện."
+    },
+    "costEstimator": {
+      "title": "Công cụ ước tính chi phí",
+      "description": "Chi phí tổng thể để chuyển ra nước ngoài — không chỉ là phí visa."
+    },
+    "timelineCalculator": {
+      "title": "Trình tính toán thời gian",
+      "description": "Dự đoán thời gian bạn sẽ đến từng bước."
+    }
+  },
+  "eligibilityChecker": {
+    "pageTitle": "Trình kiểm tra đủ điều kiện visa miễn phí",
+    "pageSubtitle": "Trả lời 6 câu hỏi ngắn. Xem danh sách ngắn các loại visa bạn có khả năng đủ điều kiện — không cần đăng ký.",
+    "faq1": {
+      "question": "Trình kiểm tra đủ điều kiện miễn phí không?",
+      "answer": "Có. Hoàn toàn hoạt động trên trình duyệt của bạn và không yêu cầu tài khoản."
+    },
+    "faq2": {
+      "question": "Kiểm tra chính xác đến mức nào?",
+      "answer": "Sử dụng các quy tắc đủ điều kiện công khai cho từng con đường. Là một bộ lọc ban đầu mạnh mẽ nhưng không thay thế cho phân tích toàn diện hỗ trợ AI hoặc tư vấn pháp lý."
+    },
+    "faq3": {
+      "question": "Nó có lưu lại câu trả lời của tôi không?",
+      "answer": "Không. Công cụ hoạt động cục bộ trên trình duyệt của bạn. Nếu bạn muốn lưu kết quả của mình vào hồ sơ, hãy đăng ký."
+    },
+    "emailCapture": {
+      "title": "Phân tích hoàn toàn hỗ trợ AI",
+      "subtitle": "Nhận kế hoạch A/B/C cá nhân hóa qua email và điểm chuẩn bị."
+    }
+  },
+  "costEstimator": {
+    "pageTitle": "Công cụ ước tính chi phí di trú",
+    "pageSubtitle": "Chọn một con đường, thêm kích thước gia đình của bạn và xem tổng chi phí thực tế — không chỉ là phí visa.",
+    "faq1": {
+      "question": "Dự đoán bao gồm những gì?",
+      "answer": "Phí nhà nước, phí pháp lý/đại lý, quỹ định cư, vé máy bay, chỗ ở ban đầu và quỹ dự phòng 10% cho chi phí bất ngờ."
+    },
+    "faq2": {
+      "question": "Điều này có đúng cho tình huống cụ thể của tôi không?",
+      "answer": "Là một ước tính hướng dẫn tốt cho từng con đường. Chi phí thực tế của bạn sẽ thay đổi tùy thuộc vào kích thước gia đình, thành phố và lựa chọn luật sư. Đăng ký để có báo cáo cá nhân hóa."
+    },
+    "emailCapture": {
+      "title": "Báo cáo chi phí đầy đủ qua email",
+      "subtitle": "Bảng chứa các chi phí theo dòng được điều chỉnh theo quốc gia mục tiêu của bạn."
+    }
+  },
+  "timelineCalculator": {
+    "pageTitle": "Trình tính toán thời gian",
+    "pageSubtitle": "Chọn một con đường. Xem khi nào bạn sẽ đến — bao gồm chuẩn bị, nộp đơn, xử lý và đến nơi.",
+    "faq1": {
+      "question": "Tại sao thời gian chuẩn bị lại được bao gồm?",
+      "answer": "Thời gian không bắt đầu khi bạn nộp đơn — nó bắt đầu khi bạn bắt đầu thu thập tài liệu. Chúng tôi thêm một khoảng thời gian chuẩn bị thực tế cho từng con đường."
+    },
+    "faq2": {
+      "question": "Dự đoán này chính xác đến mức nào?",
+      "answer": "Phản ánh thời gian xử lý trung bình đã công bố. Các trường hợp cá nhân có thể nhanh hơn hoặc chậm hơn tùy thuộc vào RFE, hạn ngạch quốc gia và tính đầy đủ của bằng chứng."
+    },
+    "emailCapture": {
+      "title": "Trình theo dõi thời gian hàng tuần",
+      "subtitle": "Chúng tôi sẽ gửi cho bạn một kế hoạch hàng tuần đơn giản qua email cho đến ngày đến nơi."
+    }
+  },
+  "visaIndex": {
+    "pageTitle": "Tất cả các loại visa",
+    "pageSubtitle": "Chi phí, thời gian và đủ điều kiện cho từng con đường mà chúng tôi bao gồm.",
+    "months": "tháng"
+  },
+  "bestCountries": {
+    "pageTitle": "Các quốc gia tốt nhất theo nghề nghiệp",
+    "pageSubtitle": "Chọn nghề của bạn để xem các điểm đến di trú được xếp hạng.",
+    "cardTitle": "Các quốc gia tốt nhất cho {profession}",
+    "breadcrumb": "Các quốc gia tốt nhất",
+    "rankedSubtitle": "Được xếp hạng theo chi phí, thời gian và thường trú. Dữ liệu được cập nhật cho năm 2026.",
+    "topPathway": "Con đường tốt nhất",
+    "seeAllPathways": "Xem tất cả các con đường",
+    "visaDetails": "Chi tiết {code}",
+    "otherProfessions": "Các nghề khác"
+  },
+  "compare": {
+    "pageTitle": "So sánh visa",
+    "pageSubtitle": "So sánh song song các quyết định con đường phổ biến nhất.",
+    "vs": "so với",
+    "comparingSubtitle": "So sánh chi phí, thời gian và sự phù hợp giữa {nameA} và {nameB} — để bạn không lãng phí tháng trời vào con đường sai.",
+    "rowFullName": "Tên đầy đủ",
+    "rowCategory": "Danh mục",
+    "rowDestination": "Quốc gia mục tiêu",
+    "rowTypicalDuration": "Thời gian điển hình",
+    "rowCostUsd": "Chi phí (USD)",
+    "rowLeadsToPR": "Dẫn đến thường trú",
+    "yes": "Có",
+    "no": "Không",
+    "bestFor": "Tối ưu nhất",
+    "otherComparisons": "Các so sánh visa khác"
+  },
+  "visaMatch": {
+    "pageTitle": "Phù hợp visa",
+    "pageSubtitle": "Chọn quốc gia mục tiêu và hồ sơ của bạn để xem 3 con đường đầu tiên.",
+    "cardSubtitle": "Visa tốt nhất cho {profession}",
+    "breadcrumb": "Phù hợp Visa",
+    "rankedSubtitle": "Đã xếp hạng {count} con đường di cư cho {profession}; với mục tiêu {countryName}. Mỗi lựa chọn được chấm điểm dựa trên sự phù hợp, chi phí, thời gian và rủi ro.",
+    "getPersonalizedMatch": "Nhận sự phù hợp cá nhân hóa của bạn",
+    "freeEligibilityCheck": "Kiểm tra đủ điều kiện miễn phí",
+    "typicalTimeline": "Thời gian biểu điển hình",
+    "typicalCost": "Chi phí điển hình",
+    "duration": "Thời gian",
+    "strengths": "Điểm mạnh",
+    "moreVisaGuides": "Hướng dẫn visa thêm cho {countryName}"
+  },
+  "moveTo": {
+    "pageTitle": "Hướng dẫn di chuyển quốc gia",
+    "pageSubtitle": "Hướng dẫn từng bước theo nguồn gốc và quốc gia mục tiêu.",
+    "fromLabel": "{flag} từ {name}",
+    "cardSubtitle": "Hướng dẫn cho công dân {demonym}",
+    "h1": "Di chuyển đến thành phố {toName} từ {fromName}",
+    "intro": "Hướng dẫn thực tế cho công dân {demonym} di chuyển đến thành phố {toName}. Chọn một con đường, hiểu thời gian biểu và chi phí, nhận điểm chuẩn bị cá nhân hóa.",
+    "topVisaPathways": "Những con đường visa tốt nhất cho {toName}",
+    "howToStepByStep": "Cách di chuyển từng bước",
+    "moreCountryGuides": "Hướng dẫn thêm cho các quốc gia"
+  },
+  "Onboarding could not load": "Không thể tải lên quá trình onboarding",
+  "Review the highlighted profile fields before continuing": {
+    "": "Xem lại các trường hồ sơ được đánh dấu trước khi tiếp tục"
+  },
+  "Skip": "Bỏ qua",
+  "Who are you?": "Bạn là ai?",
+  "Select your nationality": "Chọn quốc tịch của bạn",
+  "Select current country": "Chọn quốc gia hiện tại",
+  "e": {
+    "g": {
+      " English, Turkish": {
+        "": {
+          "": {
+            "": "ví dụ. Tiếng Anh, Tiếng Thổ Nhĩ Kỳ..."
+          }
+        }
+      },
+      " Software Engineer, Doctor, Designer": {
+        "": {
+          "": {
+            "": "ví dụ. Kỹ sư Phần mềm, Bác sĩ, Nhà thiết kế..."
+          }
+        }
+      },
+      " 50000": "ví dụ. 50000"
+    }
+  },
+  "Your background": "Hồ sơ của bạn",
+  "English proficiency": "Trình độ tiếng Anh",
+  "Available capital (USD)": "Vốn có sẵn (USD)",
+  "Your dream destination and timeline": {
+    "": "Điểm đến mơ ước và thời gian của bạn"
+  },
+  "When do you want to move?": "Khi nào bạn muốn di chuyển?",
+  "Have you had a visa refusal before?": "Bạn đã từng bị từ chối visa trước đây chưa?",
+  "This helps us give accurate recommendations": {
+    " Your data is private and secure": {
+      "": "Điều này giúp chúng tôi đưa ra những khuyến nghị chính xác  Dữ liệu của bạn là riêng tư và an toàn"
+    }
+  },
+  "You're all set!": "Bạn đã sẵn sàng!",
+  "Amazing! Your profile is almost complete": {
+    " We can build great strategies for you": {
+      "": "Tuyệt vời! Hồ sơ của bạn gần như hoàn thành  Chúng tôi có thể xây dựng những chiến lược tuyệt vời cho bạn"
+    }
+  },
+  "Great start! You can always complete more details from your profile page": {
+    "": "Khởi đầu tuyệt vời! Bạn luôn có thể hoàn thành thêm chi tiết từ trang hồ sơ của bạn"
+  },
+  "No worries! You can fill in more details anytime from your dashboard": {
+    "": "Không lo lắng! Bạn có thể điền thêm chi tiết bất cứ lúc nào từ bảng điều khiển của bạn"
+  },
+  "See your AI analysis": "Xem phân tích AI của bạn",
+  "there": "ở đó",
+  "Immigrant": "Người nhập cư",
+  "Guru": "Guru",
+  "Hey {name}, welcome aboard!": "Chào {name}, chào mừng bạn đến với chúng tôi!",
+  "Let's build your immigration profile in under 2 minutes": {
+    " The more we know, the better strategies we can craft for you": {
+      "": "Hãy cùng xây dựng hồ sơ di trú của bạn trong chưa đầy 2 phút  Càng biết nhiều, chúng tôi càng có thể tạo ra những chiến lược tốt hơn cho bạn"
+    }
+  },
+  "Let's go": "Đi nào",
+  "Takes about 2 minutes": {
+    " You can skip anything": {
+      "": "Mất khoảng 2 phút  Bạn có thể bỏ qua bất cứ điều gì"
+    }
+  },
+  "score": {
+    "outOf100": "Trên 100",
+    "thisProfileIs": "Hồ sơ này ở mức độ {readiness}",
+    "scoredOn": "Immigrant Guru đã chấm điểm hồ sơ này dựa trên giáo dục, kinh nghiệm làm việc, ngôn ngữ, sự phù hợp với quốc gia mục tiêu và 8 yếu tố khác.",
+    "getMyOwnScore": "Nhận điểm số của riêng tôi",
+    "shareOnX": "Chia sẻ trên X"
+  },
+  "visa": {
+    "cost": "Chi phí",
+    "prPath": "Con đường định cư lâu dài",
+    "idealFor": "Những người đủ điều kiện",
+    "requirements": "Yêu cầu",
+    "risksAndRejection": "Rủi ro và lý do từ chối phổ biến",
+    "checkReadiness": "Kiểm tra sự chuẩn bị của tôi cho {code}",
+    "moreVisaGuides": "Hướng dẫn visa thêm cho {countryName}"
+  }
 }

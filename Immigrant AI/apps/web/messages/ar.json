@@ -1,103 +1,165 @@
 {
-  "Immigrant Guru - AI Immigration Strategy Platform": "Immigrant Guru - منصة استراتيجية الهجرة بالذكاء الاصطناعي",
-  "Immigrant Guru - Move to a New Country Without Confusion": "Immigrant Guru - انتقل إلى بلد جديد دون ارتباك",
-  "Language": "اللغة",
-  "Select language": "اختر اللغة",
-  "How it works": "كيف يعمل",
-  "Find your path": "اعثر على مسارك",
-  "Pricing": "الأسعار",
-  "Home": "الرئيسية",
-  "Sign in": "تسجيل الدخول",
-  "Sign up": "إنشاء حساب",
-  "Dashboard": "لوحة التحكم",
-  "Log out": "تسجيل الخروج",
-  "Move to a New Country Without Confusion": "انتقل إلى بلد جديد دون ارتباك",
-  "Get your personalized visa, readiness score, and action plan in minutes": {
-    "": "احصل خلال دقائق على مسار التأشيرة المخصص لك ودرجة الجاهزية وخطة العمل."
+  "Active": "نشط",
+  "Cancel": "إلغاء",
+  "Capture the destination, program, current stage, and risk signals that anchor strategy generation, scoring, and document workflows": {
+    "": "التقاط الوجهة، البرنامج، المرحلة الحالية، وإشارات المخاطر التي تؤسس لتوليد الاستراتيجية، التقييم، وتدفقات الوثائق"
   },
-  "Benefits": "المزايا",
-  "Everything you need in one place": "كل ما تحتاجه في مكان واحد",
-  "Simple pricing": "تسعير بسيط",
-  "Free": "مجاني",
-  "Starter": "المبتدئ",
-  "Plus": "بلس",
-  "Premium": "بريميوم",
-  "Create your account": "أنشئ حسابك",
-  "Welcome back": "مرحبًا بعودتك",
-  "First name": "الاسم الأول",
-  "Last name": "اسم العائلة",
-  "Email": "البريد الإلكتروني",
-  "Password": "كلمة المرور",
-  "Confirm password": "تأكيد كلمة المرور",
-  "Overview": "نظرة عامة",
-  "Profile": "الملف الشخصي",
-  "Cases": "الملفات",
-  "Strategy": "الاستراتيجية",
-  "Timeline": "الجدول الزمني",
-  "Documents": "المستندات",
-  "Risks": "المخاطر",
-  "Copilot": "المساعد",
-  "Comparison": "المقارنة",
-  "Retry": "أعد المحاولة",
-  "Back": "رجوع",
-  "Next": "التالي",
-  "Finish": "إنهاء",
-  "Generate strategy": "إنشاء الاستراتيجية",
-  "Upload document": "رفع مستند",
-  "Scenario simulation": "محاكاة السيناريو",
-  "My plan": "خطتي",
-  "Sign out": "تسجيل الخروج",
-  "Log in": "تسجيل الدخول",
-  "Start your plan": "ابدأ خطتك",
-  "Readiness score": "درجة الجاهزية",
-  "Probability score": "درجة الاحتمال",
-  "Recommended pathway": "المسار الموصى به",
-  "Next best action": "أفضل إجراء تالي",
-  "Immigrant Guru helps you evaluate pathways, compare strategies, and act with clarity": {
-    "": "يساعدك Immigrant Guru على تقييم المسارات ومقارنة الاستراتيجيات واتخاذ القرار بوضوح."
+  "Case Detail": "تفاصيل الحالة",
+  "Case planning workspace": "مساحة تخطيط الحالة",
+  "Case portfolio": "محفظة الحالة",
+  "Case status": "حالة الحالة",
+  "Case title": "عنوان الحالة",
+  "Closed": "مغلقة",
+  "Close": "إغلاق",
+  "Close new case": "إغلاق حالة جديدة",
+  "Collect recommendation letters and evidence of impact": {
+    "": "جمع رسائل التوصية وأدلة التأثير"
   },
-  "A focused workspace for immigration decisions": "مساحة عمل مركزة لقرارات الهجرة",
-  "Six powerful tools working together to give you clarity, confidence, and a concrete plan": {
-    "": "ست أدوات قوية تعمل معًا لمنحك الوضوح والثقة وخطة عملية."
+  "Continue your immigration planning": {
+    " Keep profile and case data aligned": {
+      "": "تابع تخطيط الهجرة الخاص بك  حافظ على توافق البيانات الشخصية وحالة الحالة"
+    }
   },
-  "Immigration Score": "درجة الهجرة",
-  "Explainable readiness signals": "مؤشرات جاهزية قابلة للتفسير",
-  "System health": "حالة النظام",
-  "Platform Status": "حالة المنصة",
-  "Work abroad": "العمل في الخارج",
-  "Study abroad": "الدراسة في الخارج",
-  "Move with family": "الانتقال مع العائلة",
-  "Start a business": "ابدأ عملاً",
-  "Tell us about you": "أخبرنا عنك",
-  "We analyze your options": "نحلل خياراتك",
-  "Get your plan": "احصل على خطتك",
-  "Find the plan that fits your journey": "اختر الخطة المناسبة لرحلتك",
-  "Start free": {
-    " Upgrade when you're ready for your full immigration plan": {
-      "": "ابدأ مجانًا. قم بالترقية عندما تكون جاهزًا لخطة الهجرة الكاملة."
-    },
-    "": "ابدأ مجانًا"
+  "Create a case for each migration plan you want to evaluate, compare, or execute": {
+    " Cases anchor strategy generation, scoring, and document collection in one workspace": {
+      "": "أنشئ حالة لكل خطة هجرة تريد تقييمها، مقارنتها، أو تنفيذها  الحالات تؤسس لتوليد الاستراتيجية، التقييم، وجمع الوثائق في مساحة عمل واحدة"
+    }
   },
-  "Best value": "أفضل قيمة",
-  "one-time": "مرة واحدة",
-  "No subscriptions": {
-    " Pay once, unlock your full plan": {
-      " 30-day money-back guarantee": {
-        "": "لا توجد اشتراكات. ادفع مرة واحدة وافتح خطتك الكاملة. ضمان استرداد لمدة 30 يومًا."
+  "Create first case": "إنشاء الحالة الأولى",
+  "Create strategy case": "إنشاء حالة استراتيجية",
+  "Creating case": {
+    "": {
+      "": {
+        "": "إنشاء حالة"
       }
     }
   },
-  "Start with the essentials and complete your immigration profile later": {
-    "": "ابدأ بالأساسيات وأكمل ملف الهجرة لاحقًا."
+  "Current stage": "المرحلة الحالية",
+  "Data unavailable": "البيانات غير متاحة",
+  "Define a migration pathway to evaluate": "تحديد مسار هجرة للتقييم",
+  "Destination pending": "الوجهة معلقة",
+  "Draft": "مسودة",
+  "Evaluation signals": "إشارات التقييم",
+  "Example: eligibility_review, document_collection, filing_ready": "مثال: eligibility_review, document_collection, filing_ready",
+  "Higher values should indicate higher execution or eligibility risk": {
+    "": "القيم الأعلى يجب أن تشير إلى مخاطر تنفيذ أو أهلية أعلى"
   },
-  "Sign in to continue your immigration strategy": {
-    "": "سجّل الدخول لمتابعة استراتيجية الهجرة الخاصة بك."
+  "Immigration strategy cases": "حالات استراتيجية الهجرة",
+  "In review": "قيد المراجعة",
+  "Internal Console": "وحدة التحكم الداخلية",
+  "Keep notes focused on blockers, evidence gaps, and next actions": {
+    "": "احتفظ بالملاحظات مركزة على العوائق، فجوات الأدلة، والإجراءات التالية"
   },
-  "Forgot your password?": "هل نسيت كلمة المرور؟",
-  "Create account": "إنشاء حساب",
-  "Create one": "أنشئ حسابًا",
+  "Latest score": "أحدث تقييم",
+  "Manage immigration strategy records that anchor pathway evaluation, stage tracking, scoring, and later document workflows": {
+    "": "إدارة سجلات استراتيجية الهجرة التي تؤسس لتقييم المسار، تتبع المرحلة، التقييم، وتدفقات الوثائق لاحقًا"
+  },
+  "New case": "حالة جديدة",
+  "New strategy case": "حالة استراتيجية جديدة",
+  "No changes to save": "لا توجد تغييرات لحفظها",
+  "No strategic notes recorded yet for this immigration path": {
+    "": "لا توجد ملاحظات استراتيجية مسجلة بعد لهذا المسار الهجري"
+  },
+  "No strategy cases yet": "لا توجد حالات استراتيجية بعد",
+  "on record": "مسجل",
+  "Open case": "فتح الحالة",
+  "Optional score snapshot if you want to retain a manual benchmark": {
+    "": "لقطة تقييم اختيارية إذا كنت ترغب في الاحتفاظ بمعيار يدوي"
+  },
+  "Pathway not defined yet": "لم يتم تحديد المسار بعد",
+  "Refresh cases": "تحديث الحالات",
+  "Review the highlighted case fields before saving": {
+    "": "مراجعة حقول الحالة المميزة قبل الحفظ"
+  },
+  "Risk score": "درجة المخاطر",
+  "Risk": "المخاطر",
+  "Save case changes": "حفظ تغييرات الحالة",
+  "Saving changes": {
+    "": {
+      "": {
+        "": "حفظ التغييرات"
+      }
+    }
+  },
+  "Score": "التقييم",
+  "Session": "الجلسة",
+  "Stage": "المرحلة",
+  "Start with a target country and pathway": "ابدأ بدولة مستهدفة ومسار",
+  "Strategy case created successfully": {
+    "": "تم إنشاء حالة استراتيجية بنجاح"
+  },
+  "Strategy identity": "هوية الاستراتيجية",
+  "Strategy notes": "ملاحظات الاستراتيجية",
+  "Target country": "البلد المستهدف",
+  "Target pathway or program": "المسار أو البرنامج المستهدف",
+  "The case portfolio could not be loaded": {
+    "": "لم يتم تحميل محفظة الحالة"
+  },
+  "Track every active migration path in one workspace": "تتبع كل مسار هجرة نشط في مساحة عمل واحدة",
+  "U": {
+    "S": {
+      " employment-based migration plan": "خطة هجرة قائمة على العمل في الولايات المتحدة"
+    }
+  },
+  "United States": "الولايات المتحدة",
+  "Update the case strategy record": "تحديث سجل استراتيجية الحالة",
+  "Updated": "تم التحديث",
+  "Workspace data could not be loaded": {
+    "": "لم يتم تحميل بيانات مساحة العمل"
+  },
+  "You are no longer authenticated": {
+    "": "لم تعد مصدقًا"
+  },
+  "case": "حالة",
+  "cases": "حالات",
+  "12-18 months": "12-18 شهرًا",
+  "3 country comparisons": "3 مقارنات بين الدول",
+  "A focused workspace for immigration decisions": "مساحة عمل مركزة لقرارات الهجرة",
+  "AI checks 47 visa categories and finds your best match": {
+    "": "الذكاء الاصطناعي يتحقق من 47 فئة تأشيرات ويجد أفضل تطابق لك"
+  },
+  "Access your immigration dashboard, decision plans, and case workspace": {
+    "": "الوصول إلى لوحة معلومات الهجرة الخاصة بك، خطط القرار، ومساحة العمل الخاصة بالقضية"
+  },
+  "Action roadmap": "خارطة الإجراءات",
+  "Admin": "الإدارة",
+  "Advanced action plan": "خطة عمل متقدمة",
   "Already have an account?": "هل لديك حساب بالفعل؟",
-  "Need an account?": "هل تحتاج إلى حساب؟",
+  "Any criminal record?": "هل لديك سجل جنائي؟",
+  "Available capital": "رأس المال المتاح",
+  "Average time to first plan": "متوسط الوقت للخطة الأولى",
+  "Back": "رجوع",
+  "Benefits": "المزايا",
+  "Best value": "أفضل قيمة",
+  "Best visa option": "أفضل خيار تأشيرة",
+  "Best visa recommendation": "أفضل توصية تأشيرة",
+  "Better case preparation": "إعداد أفضل للقضية",
+  "Built for immigrants, by immigrants": "مصمم للمهاجرين، بواسطة المهاجرين",
+  "Case health": "حالة الملف",
+  "Cases": "الملفات",
+  "Check your email": "تحقق من بريدك الإلكتروني",
+  "Checkout failed": "فشل الدفع",
+  "Children": "عدد الأطفال",
+  "Choose a new password for your account": {
+    "": "اختر كلمة مرور جديدة لحسابك"
+  },
+  "Comparison": "المقارنة",
+  "Confirm password": "تأكيد كلمة المرور",
+  "Confirm your password": {
+    "": "تأكيد كلمة مرورك"
+  },
+  "Confusing visa rules that change every year": "قواعد تأشيرات مربكة تتغير كل عام",
+  "Copilot": "المساعد",
+  "Cost estimate": "تقدير التكلفة",
+  "Countries": "الدول",
+  "Countries supported": "الدول المدعومة",
+  "Create account": "إنشاء حساب",
+  "Create an account to start building an immigration profile, evaluate pathways, and manage your cases": {
+    "": "أنشئ حسابًا لبدء بناء ملف هجرة، تقييم المسارات، وإدارة قضاياك"
+  },
+  "Create one": "أنشئ حسابًا",
+  "Create your Immigrant Guru account": "أنشئ حسابك في Immigrant Guru",
+  "Create your account": "أنشئ حسابك",
   "Creating account": {
     "": {
       "": {
@@ -105,65 +167,210 @@
       }
     }
   },
-  "Signing in": {
-    "": {
-      "": {
-        "": "جارٍ تسجيل الدخول..."
+  "Dashboard": "لوحة التحكم",
+  "Data Scientist, India to Canada": "عالم بيانات، الهند إلى كندا",
+  "Deeper analysis": "تحليل أعمق",
+  "Document checklist": "قائمة التحقق من الوثائق",
+  "Document status": "حالة المستندات",
+  "Documents": "المستندات",
+  "E-2 investor, EB-5, startup visa — explore entrepreneurial immigration routes": {
+    "": "مستثمر E-2، EB-5، تأشيرة بدء التشغيل - استكشف طرق الهجرة الريادية"
+  },
+  "Education level": "المستوى التعليمي",
+  "Email": "البريد الإلكتروني",
+  "English level": "مستوى الإنجليزية",
+  "Enter a valid email address": {
+    "": "أدخل بريدًا إلكترونيًا صالحًا."
+  },
+  "Enter it below to verify your account": {
+    "": "أدخله أدناه للتحقق من حسابك"
+  },
+  "Enter the 6-digit code from your email": {
+    "": "أدخل الرمز المكون من 6 أرقام من بريدك الإلكتروني"
+  },
+  "Enter the 6-digit code": {
+    "": "أدخل الرمز المكون من 6 أرقام"
+  },
+  "Enter your email and we'll send you a reset code": {
+    "": "أدخل بريدك الإلكتروني وسنرسل لك رمز إعادة تعيين"
+  },
+  "Enter your email": {
+    "": "أدخل بريدك الإلكتروني"
+  },
+  "Error": "خطأ",
+  "Est": {
+    " cost": "التكلفة المقدرة"
+  },
+  "Estimated cost": "التكلفة المقدرة",
+  "Even if you think you don't qualify — we'll show you what's possible": {
+    "": "حتى لو كنت تعتقد أنك لا تتأهل - سنظهر لك ما هو ممكن"
+  },
+  "Everything in Plus": "كل شيء في Plus",
+  "Everything in Starter": "كل شيء في Starter",
+  "Everything you need in one place": "كل ما تحتاجه في مكان واحد",
+  "Expanded document guidance": "إرشادات مستندات موسعة",
+  "Expensive lawyers who charge $5,000+ for basic advice": "محامون مكلفون يتقاضون 5000 دولار أو أكثر مقابل نصيحة أساسية",
+  "Explainable readiness signals": "مؤشرات جاهزية قابلة للتفسير",
+  "F-1, OPT, STEM extension — understand your path from student to professional": {
+    "": "F-1، OPT، تمديد STEM - افهم مسارك من طالب إلى محترف"
+  },
+  "Filing + legal fees": "رسوم التقديم + القانونية",
+  "Find my best path": "ابحث عن أفضل مسار لي",
+  "Find the plan that fits your journey": "اختر الخطة المناسبة لرحلتك",
+  "Find the right work visa for your skills and experience": {
+    " H-1B, EB-2, O-1, and more": {
+      "": "ابحث عن تأشيرة العمل المناسبة لمهاراتك وخبرتك H-1B، EB-2، O-1، والمزيد"
+    }
+  },
+  "Find your best path": "ابحث عن أفضل مسارك",
+  "Find your path": "اعثر على مسارك",
+  "Finish": "إنهاء",
+  "First name": "الاسم الأول",
+  "First name is too long": {
+    "": "الاسم الأول طويل جدًا"
+  },
+  "For comparing options": "لمقارنة الخيارات",
+  "For every situation": "لكل موقف",
+  "For one clear path": "لمسار واضح واحد",
+  "Forgot your password?": "هل نسيت كلمة المرور؟",
+  "Free": "مجاني",
+  "Free to start · No credit card · Takes 2 minutes": "مجاني للبدء · لا حاجة لبطاقة ائتمان · يستغرق دقيقتين",
+  "From filing to approval": "من التقديم إلى الموافقة",
+  "Full path comparison": "مقارنة كاملة للمسارات",
+  "Full plan for 1 country": "خطة كاملة لدولة واحدة",
+  "Full strategic experience": "تجربة استراتيجية كاملة",
+  "Full strategic recommendation": "توصية استراتيجية كاملة",
+  "Generate strategy": "إنشاء الاستراتيجية",
+  "Get Started": "ابدأ",
+  "Get your personalized visa, readiness score, and action plan in minutes": {
+    "": "احصل خلال دقائق على مسار التأشيرة المخصص لك ودرجة الجاهزية وخطة العمل.",
+    " Not months": {
+      "": "احصل على تأشيرتك الشخصية، درجة الجاهزية، وخطة العمل في دقائق وليس أشهر"
+    }
+  },
+  "Get your plan": "احصل على خطتك",
+  "Get {plan}": "احصل على {plan}",
+  "Go back": "عد إلى الوراء",
+  "Go home": "اذهب إلى الرئيسية",
+  "Home": "الرئيسية",
+  "How it works": "كيف يعمل",
+  "I spent months Googling visa options": {
+    " Immigrant Guru gave me a clear plan in 10 minutes": {
+      " I wish I found this earlier": {
+        "": "قضيت شهورًا أبحث في خيارات التأشيرات - أعطاني Immigrant Guru خطة واضحة في 10 دقائق - أتمنى لو كنت قد وجدت هذا في وقت سابق"
       }
     }
   },
+  "Immigrant Guru - AI Immigration Strategy Platform": "Immigrant Guru - منصة استراتيجية الهجرة بالذكاء الاصطناعي",
+  "Immigrant Guru - Move to a New Country Without Confusion": "Immigrant Guru - انتقل إلى بلد جديد دون ارتباك",
+  "Immigrant Guru helps you evaluate pathways, compare strategies, and act with clarity": {
+    "": "يساعدك Immigrant Guru على تقييم المسارات ومقارنة الاستراتيجيات واتخاذ القرار بوضوح."
+  },
+  "Immigration Plan": "خطة الهجرة",
+  "Immigration Score": "درجة الهجرة",
+  "Immigration shouldn't feel this hard": {
+    "": "لا ينبغي أن تكون الهجرة بهذا الصعوبة"
+  },
+  "Job opportunities": "فرص العمل",
+  "Language": "اللغة",
+  "Last name": "اسم العائلة",
+  "Last name is too long": {
+    "": "الاسم الأخير طويل جداً"
+  },
+  "Log in": "تسجيل الدخول",
+  "Log out": "تسجيل الخروج",
   "Minimum 8 characters": "8 أحرف على الأقل",
-  "Repeat your password": "أعد إدخال كلمة المرور",
-  "Enter a valid email address": {
-    "": "أدخل بريدًا إلكترونيًا صالحًا."
+  "Months of waiting with no visibility": "أشهر من الانتظار دون رؤية",
+  "Move to a New Country Without Confusion": "انتقل إلى بلد جديد دون ارتباك",
+  "Move to a new country": "الانتقال إلى بلد جديد",
+  "Move with family": "الانتقال مع العائلة",
+  "Multiple visa alternatives": "بدائل تأشيرات متعددة",
+  "My plan": "خطتي",
+  "National Interest Waiver · United States": "إعفاء المصلحة الوطنية · الولايات المتحدة",
+  "Nationality": "الجنسية",
+  "Need an account?": "هل تحتاج إلى حساب؟",
+  "New password": "كلمة مرور جديدة",
+  "Next": "التالي",
+  "Next best action": "أفضل إجراء تالي",
+  "Next step:": "الخطوة التالية:",
+  "No cases yet": "لا توجد ملفات بعد",
+  "No clear direction — just endless Googling": "لا اتجاه واضح — مجرد بحث لا نهاية له على جوجل",
+  "No confusion, no jargon": "لا ارتباك، لا مصطلحات معقدة",
+  "No employer sponsor needed — you can self-petition": {
+    "": "لا حاجة لرعاية صاحب العمل — يمكنك تقديم الطلب بنفسك"
+  },
+  "No matter your background, we help you find a way forward": {
+    "": "بغض النظر عن خلفيتك، نحن نساعدك في إيجاد طريق للمضي قدماً"
+  },
+  "No subscriptions": {
+    " Pay once, unlock your full plan": {
+      " 30-day money-back guarantee": {
+        "": "لا توجد اشتراكات. ادفع مرة واحدة وافتح خطتك الكاملة. ضمان استرداد لمدة 30 يومًا."
+      }
+    }
+  },
+  "One clear plan": {
+    " Everything you need": {
+      "": "خطة واضحة واحدة  كل ما تحتاجه"
+    }
+  },
+  "One-time payment": {
+    " Unlock your full personalized immigration plan": {
+      "": "دفعة واحدة  افتح خطتك الشخصية الكاملة للهجرة"
+    }
+  },
+  "Overview": "نظرة عامة",
+  "Page not found": "الصفحة غير موجودة",
+  "Password": "كلمة المرور",
+  "Password must be at least 8 characters": {
+    "": "يجب أن تتكون كلمة المرور من 8 أحرف على الأقل"
   },
   "Password must contain at least 8 characters": {
     "": "يجب أن تحتوي كلمة المرور على 8 أحرف على الأقل."
   },
-  "Page not found": "الصفحة غير موجودة",
-  "The page you're looking for doesn't exist or hasn't been built yet": {
-    "": "الصفحة التي تبحث عنها غير موجودة أو لم يتم إنشاؤها بعد."
+  "Password reset!": "إعادة تعيين كلمة المرور!",
+  "Passwords do not match": {
+    "": "كلمات المرور لا تتطابق"
   },
-  "Return home": "العودة إلى الرئيسية",
-  "Error": "خطأ",
-  "Something went wrong": "حدث خطأ ما",
-  "The page hit an unexpected error while rendering": {
-    " Try again, and if it persists, check the server logs": {
-      "": "واجهت الصفحة خطأ غير متوقع أثناء العرض. حاول مرة أخرى، وإذا استمرت المشكلة فراجع سجلات الخادم."
-    }
-  },
-  "Go home": "اذهب إلى الرئيسية",
-  "Admin": "الإدارة",
-  "Step 1 of 4": "الخطوة 1 من 4",
-  "Step 2 of 4": "الخطوة 2 من 4",
-  "Step 3 of 4": "الخطوة 3 من 4",
-  "Step 4 of 4": "الخطوة 4 من 4",
-  "Tell us a bit about yourself": {
-    "": "أخبرنا قليلًا عن نفسك."
-  },
-  "Where do you want to go?": "إلى أين تريد الذهاب؟",
-  "Your immigration goals and timing": {
-    "": "أهداف الهجرة والتوقيت المناسب لك."
-  },
+  "Platform Status": "حالة المنصة",
+  "Plus": "بلس",
+  "Possible paths": "مسارات ممكنة",
+  "Preferred language": "اللغة المفضلة",
+  "Premium": "بريميوم",
+  "Premium dashboard": "لوحة تحكم مميزة",
+  "Pricing": "الأسعار",
+  "Prior visa refusal?": "هل لديك رفض تأشيرة سابق؟",
+  "Priority AI guidance": "إرشادات أولوية من الذكاء الاصطناعي",
+  "Probability score": "درجة الاحتمال",
   "Professional experience and finances": {
     "": "الخبرة المهنية والوضع المالي."
   },
-  "You're ready to see your first strategy": "أنت جاهز لرؤية أول استراتيجية لك",
-  "Nationality": "الجنسية",
-  "Where do you live now?": "أين تعيش الآن؟",
+  "Profile": "الملف الشخصي",
+  "Profile, finance, case": "الملف الشخصي، المالية، القضية",
+  "Readiness": "الاستعداد",
+  "Readiness score": "درجة الجاهزية",
+  "Ready": "جاهز",
+  "Recommended pathway": "المسار الموصى به",
+  "Redirecting…": "إعادة التوجيه…",
   "Relationship status": "الحالة الاجتماعية",
-  "Children": "عدد الأطفال",
-  "Preferred language": "اللغة المفضلة",
-  "Target country": "البلد المستهدف",
   "Relocation timeline": "الجدول الزمني للانتقال",
-  "Prior visa refusal?": "هل لديك رفض تأشيرة سابق؟",
-  "Any criminal record?": "هل لديك سجل جنائي؟",
-  "What do you do?": "ما هو عملك؟",
-  "Years of experience": "سنوات الخبرة",
-  "Education level": "المستوى التعليمي",
-  "English level": "مستوى الإنجليزية",
-  "Available capital": "رأس المال المتاح",
+  "Remember your password?": "هل تذكر كلمة مرورك؟",
+  "Repeat your password": "أعد إدخال كلمة المرور",
+  "Resend code": "إعادة إرسال الرمز",
+  "Resend code in {n}s": "إعادة إرسال الرمز في {n} ثانية",
+  "Reset code": "إعادة تعيين الرمز",
+  "Reset password": "إعادة تعيين كلمة المرور",
+  "Resetting": {
+    "": {
+      "": {
+        "": "يتم إعادة التعيين"
+      }
+    }
+  },
+  "Retry": "أعد المحاولة",
+  "Return home": "العودة إلى الرئيسية",
   "Review and continue": "راجع وتابع",
+  "Risks": "المخاطر",
   "Saving": {
     "": {
       "": {
@@ -171,23 +378,411 @@
       }
     }
   },
-  "Your session is no longer available": {
-    " Sign in again to continue onboarding": {
-      "": "لم تعد جلستك متاحة. سجّل الدخول مرة أخرى لمتابعة الإعداد."
+  "Scenario simulation": "محاكاة السيناريو",
+  "See how it works": "شاهد كيف يعمل",
+  "Select language": "اختر اللغة",
+  "Send reset code": "إرسال رمز إعادة التعيين",
+  "Sending": {
+    "": {
+      "": {
+        "": "يتم الإرسال"
+      }
     }
   },
-  "Your profile could not be saved right now": {
-    " Retry before moving to the next step": {
-      "": "تعذر حفظ ملفك الآن. أعد المحاولة قبل الانتقال إلى الخطوة التالية."
+  "Set new password": "تعيين كلمة مرور جديدة",
+  "Sign in": "تسجيل الدخول",
+  "Sign in to continue your case strategy": "تسجيل الدخول لمتابعة استراتيجية قضيتك",
+  "Sign in to continue your immigration strategy": {
+    "": "سجّل الدخول لمتابعة استراتيجية الهجرة الخاصة بك."
+  },
+  "Sign out": "تسجيل الخروج",
+  "Sign up": "إنشاء حساب",
+  "Signing in": {
+    "": {
+      "": {
+        "": "جارٍ تسجيل الدخول..."
+      }
     }
+  },
+  "Simple pricing": "تسعير بسيط",
+  "Six powerful tools working together to give you clarity, confidence, and a concrete plan": {
+    "": "ست أدوات قوية تعمل معًا لمنحك الوضوح والثقة وخطة عملية."
+  },
+  "Software Engineer, Turkey to USA": "مهندس برمجيات، تركيا إلى الولايات المتحدة",
+  "Software Engineering, AI/ML, Product": "هندسة البرمجيات، الذكاء الاصطناعي/تعلم الآلة، المنتج",
+  "Something went wrong": {
+    "": "حدث خطأ ما",
+    " Please try again": {
+      "": "حدث خطأ ما  يرجى المحاولة مرة أخرى"
+    }
+  },
+  "Spouse, children, parents — know which family visa fits and how long it takes": {
+    "": "الزوج، الأطفال، الآباء — اعرف أي تأشيرة عائلية تناسبك ومدة الحصول عليها"
+  },
+  "Start a business": "ابدأ عملاً",
+  "Start free": {
+    "": "ابدأ مجانًا",
+    " Upgrade when you're ready for your full immigration plan": {
+      "": "ابدأ مجانًا. قم بالترقية عندما تكون جاهزًا لخطة الهجرة الكاملة."
+    }
+  },
+  "Start with the essentials and complete your immigration profile later": {
+    "": "ابدأ بالأساسيات وأكمل ملف الهجرة لاحقًا."
+  },
+  "Start your plan": "ابدأ خطتك",
+  "Starter": "المبتدئ",
+  "Step 1 of 4": "الخطوة 1 من 4",
+  "Step 2 of 4": "الخطوة 2 من 4",
+  "Step 3 of 4": "الخطوة 3 من 4",
+  "Step 4 of 4": "الخطوة 4 من 4",
+  "Step-by-step roadmap": "خارطة طريق خطوة بخطوة",
+  "Stop guessing": {
+    " Get a clear plan for your immigration journey — in minutes, not months": {
+      "": "توقف عن التخمين  احصل على خطة واضحة لرحلة هجرتك — في دقائق، وليس أشهر"
+    }
+  },
+  "Strategy": "الاستراتيجية",
+  "Study abroad": "الدراسة في الخارج",
+  "Suggested cities": "المدن المقترحة",
+  "Suitability": "الملاءمة",
+  "System health": "حالة النظام",
+  "Tell us a bit about yourself": {
+    "": "أخبرنا قليلًا عن نفسك."
+  },
+  "Tell us about you": "أخبرنا عنك",
+  "Tell us about yourself": {
+    " Our AI analyzes 47 visa categories, checks your readiness, and gives you a step-by-step plan with timeline, cost, and documents — in minutes": {
+      "": "أخبرنا عن نفسك  يقوم الذكاء الاصطناعي لدينا بتحليل 47 فئة تأشيرة، يتحقق من جاهزيتك، ويقدم لك خطة خطوة بخطوة مع الجدول الزمني، التكلفة، والمستندات — في دقائق"
+    }
+  },
+  "The page hit an unexpected error while rendering": {
+    " Try again, and if it persists, check the server logs": {
+      "": "واجهت الصفحة خطأ غير متوقع أثناء العرض. حاول مرة أخرى، وإذا استمرت المشكلة فراجع سجلات الخادم."
+    }
+  },
+  "The page you're looking for doesn't exist or hasn't been built yet": {
+    "": "الصفحة التي تبحث عنها غير موجودة أو لم يتم إنشاؤها بعد."
   },
   "The platform could not load your profile draft": {
     " Retry before continuing": {
       "": "تعذر على المنصة تحميل مسودة ملفك الشخصي. أعد المحاولة قبل المتابعة."
     }
   },
-  "Document status": "حالة المستندات",
-  "Case health": "حالة الملف",
-  "Action roadmap": "خارطة الإجراءات",
-  "No cases yet": "لا توجد ملفات بعد"
+  "The problem": "المشكلة",
+  "The readiness score showed me exactly what I was missing": {
+    " I uploaded 3 documents and my score jumped from 52 to 81": {
+      "": "أظهر لي معدل الاستعداد بالضبط ما كنت أفتقده  قمت بتحميل 3 مستندات وقفزت درجتي من 52 إلى 81"
+    }
+  },
+  "The solution": "الحل",
+  "There's always a way — we help you find it": {
+    "": "دائماً هناك طريقة — نحن نساعدك في العثور عليها"
+  },
+  "Three steps": {
+    " No confusion": {
+      "": "ثلاث خطوات  لا ارتباك"
+    }
+  },
+  "Timeline": "الجدول الزمني",
+  "Timeline estimate": "تقدير الجدول الزمني",
+  "Toggle menu": "تبديل القائمة",
+  "Try it now": "جربه الآن",
+  "Turkey, India, Brazil": {
+    "": {
+      "": {
+        "": "تركيا، الهند، البرازيل"
+      }
+    }
+  },
+  "United States, Canada": {
+    "": {
+      "": {
+        "": "الولايات المتحدة، كندا"
+      }
+    }
+  },
+  "Upload document": "رفع مستند",
+  "Upload your resume and education documents to increase your readiness score to 90+": {
+    "": "قم بتحميل سيرتك الذاتية ومستندات التعليم لزيادة درجة جاهزيتك إلى 90+"
+  },
+  "Verification code": "رمز التحقق",
+  "Verify code": "تحقق من الرمز",
+  "Verify email": "تحقق من البريد الإلكتروني",
+  "Verifying": {
+    "": {
+      "": {
+        "": "جارٍ التحقق"
+      }
+    }
+  },
+  "Visa categories analyzed": "فئات التأشيرات التي تم تحليلها",
+  "Visa types": "أنواع التأشيرات",
+  "Visa, timeline, documents, cost — everything in one clear view": {
+    "": "التأشيرة، الجدول الزمني، الوثائق، التكلفة - كل شيء في عرض واضح واحد"
+  },
+  "We analyze multiple countries, visa types, and pathways to match you with the best option based on your profile": {
+    "": "نقوم بتحليل دول متعددة، وأنواع التأشيرات، والمسارات لمطابقتك مع أفضل خيار بناءً على ملفك الشخصي"
+  },
+  "We analyze your options": "نحلل خياراتك",
+  "We sent a 6-digit code to": "لقد أرسلنا رمزًا مكونًا من 6 أرقام إلى",
+  "We show you what to do": "نعرض لك ما يجب القيام به",
+  "We turn everything into one clear plan": {
+    "": "نحول كل شيء إلى خطة واضحة واحدة"
+  },
+  "Welcome back": "مرحبًا بعودتك",
+  "What do you do?": "ما هو عملك؟",
+  "What you get": "ما ستحصل عليه",
+  "Whatever your reason, we can help": {
+    "": "مهما كان سببك، يمكننا المساعدة"
+  },
+  "Where are you from?": "من أين أنت؟",
+  "Where do you live now?": "أين تعيش الآن؟",
+  "Where do you want to go?": "إلى أين تريد الذهاب؟",
+  "Work abroad": "العمل في الخارج",
+  "Wrong email?": "بريد إلكتروني خاطئ؟",
+  "Years of experience": "سنوات الخبرة",
+  "You're ready to see your first strategy": "أنت جاهز لرؤية أول استراتيجية لك",
+  "Your background, education, experience, and goals": {
+    " Takes 2 minutes": {
+      "": "خلفيتك، تعليمك، خبرتك، وأهدافك تستغرق دقيقتين"
+    }
+  },
+  "Your best path": "أفضل مسار لك",
+  "Your best path, ranked by fit": "أفضل مسارك، مرتبة حسب الملاءمة",
+  "Your immigration goals and timing": {
+    "": "أهداف الهجرة والتوقيت المناسب لك."
+  },
+  "Your new life starts here": {
+    "": "تبدأ حياتك الجديدة هنا"
+  },
+  "Your password has been updated": {
+    " You can now sign in": {
+      "": "تم تحديث كلمة المرور الخاصة بك يمكنك الآن تسجيل الدخول"
+    }
+  },
+  "Your personalized result": "نتيجتك المخصصة",
+  "Your profile could not be saved right now": {
+    " Retry before moving to the next step": {
+      "": "تعذر حفظ ملفك الآن. أعد المحاولة قبل الانتقال إلى الخطوة التالية."
+    }
+  },
+  "Your session is no longer available": {
+    " Sign in again to continue onboarding": {
+      "": "لم تعد جلستك متاحة. سجّل الدخول مرة أخرى لمتابعة الإعداد."
+    }
+  },
+  "one-time": "مرة واحدة",
+  "without confusion": {
+    "": "بدون ارتباك"
+  },
+  "FAQ": "الأسئلة الشائعة",
+  "tools": {
+    "pageTitle": "أدوات الهجرة المجانية",
+    "pageSubtitle": "إجابات سريعة - لا حاجة للتسجيل.",
+    "eligibilityChecker": {
+      "title": "مدقق الأهلية",
+      "description": "أجب عن 6 أسئلة، واطلع على التأشيرات التي قد تكون مؤهلاً لها."
+    },
+    "costEstimator": {
+      "title": "أداة تقدير التكلفة",
+      "description": "التكلفة الكاملة للانتقال إلى الخارج - ليست فقط رسوم التأشيرة."
+    },
+    "timelineCalculator": {
+      "title": "حاسبة الجدول الزمني",
+      "description": "توقع متى ستصل خطوة بخطوة."
+    }
+  },
+  "eligibilityChecker": {
+    "pageTitle": "مدقق أهلية التأشيرة المجاني",
+    "pageSubtitle": "أجب عن 6 أسئلة قصيرة. اطلع على قائمة مختصرة بالتأشيرات التي قد تكون مؤهلاً لها - لا حاجة للتسجيل.",
+    "faq1": {
+      "question": "هل مدقق الأهلية مجاني؟",
+      "answer": "نعم. يعمل بالكامل في متصفحك ولا يتطلب حسابًا."
+    },
+    "faq2": {
+      "question": "ما مدى دقة الفحص؟",
+      "answer": "يستخدم قواعد الأهلية العامة لكل طريق. إنه فلتر أول قوي ولكنه لا يحل محل التحليل الكامل المدعوم بالذكاء الاصطناعي أو المشورة القانونية."
+    },
+    "faq3": {
+      "question": "هل يحتفظ بإجاباتي؟",
+      "answer": "لا. الأداة تعمل محليًا في متصفحك. إذا كنت ترغب في حفظ نتائجك في ملفك الشخصي، يرجى التسجيل."
+    },
+    "emailCapture": {
+      "title": "تحليل كامل مدعوم بالذكاء الاصطناعي",
+      "subtitle": "احصل على خطة A/B/C مخصصة ودرجة استعداد عبر البريد الإلكتروني."
+    }
+  },
+  "costEstimator": {
+    "pageTitle": "أداة تقدير تكلفة الهجرة",
+    "pageSubtitle": "اختر طريقًا، أضف حجم عائلتك، واطلع على التكلفة الإجمالية الواقعية - ليست فقط رسوم التأشيرة.",
+    "faq1": {
+      "question": "ماذا يتضمن التقدير؟",
+      "answer": "الرسوم الحكومية، الرسوم القانونية/الوكالة، أموال الاستقرار، تذكرة الطيران، السكن الأول و10% كاحتياطي للنفقات غير المتوقعة."
+    },
+    "faq2": {
+      "question": "هل هذا صحيح لحالتي الخاصة؟",
+      "answer": "إنه تقدير جيد للإرشاد لكل طريق. قد تختلف تكلفتك الفعلية حسب حجم العائلة، المدينة، واختيار المحامي. يرجى التسجيل للحصول على تفاصيل مخصصة."
+    },
+    "emailCapture": {
+      "title": "احصل على تفصيل التكلفة الكامل عبر البريد الإلكتروني",
+      "subtitle": "جدول يحتوي على تكاليف مفصلة مرتبة حسب بلدك المستهدف."
+    }
+  },
+  "timelineCalculator": {
+    "pageTitle": "حاسبة الجدول الزمني",
+    "pageSubtitle": "اختر طريقًا. اطلع على متى ستصل - بما في ذلك الاستعداد، التقديم، المعالجة والوصول.",
+    "faq1": {
+      "question": "لماذا يتم تضمين فترة الاستعداد؟",
+      "answer": "لا يبدأ الوقت عند تقديم الطلب - يبدأ عندما تبدأ في جمع الوثائق. نضيف نافذة استعداد واقعية لكل طريق."
+    },
+    "faq2": {
+      "question": "ما مدى دقة هذا التقدير؟",
+      "answer": "يعكس الأوقات المتوسطة المنشورة للمعالجة. قد تكون الحالات الفردية أسرع أو أبطأ بناءً على طلبات المعلومات الإضافية، حصص الدول، واكتمال الأدلة."
+    },
+    "emailCapture": {
+      "title": "متتبع الجدول الزمني الأسبوعي",
+      "subtitle": "سنرسل لك خطة أسبوعية بسيطة عبر البريد الإلكتروني حتى يوم الوصول."
+    }
+  },
+  "visaIndex": {
+    "pageTitle": "جميع التأشيرات",
+    "pageSubtitle": "التكلفة، الجدول الزمني، والأهلية لكل طريق نغطيه.",
+    "months": "شهر"
+  },
+  "bestCountries": {
+    "pageTitle": "أفضل الدول حسب المهنة",
+    "pageSubtitle": "اختر مهنتك لرؤية وجهات الهجرة المصنفة.",
+    "cardTitle": "أفضل الدول لـ {profession}",
+    "breadcrumb": "أفضل الدول",
+    "rankedSubtitle": "مرتبة حسب التكلفة، الجدول الزمني، والإقامة الدائمة. البيانات محدثة لعام 2026.",
+    "topPathway": "أفضل طريق",
+    "seeAllPathways": "عرض جميع الطرق",
+    "visaDetails": "تفاصيل {code}",
+    "otherProfessions": "مهن أخرى"
+  },
+  "compare": {
+    "pageTitle": "مقارنات التأشيرات",
+    "pageSubtitle": "مقارنات جنبًا إلى جنب لأكثر قرارات الطرق شيوعًا.",
+    "vs": "مقابل",
+    "comparingSubtitle": "يتم مقارنة {nameA} مع {nameB} من حيث التكلفة، الوقت، والتوافق - حتى لا تضيع شهورًا في الطريق الخطأ.",
+    "rowFullName": "الاسم الكامل",
+    "rowCategory": "الفئة",
+    "rowDestination": "الدولة المستهدفة",
+    "rowTypicalDuration": "المدة النموذجية",
+    "rowCostUsd": "التكلفة (دولار أمريكي)",
+    "rowLeadsToPR": "يؤدي إلى الإقامة الدائمة",
+    "yes": "نعم",
+    "no": "لا",
+    "bestFor": "الأكثر ملاءمة",
+    "otherComparisons": "مقارنات تأشيرات أخرى"
+  },
+  "visaMatch": {
+    "pageTitle": "مطابقة التأشيرات",
+    "pageSubtitle": "اختر بلدك المستهدف وملفك الشخصي لرؤية أول 3 طرق لك.",
+    "cardSubtitle": "أفضل التأشيرات لـ {profession}",
+    "breadcrumb": "مطابقة التأشيرات",
+    "rankedSubtitle": "تم ترتيب {count} طرق هجرة لـ {profession}؛ مع هدف {countryName}. تم تقييم كل خيار بناءً على التوافق والتكلفة والمدة والمخاطر.",
+    "getPersonalizedMatch": "احصل على مطابقتك المخصصة",
+    "freeEligibilityCheck": "فحص الأهلية المجاني",
+    "typicalTimeline": "الجدول الزمني النموذجي",
+    "typicalCost": "التكلفة النموذجية",
+    "duration": "المدة",
+    "strengths": "نقاط القوة",
+    "moreVisaGuides": "المزيد من أدلة التأشيرات لـ {countryName}"
+  },
+  "moveTo": {
+    "pageTitle": "أدلة الانتقال للبلدان",
+    "pageSubtitle": "أدلة خطوة بخطوة حسب بلد المنشأ والوجهة.",
+    "fromLabel": "{flag} من {name}",
+    "cardSubtitle": "دليل لمواطني {demonym}",
+    "h1": "الانتقال إلى مدينة {toName} من {fromName}",
+    "intro": "دليل عملي للانتقال إلى مدينة {toName} لمواطني {demonym}. اختر طريقًا، افهم الجدول الزمني والتكلفة، واحصل على درجة استعداد مخصصة.",
+    "topVisaPathways": "أفضل طرق التأشيرات لـ {toName}",
+    "howToStepByStep": "كيفية الانتقال خطوة بخطوة",
+    "moreCountryGuides": "المزيد من أدلة البلدان"
+  },
+  "Onboarding could not load": "لم يتم تحميل عملية الانضمام",
+  "Review the highlighted profile fields before continuing": {
+    "": "راجع حقول الملف الشخصي المميزة قبل المتابعة"
+  },
+  "Skip": "تخطي",
+  "Who are you?": "من أنت؟",
+  "Select your nationality": "اختر جنسيتك",
+  "Select current country": "اختر الدولة الحالية",
+  "e": {
+    "g": {
+      " English, Turkish": {
+        "": {
+          "": {
+            "": "على سبيل المثال: الإنجليزية، التركية..."
+          }
+        }
+      },
+      " Software Engineer, Doctor, Designer": {
+        "": {
+          "": {
+            "": "على سبيل المثال: مهندس برمجيات، طبيب، مصمم..."
+          }
+        }
+      },
+      " 50000": "على سبيل المثال: 50000"
+    }
+  },
+  "Your background": "خلفيتك",
+  "English proficiency": "مستوى إتقان اللغة الإنجليزية",
+  "Available capital (USD)": "رأس المال المتاح (دولار أمريكي)",
+  "Your dream destination and timeline": {
+    "": "وجهتك الحلم والجدول الزمني"
+  },
+  "When do you want to move?": "متى تريد الانتقال؟",
+  "Have you had a visa refusal before?": "هل سبق لك أن تلقيت رفض تأشيرة من قبل؟",
+  "This helps us give accurate recommendations": {
+    " Your data is private and secure": {
+      "": "هذا يساعدنا على تقديم توصيات دقيقة بياناتك خاصة وآمنة"
+    }
+  },
+  "You're all set!": "كل شيء جاهز!",
+  "Amazing! Your profile is almost complete": {
+    " We can build great strategies for you": {
+      "": "رائع! ملفك الشخصي شبه مكتمل يمكننا بناء استراتيجيات رائعة لك"
+    }
+  },
+  "Great start! You can always complete more details from your profile page": {
+    "": "بداية رائعة! يمكنك دائمًا إكمال المزيد من التفاصيل من صفحة ملفك الشخصي"
+  },
+  "No worries! You can fill in more details anytime from your dashboard": {
+    "": "لا داعي للقلق! يمكنك ملء المزيد من التفاصيل في أي وقت من لوحة التحكم الخاصة بك"
+  },
+  "See your AI analysis": "شاهد تحليلك بواسطة الذكاء الاصطناعي",
+  "there": "هناك",
+  "Immigrant": "مهاجر",
+  "Guru": "غورو",
+  "Hey {name}, welcome aboard!": "مرحبًا {name}، مرحبًا بك على متن الطائرة!",
+  "Let's build your immigration profile in under 2 minutes": {
+    " The more we know, the better strategies we can craft for you": {
+      "": "دعنا نبني ملفك الشخصي للهجرة في أقل من دقيقتين كلما عرفنا أكثر، كانت الاستراتيجيات التي يمكننا صياغتها لك أفضل"
+    }
+  },
+  "Let's go": "لنذهب",
+  "Takes about 2 minutes": {
+    " You can skip anything": {
+      "": "تستغرق حوالي دقيقتين يمكنك تخطي أي شيء"
+    }
+  },
+  "score": {
+    "outOf100": "من 100",
+    "thisProfileIs": "هذا الملف الشخصي بمستوى {readiness}",
+    "scoredOn": "قامت Immigrant Guru بتقييم هذا الملف الشخصي بناءً على التعليم، والخبرة العملية، واللغة، وتوافق البلد المستهدف، و8 أبعاد أخرى.",
+    "getMyOwnScore": "احصل على نتيجتي الخاصة",
+    "shareOnX": "شارك في X"
+  },
+  "visa": {
+    "cost": "التكلفة",
+    "prPath": "طريق الإقامة الدائمة",
+    "idealFor": "الأشخاص المؤهلون",
+    "requirements": "المتطلبات",
+    "risksAndRejection": "المخاطر وأسباب الرفض الشائعة",
+    "checkReadiness": "تحقق من استعدادي لـ {code}",
+    "moreVisaGuides": "المزيد من أدلة التأشيرات لـ {countryName}"
+  }
 }

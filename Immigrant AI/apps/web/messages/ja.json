@@ -1,103 +1,165 @@
 {
-  "Immigrant Guru - AI Immigration Strategy Platform": "Immigrant Guru - AI移民戦略プラットフォーム",
-  "Immigrant Guru - Move to a New Country Without Confusion": "Immigrant Guru - 迷わず新しい国へ移住する",
-  "Language": "言語",
-  "Select language": "言語を選択",
-  "How it works": "仕組み",
-  "Find your path": "最適なルートを見つける",
-  "Pricing": "料金",
-  "Home": "ホーム",
-  "Sign in": "ログイン",
-  "Sign up": "登録",
-  "Dashboard": "ダッシュボード",
-  "Log out": "ログアウト",
-  "Move to a New Country Without Confusion": "迷わず新しい国へ移住する",
-  "Get your personalized visa, readiness score, and action plan in minutes": {
-    "": "数分であなた専用のビザ方針、準備スコア、行動計画を取得。"
+  "Active": "アクティブ",
+  "Cancel": "キャンセル",
+  "Capture the destination, program, current stage, and risk signals that anchor strategy generation, scoring, and document workflows": {
+    "": "戦略生成、スコアリング、ドキュメントワークフローを支える目的地、プログラム、現在のステージ、リスク信号をキャッチします"
   },
-  "Benefits": "特長",
-  "Everything you need in one place": "必要なものをすべて一か所に",
-  "Simple pricing": "シンプルな料金",
-  "Free": "無料",
-  "Starter": "スターター",
-  "Plus": "プラス",
-  "Premium": "プレミアム",
-  "Create your account": "アカウントを作成",
-  "Welcome back": "お帰りなさい",
-  "First name": "First name",
-  "Last name": "Last name",
-  "Email": "メールアドレス",
-  "Password": "パスワード",
-  "Confirm password": "Confirm password",
-  "Overview": "概要",
-  "Profile": "プロフィール",
-  "Cases": "ケース",
-  "Strategy": "戦略",
-  "Timeline": "タイムライン",
-  "Documents": "書類",
-  "Risks": "リスク",
-  "Copilot": "Copilot",
-  "Comparison": "比較",
-  "Retry": "再試行",
-  "Back": "戻る",
-  "Next": "次へ",
-  "Finish": "完了",
-  "Generate strategy": "Generate strategy",
-  "Upload document": "Upload document",
-  "Scenario simulation": "Scenario simulation",
-  "My plan": "マイプラン",
-  "Sign out": "ログアウト",
-  "Log in": "ログイン",
-  "Start your plan": "プランを始める",
-  "Readiness score": "Readiness score",
-  "Probability score": "Probability score",
-  "Recommended pathway": "Recommended pathway",
-  "Next best action": "Next best action",
-  "Immigrant Guru helps you evaluate pathways, compare strategies, and act with clarity": {
-    "": "Immigrant Guru helps you evaluate pathways, compare strategies, and act with clarity."
+  "Case Detail": "ケース詳細",
+  "Case planning workspace": "ケース計画ワークスペース",
+  "Case portfolio": "ケースポートフォリオ",
+  "Case status": "ケースステータス",
+  "Case title": "ケースタイトル",
+  "Closed": "クローズド",
+  "Close": "閉じる",
+  "Close new case": "新しいケースを閉じる",
+  "Collect recommendation letters and evidence of impact": {
+    "": "推薦状と影響の証拠を収集する"
   },
-  "A focused workspace for immigration decisions": "A focused workspace for immigration decisions",
-  "Six powerful tools working together to give you clarity, confidence, and a concrete plan": {
-    "": "Six powerful tools working together to give you clarity, confidence, and a concrete plan."
+  "Continue your immigration planning": {
+    " Keep profile and case data aligned": {
+      "": "移民計画を続ける プロフィールとケースデータを整合させる"
+    }
   },
-  "Immigration Score": "Immigration Score",
-  "Explainable readiness signals": "Explainable readiness signals",
-  "System health": "System health",
-  "Platform Status": "Platform Status",
-  "Work abroad": "Work abroad",
-  "Study abroad": "Study abroad",
-  "Move with family": "Move with family",
-  "Start a business": "Start a business",
-  "Tell us about you": "Tell us about you",
-  "We analyze your options": "We analyze your options",
-  "Get your plan": "Get your plan",
-  "Find the plan that fits your journey": "Find the plan that fits your journey",
-  "Start free": {
-    " Upgrade when you're ready for your full immigration plan": {
-      "": "Start free. Upgrade when you're ready for your full immigration plan."
-    },
-    "": "Start free"
+  "Create a case for each migration plan you want to evaluate, compare, or execute": {
+    " Cases anchor strategy generation, scoring, and document collection in one workspace": {
+      "": "評価、比較、または実行したい各移民計画のためにケースを作成します ケースは、1つのワークスペースで戦略生成、スコアリング、ドキュメント収集を支えます"
+    }
   },
-  "Best value": "Best value",
-  "one-time": "one-time",
-  "No subscriptions": {
-    " Pay once, unlock your full plan": {
-      " 30-day money-back guarantee": {
-        "": "No subscriptions. Pay once, unlock your full plan. 30-day money-back guarantee."
+  "Create first case": "最初のケースを作成",
+  "Create strategy case": "戦略ケースを作成",
+  "Creating case": {
+    "": {
+      "": {
+        "": "ケースを作成中"
       }
     }
   },
-  "Start with the essentials and complete your immigration profile later": {
-    "": "Start with the essentials and complete your immigration profile later."
+  "Current stage": "現在のステージ",
+  "Data unavailable": "データが利用できません",
+  "Define a migration pathway to evaluate": "評価するための移民経路を定義する",
+  "Destination pending": "目的地保留中",
+  "Draft": "ドラフト",
+  "Evaluation signals": "評価信号",
+  "Example: eligibility_review, document_collection, filing_ready": "例: eligibility_review, document_collection, filing_ready",
+  "Higher values should indicate higher execution or eligibility risk": {
+    "": "高い値は、より高い実行または適格性リスクを示すべきです"
   },
-  "Sign in to continue your immigration strategy": {
-    "": "Sign in to continue your immigration strategy."
+  "Immigration strategy cases": "移民戦略ケース",
+  "In review": "レビュー中",
+  "Internal Console": "内部コンソール",
+  "Keep notes focused on blockers, evidence gaps, and next actions": {
+    "": "ブロッカー、証拠のギャップ、次のアクションに焦点を当てたメモを保持する"
   },
-  "Forgot your password?": "Forgot your password?",
-  "Create account": "Create account",
-  "Create one": "Create one",
+  "Latest score": "最新のスコア",
+  "Manage immigration strategy records that anchor pathway evaluation, stage tracking, scoring, and later document workflows": {
+    "": "経路評価、ステージ追跡、スコアリング、後のドキュメントワークフローを支える移民戦略記録を管理する"
+  },
+  "New case": "新しいケース",
+  "New strategy case": "新しい戦略ケース",
+  "No changes to save": "保存する変更はありません",
+  "No strategic notes recorded yet for this immigration path": {
+    "": "この移民経路に対する戦略ノートはまだ記録されていません"
+  },
+  "No strategy cases yet": "戦略ケースはまだありません",
+  "on record": "記録に残っている",
+  "Open case": "オープンケース",
+  "Optional score snapshot if you want to retain a manual benchmark": {
+    "": "手動ベンチマークを保持したい場合のオプションスコアスナップショット"
+  },
+  "Pathway not defined yet": "経路はまだ定義されていません",
+  "Refresh cases": "ケースを更新",
+  "Review the highlighted case fields before saving": {
+    "": "保存する前にハイライトされたケースフィールドを確認する"
+  },
+  "Risk score": "リスクスコア",
+  "Risk": "リスク",
+  "Save case changes": "ケースの変更を保存",
+  "Saving changes": {
+    "": {
+      "": {
+        "": "変更を保存中"
+      }
+    }
+  },
+  "Score": "スコア",
+  "Session": "セッション",
+  "Stage": "ステージ",
+  "Start with a target country and pathway": "目標国と経路から始める",
+  "Strategy case created successfully": {
+    "": "戦略ケースが正常に作成されました"
+  },
+  "Strategy identity": "戦略アイデンティティ",
+  "Strategy notes": "戦略ノート",
+  "Target country": "Target country",
+  "Target pathway or program": "目標経路またはプログラム",
+  "The case portfolio could not be loaded": {
+    "": "ケースポートフォリオを読み込むことができませんでした"
+  },
+  "Track every active migration path in one workspace": "1つのワークスペースでアクティブなすべての移民経路を追跡する",
+  "U": {
+    "S": {
+      " employment-based migration plan": "米国雇用ベースの移民計画"
+    }
+  },
+  "United States": "アメリカ合衆国",
+  "Update the case strategy record": "ケース戦略記録を更新する",
+  "Updated": "更新されました",
+  "Workspace data could not be loaded": {
+    "": "ワークスペースデータを読み込めませんでした"
+  },
+  "You are no longer authenticated": {
+    "": "認証されていません"
+  },
+  "case": "ケース",
+  "cases": "ケース",
+  "12-18 months": "12-18ヶ月",
+  "3 country comparisons": "3カ国の比較",
+  "A focused workspace for immigration decisions": "A focused workspace for immigration decisions",
+  "AI checks 47 visa categories and finds your best match": {
+    "": "AIが47のビザカテゴリをチェックし、最適なマッチを見つけます"
+  },
+  "Access your immigration dashboard, decision plans, and case workspace": {
+    "": "移民ダッシュボード、決定プラン、ケースワークスペースにアクセス"
+  },
+  "Action roadmap": "Action roadmap",
+  "Admin": "Admin",
+  "Advanced action plan": "高度なアクションプラン",
   "Already have an account?": "Already have an account?",
-  "Need an account?": "Need an account?",
+  "Any criminal record?": "Any criminal record?",
+  "Available capital": "Available capital",
+  "Average time to first plan": "最初のプランまでの平均時間",
+  "Back": "戻る",
+  "Benefits": "特長",
+  "Best value": "Best value",
+  "Best visa option": "最適なビザオプション",
+  "Best visa recommendation": "最適なビザ推奨",
+  "Better case preparation": "より良いケース準備",
+  "Built for immigrants, by immigrants": "移民のために、移民によって作られました",
+  "Case health": "Case health",
+  "Cases": "ケース",
+  "Check your email": "メールを確認してください",
+  "Checkout failed": "チェックアウトに失敗しました",
+  "Children": "Children",
+  "Choose a new password for your account": {
+    "": "アカウントの新しいパスワードを選択してください"
+  },
+  "Comparison": "比較",
+  "Confirm password": "Confirm password",
+  "Confirm your password": {
+    "": "パスワードを確認してください"
+  },
+  "Confusing visa rules that change every year": "毎年変わる混乱したビザルール",
+  "Copilot": "Copilot",
+  "Cost estimate": "コスト見積もり",
+  "Countries": "国",
+  "Countries supported": "サポートされている国",
+  "Create account": "Create account",
+  "Create an account to start building an immigration profile, evaluate pathways, and manage your cases": {
+    "": "移民プロフィールを構築し、経路を評価し、ケースを管理するためにアカウントを作成してください"
+  },
+  "Create one": "Create one",
+  "Create your Immigrant Guru account": "Immigrant Guruアカウントを作成する",
+  "Create your account": "アカウントを作成",
   "Creating account": {
     "": {
       "": {
@@ -105,65 +167,210 @@
       }
     }
   },
-  "Signing in": {
-    "": {
-      "": {
-        "": "Signing in..."
+  "Dashboard": "ダッシュボード",
+  "Data Scientist, India to Canada": "データサイエンティスト、インドからカナダ",
+  "Deeper analysis": "より深い分析",
+  "Document checklist": "ドキュメントチェックリスト",
+  "Document status": "Document status",
+  "Documents": "書類",
+  "E-2 investor, EB-5, startup visa — explore entrepreneurial immigration routes": {
+    "": "E-2投資家、EB-5、スタートアップビザ — 起業家移民ルートを探る"
+  },
+  "Education level": "Education level",
+  "Email": "メールアドレス",
+  "English level": "English level",
+  "Enter a valid email address": {
+    "": "Enter a valid email address."
+  },
+  "Enter it below to verify your account": {
+    "": "アカウントを確認するために下に入力してください"
+  },
+  "Enter the 6-digit code from your email": {
+    "": "メールからの6桁のコードを入力してください"
+  },
+  "Enter the 6-digit code": {
+    "": "6桁のコードを入力してください"
+  },
+  "Enter your email and we'll send you a reset code": {
+    "": "メールアドレスを入力すると、リセットコードをお送りします"
+  },
+  "Enter your email": {
+    "": "メールアドレスを入力してください"
+  },
+  "Error": "Error",
+  "Est": {
+    " cost": "推定コスト"
+  },
+  "Estimated cost": "推定コスト",
+  "Even if you think you don't qualify — we'll show you what's possible": {
+    "": "資格がないと思っていても — 可能なことをお見せします"
+  },
+  "Everything in Plus": "Plusのすべて",
+  "Everything in Starter": "Starterのすべて",
+  "Everything you need in one place": "必要なものをすべて一か所に",
+  "Expanded document guidance": "拡張されたドキュメントガイダンス",
+  "Expensive lawyers who charge $5,000+ for basic advice": "基本的なアドバイスに5,000ドル以上を請求する高額な弁護士",
+  "Explainable readiness signals": "Explainable readiness signals",
+  "F-1, OPT, STEM extension — understand your path from student to professional": {
+    "": "F-1、OPT、STEM延長 — 学生からプロフェッショナルへの道を理解する"
+  },
+  "Filing + legal fees": "提出 + 法律費用",
+  "Find my best path": "私の最適な道を見つける",
+  "Find the plan that fits your journey": "Find the plan that fits your journey",
+  "Find the right work visa for your skills and experience": {
+    " H-1B, EB-2, O-1, and more": {
+      "": "スキルと経験に合った適切な就労ビザを見つける H-1B、EB-2、O-1など"
+    }
+  },
+  "Find your best path": "あなたの最適な道を見つける",
+  "Find your path": "最適なルートを見つける",
+  "Finish": "完了",
+  "First name": "First name",
+  "First name is too long": {
+    "": "名字が長すぎます"
+  },
+  "For comparing options": "オプションを比較するために",
+  "For every situation": "すべての状況に対して",
+  "For one clear path": "明確な道のために",
+  "Forgot your password?": "Forgot your password?",
+  "Free": "無料",
+  "Free to start · No credit card · Takes 2 minutes": "無料で開始 · クレジットカード不要 · 2分で完了",
+  "From filing to approval": "提出から承認まで",
+  "Full path comparison": "完全な経路比較",
+  "Full plan for 1 country": "1カ国の完全なプラン",
+  "Full strategic experience": "完全な戦略的経験",
+  "Full strategic recommendation": "完全な戦略的推奨",
+  "Generate strategy": "Generate strategy",
+  "Get Started": "始める",
+  "Get your personalized visa, readiness score, and action plan in minutes": {
+    "": "数分であなた専用のビザ方針、準備スコア、行動計画を取得。",
+    " Not months": {
+      "": "あなたのパーソナライズされたビザ、準備スコア、アクションプランを数分で取得  数ヶ月ではなく"
+    }
+  },
+  "Get your plan": "Get your plan",
+  "Get {plan}": "{plan}を取得",
+  "Go back": "戻る",
+  "Go home": "Go home",
+  "Home": "ホーム",
+  "How it works": "仕組み",
+  "I spent months Googling visa options": {
+    " Immigrant Guru gave me a clear plan in 10 minutes": {
+      " I wish I found this earlier": {
+        "": "ビザオプションを探すのに数ヶ月かかりました  Immigrant Guruは10分で明確なプランを提供してくれました  もっと早く見つけていればよかった"
       }
     }
   },
+  "Immigrant Guru - AI Immigration Strategy Platform": "Immigrant Guru - AI移民戦略プラットフォーム",
+  "Immigrant Guru - Move to a New Country Without Confusion": "Immigrant Guru - 迷わず新しい国へ移住する",
+  "Immigrant Guru helps you evaluate pathways, compare strategies, and act with clarity": {
+    "": "Immigrant Guru helps you evaluate pathways, compare strategies, and act with clarity."
+  },
+  "Immigration Plan": "移民プラン",
+  "Immigration Score": "Immigration Score",
+  "Immigration shouldn't feel this hard": {
+    "": "移民はこんなに難しく感じるべきではありません"
+  },
+  "Job opportunities": "職業機会",
+  "Language": "言語",
+  "Last name": "Last name",
+  "Last name is too long": {
+    "": "姓が長すぎます"
+  },
+  "Log in": "ログイン",
+  "Log out": "ログアウト",
   "Minimum 8 characters": "Minimum 8 characters",
-  "Repeat your password": "Repeat your password",
-  "Enter a valid email address": {
-    "": "Enter a valid email address."
+  "Months of waiting with no visibility": "見通しのない待機月数",
+  "Move to a New Country Without Confusion": "迷わず新しい国へ移住する",
+  "Move to a new country": "新しい国に移住する",
+  "Move with family": "Move with family",
+  "Multiple visa alternatives": "複数のビザの選択肢",
+  "My plan": "マイプラン",
+  "National Interest Waiver · United States": "国家利益免除 · アメリカ合衆国",
+  "Nationality": "Nationality",
+  "Need an account?": "Need an account?",
+  "New password": "新しいパスワード",
+  "Next": "次へ",
+  "Next best action": "Next best action",
+  "Next step:": "次のステップ：",
+  "No cases yet": "No cases yet",
+  "No clear direction — just endless Googling": "明確な方向性がない — 終わりのないグーグル検索",
+  "No confusion, no jargon": "混乱なし、専門用語なし",
+  "No employer sponsor needed — you can self-petition": {
+    "": "雇用主のスポンサーは不要 — 自己請願が可能です"
+  },
+  "No matter your background, we help you find a way forward": {
+    "": "あなたのバックグラウンドに関係なく、前進する方法を見つけるお手伝いをします"
+  },
+  "No subscriptions": {
+    " Pay once, unlock your full plan": {
+      " 30-day money-back guarantee": {
+        "": "No subscriptions. Pay once, unlock your full plan. 30-day money-back guarantee."
+      }
+    }
+  },
+  "One clear plan": {
+    " Everything you need": {
+      "": "明確なプラン  必要なすべてが揃っています"
+    }
+  },
+  "One-time payment": {
+    " Unlock your full personalized immigration plan": {
+      "": "一回限りの支払い  あなたの完全なパーソナライズされた移民プランをアンロック"
+    }
+  },
+  "Overview": "概要",
+  "Page not found": "Page not found",
+  "Password": "パスワード",
+  "Password must be at least 8 characters": {
+    "": "パスワードは8文字以上でなければなりません"
   },
   "Password must contain at least 8 characters": {
     "": "Password must contain at least 8 characters."
   },
-  "Page not found": "Page not found",
-  "The page you're looking for doesn't exist or hasn't been built yet": {
-    "": "The page you're looking for doesn't exist or hasn't been built yet."
+  "Password reset!": "パスワードリセット！",
+  "Passwords do not match": {
+    "": "パスワードが一致しません"
   },
-  "Return home": "Return home",
-  "Error": "Error",
-  "Something went wrong": "Something went wrong",
-  "The page hit an unexpected error while rendering": {
-    " Try again, and if it persists, check the server logs": {
-      "": "The page hit an unexpected error while rendering. Try again, and if it persists, check the server logs."
-    }
-  },
-  "Go home": "Go home",
-  "Admin": "Admin",
-  "Step 1 of 4": "Step 1 of 4",
-  "Step 2 of 4": "Step 2 of 4",
-  "Step 3 of 4": "Step 3 of 4",
-  "Step 4 of 4": "Step 4 of 4",
-  "Tell us a bit about yourself": {
-    "": "Tell us a bit about yourself."
-  },
-  "Where do you want to go?": "Where do you want to go?",
-  "Your immigration goals and timing": {
-    "": "Your immigration goals and timing."
-  },
+  "Platform Status": "Platform Status",
+  "Plus": "プラス",
+  "Possible paths": "可能な道",
+  "Preferred language": "Preferred language",
+  "Premium": "プレミアム",
+  "Premium dashboard": "プレミアムダッシュボード",
+  "Pricing": "料金",
+  "Prior visa refusal?": "Prior visa refusal?",
+  "Priority AI guidance": "優先AIガイダンス",
+  "Probability score": "Probability score",
   "Professional experience and finances": {
     "": "Professional experience and finances."
   },
-  "You're ready to see your first strategy": "You're ready to see your first strategy",
-  "Nationality": "Nationality",
-  "Where do you live now?": "Where do you live now?",
+  "Profile": "プロフィール",
+  "Profile, finance, case": "プロフィール、財務、ケース",
+  "Readiness": "準備状況",
+  "Readiness score": "Readiness score",
+  "Ready": "準備完了",
+  "Recommended pathway": "Recommended pathway",
+  "Redirecting…": "リダイレクト中…",
   "Relationship status": "Relationship status",
-  "Children": "Children",
-  "Preferred language": "Preferred language",
-  "Target country": "Target country",
   "Relocation timeline": "Relocation timeline",
-  "Prior visa refusal?": "Prior visa refusal?",
-  "Any criminal record?": "Any criminal record?",
-  "What do you do?": "What do you do?",
-  "Years of experience": "Years of experience",
-  "Education level": "Education level",
-  "English level": "English level",
-  "Available capital": "Available capital",
+  "Remember your password?": "パスワードを覚えていますか？",
+  "Repeat your password": "Repeat your password",
+  "Resend code": "コードを再送信",
+  "Resend code in {n}s": "{n}秒後にコードを再送信",
+  "Reset code": "コードをリセット",
+  "Reset password": "パスワードをリセット",
+  "Resetting": {
+    "": {
+      "": {
+        "": "リセット中"
+      }
+    }
+  },
+  "Retry": "再試行",
+  "Return home": "Return home",
   "Review and continue": "Review and continue",
+  "Risks": "リスク",
   "Saving": {
     "": {
       "": {
@@ -171,23 +378,411 @@
       }
     }
   },
-  "Your session is no longer available": {
-    " Sign in again to continue onboarding": {
-      "": "Your session is no longer available. Sign in again to continue onboarding."
+  "Scenario simulation": "Scenario simulation",
+  "See how it works": "どのように機能するかを見る",
+  "Select language": "言語を選択",
+  "Send reset code": "リセットコードを送信",
+  "Sending": {
+    "": {
+      "": {
+        "": "送信中"
+      }
     }
   },
-  "Your profile could not be saved right now": {
-    " Retry before moving to the next step": {
-      "": "Your profile could not be saved right now. Retry before moving to the next step."
+  "Set new password": "新しいパスワードを設定",
+  "Sign in": "ログイン",
+  "Sign in to continue your case strategy": "ケース戦略を続けるためにサインイン",
+  "Sign in to continue your immigration strategy": {
+    "": "Sign in to continue your immigration strategy."
+  },
+  "Sign out": "ログアウト",
+  "Sign up": "登録",
+  "Signing in": {
+    "": {
+      "": {
+        "": "Signing in..."
+      }
     }
+  },
+  "Simple pricing": "シンプルな料金",
+  "Six powerful tools working together to give you clarity, confidence, and a concrete plan": {
+    "": "Six powerful tools working together to give you clarity, confidence, and a concrete plan."
+  },
+  "Software Engineer, Turkey to USA": "ソフトウェアエンジニア、トルコからアメリカへ",
+  "Software Engineering, AI/ML, Product": "ソフトウェア工学、AI/ML、製品",
+  "Something went wrong": {
+    "": "何かがうまくいきませんでした",
+    " Please try again": {
+      "": "何かがうまくいきませんでした  もう一度お試しください"
+    }
+  },
+  "Spouse, children, parents — know which family visa fits and how long it takes": {
+    "": "配偶者、子供、親 — どの家族ビザが適しているか、どれくらい時間がかかるかを知る"
+  },
+  "Start a business": "Start a business",
+  "Start free": {
+    "": "Start free",
+    " Upgrade when you're ready for your full immigration plan": {
+      "": "Start free. Upgrade when you're ready for your full immigration plan."
+    }
+  },
+  "Start with the essentials and complete your immigration profile later": {
+    "": "Start with the essentials and complete your immigration profile later."
+  },
+  "Start your plan": "プランを始める",
+  "Starter": "スターター",
+  "Step 1 of 4": "Step 1 of 4",
+  "Step 2 of 4": "Step 2 of 4",
+  "Step 3 of 4": "Step 3 of 4",
+  "Step 4 of 4": "Step 4 of 4",
+  "Step-by-step roadmap": "ステップバイステップのロードマップ",
+  "Stop guessing": {
+    " Get a clear plan for your immigration journey — in minutes, not months": {
+      "": "推測をやめる  あなたの移民の旅のための明確なプランを得る — 数分で、数ヶ月ではなく"
+    }
+  },
+  "Strategy": "戦略",
+  "Study abroad": "Study abroad",
+  "Suggested cities": "推奨都市",
+  "Suitability": "適合性",
+  "System health": "System health",
+  "Tell us a bit about yourself": {
+    "": "Tell us a bit about yourself."
+  },
+  "Tell us about you": "Tell us about you",
+  "Tell us about yourself": {
+    " Our AI analyzes 47 visa categories, checks your readiness, and gives you a step-by-step plan with timeline, cost, and documents — in minutes": {
+      "": "あなたについて教えてください  私たちのAIは47のビザカテゴリーを分析し、あなたの準備状況をチェックし、タイムライン、コスト、書類を含むステップバイステップのプランを提供します — 数分で"
+    }
+  },
+  "The page hit an unexpected error while rendering": {
+    " Try again, and if it persists, check the server logs": {
+      "": "The page hit an unexpected error while rendering. Try again, and if it persists, check the server logs."
+    }
+  },
+  "The page you're looking for doesn't exist or hasn't been built yet": {
+    "": "The page you're looking for doesn't exist or hasn't been built yet."
   },
   "The platform could not load your profile draft": {
     " Retry before continuing": {
       "": "The platform could not load your profile draft. Retry before continuing."
     }
   },
-  "Document status": "Document status",
-  "Case health": "Case health",
-  "Action roadmap": "Action roadmap",
-  "No cases yet": "No cases yet"
+  "The problem": "問題",
+  "The readiness score showed me exactly what I was missing": {
+    " I uploaded 3 documents and my score jumped from 52 to 81": {
+      "": "準備スコアは私が何を欠いているかを正確に示しました  3つの書類をアップロードしたら、スコアが52から81に跳ね上がりました"
+    }
+  },
+  "The solution": "解決策",
+  "There's always a way — we help you find it": {
+    "": "いつでも方法はあります — 私たちがそれを見つけるお手伝いをします"
+  },
+  "Three steps": {
+    " No confusion": {
+      "": "三つのステップ  混乱なし"
+    }
+  },
+  "Timeline": "タイムライン",
+  "Timeline estimate": "タイムラインの見積もり",
+  "Toggle menu": "メニューを切り替える",
+  "Try it now": "今すぐ試してみてください",
+  "Turkey, India, Brazil": {
+    "": {
+      "": {
+        "": "トルコ、インド、ブラジル"
+      }
+    }
+  },
+  "United States, Canada": {
+    "": {
+      "": {
+        "": "アメリカ合衆国、カナダ"
+      }
+    }
+  },
+  "Upload document": "Upload document",
+  "Upload your resume and education documents to increase your readiness score to 90+": {
+    "": "履歴書と教育書類をアップロードして、準備スコアを90以上に引き上げましょう"
+  },
+  "Verification code": "検証コード",
+  "Verify code": "コードを確認",
+  "Verify email": "メールを確認する",
+  "Verifying": {
+    "": {
+      "": {
+        "": "確認中"
+      }
+    }
+  },
+  "Visa categories analyzed": "分析されたビザカテゴリ",
+  "Visa types": "ビザの種類",
+  "Visa, timeline, documents, cost — everything in one clear view": {
+    "": "ビザ、タイムライン、書類、費用 — すべてを明確に表示"
+  },
+  "We analyze multiple countries, visa types, and pathways to match you with the best option based on your profile": {
+    "": "私たちは複数の国、ビザの種類、経路を分析し、あなたのプロフィールに基づいて最適なオプションを提案します"
+  },
+  "We analyze your options": "We analyze your options",
+  "We sent a 6-digit code to": "6桁のコードを送信しました",
+  "We show you what to do": "何をすべきかをお知らせします",
+  "We turn everything into one clear plan": {
+    "": "すべてを1つの明確な計画にまとめます"
+  },
+  "Welcome back": "お帰りなさい",
+  "What do you do?": "What do you do?",
+  "What you get": "あなたが得られるもの",
+  "Whatever your reason, we can help": {
+    "": "理由は何であれ、私たちが助けます"
+  },
+  "Where are you from?": "あなたはどこから来ましたか？",
+  "Where do you live now?": "Where do you live now?",
+  "Where do you want to go?": "Where do you want to go?",
+  "Work abroad": "Work abroad",
+  "Wrong email?": "間違ったメールですか？",
+  "Years of experience": "Years of experience",
+  "You're ready to see your first strategy": "You're ready to see your first strategy",
+  "Your background, education, experience, and goals": {
+    " Takes 2 minutes": {
+      "": "あなたのバックグラウンド、教育、経験、目標 2分かかります"
+    }
+  },
+  "Your best path": "あなたの最適な道",
+  "Your best path, ranked by fit": "適合度に基づいてランク付けされたあなたの最適な道",
+  "Your immigration goals and timing": {
+    "": "Your immigration goals and timing."
+  },
+  "Your new life starts here": {
+    "": "あなたの新しい生活はここから始まります"
+  },
+  "Your password has been updated": {
+    " You can now sign in": {
+      "": "パスワードが更新されました  今すぐサインインできます"
+    }
+  },
+  "Your personalized result": "あなたのパーソナライズされた結果",
+  "Your profile could not be saved right now": {
+    " Retry before moving to the next step": {
+      "": "Your profile could not be saved right now. Retry before moving to the next step."
+    }
+  },
+  "Your session is no longer available": {
+    " Sign in again to continue onboarding": {
+      "": "Your session is no longer available. Sign in again to continue onboarding."
+    }
+  },
+  "one-time": "one-time",
+  "without confusion": {
+    "": "混乱なく"
+  },
+  "FAQ": "よくある質問",
+  "tools": {
+    "pageTitle": "無料の移民ツール",
+    "pageSubtitle": "迅速な回答 — 登録は不要です。",
+    "eligibilityChecker": {
+      "title": "適格性チェッカー",
+      "description": "6つの質問に答えて、取得可能なビザを確認してください。"
+    },
+    "costEstimator": {
+      "title": "コスト見積もりツール",
+      "description": "海外移住の総コスト — ビザ料金だけではありません。"
+    },
+    "timelineCalculator": {
+      "title": "タイムライン計算機",
+      "description": "ステップバイステップで到着予定時刻を予測します。"
+    }
+  },
+  "eligibilityChecker": {
+    "pageTitle": "無料ビザ適格性チェッカー",
+    "pageSubtitle": "6つの簡単な質問に答えてください。取得可能なビザの短いリストを確認してください — 登録は不要です。",
+    "faq1": {
+      "question": "適格性チェッカーは無料ですか？",
+      "answer": "はい。完全にブラウザで動作し、アカウントは必要ありません。"
+    },
+    "faq2": {
+      "question": "チェックはどれくらい正確ですか？",
+      "answer": "すべてのルートに対して公開されている適格性ルールを使用します。強力な初期フィルターですが、AI支援の完全な分析や法的アドバイスの代わりにはなりません。"
+    },
+    "faq3": {
+      "question": "私の回答は保存されますか？",
+      "answer": "いいえ。このツールはブラウザでローカルに動作します。結果をプロフィールに保存したい場合は、登録してください。"
+    },
+    "emailCapture": {
+      "title": "完全なAI支援の分析",
+      "subtitle": "EメールでパーソナライズされたプランA/B/Cと準備スコアを受け取ります。"
+    }
+  },
+  "costEstimator": {
+    "pageTitle": "移民コスト見積もりツール",
+    "pageSubtitle": "ルートを選択し、家族の人数を追加して、現実的な総コストを確認してください — ビザ料金だけではありません。",
+    "faq1": {
+      "question": "見積もりには何が含まれますか？",
+      "answer": "政府手数料、法律/エージェント手数料、移住基金、航空券、初期住居、そして10%の予期しない費用のバッファ。"
+    },
+    "faq2": {
+      "question": "これは私の特別な状況に合っていますか？",
+      "answer": "すべてのルートに対して良いガイドラインの見積もりです。実際のコストは家族の人数、都市、弁護士の選択によって異なります。パーソナライズされた明細を得るには登録してください。"
+    },
+    "emailCapture": {
+      "title": "Eメールでの完全なコスト明細",
+      "subtitle": "目標国に応じて整理された行ベースのコストを含む表。"
+    }
+  },
+  "timelineCalculator": {
+    "pageTitle": "タイムライン計算機",
+    "pageSubtitle": "ルートを選択してください。到着予定時刻を確認してください — 準備、申請、処理、到着を含みます。",
+    "faq1": {
+      "question": "準備期間はなぜ含まれていますか？",
+      "answer": "申請時に開始されるのではなく、書類の収集を開始した時に始まります。すべてのルートに対して現実的な準備ウィンドウを追加しています。"
+    },
+    "faq2": {
+      "question": "この見積もりはどれくらい正確ですか？",
+      "answer": "公表された平均処理時間を反映しています。個々のケースはRFE、国の割り当て、証拠の完全性によって早くなることも遅くなることもあります。"
+    },
+    "emailCapture": {
+      "title": "週間タイムライントラッカー",
+      "subtitle": "到着日までにシンプルな週間プランをEメールでお送りします。"
+    }
+  },
+  "visaIndex": {
+    "pageTitle": "すべてのビザ",
+    "pageSubtitle": "我々がカバーするすべてのルートのコスト、タイムライン、適格性。",
+    "months": "月"
+  },
+  "bestCountries": {
+    "pageTitle": "職業別の最適な国",
+    "pageSubtitle": "職業を選択して、ランク付けされた移住先を確認してください。",
+    "cardTitle": "{profession}のための最適な国",
+    "breadcrumb": "最適な国",
+    "rankedSubtitle": "コスト、タイムライン、永住権に基づいてランク付けされています。データは2026年のものです。",
+    "topPathway": "最適なルート",
+    "seeAllPathways": "すべてのルートを見る",
+    "visaDetails": "{code}の詳細",
+    "otherProfessions": "他の職業"
+  },
+  "compare": {
+    "pageTitle": "ビザ比較",
+    "pageSubtitle": "最も一般的なルートの決定を並べて比較します。",
+    "vs": "対",
+    "comparingSubtitle": "{nameA}と{nameB}のコスト、時間、適合性を比較しています — 間違ったルートに数ヶ月を費やさないために。",
+    "rowFullName": "フルネーム",
+    "rowCategory": "カテゴリ",
+    "rowDestination": "目標国",
+    "rowTypicalDuration": "典型的な期間",
+    "rowCostUsd": "コスト（USD）",
+    "rowLeadsToPR": "永住権を取得する",
+    "yes": "はい",
+    "no": "いいえ",
+    "bestFor": "最も適切",
+    "otherComparisons": "他のビザ比較"
+  },
+  "visaMatch": {
+    "pageTitle": "ビザマッチング",
+    "pageSubtitle": "最初の3つのルートを見るために、目的国とプロフィールを選択してください。",
+    "cardSubtitle": "{profession}のための最適なビザ",
+    "breadcrumb": "ビザマッチング",
+    "rankedSubtitle": "{profession}のために{count}の移民ルートがランキングされました; {countryName}を目的地としています。各オプションは、適合性、コスト、期間、リスクに基づいて評価されています。",
+    "getPersonalizedMatch": "パーソナライズされたマッチを取得",
+    "freeEligibilityCheck": "無料適合性チェック",
+    "typicalTimeline": "典型的なタイムライン",
+    "typicalCost": "典型的なコスト",
+    "duration": "期間",
+    "strengths": "強み",
+    "moreVisaGuides": "{countryName}のためのさらなるビザガイド"
+  },
+  "moveTo": {
+    "pageTitle": "国別移住ガイド",
+    "pageSubtitle": "出発国と目的国に基づくステップバイステップガイド。",
+    "fromLabel": "{flag} {name}から",
+    "cardSubtitle": "{demonym}市民のためのガイド",
+    "h1": "{fromName}から{toName}市に移住",
+    "intro": "{demonym}市民のための{toName}市への移住に関する実用ガイド。ルートを選択し、タイムラインとコストを理解し、パーソナライズされた準備スコアを取得します。",
+    "topVisaPathways": "{toName}のための最適なビザルート",
+    "howToStepByStep": "ステップバイステップでの移住方法",
+    "moreCountryGuides": "さらなる国別ガイド"
+  },
+  "Onboarding could not load": "オンボーディングを読み込めませんでした",
+  "Review the highlighted profile fields before continuing": {
+    "": "続行する前にハイライトされたプロフィールフィールドを確認してください"
+  },
+  "Skip": "スキップ",
+  "Who are you?": "あなたは誰ですか？",
+  "Select your nationality": "国籍を選択してください",
+  "Select current country": "現在の国を選択してください",
+  "e": {
+    "g": {
+      " English, Turkish": {
+        "": {
+          "": {
+            "": "例: 英語、トルコ語..."
+          }
+        }
+      },
+      " Software Engineer, Doctor, Designer": {
+        "": {
+          "": {
+            "": "例: ソフトウェアエンジニア、医師、デザイナー..."
+          }
+        }
+      },
+      " 50000": "例: 50000"
+    }
+  },
+  "Your background": "あなたのバックグラウンド",
+  "English proficiency": "英語の熟練度",
+  "Available capital (USD)": "利用可能な資本（USD）",
+  "Your dream destination and timeline": {
+    "": "あなたの夢の目的地とタイムライン"
+  },
+  "When do you want to move?": "いつ引っ越したいですか？",
+  "Have you had a visa refusal before?": "ビザの拒否を受けたことがありますか？",
+  "This helps us give accurate recommendations": {
+    " Your data is private and secure": {
+      "": "これにより正確な推奨を提供できます  あなたのデータはプライベートで安全です"
+    }
+  },
+  "You're all set!": "準備完了です！",
+  "Amazing! Your profile is almost complete": {
+    " We can build great strategies for you": {
+      "": "素晴らしい！ あなたのプロフィールはほぼ完成です  私たちはあなたのために素晴らしい戦略を構築できます"
+    }
+  },
+  "Great start! You can always complete more details from your profile page": {
+    "": "良いスタートです！ プロフィールページからいつでも詳細を追加できます"
+  },
+  "No worries! You can fill in more details anytime from your dashboard": {
+    "": "心配しないで！ ダッシュボードからいつでも詳細を追加できます"
+  },
+  "See your AI analysis": "あなたのAI分析を見る",
+  "there": "そこに",
+  "Immigrant": "移民",
+  "Guru": "グル",
+  "Hey {name}, welcome aboard!": "こんにちは {name}、ようこそ！",
+  "Let's build your immigration profile in under 2 minutes": {
+    " The more we know, the better strategies we can craft for you": {
+      "": "2分以内にあなたの移民プロフィールを作成しましょう  知れば知るほど、より良い戦略を作成できます"
+    }
+  },
+  "Let's go": "行きましょう",
+  "Takes about 2 minutes": {
+    " You can skip anything": {
+      "": "約2分かかります  何でもスキップできます"
+    }
+  },
+  "score": {
+    "outOf100": "100点満点中",
+    "thisProfileIs": "このプロフィールは{name}レベルです",
+    "scoredOn": "Immigrant Guruはこのプロフィールを教育、職務経験、言語、目的国の適合性、その他8つの次元に基づいて評価しました。",
+    "getMyOwnScore": "自分のスコアを取得",
+    "shareOnX": "Xで共有"
+  },
+  "visa": {
+    "cost": "コスト",
+    "prPath": "永住権ルート",
+    "idealFor": "適格者",
+    "requirements": "要件",
+    "risksAndRejection": "リスクと一般的な拒否理由",
+    "checkReadiness": "{code}の準備状況を確認する",
+    "moreVisaGuides": "{countryName}のためのさらなるビザガイド"
+  }
 }

@@ -1,103 +1,165 @@
 {
-  "Immigrant Guru - AI Immigration Strategy Platform": "Immigrant Guru - AI Immigration Strategy Platform",
-  "Immigrant Guru - Move to a New Country Without Confusion": "Immigrant Guru - Move to a New Country Without Confusion",
-  "Language": "Language",
-  "Select language": "Select language",
-  "How it works": "How it works",
-  "Find your path": "Find your path",
-  "Pricing": "Pricing",
-  "Home": "Home",
-  "Sign in": "Sign in",
-  "Sign up": "Sign up",
-  "Dashboard": "Dashboard",
-  "Log out": "Log out",
-  "Move to a New Country Without Confusion": "Move to a New Country Without Confusion",
-  "Get your personalized visa, readiness score, and action plan in minutes": {
-    "": "Get your personalized visa, readiness score, and action plan in minutes."
+  "Active": "Aktív",
+  "Cancel": "Törlés",
+  "Capture the destination, program, current stage, and risk signals that anchor strategy generation, scoring, and document workflows": {
+    "": "Rögzítse a célországot, a programot, a jelenlegi szakaszt és a kockázati jeleket, amelyek megalapozzák a stratégia generálását, a pontozást és a dokumentum munkafolyamatokat"
   },
-  "Benefits": "Benefits",
-  "Everything you need in one place": "Everything you need in one place",
-  "Simple pricing": "Simple pricing",
-  "Free": "Free",
-  "Starter": "Starter",
-  "Plus": "Plus",
-  "Premium": "Premium",
-  "Create your account": "Create your account",
-  "Welcome back": "Welcome back",
-  "First name": "First name",
-  "Last name": "Last name",
-  "Email": "Email",
-  "Password": "Password",
-  "Confirm password": "Confirm password",
-  "Overview": "Overview",
-  "Profile": "Profile",
-  "Cases": "Cases",
-  "Strategy": "Strategy",
-  "Timeline": "Timeline",
-  "Documents": "Documents",
-  "Risks": "Risks",
-  "Copilot": "Copilot",
-  "Comparison": "Comparison",
-  "Retry": "Retry",
-  "Back": "Back",
-  "Next": "Next",
-  "Finish": "Finish",
-  "Generate strategy": "Generate strategy",
-  "Upload document": "Upload document",
-  "Scenario simulation": "Scenario simulation",
-  "My plan": "My plan",
-  "Sign out": "Sign out",
-  "Log in": "Log in",
-  "Start your plan": "Start your plan",
-  "Readiness score": "Readiness score",
-  "Probability score": "Probability score",
-  "Recommended pathway": "Recommended pathway",
-  "Next best action": "Next best action",
-  "Immigrant Guru helps you evaluate pathways, compare strategies, and act with clarity": {
-    "": "Immigrant Guru helps you evaluate pathways, compare strategies, and act with clarity."
+  "Case Detail": "Ügy részletei",
+  "Case planning workspace": "Ügytervezési munkaterület",
+  "Case portfolio": "Ügyportfólió",
+  "Case status": "Ügy állapota",
+  "Case title": "Ügy címe",
+  "Closed": "Lezárva",
+  "Close": "Bezárás",
+  "Close new case": "Új ügy bezárása",
+  "Collect recommendation letters and evidence of impact": {
+    "": "Gyűjtsön ajánlóleveleket és hatásra vonatkozó bizonyítékokat"
   },
-  "A focused workspace for immigration decisions": "A focused workspace for immigration decisions",
-  "Six powerful tools working together to give you clarity, confidence, and a concrete plan": {
-    "": "Six powerful tools working together to give you clarity, confidence, and a concrete plan."
+  "Continue your immigration planning": {
+    " Keep profile and case data aligned": {
+      "": "Folytassa a bevándorlási tervezést  Tartsa a profilt és az ügyadatokat összhangban"
+    }
   },
-  "Immigration Score": "Immigration Score",
-  "Explainable readiness signals": "Explainable readiness signals",
-  "System health": "System health",
-  "Platform Status": "Platform Status",
-  "Work abroad": "Work abroad",
-  "Study abroad": "Study abroad",
-  "Move with family": "Move with family",
-  "Start a business": "Start a business",
-  "Tell us about you": "Tell us about you",
-  "We analyze your options": "We analyze your options",
-  "Get your plan": "Get your plan",
-  "Find the plan that fits your journey": "Find the plan that fits your journey",
-  "Start free": {
-    " Upgrade when you're ready for your full immigration plan": {
-      "": "Start free. Upgrade when you're ready for your full immigration plan."
-    },
-    "": "Start free"
+  "Create a case for each migration plan you want to evaluate, compare, or execute": {
+    " Cases anchor strategy generation, scoring, and document collection in one workspace": {
+      "": "Hozzon létre egy ügyet minden migrációs tervhez, amelyet értékelni, összehasonlítani vagy végrehajtani szeretne  Az ügyek megalapozzák a stratégia generálását, a pontozást és a dokumentumgyűjtést egy munkaterületen"
+    }
   },
-  "Best value": "Best value",
-  "one-time": "one-time",
-  "No subscriptions": {
-    " Pay once, unlock your full plan": {
-      " 30-day money-back guarantee": {
-        "": "No subscriptions. Pay once, unlock your full plan. 30-day money-back guarantee."
+  "Create first case": "Első ügy létrehozása",
+  "Create strategy case": "Stratégiai ügy létrehozása",
+  "Creating case": {
+    "": {
+      "": {
+        "": "Ügy létrehozása"
       }
     }
   },
-  "Start with the essentials and complete your immigration profile later": {
-    "": "Start with the essentials and complete your immigration profile later."
+  "Current stage": "Jelenlegi szakasz",
+  "Data unavailable": "Adatok nem elérhetők",
+  "Define a migration pathway to evaluate": "Határozzon meg egy migrációs utat az értékeléshez",
+  "Destination pending": "Célország függő",
+  "Draft": "Vázlat",
+  "Evaluation signals": "Értékelési jelek",
+  "Example: eligibility_review, document_collection, filing_ready": "Példa: eligibility_review, document_collection, filing_ready",
+  "Higher values should indicate higher execution or eligibility risk": {
+    "": "A magasabb értékeknek magasabb végrehajtási vagy jogosultsági kockázatot kell jelezniük"
   },
-  "Sign in to continue your immigration strategy": {
-    "": "Sign in to continue your immigration strategy."
+  "Immigration strategy cases": "Bevándorlási stratégiai ügyek",
+  "In review": "Felülvizsgálat alatt",
+  "Internal Console": "Belső konzol",
+  "Keep notes focused on blockers, evidence gaps, and next actions": {
+    "": "Tartsa a jegyzeteket a blokkolókról, a bizonyítékhiányokról és a következő lépésekről"
   },
-  "Forgot your password?": "Forgot your password?",
-  "Create account": "Create account",
-  "Create one": "Create one",
+  "Latest score": "Legutolsó pontszám",
+  "Manage immigration strategy records that anchor pathway evaluation, stage tracking, scoring, and later document workflows": {
+    "": "Kezelje a bevándorlási stratégiai nyilvántartásokat, amelyek megalapozzák az útvonal értékelését, a szakasz nyomon követését, a pontozást és a későbbi dokumentum munkafolyamatokat"
+  },
+  "New case": "Új ügy",
+  "New strategy case": "Új stratégiai ügy",
+  "No changes to save": "Nincs menteni való változás",
+  "No strategic notes recorded yet for this immigration path": {
+    "": "Még nincs rögzített stratégiai jegyzet ezen a bevándorlási úton"
+  },
+  "No strategy cases yet": "Még nincsenek stratégiai ügyek",
+  "on record": "nyilvántartásban",
+  "Open case": "Nyitott ügy",
+  "Optional score snapshot if you want to retain a manual benchmark": {
+    "": "Opcionális pontszám pillanatkép, ha manuális referenciaértéket szeretne megőrizni"
+  },
+  "Pathway not defined yet": "Az útvonal még nincs meghatározva",
+  "Refresh cases": "Ügyek frissítése",
+  "Review the highlighted case fields before saving": {
+    "": "Ellenőrizze a kiemelt ügymezőket a mentés előtt"
+  },
+  "Risk score": "Kockázati pontszám",
+  "Risk": "Kockázat",
+  "Save case changes": "Ügyváltozások mentése",
+  "Saving changes": {
+    "": {
+      "": {
+        "": "Változások mentése"
+      }
+    }
+  },
+  "Score": "Pontszám",
+  "Session": "Ülés",
+  "Stage": "Szakasz",
+  "Start with a target country and pathway": "Kezdje egy célországgal és útvonallal",
+  "Strategy case created successfully": {
+    "": "Stratégiai ügy sikeresen létrehozva"
+  },
+  "Strategy identity": "Stratégiai identitás",
+  "Strategy notes": "Stratégiai jegyzetek",
+  "Target country": "Target country",
+  "Target pathway or program": "Célútvonal vagy program",
+  "The case portfolio could not be loaded": {
+    "": "Az ügyportfóliót nem lehetett betölteni"
+  },
+  "Track every active migration path in one workspace": "Kövesse nyomon minden aktív migrációs utat egy munkaterületen",
+  "U": {
+    "S": {
+      " employment-based migration plan": "Az Egyesült Államok munkavállalás alapú migrációs terve"
+    }
+  },
+  "United States": "Egyesült Államok",
+  "Update the case strategy record": "Frissítse az ügy stratégiai nyilvántartását",
+  "Updated": "Frissítve",
+  "Workspace data could not be loaded": {
+    "": "A munkaterület adatai nem tölthetők be"
+  },
+  "You are no longer authenticated": {
+    "": "Már nem vagy hitelesítve"
+  },
+  "case": "ügy",
+  "cases": "ügyek",
+  "12-18 months": "12-18 hónap",
+  "3 country comparisons": "3 ország összehasonlítás",
+  "A focused workspace for immigration decisions": "A focused workspace for immigration decisions",
+  "AI checks 47 visa categories and finds your best match": {
+    "": "Az AI 47 vízumkategóriát ellenőriz és megtalálja a legjobb megfelelőt"
+  },
+  "Access your immigration dashboard, decision plans, and case workspace": {
+    "": "Érd el a bevándorlási irányítópultodat, döntési terveidet és az ügy munkaterületét"
+  },
+  "Action roadmap": "Action roadmap",
+  "Admin": "Admin",
+  "Advanced action plan": "Fejlett akcióterv",
   "Already have an account?": "Already have an account?",
-  "Need an account?": "Need an account?",
+  "Any criminal record?": "Any criminal record?",
+  "Available capital": "Available capital",
+  "Average time to first plan": "Átlagos idő az első tervhez",
+  "Back": "Back",
+  "Benefits": "Benefits",
+  "Best value": "Best value",
+  "Best visa option": "Legjobb vízumopció",
+  "Best visa recommendation": "Legjobb vízumajánlás",
+  "Better case preparation": "Jobb ügy előkészítés",
+  "Built for immigrants, by immigrants": "Bevándorlók által, bevándorlóknak készült",
+  "Case health": "Case health",
+  "Cases": "Cases",
+  "Check your email": "Ellenőrizd az emailed",
+  "Checkout failed": "A pénztár nem sikerült",
+  "Children": "Children",
+  "Choose a new password for your account": {
+    "": "Válassz új jelszót a fiókodhoz"
+  },
+  "Comparison": "Comparison",
+  "Confirm password": "Confirm password",
+  "Confirm your password": {
+    "": "Erősítsd meg a jelszavad"
+  },
+  "Confusing visa rules that change every year": "Zavaros vízumszabályok, amelyek évente változnak",
+  "Copilot": "Copilot",
+  "Cost estimate": "Költségbecslés",
+  "Countries": "Országok",
+  "Countries supported": "Támogatott országok",
+  "Create account": "Create account",
+  "Create an account to start building an immigration profile, evaluate pathways, and manage your cases": {
+    "": "Hozz létre egy fiókot, hogy elkezdhess építeni egy bevándorlási profilt, értékelni az utakat és kezelni az ügyeidet"
+  },
+  "Create one": "Create one",
+  "Create your Immigrant Guru account": "Hozd létre az Immigrant Guru fiókodat",
+  "Create your account": "Create your account",
   "Creating account": {
     "": {
       "": {
@@ -105,65 +167,210 @@
       }
     }
   },
-  "Signing in": {
-    "": {
-      "": {
-        "": "Signing in..."
+  "Dashboard": "Dashboard",
+  "Data Scientist, India to Canada": "Adattudós, India és Kanada között",
+  "Deeper analysis": "Mélyebb elemzés",
+  "Document checklist": "Dokumentumellenőrző lista",
+  "Document status": "Document status",
+  "Documents": "Documents",
+  "E-2 investor, EB-5, startup visa — explore entrepreneurial immigration routes": {
+    "": "E-2 befektető, EB-5, startup vízum — fedezd fel a vállalkozói bevándorlási útvonalakat"
+  },
+  "Education level": "Education level",
+  "Email": "Email",
+  "English level": "English level",
+  "Enter a valid email address": {
+    "": "Enter a valid email address."
+  },
+  "Enter it below to verify your account": {
+    "": "Írd be alább, hogy ellenőrizd a fiókodat"
+  },
+  "Enter the 6-digit code from your email": {
+    "": "Írd be a 6 számjegyű kódot az emailedből"
+  },
+  "Enter the 6-digit code": {
+    "": "Írd be a 6 számjegyű kódot"
+  },
+  "Enter your email and we'll send you a reset code": {
+    "": "Írd be az emailed, és küldünk neked egy visszaállító kódot"
+  },
+  "Enter your email": {
+    "": "Írd be az emailed"
+  },
+  "Error": "Error",
+  "Est": {
+    " cost": "Becslés költség"
+  },
+  "Estimated cost": "Becslés költsége",
+  "Even if you think you don't qualify — we'll show you what's possible": {
+    "": "Még ha úgy gondolod, hogy nem vagy jogosult — megmutatjuk, mi lehetséges"
+  },
+  "Everything in Plus": "Minden a Plusban",
+  "Everything in Starter": "Minden a Starterben",
+  "Everything you need in one place": "Everything you need in one place",
+  "Expanded document guidance": "Kiterjesztett dokumentum útmutatás",
+  "Expensive lawyers who charge $5,000+ for basic advice": "Drága ügyvédek, akik 5000 dollár felett kérnek alapvető tanácsokért",
+  "Explainable readiness signals": "Explainable readiness signals",
+  "F-1, OPT, STEM extension — understand your path from student to professional": {
+    "": "F-1, OPT, STEM hosszabbítás — értsd meg az utadat a diákból a szakemberig"
+  },
+  "Filing + legal fees": "Benyújtási + jogi díjak",
+  "Find my best path": "Találd meg a legjobb utamat",
+  "Find the plan that fits your journey": "Find the plan that fits your journey",
+  "Find the right work visa for your skills and experience": {
+    " H-1B, EB-2, O-1, and more": {
+      "": "Találd meg a megfelelő munkavízumot a készségeid és tapasztalataid alapján: H-1B, EB-2, O-1 és még sok más"
+    }
+  },
+  "Find your best path": "Találd meg a legjobb utadat",
+  "Find your path": "Find your path",
+  "Finish": "Finish",
+  "First name": "First name",
+  "First name is too long": {
+    "": "A keresztnév túl hosszú"
+  },
+  "For comparing options": "Opciók összehasonlításához",
+  "For every situation": "Minden helyzethez",
+  "For one clear path": "Egy világos útvonalhoz",
+  "Forgot your password?": "Forgot your password?",
+  "Free": "Free",
+  "Free to start · No credit card · Takes 2 minutes": "Ingyenes a kezdéshez · Nincs hitelkártya · 2 percet vesz igénybe",
+  "From filing to approval": "A benyújtástól a jóváhagyásig",
+  "Full path comparison": "Teljes útvonal összehasonlítás",
+  "Full plan for 1 country": "Teljes terv 1 országra",
+  "Full strategic experience": "Teljes stratégiai tapasztalat",
+  "Full strategic recommendation": "Teljes stratégiai ajánlás",
+  "Generate strategy": "Generate strategy",
+  "Get Started": "Kezdj el",
+  "Get your personalized visa, readiness score, and action plan in minutes": {
+    "": "Get your personalized visa, readiness score, and action plan in minutes.",
+    " Not months": {
+      "": "Szerezd meg a személyre szabott vízumodat, készenléti pontszámodat és akciótervedet percek alatt, nem hónapok alatt"
+    }
+  },
+  "Get your plan": "Get your plan",
+  "Get {plan}": "Szerezd meg a {plan}",
+  "Go back": "Menj vissza",
+  "Go home": "Go home",
+  "Home": "Home",
+  "How it works": "How it works",
+  "I spent months Googling visa options": {
+    " Immigrant Guru gave me a clear plan in 10 minutes": {
+      " I wish I found this earlier": {
+        "": "Hónapokat töltöttem a vízumopciók Google-ozásával, az Immigrant Guru 10 perc alatt adott egy világos tervet, bárcsak korábban rátaláltam volna"
       }
     }
   },
+  "Immigrant Guru - AI Immigration Strategy Platform": "Immigrant Guru - AI Immigration Strategy Platform",
+  "Immigrant Guru - Move to a New Country Without Confusion": "Immigrant Guru - Move to a New Country Without Confusion",
+  "Immigrant Guru helps you evaluate pathways, compare strategies, and act with clarity": {
+    "": "Immigrant Guru helps you evaluate pathways, compare strategies, and act with clarity."
+  },
+  "Immigration Plan": "Bevándorlási terv",
+  "Immigration Score": "Immigration Score",
+  "Immigration shouldn't feel this hard": {
+    "": "A bevándorlás nem lehet ennyire nehéz"
+  },
+  "Job opportunities": "Munkalehetőségek",
+  "Language": "Language",
+  "Last name": "Last name",
+  "Last name is too long": {
+    "": "A vezetéknév túl hosszú"
+  },
+  "Log in": "Log in",
+  "Log out": "Log out",
   "Minimum 8 characters": "Minimum 8 characters",
-  "Repeat your password": "Repeat your password",
-  "Enter a valid email address": {
-    "": "Enter a valid email address."
+  "Months of waiting with no visibility": "Hónapok várakozás láthatóság nélkül",
+  "Move to a New Country Without Confusion": "Move to a New Country Without Confusion",
+  "Move to a new country": "Költözz egy új országba",
+  "Move with family": "Move with family",
+  "Multiple visa alternatives": "Több vízumalternatíva",
+  "My plan": "My plan",
+  "National Interest Waiver · United States": "Nemzeti Érdek Mentesség · Egyesült Államok",
+  "Nationality": "Nationality",
+  "Need an account?": "Need an account?",
+  "New password": "Új jelszó",
+  "Next": "Next",
+  "Next best action": "Next best action",
+  "Next step:": "Következő lépés:",
+  "No cases yet": "No cases yet",
+  "No clear direction — just endless Googling": "Nincs világos irány — csak végtelen Google keresés",
+  "No confusion, no jargon": "Nincs zűrzavar, nincs szakzsargon",
+  "No employer sponsor needed — you can self-petition": {
+    "": "Nincs szükség munkáltatói szponzorra — önállóan is kérvényezhetsz"
+  },
+  "No matter your background, we help you find a way forward": {
+    "": "Függetlenül a hátteredtől, segítünk megtalálni az utat előre"
+  },
+  "No subscriptions": {
+    " Pay once, unlock your full plan": {
+      " 30-day money-back guarantee": {
+        "": "No subscriptions. Pay once, unlock your full plan. 30-day money-back guarantee."
+      }
+    }
+  },
+  "One clear plan": {
+    " Everything you need": {
+      "": "Egy világos terv  Minden, amire szükséged van"
+    }
+  },
+  "One-time payment": {
+    " Unlock your full personalized immigration plan": {
+      "": "Egyszeri díj  Oldd fel a teljes, személyre szabott bevándorlási tervedet"
+    }
+  },
+  "Overview": "Overview",
+  "Page not found": "Page not found",
+  "Password": "Password",
+  "Password must be at least 8 characters": {
+    "": "A jelszónak legalább 8 karakterből kell állnia"
   },
   "Password must contain at least 8 characters": {
     "": "Password must contain at least 8 characters."
   },
-  "Page not found": "Page not found",
-  "The page you're looking for doesn't exist or hasn't been built yet": {
-    "": "The page you're looking for doesn't exist or hasn't been built yet."
+  "Password reset!": "Jelszó visszaállítása!",
+  "Passwords do not match": {
+    "": "A jelszavak nem egyeznek"
   },
-  "Return home": "Return home",
-  "Error": "Error",
-  "Something went wrong": "Something went wrong",
-  "The page hit an unexpected error while rendering": {
-    " Try again, and if it persists, check the server logs": {
-      "": "The page hit an unexpected error while rendering. Try again, and if it persists, check the server logs."
-    }
-  },
-  "Go home": "Go home",
-  "Admin": "Admin",
-  "Step 1 of 4": "Step 1 of 4",
-  "Step 2 of 4": "Step 2 of 4",
-  "Step 3 of 4": "Step 3 of 4",
-  "Step 4 of 4": "Step 4 of 4",
-  "Tell us a bit about yourself": {
-    "": "Tell us a bit about yourself."
-  },
-  "Where do you want to go?": "Where do you want to go?",
-  "Your immigration goals and timing": {
-    "": "Your immigration goals and timing."
-  },
+  "Platform Status": "Platform Status",
+  "Plus": "Plus",
+  "Possible paths": "Lehetséges utak",
+  "Preferred language": "Preferred language",
+  "Premium": "Premium",
+  "Premium dashboard": "Prémium irányítópult",
+  "Pricing": "Pricing",
+  "Prior visa refusal?": "Prior visa refusal?",
+  "Priority AI guidance": "Prioritás AI útmutatás",
+  "Probability score": "Probability score",
   "Professional experience and finances": {
     "": "Professional experience and finances."
   },
-  "You're ready to see your first strategy": "You're ready to see your first strategy",
-  "Nationality": "Nationality",
-  "Where do you live now?": "Where do you live now?",
+  "Profile": "Profile",
+  "Profile, finance, case": "Profil, pénzügyek, ügy",
+  "Readiness": "Készültség",
+  "Readiness score": "Readiness score",
+  "Ready": "Kész",
+  "Recommended pathway": "Recommended pathway",
+  "Redirecting…": "Átirányítás…",
   "Relationship status": "Relationship status",
-  "Children": "Children",
-  "Preferred language": "Preferred language",
-  "Target country": "Target country",
   "Relocation timeline": "Relocation timeline",
-  "Prior visa refusal?": "Prior visa refusal?",
-  "Any criminal record?": "Any criminal record?",
-  "What do you do?": "What do you do?",
-  "Years of experience": "Years of experience",
-  "Education level": "Education level",
-  "English level": "English level",
-  "Available capital": "Available capital",
+  "Remember your password?": "Emlékszel a jelszavadra?",
+  "Repeat your password": "Repeat your password",
+  "Resend code": "Kód újraküldése",
+  "Resend code in {n}s": "Kód újraküldése {n} másodperc múlva",
+  "Reset code": "Kód visszaállítása",
+  "Reset password": "Jelszó visszaállítása",
+  "Resetting": {
+    "": {
+      "": {
+        "": "Visszaállítás folyamatban"
+      }
+    }
+  },
+  "Retry": "Retry",
+  "Return home": "Return home",
   "Review and continue": "Review and continue",
+  "Risks": "Risks",
   "Saving": {
     "": {
       "": {
@@ -171,23 +378,411 @@
       }
     }
   },
-  "Your session is no longer available": {
-    " Sign in again to continue onboarding": {
-      "": "Your session is no longer available. Sign in again to continue onboarding."
+  "Scenario simulation": "Scenario simulation",
+  "See how it works": "Nézd meg, hogyan működik",
+  "Select language": "Select language",
+  "Send reset code": "Küldd el a visszaállító kódot",
+  "Sending": {
+    "": {
+      "": {
+        "": "Küldés folyamatban"
+      }
     }
   },
-  "Your profile could not be saved right now": {
-    " Retry before moving to the next step": {
-      "": "Your profile could not be saved right now. Retry before moving to the next step."
+  "Set new password": "Új jelszó beállítása",
+  "Sign in": "Sign in",
+  "Sign in to continue your case strategy": "Jelentkezz be az ügy stratégiád folytatásához",
+  "Sign in to continue your immigration strategy": {
+    "": "Sign in to continue your immigration strategy."
+  },
+  "Sign out": "Sign out",
+  "Sign up": "Sign up",
+  "Signing in": {
+    "": {
+      "": {
+        "": "Signing in..."
+      }
     }
+  },
+  "Simple pricing": "Simple pricing",
+  "Six powerful tools working together to give you clarity, confidence, and a concrete plan": {
+    "": "Six powerful tools working together to give you clarity, confidence, and a concrete plan."
+  },
+  "Software Engineer, Turkey to USA": "Szoftvermérnök, Törökország az Egyesült Államokba",
+  "Software Engineering, AI/ML, Product": "Szoftverfejlesztés, AI/ML, Termék",
+  "Something went wrong": {
+    "": "Valami hiba történt",
+    " Please try again": {
+      "": "Valami hiba történt  Kérlek, próbáld újra"
+    }
+  },
+  "Spouse, children, parents — know which family visa fits and how long it takes": {
+    "": "Házastárs, gyermekek, szülők — tudd meg, melyik családi vízum illik hozzád és mennyi ideig tart"
+  },
+  "Start a business": "Start a business",
+  "Start free": {
+    "": "Start free",
+    " Upgrade when you're ready for your full immigration plan": {
+      "": "Start free. Upgrade when you're ready for your full immigration plan."
+    }
+  },
+  "Start with the essentials and complete your immigration profile later": {
+    "": "Start with the essentials and complete your immigration profile later."
+  },
+  "Start your plan": "Start your plan",
+  "Starter": "Starter",
+  "Step 1 of 4": "Step 1 of 4",
+  "Step 2 of 4": "Step 2 of 4",
+  "Step 3 of 4": "Step 3 of 4",
+  "Step 4 of 4": "Step 4 of 4",
+  "Step-by-step roadmap": "Lépésről lépésre útmutató",
+  "Stop guessing": {
+    " Get a clear plan for your immigration journey — in minutes, not months": {
+      "": "Ne találgass  Szerezz egy világos tervet a bevándorlási utadhoz — percek alatt, nem hónapok alatt"
+    }
+  },
+  "Strategy": "Strategy",
+  "Study abroad": "Study abroad",
+  "Suggested cities": "Javasolt városok",
+  "Suitability": "Alkalmasság",
+  "System health": "System health",
+  "Tell us a bit about yourself": {
+    "": "Tell us a bit about yourself."
+  },
+  "Tell us about you": "Tell us about you",
+  "Tell us about yourself": {
+    " Our AI analyzes 47 visa categories, checks your readiness, and gives you a step-by-step plan with timeline, cost, and documents — in minutes": {
+      "": "Mesélj magadról  AI-nk 47 vízumkategóriát elemez, ellenőrzi a készültségedet, és ad egy lépésről lépésre tervet idővonal, költség és dokumentumok megadásával — percek alatt"
+    }
+  },
+  "The page hit an unexpected error while rendering": {
+    " Try again, and if it persists, check the server logs": {
+      "": "The page hit an unexpected error while rendering. Try again, and if it persists, check the server logs."
+    }
+  },
+  "The page you're looking for doesn't exist or hasn't been built yet": {
+    "": "The page you're looking for doesn't exist or hasn't been built yet."
   },
   "The platform could not load your profile draft": {
     " Retry before continuing": {
       "": "The platform could not load your profile draft. Retry before continuing."
     }
   },
-  "Document status": "Document status",
-  "Case health": "Case health",
-  "Action roadmap": "Action roadmap",
-  "No cases yet": "No cases yet"
+  "The problem": "A probléma",
+  "The readiness score showed me exactly what I was missing": {
+    " I uploaded 3 documents and my score jumped from 52 to 81": {
+      "": "A készültségi pontszám pontosan megmutatta, mi hiányzik  Feltöltöttem 3 dokumentumot, és a pontszámom 52-ről 81-re ugrott"
+    }
+  },
+  "The solution": "A megoldás",
+  "There's always a way — we help you find it": {
+    "": "Mindig van megoldás — segítünk megtalálni"
+  },
+  "Three steps": {
+    " No confusion": {
+      "": "Három lépés  Nincs zűrzavar"
+    }
+  },
+  "Timeline": "Timeline",
+  "Timeline estimate": "Idővonal becslés",
+  "Toggle menu": "Menü váltása",
+  "Try it now": "Próbáld ki most",
+  "Turkey, India, Brazil": {
+    "": {
+      "": {
+        "": "Törökország, India, Brazília"
+      }
+    }
+  },
+  "United States, Canada": {
+    "": {
+      "": {
+        "": "Egyesült Államok, Kanada"
+      }
+    }
+  },
+  "Upload document": "Upload document",
+  "Upload your resume and education documents to increase your readiness score to 90+": {
+    "": "Töltsd fel az önéletrajzodat és a tanulmányi dokumentumaidat, hogy növeld a készültségi pontszámodat 90+ ra"
+  },
+  "Verification code": "Ellenőrző kód",
+  "Verify code": "Kód ellenőrzése",
+  "Verify email": "Email megerősítése",
+  "Verifying": {
+    "": {
+      "": {
+        "": "Ellenőrzés alatt"
+      }
+    }
+  },
+  "Visa categories analyzed": "Elemzett vízumsorozatok",
+  "Visa types": "Vízumtípusok",
+  "Visa, timeline, documents, cost — everything in one clear view": {
+    "": "Vízum, idővonal, dokumentumok, költség — minden egy világos nézetben"
+  },
+  "We analyze multiple countries, visa types, and pathways to match you with the best option based on your profile": {
+    "": "Több országot, vízumtípust és lehetőséget elemezünk, hogy a legjobb opciót találjuk meg a profilod alapján"
+  },
+  "We analyze your options": "We analyze your options",
+  "We sent a 6-digit code to": "Küldtünk egy 6-jegyű kódot a következő címre",
+  "We show you what to do": "Megmutatjuk, mit kell tenned",
+  "We turn everything into one clear plan": {
+    "": "Mindenből egy világos tervet készítünk"
+  },
+  "Welcome back": "Welcome back",
+  "What do you do?": "What do you do?",
+  "What you get": "Mit kapsz",
+  "Whatever your reason, we can help": {
+    "": "Bármilyen okból is, segíthetünk"
+  },
+  "Where are you from?": "Honnan származol?",
+  "Where do you live now?": "Where do you live now?",
+  "Where do you want to go?": "Where do you want to go?",
+  "Work abroad": "Work abroad",
+  "Wrong email?": "Hibás email?",
+  "Years of experience": "Years of experience",
+  "You're ready to see your first strategy": "You're ready to see your first strategy",
+  "Your background, education, experience, and goals": {
+    " Takes 2 minutes": {
+      "": "A háttér, oktatás, tapasztalat és célok  2 percet vesz igénybe"
+    }
+  },
+  "Your best path": "A legjobb utad",
+  "Your best path, ranked by fit": "A legjobb utad, a megfelelőség alapján rangsorolva",
+  "Your immigration goals and timing": {
+    "": "Your immigration goals and timing."
+  },
+  "Your new life starts here": {
+    "": "Az új életed itt kezdődik"
+  },
+  "Your password has been updated": {
+    " You can now sign in": {
+      "": "A jelszavad frissítve lett  Most már be tudsz jelentkezni"
+    }
+  },
+  "Your personalized result": "A személyre szabott eredményed",
+  "Your profile could not be saved right now": {
+    " Retry before moving to the next step": {
+      "": "Your profile could not be saved right now. Retry before moving to the next step."
+    }
+  },
+  "Your session is no longer available": {
+    " Sign in again to continue onboarding": {
+      "": "Your session is no longer available. Sign in again to continue onboarding."
+    }
+  },
+  "one-time": "one-time",
+  "without confusion": {
+    "": "zűrzavar nélkül"
+  },
+  "FAQ": "GYIK",
+  "tools": {
+    "pageTitle": "Ingyenes bevándorlási eszközök",
+    "pageSubtitle": "Gyors válaszok — regisztráció nem szükséges.",
+    "eligibilityChecker": {
+      "title": "Alkalmassági ellenőrző",
+      "description": "Válaszoljon 6 kérdésre, és nézze meg a valószínűleg jogosult vízákat."
+    },
+    "costEstimator": {
+      "title": "Költségbecslő eszköz",
+      "description": "A külföldre költözés teljes költsége — nem csak a vízdíj."
+    },
+    "timelineCalculator": {
+      "title": "Idővonal számító",
+      "description": "Lépésről lépésre becsülje meg, mikor érkezik."
+    }
+  },
+  "eligibilityChecker": {
+    "pageTitle": "Ingyenes vízumalkalmassági ellenőrző",
+    "pageSubtitle": "Válaszoljon 6 rövid kérdésre. Nézze meg a valószínűleg jogosult vízák rövid listáját — regisztráció nem szükséges.",
+    "faq1": {
+      "question": "Ingyenes az alkalmassági ellenőrző?",
+      "answer": "Igen. Teljesen a böngészőjében működik, és nem igényel fiókot."
+    },
+    "faq2": {
+      "question": "Mennyire pontos a ellenőrzés?",
+      "answer": "Minden útra vonatkozó nyilvános alkalmassági szabályokat használ. Erős első szűrő, de nem helyettesíti az AI által támogatott teljes elemzést vagy jogi tanácsadást."
+    },
+    "faq3": {
+      "question": "Elmenti a válaszaimat?",
+      "answer": "Nem. Az eszköz a böngészőjében helyben működik. Ha szeretné, hogy az eredményei a profiljába legyenek mentve, regisztráljon."
+    },
+    "emailCapture": {
+      "title": "Teljes AI által támogatott elemzés",
+      "subtitle": "E-mailben személyre szabott A/B/C tervet és felkészültségi pontszámot kap."
+    }
+  },
+  "costEstimator": {
+    "pageTitle": "Bevándorlási költségbecslő eszköz",
+    "pageSubtitle": "Válasszon egy utat, adja hozzá a család méretét, és nézze meg a reális összköltséget — nem csak a vízdíj.",
+    "faq1": {
+      "question": "Mi tartozik a becslésbe?",
+      "answer": "Állami díjak, jogi/ügynöki díjak, letelepedési alapok, repülőjegy, első lakhatás és 10% váratlan költségpuffer."
+    },
+    "faq2": {
+      "question": "Ez helyes az én különleges helyzetemre?",
+      "answer": "Jó irányadó becslés minden útra. A tényleges költsége az család méretétől, várostól és ügyvéd választásától függ. Személyre szabott kimutatásért regisztráljon."
+    },
+    "emailCapture": {
+      "title": "E-mailben teljes költségkimutatás",
+      "subtitle": "A célországához igazított soralapú költségeket tartalmazó táblázat."
+    }
+  },
+  "timelineCalculator": {
+    "pageTitle": "Idővonal számító",
+    "pageSubtitle": "Válasszon egy utat. Nézze meg, mikor érkezik — felkészülés, jelentkezés, feldolgozás és érkezés beleértve.",
+    "faq1": {
+      "question": "Miért tartalmazza a felkészülési időt?",
+      "answer": "Az óra nem akkor kezdődik, amikor jelentkezik — akkor kezdődik, amikor elkezdi összegyűjteni a dokumentumokat. Minden útra reális felkészülési időt adunk hozzá."
+    },
+    "faq2": {
+      "question": "Mennyire pontos ez a becslés?",
+      "answer": "A közzétett átlagos feldolgozási időket tükrözi. Az egyéni esetek RFE-k, ország kvóták és a bizonyítékok teljessége alapján gyorsabbak vagy lassabbak lehetnek."
+    },
+    "emailCapture": {
+      "title": "Heti idővonal nyomon követő",
+      "subtitle": "Egyszerű heti tervet küldünk Önnek e-mailben az érkezési napig."
+    }
+  },
+  "visaIndex": {
+    "pageTitle": "Minden vízum",
+    "pageSubtitle": "Költség, idővonal és alkalmasság minden útra, amit lefedünk.",
+    "months": "hónap"
+  },
+  "bestCountries": {
+    "pageTitle": "Legjobb országok szakma szerint",
+    "pageSubtitle": "Válassza ki szakmáját, hogy lássa a rangsorolt bevándorlási célpontokat.",
+    "cardTitle": "A legjobb országok {profession} számára",
+    "breadcrumb": "Legjobb országok",
+    "rankedSubtitle": "Költség, idővonal és állandó tartózkodás szerint rangsorolva. Az adatok 2026-ra aktuálisak.",
+    "topPathway": "Legjobb út",
+    "seeAllPathways": "Minden út megtekintése",
+    "visaDetails": "{code} részletei",
+    "otherProfessions": "Egyéb szakmák"
+  },
+  "compare": {
+    "pageTitle": "Vízum összehasonlítások",
+    "pageSubtitle": "A leggyakoribb úti döntések egymás melletti összehasonlítása.",
+    "vs": "vs",
+    "comparingSubtitle": "{nameA} és {nameB} költség, idő és megfelelőség szempontjából összehasonlítva — hogy ne pazaroljon hónapokat a rossz útra.",
+    "rowFullName": "Teljes név",
+    "rowCategory": "Kategória",
+    "rowDestination": "Célország",
+    "rowTypicalDuration": "Tipikus időtartam",
+    "rowCostUsd": "Költség (USD)",
+    "rowLeadsToPR": "Állandó tartózkodásra jogosít",
+    "yes": "Igen",
+    "no": "Nem",
+    "bestFor": "Legmegfelelőbb",
+    "otherComparisons": "Egyéb vízum összehasonlítások"
+  },
+  "visaMatch": {
+    "pageTitle": "Vízum párosítás",
+    "pageSubtitle": "Az első 3 útvonal megtekintéséhez válaszd ki a célországodat és a profilodat.",
+    "cardSubtitle": "A legjobb vízumok {profession} számára",
+    "breadcrumb": "Vízum Párosítás",
+    "rankedSubtitle": "{profession} számára {count} bevándorlási útvonal rangsorolva; {countryName} céljával. Minden lehetőség pontozva van a megfelelőség, költség, időtartam és kockázat alapján.",
+    "getPersonalizedMatch": "Szerezd meg a személyre szabott párosításodat",
+    "freeEligibilityCheck": "Ingyenes alkalmassági ellenőrzés",
+    "typicalTimeline": "Tipikus idővonal",
+    "typicalCost": "Tipikus költség",
+    "duration": "Időtartam",
+    "strengths": "Erősségek",
+    "moreVisaGuides": "További vízum útmutatók {countryName} számára"
+  },
+  "moveTo": {
+    "pageTitle": "Ország költözési útmutatók",
+    "pageSubtitle": "Lépésről lépésre útmutatók a származási és célország szerint.",
+    "fromLabel": "{flag} {name}-tól",
+    "cardSubtitle": "Útmutató {demonym} állampolgárok számára",
+    "h1": "Költözés {fromName} városából {toName} városába",
+    "intro": "Gyakorlati útmutató a {demonym} állampolgárok számára {toName} városába való költözéshez. Válassz egy utat, értsd meg az idővonalat és a költségeket, és szerezz személyre szabott felkészültségi pontszámot.",
+    "topVisaPathways": "A legjobb vízum lehetőségek {toName} számára",
+    "howToStepByStep": "Lépésről lépésre hogyan költözz",
+    "moreCountryGuides": "További ország útmutatók"
+  },
+  "Onboarding could not load": "Az onboarding nem tudott betöltődni",
+  "Review the highlighted profile fields before continuing": {
+    "": "Ellenőrizd a kiemelt profilmezőket a folytatás előtt"
+  },
+  "Skip": "Kihagyás",
+  "Who are you?": "Ki vagy te?",
+  "Select your nationality": "Válaszd ki a nemzetiséged",
+  "Select current country": "Válaszd ki a jelenlegi országot",
+  "e": {
+    "g": {
+      " English, Turkish": {
+        "": {
+          "": {
+            "": "pl. Angol, Török..."
+          }
+        }
+      },
+      " Software Engineer, Doctor, Designer": {
+        "": {
+          "": {
+            "": "pl. Szoftvermérnök, Orvos, Tervező..."
+          }
+        }
+      },
+      " 50000": "pl. 50000"
+    }
+  },
+  "Your background": "A háttér",
+  "English proficiency": "Angol nyelvtudás",
+  "Available capital (USD)": "Elérhető tőke (USD)",
+  "Your dream destination and timeline": {
+    "": "Az álom célpontod és idővonalad"
+  },
+  "When do you want to move?": "Mikor szeretnél költözni?",
+  "Have you had a visa refusal before?": "Volt már vízumelutasításod korábban?",
+  "This helps us give accurate recommendations": {
+    " Your data is private and secure": {
+      "": "Ez segít nekünk pontos ajánlásokat adni  Az adataid magánjellegűek és biztonságosak"
+    }
+  },
+  "You're all set!": "Minden rendben van!",
+  "Amazing! Your profile is almost complete": {
+    " We can build great strategies for you": {
+      "": "Csodás! A profilod majdnem kész  Nagyszerű stratégiákat tudunk építeni számodra"
+    }
+  },
+  "Great start! You can always complete more details from your profile page": {
+    "": "Nagyszerű kezdet! Mindig kiegészítheted a profilod további részleteivel"
+  },
+  "No worries! You can fill in more details anytime from your dashboard": {
+    "": "Ne aggódj! Bármikor kitöltheted a további részleteket a vezérlőpultodról"
+  },
+  "See your AI analysis": "Nézd meg az AI elemzésedet",
+  "there": "ott",
+  "Immigrant": "Bevándorló",
+  "Guru": "Guru",
+  "Hey {name}, welcome aboard!": "Helló {name}, üdvözlünk a fedélzeten!",
+  "Let's build your immigration profile in under 2 minutes": {
+    " The more we know, the better strategies we can craft for you": {
+      "": "Építsük meg a bevándorlási profilodat  2 perc alatt  Minél többet tudunk, annál jobb stratégiákat tudunk kidolgozni számodra"
+    }
+  },
+  "Let's go": "Induljunk",
+  "Takes about 2 minutes": {
+    " You can skip anything": {
+      "": "Körülbelül 2 percet vesz igénybe  Bármilyen részt kihagyhatsz"
+    }
+  },
+  "score": {
+    "outOf100": "100-ból",
+    "thisProfileIs": "Ez a profil {readiness} szinten van",
+    "scoredOn": "Az Immigrant Guru ezt a profilt képzés, munkatapasztalat, nyelv, célország megfelelőség és 8 másik dimenzió alapján pontozta.",
+    "getMyOwnScore": "Szerezd meg a saját pontszámomat",
+    "shareOnX": "Megosztás X-en"
+  },
+  "visa": {
+    "cost": "Költség",
+    "prPath": "Tartós tartózkodási útvonal",
+    "idealFor": "Megfelelő személyek",
+    "requirements": "Követelmények",
+    "risksAndRejection": "Kockázatok és gyakori elutasítási okok",
+    "checkReadiness": "Ellenőrizd a {code} felkészültségemet",
+    "moreVisaGuides": "További vízum útmutatók {countryName} számára"
+  }
 }

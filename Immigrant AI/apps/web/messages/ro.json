@@ -1,103 +1,165 @@
 {
-  "Immigrant Guru - AI Immigration Strategy Platform": "Immigrant Guru - AI Immigration Strategy Platform",
-  "Immigrant Guru - Move to a New Country Without Confusion": "Immigrant Guru - Move to a New Country Without Confusion",
-  "Language": "Language",
-  "Select language": "Select language",
-  "How it works": "How it works",
-  "Find your path": "Find your path",
-  "Pricing": "Pricing",
-  "Home": "Home",
-  "Sign in": "Sign in",
-  "Sign up": "Sign up",
-  "Dashboard": "Dashboard",
-  "Log out": "Log out",
-  "Move to a New Country Without Confusion": "Move to a New Country Without Confusion",
-  "Get your personalized visa, readiness score, and action plan in minutes": {
-    "": "Get your personalized visa, readiness score, and action plan in minutes."
+  "Active": "Activ",
+  "Cancel": "Anulează",
+  "Capture the destination, program, current stage, and risk signals that anchor strategy generation, scoring, and document workflows": {
+    "": "Capturați destinația, programul, etapa curentă și semnalele de risc care ancorează generarea strategiei, evaluarea și fluxurile de lucru ale documentelor"
   },
-  "Benefits": "Benefits",
-  "Everything you need in one place": "Everything you need in one place",
-  "Simple pricing": "Simple pricing",
-  "Free": "Free",
-  "Starter": "Starter",
-  "Plus": "Plus",
-  "Premium": "Premium",
-  "Create your account": "Create your account",
-  "Welcome back": "Welcome back",
-  "First name": "First name",
-  "Last name": "Last name",
-  "Email": "Email",
-  "Password": "Password",
-  "Confirm password": "Confirm password",
-  "Overview": "Overview",
-  "Profile": "Profile",
-  "Cases": "Cases",
-  "Strategy": "Strategy",
-  "Timeline": "Timeline",
-  "Documents": "Documents",
-  "Risks": "Risks",
-  "Copilot": "Copilot",
-  "Comparison": "Comparison",
-  "Retry": "Retry",
-  "Back": "Back",
-  "Next": "Next",
-  "Finish": "Finish",
-  "Generate strategy": "Generate strategy",
-  "Upload document": "Upload document",
-  "Scenario simulation": "Scenario simulation",
-  "My plan": "My plan",
-  "Sign out": "Sign out",
-  "Log in": "Log in",
-  "Start your plan": "Start your plan",
-  "Readiness score": "Readiness score",
-  "Probability score": "Probability score",
-  "Recommended pathway": "Recommended pathway",
-  "Next best action": "Next best action",
-  "Immigrant Guru helps you evaluate pathways, compare strategies, and act with clarity": {
-    "": "Immigrant Guru helps you evaluate pathways, compare strategies, and act with clarity."
+  "Case Detail": "Detalii caz",
+  "Case planning workspace": "Spațiu de lucru pentru planificarea cazului",
+  "Case portfolio": "Portofoliu de cazuri",
+  "Case status": "Starea cazului",
+  "Case title": "Titlul cazului",
+  "Closed": "Închis",
+  "Close": "Închide",
+  "Close new case": "Închide caz nou",
+  "Collect recommendation letters and evidence of impact": {
+    "": "Colectați scrisori de recomandare și dovezi ale impactului"
   },
-  "A focused workspace for immigration decisions": "A focused workspace for immigration decisions",
-  "Six powerful tools working together to give you clarity, confidence, and a concrete plan": {
-    "": "Six powerful tools working together to give you clarity, confidence, and a concrete plan."
+  "Continue your immigration planning": {
+    " Keep profile and case data aligned": {
+      "": "Continuați planificarea imigrației  Mențineți datele de profil și caz aliniate"
+    }
   },
-  "Immigration Score": "Immigration Score",
-  "Explainable readiness signals": "Explainable readiness signals",
-  "System health": "System health",
-  "Platform Status": "Platform Status",
-  "Work abroad": "Work abroad",
-  "Study abroad": "Study abroad",
-  "Move with family": "Move with family",
-  "Start a business": "Start a business",
-  "Tell us about you": "Tell us about you",
-  "We analyze your options": "We analyze your options",
-  "Get your plan": "Get your plan",
-  "Find the plan that fits your journey": "Find the plan that fits your journey",
-  "Start free": {
-    " Upgrade when you're ready for your full immigration plan": {
-      "": "Start free. Upgrade when you're ready for your full immigration plan."
-    },
-    "": "Start free"
+  "Create a case for each migration plan you want to evaluate, compare, or execute": {
+    " Cases anchor strategy generation, scoring, and document collection in one workspace": {
+      "": "Creați un caz pentru fiecare plan de migrație pe care doriți să-l evaluați, comparați sau executați  Cazurile ancorează generarea strategiei, evaluarea și colectarea documentelor într-un singur spațiu de lucru"
+    }
   },
-  "Best value": "Best value",
-  "one-time": "one-time",
-  "No subscriptions": {
-    " Pay once, unlock your full plan": {
-      " 30-day money-back guarantee": {
-        "": "No subscriptions. Pay once, unlock your full plan. 30-day money-back guarantee."
+  "Create first case": "Creați primul caz",
+  "Create strategy case": "Creați caz de strategie",
+  "Creating case": {
+    "": {
+      "": {
+        "": "Crearea cazului"
       }
     }
   },
-  "Start with the essentials and complete your immigration profile later": {
-    "": "Start with the essentials and complete your immigration profile later."
+  "Current stage": "Etapa curentă",
+  "Data unavailable": "Date indisponibile",
+  "Define a migration pathway to evaluate": "Definiți un traseu de migrație pentru evaluare",
+  "Destination pending": "Destinație în așteptare",
+  "Draft": "Schiță",
+  "Evaluation signals": "Semnale de evaluare",
+  "Example: eligibility_review, document_collection, filing_ready": "Exemplu: eligibility_review, document_collection, filing_ready",
+  "Higher values should indicate higher execution or eligibility risk": {
+    "": "Valorile mai mari ar trebui să indice un risc mai mare de execuție sau eligibilitate"
   },
-  "Sign in to continue your immigration strategy": {
-    "": "Sign in to continue your immigration strategy."
+  "Immigration strategy cases": "Cazuri de strategie de imigrație",
+  "In review": "În revizuire",
+  "Internal Console": "Consola internă",
+  "Keep notes focused on blockers, evidence gaps, and next actions": {
+    "": "Mențineți notițele concentrate pe blocaje, lacune de dovezi și acțiuni următoare"
   },
-  "Forgot your password?": "Forgot your password?",
-  "Create account": "Create account",
-  "Create one": "Create one",
+  "Latest score": "Ultimul scor",
+  "Manage immigration strategy records that anchor pathway evaluation, stage tracking, scoring, and later document workflows": {
+    "": "Gestionați înregistrările strategiei de imigrație care ancorează evaluarea traseului, urmărirea etapelor, evaluarea și ulterior fluxurile de lucru ale documentelor"
+  },
+  "New case": "Caz nou",
+  "New strategy case": "Caz nou de strategie",
+  "No changes to save": "Nicio modificare de salvat",
+  "No strategic notes recorded yet for this immigration path": {
+    "": "Niciun notițe strategice înregistrate încă pentru acest traseu de imigrație"
+  },
+  "No strategy cases yet": "Niciun caz de strategie încă",
+  "on record": "înregistrat",
+  "Open case": "Deschide caz",
+  "Optional score snapshot if you want to retain a manual benchmark": {
+    "": "Instantaneu opțional al scorului dacă doriți să păstrați un reper manual"
+  },
+  "Pathway not defined yet": "Traseu nedefinit încă",
+  "Refresh cases": "Reîmprospătați cazurile",
+  "Review the highlighted case fields before saving": {
+    "": "Revizuiți câmpurile de caz evidențiate înainte de a salva"
+  },
+  "Risk score": "Scor de risc",
+  "Risk": "Risc",
+  "Save case changes": "Salvați modificările cazului",
+  "Saving changes": {
+    "": {
+      "": {
+        "": "Salvarea modificărilor"
+      }
+    }
+  },
+  "Score": "Scor",
+  "Session": "Sesiune",
+  "Stage": "Etapă",
+  "Start with a target country and pathway": "Începeți cu o țară țintă și un traseu",
+  "Strategy case created successfully": {
+    "": "Cazul de strategie a fost creat cu succes"
+  },
+  "Strategy identity": "Identitate de strategie",
+  "Strategy notes": "Notițe de strategie",
+  "Target country": "Target country",
+  "Target pathway or program": "Traseu sau program țintă",
+  "The case portfolio could not be loaded": {
+    "": "Portofoliul de cazuri nu a putut fi încărcat"
+  },
+  "Track every active migration path in one workspace": "Urmăriți fiecare traseu de migrație activ într-un singur spațiu de lucru",
+  "U": {
+    "S": {
+      " employment-based migration plan": "Plan de migrație bazat pe angajare în SUA"
+    }
+  },
+  "United States": "Statele Unite",
+  "Update the case strategy record": "Actualizați înregistrarea strategiei cazului",
+  "Updated": "Actualizat",
+  "Workspace data could not be loaded": {
+    "": "Datele spațiului de lucru nu au putut fi încărcate"
+  },
+  "You are no longer authenticated": {
+    "": "Nu mai ești autentificat"
+  },
+  "case": "caz",
+  "cases": "cazuri",
+  "12-18 months": "12-18 luni",
+  "3 country comparisons": "3 comparații de țări",
+  "A focused workspace for immigration decisions": "A focused workspace for immigration decisions",
+  "AI checks 47 visa categories and finds your best match": {
+    "": "AI verifică 47 de categorii de vize și găsește cea mai bună potrivire pentru tine"
+  },
+  "Access your immigration dashboard, decision plans, and case workspace": {
+    "": "Accesează tabloul de bord pentru imigrație, planurile de decizie și spațiul de lucru pentru cazuri"
+  },
+  "Action roadmap": "Action roadmap",
+  "Admin": "Admin",
+  "Advanced action plan": "Plan de acțiune avansat",
   "Already have an account?": "Already have an account?",
-  "Need an account?": "Need an account?",
+  "Any criminal record?": "Any criminal record?",
+  "Available capital": "Available capital",
+  "Average time to first plan": "Timp mediu până la primul plan",
+  "Back": "Back",
+  "Benefits": "Benefits",
+  "Best value": "Best value",
+  "Best visa option": "Cea mai bună opțiune de viză",
+  "Best visa recommendation": "Cea mai bună recomandare de viză",
+  "Better case preparation": "O pregătire mai bună a cazului",
+  "Built for immigrants, by immigrants": "Creat pentru imigranți, de către imigranți",
+  "Case health": "Case health",
+  "Cases": "Cases",
+  "Check your email": "Verifică-ți emailul",
+  "Checkout failed": "Finalizarea plății a eșuat",
+  "Children": "Children",
+  "Choose a new password for your account": {
+    "": "Alege o nouă parolă pentru contul tău"
+  },
+  "Comparison": "Comparison",
+  "Confirm password": "Confirm password",
+  "Confirm your password": {
+    "": "Confirmă-ți parola"
+  },
+  "Confusing visa rules that change every year": "Reguli de viză confuze care se schimbă în fiecare an",
+  "Copilot": "Copilot",
+  "Cost estimate": "Estimare de cost",
+  "Countries": "Țări",
+  "Countries supported": "Țări suportate",
+  "Create account": "Create account",
+  "Create an account to start building an immigration profile, evaluate pathways, and manage your cases": {
+    "": "Creează un cont pentru a începe să construiești un profil de imigrație, a evalua căile și a gestiona cazurile tale"
+  },
+  "Create one": "Create one",
+  "Create your Immigrant Guru account": "Creează-ți contul Immigrant Guru",
+  "Create your account": "Create your account",
   "Creating account": {
     "": {
       "": {
@@ -105,65 +167,210 @@
       }
     }
   },
-  "Signing in": {
-    "": {
-      "": {
-        "": "Signing in..."
+  "Dashboard": "Dashboard",
+  "Data Scientist, India to Canada": "Data Scientist, India către Canada",
+  "Deeper analysis": "Analiză mai profundă",
+  "Document checklist": "Lista de verificare a documentelor",
+  "Document status": "Document status",
+  "Documents": "Documents",
+  "E-2 investor, EB-5, startup visa — explore entrepreneurial immigration routes": {
+    "": "Investitor E-2, EB-5, viză pentru startup-uri — explorează rutele de imigrație antreprenorială"
+  },
+  "Education level": "Education level",
+  "Email": "Email",
+  "English level": "English level",
+  "Enter a valid email address": {
+    "": "Enter a valid email address."
+  },
+  "Enter it below to verify your account": {
+    "": "Introdu-l mai jos pentru a-ți verifica contul"
+  },
+  "Enter the 6-digit code from your email": {
+    "": "Introdu codul de 6 cifre din emailul tău"
+  },
+  "Enter the 6-digit code": {
+    "": "Introdu codul de 6 cifre"
+  },
+  "Enter your email and we'll send you a reset code": {
+    "": "Introdu-ți emailul și îți vom trimite un cod de resetare"
+  },
+  "Enter your email": {
+    "": "Introdu-ți emailul"
+  },
+  "Error": "Error",
+  "Est": {
+    " cost": "Est. cost"
+  },
+  "Estimated cost": "Cost estimat",
+  "Even if you think you don't qualify — we'll show you what's possible": {
+    "": "Chiar dacă crezi că nu te califici — îți vom arăta ce este posibil"
+  },
+  "Everything in Plus": "Totul în Plus",
+  "Everything in Starter": "Totul în Starter",
+  "Everything you need in one place": "Everything you need in one place",
+  "Expanded document guidance": "Ghidare extinsă a documentelor",
+  "Expensive lawyers who charge $5,000+ for basic advice": "Avocați scumpi care percep 5.000 $+ pentru sfaturi de bază",
+  "Explainable readiness signals": "Explainable readiness signals",
+  "F-1, OPT, STEM extension — understand your path from student to professional": {
+    "": "F-1, OPT, extensie STEM — înțelege-ți calea de la student la profesionist"
+  },
+  "Filing + legal fees": "Taxe de depunere + taxe legale",
+  "Find my best path": "Găsește cea mai bună cale pentru mine",
+  "Find the plan that fits your journey": "Find the plan that fits your journey",
+  "Find the right work visa for your skills and experience": {
+    " H-1B, EB-2, O-1, and more": {
+      "": "Găsește viza de muncă potrivită pentru abilitățile și experiența ta H-1B, EB-2, O-1 și altele"
+    }
+  },
+  "Find your best path": "Găsește-ți cea mai bună cale",
+  "Find your path": "Find your path",
+  "Finish": "Finish",
+  "First name": "First name",
+  "First name is too long": {
+    "": "Prenumele este prea lung"
+  },
+  "For comparing options": "Pentru compararea opțiunilor",
+  "For every situation": "Pentru fiecare situație",
+  "For one clear path": "Pentru un singur drum clar",
+  "Forgot your password?": "Forgot your password?",
+  "Free": "Free",
+  "Free to start · No credit card · Takes 2 minutes": "Gratuit pentru a începe · Fără card de credit · Durata 2 minute",
+  "From filing to approval": "De la depunere la aprobat",
+  "Full path comparison": "Compararea completă a căilor",
+  "Full plan for 1 country": "Plan complet pentru 1 țară",
+  "Full strategic experience": "Experiență strategică completă",
+  "Full strategic recommendation": "Recomandare strategică completă",
+  "Generate strategy": "Generate strategy",
+  "Get Started": "Începe",
+  "Get your personalized visa, readiness score, and action plan in minutes": {
+    "": "Get your personalized visa, readiness score, and action plan in minutes.",
+    " Not months": {
+      "": "Obține-ți viza personalizată, scorul de pregătire și planul de acțiune în câteva minute Nu în luni"
+    }
+  },
+  "Get your plan": "Get your plan",
+  "Get {plan}": "Obține {plan}",
+  "Go back": "Întoarce-te",
+  "Go home": "Go home",
+  "Home": "Home",
+  "How it works": "How it works",
+  "I spent months Googling visa options": {
+    " Immigrant Guru gave me a clear plan in 10 minutes": {
+      " I wish I found this earlier": {
+        "": "Am petrecut luni căutând opțiuni de viză Immigrant Guru mi-a oferit un plan clar în 10 minute Mi-aș fi dorit să fi găsit asta mai devreme"
       }
     }
   },
+  "Immigrant Guru - AI Immigration Strategy Platform": "Immigrant Guru - AI Immigration Strategy Platform",
+  "Immigrant Guru - Move to a New Country Without Confusion": "Immigrant Guru - Move to a New Country Without Confusion",
+  "Immigrant Guru helps you evaluate pathways, compare strategies, and act with clarity": {
+    "": "Immigrant Guru helps you evaluate pathways, compare strategies, and act with clarity."
+  },
+  "Immigration Plan": "Plan de imigrație",
+  "Immigration Score": "Immigration Score",
+  "Immigration shouldn't feel this hard": {
+    "": "Imigrarea nu ar trebui să fie atât de dificilă"
+  },
+  "Job opportunities": "Oportunități de muncă",
+  "Language": "Language",
+  "Last name": "Last name",
+  "Last name is too long": {
+    "": "Numele de familie este prea lung"
+  },
+  "Log in": "Log in",
+  "Log out": "Log out",
   "Minimum 8 characters": "Minimum 8 characters",
-  "Repeat your password": "Repeat your password",
-  "Enter a valid email address": {
-    "": "Enter a valid email address."
+  "Months of waiting with no visibility": "Lunile de așteptare fără vizibilitate",
+  "Move to a New Country Without Confusion": "Move to a New Country Without Confusion",
+  "Move to a new country": "Mutați-vă într-o nouă țară",
+  "Move with family": "Move with family",
+  "Multiple visa alternatives": "Multiple alternative de viză",
+  "My plan": "My plan",
+  "National Interest Waiver · United States": "Excepția de interes național · Statele Unite",
+  "Nationality": "Nationality",
+  "Need an account?": "Need an account?",
+  "New password": "Parolă nouă",
+  "Next": "Next",
+  "Next best action": "Next best action",
+  "Next step:": "Pasul următor:",
+  "No cases yet": "No cases yet",
+  "No clear direction — just endless Googling": "Fără direcție clară — doar căutări nesfârșite pe Google",
+  "No confusion, no jargon": "Fără confuzie, fără jargon",
+  "No employer sponsor needed — you can self-petition": {
+    "": "Nu este nevoie de sponsor de angajator — te poți auto-petitiona"
+  },
+  "No matter your background, we help you find a way forward": {
+    "": "Indiferent de background-ul tău, te ajutăm să găsești o cale înainte"
+  },
+  "No subscriptions": {
+    " Pay once, unlock your full plan": {
+      " 30-day money-back guarantee": {
+        "": "No subscriptions. Pay once, unlock your full plan. 30-day money-back guarantee."
+      }
+    }
+  },
+  "One clear plan": {
+    " Everything you need": {
+      "": "Un plan clar  Tot ce ai nevoie"
+    }
+  },
+  "One-time payment": {
+    " Unlock your full personalized immigration plan": {
+      "": "Plată unică  Deblochează-ți planul personalizat de imigrație"
+    }
+  },
+  "Overview": "Overview",
+  "Page not found": "Page not found",
+  "Password": "Password",
+  "Password must be at least 8 characters": {
+    "": "Parola trebuie să aibă cel puțin 8 caractere"
   },
   "Password must contain at least 8 characters": {
     "": "Password must contain at least 8 characters."
   },
-  "Page not found": "Page not found",
-  "The page you're looking for doesn't exist or hasn't been built yet": {
-    "": "The page you're looking for doesn't exist or hasn't been built yet."
+  "Password reset!": "Resetare parolă!",
+  "Passwords do not match": {
+    "": "Parolele nu se potrivesc"
   },
-  "Return home": "Return home",
-  "Error": "Error",
-  "Something went wrong": "Something went wrong",
-  "The page hit an unexpected error while rendering": {
-    " Try again, and if it persists, check the server logs": {
-      "": "The page hit an unexpected error while rendering. Try again, and if it persists, check the server logs."
-    }
-  },
-  "Go home": "Go home",
-  "Admin": "Admin",
-  "Step 1 of 4": "Step 1 of 4",
-  "Step 2 of 4": "Step 2 of 4",
-  "Step 3 of 4": "Step 3 of 4",
-  "Step 4 of 4": "Step 4 of 4",
-  "Tell us a bit about yourself": {
-    "": "Tell us a bit about yourself."
-  },
-  "Where do you want to go?": "Where do you want to go?",
-  "Your immigration goals and timing": {
-    "": "Your immigration goals and timing."
-  },
+  "Platform Status": "Platform Status",
+  "Plus": "Plus",
+  "Possible paths": "Cărți de acces posibile",
+  "Preferred language": "Preferred language",
+  "Premium": "Premium",
+  "Premium dashboard": "Panou premium",
+  "Pricing": "Pricing",
+  "Prior visa refusal?": "Prior visa refusal?",
+  "Priority AI guidance": "Ghidare AI prioritară",
+  "Probability score": "Probability score",
   "Professional experience and finances": {
     "": "Professional experience and finances."
   },
-  "You're ready to see your first strategy": "You're ready to see your first strategy",
-  "Nationality": "Nationality",
-  "Where do you live now?": "Where do you live now?",
+  "Profile": "Profile",
+  "Profile, finance, case": "Profil, finanțe, caz",
+  "Readiness": "Pregătire",
+  "Readiness score": "Readiness score",
+  "Ready": "Pregătit",
+  "Recommended pathway": "Recommended pathway",
+  "Redirecting…": "Redirecționare…",
   "Relationship status": "Relationship status",
-  "Children": "Children",
-  "Preferred language": "Preferred language",
-  "Target country": "Target country",
   "Relocation timeline": "Relocation timeline",
-  "Prior visa refusal?": "Prior visa refusal?",
-  "Any criminal record?": "Any criminal record?",
-  "What do you do?": "What do you do?",
-  "Years of experience": "Years of experience",
-  "Education level": "Education level",
-  "English level": "English level",
-  "Available capital": "Available capital",
+  "Remember your password?": "Îți amintești parola?",
+  "Repeat your password": "Repeat your password",
+  "Resend code": "Retrimite codul",
+  "Resend code in {n}s": "Retrimite codul în {n}s",
+  "Reset code": "Resetează codul",
+  "Reset password": "Resetează parola",
+  "Resetting": {
+    "": {
+      "": {
+        "": "Resetare"
+      }
+    }
+  },
+  "Retry": "Retry",
+  "Return home": "Return home",
   "Review and continue": "Review and continue",
+  "Risks": "Risks",
   "Saving": {
     "": {
       "": {
@@ -171,23 +378,411 @@
       }
     }
   },
-  "Your session is no longer available": {
-    " Sign in again to continue onboarding": {
-      "": "Your session is no longer available. Sign in again to continue onboarding."
+  "Scenario simulation": "Scenario simulation",
+  "See how it works": "Vezi cum funcționează",
+  "Select language": "Select language",
+  "Send reset code": "Trimite codul de resetare",
+  "Sending": {
+    "": {
+      "": {
+        "": "Trimitere"
+      }
     }
   },
-  "Your profile could not be saved right now": {
-    " Retry before moving to the next step": {
-      "": "Your profile could not be saved right now. Retry before moving to the next step."
+  "Set new password": "Setează o parolă nouă",
+  "Sign in": "Sign in",
+  "Sign in to continue your case strategy": "Conectează-te pentru a continua strategia cazului tău",
+  "Sign in to continue your immigration strategy": {
+    "": "Sign in to continue your immigration strategy."
+  },
+  "Sign out": "Sign out",
+  "Sign up": "Sign up",
+  "Signing in": {
+    "": {
+      "": {
+        "": "Signing in..."
+      }
     }
+  },
+  "Simple pricing": "Simple pricing",
+  "Six powerful tools working together to give you clarity, confidence, and a concrete plan": {
+    "": "Six powerful tools working together to give you clarity, confidence, and a concrete plan."
+  },
+  "Software Engineer, Turkey to USA": "Inginer software, Turcia în SUA",
+  "Software Engineering, AI/ML, Product": "Inginerie software, AI/ML, Produs",
+  "Something went wrong": {
+    "": "Ceva a mers prost",
+    " Please try again": {
+      "": "Ceva a mers prost  Te rugăm să încerci din nou"
+    }
+  },
+  "Spouse, children, parents — know which family visa fits and how long it takes": {
+    "": "Soț, copii, părinți — află care viză de familie se potrivește și cât durează"
+  },
+  "Start a business": "Start a business",
+  "Start free": {
+    "": "Start free",
+    " Upgrade when you're ready for your full immigration plan": {
+      "": "Start free. Upgrade when you're ready for your full immigration plan."
+    }
+  },
+  "Start with the essentials and complete your immigration profile later": {
+    "": "Start with the essentials and complete your immigration profile later."
+  },
+  "Start your plan": "Start your plan",
+  "Starter": "Starter",
+  "Step 1 of 4": "Step 1 of 4",
+  "Step 2 of 4": "Step 2 of 4",
+  "Step 3 of 4": "Step 3 of 4",
+  "Step 4 of 4": "Step 4 of 4",
+  "Step-by-step roadmap": "Harta pas cu pas",
+  "Stop guessing": {
+    " Get a clear plan for your immigration journey — in minutes, not months": {
+      "": "Oprește-te din ghicit  Obține un plan clar pentru călătoria ta de imigrație — în câteva minute, nu luni"
+    }
+  },
+  "Strategy": "Strategy",
+  "Study abroad": "Study abroad",
+  "Suggested cities": "Orașe sugerate",
+  "Suitability": "Adecvare",
+  "System health": "System health",
+  "Tell us a bit about yourself": {
+    "": "Tell us a bit about yourself."
+  },
+  "Tell us about you": "Tell us about you",
+  "Tell us about yourself": {
+    " Our AI analyzes 47 visa categories, checks your readiness, and gives you a step-by-step plan with timeline, cost, and documents — in minutes": {
+      "": "Spune-ne despre tine  AI-ul nostru analizează 47 de categorii de viză, verifică-ți pregătirea și îți oferă un plan pas cu pas cu cronologie, cost și documente — în câteva minute"
+    }
+  },
+  "The page hit an unexpected error while rendering": {
+    " Try again, and if it persists, check the server logs": {
+      "": "The page hit an unexpected error while rendering. Try again, and if it persists, check the server logs."
+    }
+  },
+  "The page you're looking for doesn't exist or hasn't been built yet": {
+    "": "The page you're looking for doesn't exist or hasn't been built yet."
   },
   "The platform could not load your profile draft": {
     " Retry before continuing": {
       "": "The platform could not load your profile draft. Retry before continuing."
     }
   },
-  "Document status": "Document status",
-  "Case health": "Case health",
-  "Action roadmap": "Action roadmap",
-  "No cases yet": "No cases yet"
+  "The problem": "Problema",
+  "The readiness score showed me exactly what I was missing": {
+    " I uploaded 3 documents and my score jumped from 52 to 81": {
+      "": "Scorul de pregătire mi-a arătat exact ce îmi lipsea  Am încărcat 3 documente și scorul meu a sărit de la 52 la 81"
+    }
+  },
+  "The solution": "Soluția",
+  "There's always a way — we help you find it": {
+    "": "Întotdeauna există o cale — te ajutăm să o găsești"
+  },
+  "Three steps": {
+    " No confusion": {
+      "": "Trei pași  Fără confuzie"
+    }
+  },
+  "Timeline": "Timeline",
+  "Timeline estimate": "Estimare a cronologiei",
+  "Toggle menu": "Comută meniul",
+  "Try it now": "Încearcă acum",
+  "Turkey, India, Brazil": {
+    "": {
+      "": {
+        "": "Turcia, India, Brazilia"
+      }
+    }
+  },
+  "United States, Canada": {
+    "": {
+      "": {
+        "": "Statele Unite, Canada"
+      }
+    }
+  },
+  "Upload document": "Upload document",
+  "Upload your resume and education documents to increase your readiness score to 90+": {
+    "": "Încarcă-ți CV-ul și documentele de educație pentru a-ți crește scorul de pregătire la 90+"
+  },
+  "Verification code": "Cod de verificare",
+  "Verify code": "Verifică codul",
+  "Verify email": "Verifică emailul",
+  "Verifying": {
+    "": {
+      "": {
+        "": "Verificare"
+      }
+    }
+  },
+  "Visa categories analyzed": "Categorii de vize analizate",
+  "Visa types": "Tipuri de vize",
+  "Visa, timeline, documents, cost — everything in one clear view": {
+    "": "Viză, cronologie, documente, cost — totul într-o vedere clară"
+  },
+  "We analyze multiple countries, visa types, and pathways to match you with the best option based on your profile": {
+    "": "Analizăm multiple țări, tipuri de vize și căi pentru a te potrivi cu cea mai bună opțiune pe baza profilului tău"
+  },
+  "We analyze your options": "We analyze your options",
+  "We sent a 6-digit code to": "Ți-am trimis un cod de 6 cifre la",
+  "We show you what to do": "Îți arătăm ce trebuie să faci",
+  "We turn everything into one clear plan": {
+    "": "Transformăm totul într-un plan clar"
+  },
+  "Welcome back": "Welcome back",
+  "What do you do?": "What do you do?",
+  "What you get": "Ce primești",
+  "Whatever your reason, we can help": {
+    "": "Indiferent de motivul tău, te putem ajuta"
+  },
+  "Where are you from?": "De unde ești?",
+  "Where do you live now?": "Where do you live now?",
+  "Where do you want to go?": "Where do you want to go?",
+  "Work abroad": "Work abroad",
+  "Wrong email?": "Email greșit?",
+  "Years of experience": "Years of experience",
+  "You're ready to see your first strategy": "You're ready to see your first strategy",
+  "Your background, education, experience, and goals": {
+    " Takes 2 minutes": {
+      "": "Fundalul tău, educația, experiența și obiectivele  Durata: 2 minute"
+    }
+  },
+  "Your best path": "Calea ta cea mai bună",
+  "Your best path, ranked by fit": "Calea ta cea mai bună, clasată după potrivire",
+  "Your immigration goals and timing": {
+    "": "Your immigration goals and timing."
+  },
+  "Your new life starts here": {
+    "": "Noua ta viață începe aici"
+  },
+  "Your password has been updated": {
+    " You can now sign in": {
+      "": "Parola ta a fost actualizată  Te poți conecta acum"
+    }
+  },
+  "Your personalized result": "Rezultatul tău personalizat",
+  "Your profile could not be saved right now": {
+    " Retry before moving to the next step": {
+      "": "Your profile could not be saved right now. Retry before moving to the next step."
+    }
+  },
+  "Your session is no longer available": {
+    " Sign in again to continue onboarding": {
+      "": "Your session is no longer available. Sign in again to continue onboarding."
+    }
+  },
+  "one-time": "one-time",
+  "without confusion": {
+    "": "fără confuzie"
+  },
+  "FAQ": "Întrebări frecvente",
+  "tools": {
+    "pageTitle": "Instrumente de imigrație gratuite",
+    "pageSubtitle": "Răspunsuri rapide — nu este necesară înregistrarea.",
+    "eligibilityChecker": {
+      "title": "Verificator de eligibilitate",
+      "description": "Răspundeți la 6 întrebări, vedeți vizele pentru care probabil sunteți eligibil."
+    },
+    "costEstimator": {
+      "title": "Instrument de estimare a costurilor",
+      "description": "Costul total al mutării în străinătate — nu doar taxa de viză."
+    },
+    "timelineCalculator": {
+      "title": "Calculator de cronologie",
+      "description": "Estimați când veți ajunge pas cu pas."
+    }
+  },
+  "eligibilityChecker": {
+    "pageTitle": "Verificator de eligibilitate pentru viză gratuit",
+    "pageSubtitle": "Răspundeți la 6 întrebări scurte. Vedeți probabil lista scurtă a vizelor pentru care sunteți eligibil — nu este necesară înregistrarea.",
+    "faq1": {
+      "question": "Este verificatorul de eligibilitate gratuit?",
+      "answer": "Da. Funcționează complet în browserul dvs. și nu necesită un cont."
+    },
+    "faq2": {
+      "question": "Cât de precis este controlul?",
+      "answer": "Folosește regulile de eligibilitate publice pentru fiecare cale. Este un filtru inițial puternic, dar nu înlocuiește analiza completă asistată de AI sau consultanța juridică."
+    },
+    "faq3": {
+      "question": "Își va salva răspunsurile mele?",
+      "answer": "Nu. Instrumentul funcționează local în browserul dvs. Dacă doriți ca rezultatele dvs. să fie salvate în profilul dvs., vă rugăm să vă înregistrați."
+    },
+    "emailCapture": {
+      "title": "Analiză completă asistată de AI",
+      "subtitle": "Primiți un Plan A/B/C personalizat și un scor de pregătire prin e-mail."
+    }
+  },
+  "costEstimator": {
+    "pageTitle": "Instrument de estimare a costurilor de imigrație",
+    "pageSubtitle": "Alegeți o cale, adăugați dimensiunea familiei dvs. și vedeți costul total realist — nu doar taxa de viză.",
+    "faq1": {
+      "question": "Ce este inclus în estimare?",
+      "answer": "Taxe guvernamentale, taxe legale/agenție, fonduri de relocare, bilet de avion, cazare inițială și un tampon de 10% pentru cheltuieli neprevăzute."
+    },
+    "faq2": {
+      "question": "Este corect pentru situația mea specifică?",
+      "answer": "Este o estimare bună pentru fiecare cale. Costul real va varia în funcție de dimensiunea familiei, oraș și alegerea avocatului. Vă rugăm să vă înregistrați pentru un raport personalizat."
+    },
+    "emailCapture": {
+      "title": "Raport complet al costurilor prin e-mail",
+      "subtitle": "Tabel cu costuri pe linie, organizate în funcție de țara țintă."
+    }
+  },
+  "timelineCalculator": {
+    "pageTitle": "Calculator de cronologie",
+    "pageSubtitle": "Alegeți o cale. Vedeți când veți ajunge — inclusiv pregătire, aplicare, procesare și sosire.",
+    "faq1": {
+      "question": "De ce este inclus timpul de pregătire?",
+      "answer": "Timpul nu începe când aplicați — începe când începeți să adunați documentele. Adăugăm o fereastră de pregătire realistă pentru fiecare cale."
+    },
+    "faq2": {
+      "question": "Cât de precisă este această estimare?",
+      "answer": "Reflectă timpii medii de procesare publicați. Cazurile individuale pot fi mai rapide sau mai lente în funcție de RFE-uri, cotele de țară și completitudinea dovezilor."
+    },
+    "emailCapture": {
+      "title": "Urmăritor de cronologie săptămânal",
+      "subtitle": "Până în ziua sosirii, vă vom trimite un plan simplu săptămânal prin e-mail."
+    }
+  },
+  "visaIndex": {
+    "pageTitle": "Toate vizele",
+    "pageSubtitle": "Costuri, cronologie și eligibilitate pentru fiecare cale pe care o acoperim.",
+    "months": "lună"
+  },
+  "bestCountries": {
+    "pageTitle": "Cele mai bune țări în funcție de profesie",
+    "pageSubtitle": "Alegeți profesia dvs. pentru a vedea destinațiile de imigrație clasificate.",
+    "cardTitle": "Cele mai bune țări pentru {profession}",
+    "breadcrumb": "Cele mai bune țări",
+    "rankedSubtitle": "Clasificate în funcție de cost, cronologie și rezidență permanentă. Datele sunt actualizate pentru 2026.",
+    "topPathway": "Cea mai bună cale",
+    "seeAllPathways": "Vezi toate căile",
+    "visaDetails": "Detalii {code}",
+    "otherProfessions": "Alte profesii"
+  },
+  "compare": {
+    "pageTitle": "Compararea vizelor",
+    "pageSubtitle": "Compararea deciziilor de cale cele mai comune față în față.",
+    "vs": "vs",
+    "comparingSubtitle": "Compararea costului, timpului și conformității între {nameA} și {nameB} — pentru a nu pierde luni pe o cale greșită.",
+    "rowFullName": "Nume complet",
+    "rowCategory": "Categorie",
+    "rowDestination": "Țara țintă",
+    "rowTypicalDuration": "Durată tipică",
+    "rowCostUsd": "Cost (USD)",
+    "rowLeadsToPR": "Conduce la rezidență permanentă",
+    "yes": "Da",
+    "no": "Nu",
+    "bestFor": "Cel mai potrivit",
+    "otherComparisons": "Alte comparații de vize"
+  },
+  "visaMatch": {
+    "pageTitle": "Asocieri de vize",
+    "pageSubtitle": "Selectați țara țintă și profilul dvs. pentru a vedea primele 3 căi.",
+    "cardSubtitle": "Cele mai bune vize pentru {profession}",
+    "breadcrumb": "Asocieri de vize",
+    "rankedSubtitle": "{count} căi de imigrație pentru {profession} au fost listate; cu ținta {countryName}. Fiecare opțiune a fost evaluată în funcție de conformitate, cost, durată și risc.",
+    "getPersonalizedMatch": "Obțineți asocieri personalizate",
+    "freeEligibilityCheck": "Verificare gratuită a eligibilității",
+    "typicalTimeline": "Cronologie tipică",
+    "typicalCost": "Cost tipic",
+    "duration": "Durată",
+    "strengths": "Puncte forte",
+    "moreVisaGuides": "Ghiduri de vize suplimentare pentru {countryName}"
+  },
+  "moveTo": {
+    "pageTitle": "Ghiduri de mutare în țară",
+    "pageSubtitle": "Ghiduri pas cu pas în funcție de țara de origine și cea țintă.",
+    "fromLabel": "{flag} de la {name}",
+    "cardSubtitle": "Ghid pentru cetățenii {demonym}",
+    "h1": "Mutare în orașul {toName} din {fromName}",
+    "intro": "Ghid practic pentru mutarea cetățenilor {demonym} în orașul {toName}. Alegeți o cale, înțelegeți cronologia și costul, obțineți un scor de pregătire personalizat.",
+    "topVisaPathways": "Cele mai bune căi de viză pentru {toName}",
+    "howToStepByStep": "Cum să te muți pas cu pas",
+    "moreCountryGuides": "Ghiduri pentru mai multe țări"
+  },
+  "Onboarding could not load": "Încărcarea procesului de integrare nu a reușit",
+  "Review the highlighted profile fields before continuing": {
+    "": "Revizuiește câmpurile de profil evidențiate înainte de a continua"
+  },
+  "Skip": "Sari peste",
+  "Who are you?": "Cine ești?",
+  "Select your nationality": "Selectează naționalitatea ta",
+  "Select current country": "Selectează țara curentă",
+  "e": {
+    "g": {
+      " English, Turkish": {
+        "": {
+          "": {
+            "": "ex. Engleză, Turcă..."
+          }
+        }
+      },
+      " Software Engineer, Doctor, Designer": {
+        "": {
+          "": {
+            "": "ex. Inginer Software, Doctor, Designer..."
+          }
+        }
+      },
+      " 50000": "ex. 50000"
+    }
+  },
+  "Your background": "Fundalul tău",
+  "English proficiency": "Competența în limba engleză",
+  "Available capital (USD)": "Capital disponibil (USD)",
+  "Your dream destination and timeline": {
+    "": "Destinația ta de vis și cronologia"
+  },
+  "When do you want to move?": "Când vrei să te muți?",
+  "Have you had a visa refusal before?": "Ai avut o refuzare a vizei înainte?",
+  "This helps us give accurate recommendations": {
+    " Your data is private and secure": {
+      "": "Acest lucru ne ajută să oferim recomandări precise  Datele tale sunt private și sigure"
+    }
+  },
+  "You're all set!": "Ești pregătit!",
+  "Amazing! Your profile is almost complete": {
+    " We can build great strategies for you": {
+      "": "Minunat! Profilul tău este aproape complet  Putem construi strategii grozave pentru tine"
+    }
+  },
+  "Great start! You can always complete more details from your profile page": {
+    "": "Un început grozav! Poți completa întotdeauna mai multe detalii de pe pagina profilului tău"
+  },
+  "No worries! You can fill in more details anytime from your dashboard": {
+    "": "Fără griji! Poți completa mai multe detalii oricând de pe tabloul tău de bord"
+  },
+  "See your AI analysis": "Vezi analiza ta AI",
+  "there": "acolo",
+  "Immigrant": "Imigrant",
+  "Guru": "Guru",
+  "Hey {name}, welcome aboard!": "Hei {name}, bun venit la bord!",
+  "Let's build your immigration profile in under 2 minutes": {
+    " The more we know, the better strategies we can craft for you": {
+      "": "Să construim profilul tău de imigrare în mai puțin de 2 minute  Cu cât știm mai multe, cu atât putem crea strategii mai bune pentru tine"
+    }
+  },
+  "Let's go": "Să începem",
+  "Takes about 2 minutes": {
+    " You can skip anything": {
+      "": "Durata: aproximativ 2 minute  Poți sări peste orice"
+    }
+  },
+  "score": {
+    "outOf100": "Din 100",
+    "thisProfileIs": "Acest profil este la nivelul {readiness}",
+    "scoredOn": "Immigrant Guru a evaluat acest profil pe baza educației, experienței de muncă, limbii, conformității cu țara țintă și 8 alte dimensiuni.",
+    "getMyOwnScore": "Obțineți propriul meu scor",
+    "shareOnX": "Distribuie pe X"
+  },
+  "visa": {
+    "cost": "Cost",
+    "prPath": "Calea către rezidența permanentă",
+    "idealFor": "Persoane eligibile",
+    "requirements": "Cerințe",
+    "risksAndRejection": "Riscuri și motive comune de respingere",
+    "checkReadiness": "Verifică-mi pregătirea {code}",
+    "moreVisaGuides": "Ghiduri suplimentare de vize pentru {countryName}"
+  }
 }

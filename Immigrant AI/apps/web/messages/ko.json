@@ -1,103 +1,165 @@
 {
-  "Immigrant Guru - AI Immigration Strategy Platform": "Immigrant Guru - AI 이민 전략 플랫폼",
-  "Immigrant Guru - Move to a New Country Without Confusion": "Immigrant Guru - 혼란 없이 새로운 나라로 이동하세요",
-  "Language": "언어",
-  "Select language": "언어 선택",
-  "How it works": "작동 방식",
-  "Find your path": "나의 경로 찾기",
-  "Pricing": "요금",
-  "Home": "홈",
-  "Sign in": "로그인",
-  "Sign up": "회원가입",
-  "Dashboard": "대시보드",
-  "Log out": "로그아웃",
-  "Move to a New Country Without Confusion": "혼란 없이 새로운 나라로 이동하세요",
-  "Get your personalized visa, readiness score, and action plan in minutes": {
-    "": "몇 분 안에 맞춤 비자 경로, 준비도 점수, 실행 계획을 받아보세요."
+  "Active": "활성",
+  "Cancel": "취소",
+  "Capture the destination, program, current stage, and risk signals that anchor strategy generation, scoring, and document workflows": {
+    "": "전략 생성, 점수 매기기 및 문서 워크플로우를 고정하는 목적지, 프로그램, 현재 단계 및 위험 신호를 캡처합니다"
   },
-  "Benefits": "장점",
-  "Everything you need in one place": "필요한 모든 것을 한 곳에서",
-  "Simple pricing": "간단한 요금",
-  "Free": "무료",
-  "Starter": "스타터",
-  "Plus": "플러스",
-  "Premium": "프리미엄",
-  "Create your account": "계정 만들기",
-  "Welcome back": "다시 오신 것을 환영합니다",
-  "First name": "First name",
-  "Last name": "Last name",
-  "Email": "이메일",
-  "Password": "비밀번호",
-  "Confirm password": "Confirm password",
-  "Overview": "개요",
-  "Profile": "프로필",
-  "Cases": "케이스",
-  "Strategy": "전략",
-  "Timeline": "타임라인",
-  "Documents": "문서",
-  "Risks": "위험",
-  "Copilot": "Copilot",
-  "Comparison": "비교",
-  "Retry": "다시 시도",
-  "Back": "뒤로",
-  "Next": "다음",
-  "Finish": "완료",
-  "Generate strategy": "Generate strategy",
-  "Upload document": "Upload document",
-  "Scenario simulation": "Scenario simulation",
-  "My plan": "내 플랜",
-  "Sign out": "로그아웃",
-  "Log in": "로그인",
-  "Start your plan": "플랜 시작하기",
-  "Readiness score": "Readiness score",
-  "Probability score": "Probability score",
-  "Recommended pathway": "Recommended pathway",
-  "Next best action": "Next best action",
-  "Immigrant Guru helps you evaluate pathways, compare strategies, and act with clarity": {
-    "": "Immigrant Guru helps you evaluate pathways, compare strategies, and act with clarity."
+  "Case Detail": "사례 세부정보",
+  "Case planning workspace": "사례 계획 작업 공간",
+  "Case portfolio": "사례 포트폴리오",
+  "Case status": "사례 상태",
+  "Case title": "사례 제목",
+  "Closed": "종료됨",
+  "Close": "닫기",
+  "Close new case": "새 사례 닫기",
+  "Collect recommendation letters and evidence of impact": {
+    "": "추천서 및 영향 증거 수집"
   },
-  "A focused workspace for immigration decisions": "A focused workspace for immigration decisions",
-  "Six powerful tools working together to give you clarity, confidence, and a concrete plan": {
-    "": "Six powerful tools working together to give you clarity, confidence, and a concrete plan."
+  "Continue your immigration planning": {
+    " Keep profile and case data aligned": {
+      "": "이민 계획을 계속 진행하세요. 프로필 및 사례 데이터를 일치시킵니다"
+    }
   },
-  "Immigration Score": "Immigration Score",
-  "Explainable readiness signals": "Explainable readiness signals",
-  "System health": "System health",
-  "Platform Status": "Platform Status",
-  "Work abroad": "Work abroad",
-  "Study abroad": "Study abroad",
-  "Move with family": "Move with family",
-  "Start a business": "Start a business",
-  "Tell us about you": "Tell us about you",
-  "We analyze your options": "We analyze your options",
-  "Get your plan": "Get your plan",
-  "Find the plan that fits your journey": "Find the plan that fits your journey",
-  "Start free": {
-    " Upgrade when you're ready for your full immigration plan": {
-      "": "Start free. Upgrade when you're ready for your full immigration plan."
-    },
-    "": "Start free"
+  "Create a case for each migration plan you want to evaluate, compare, or execute": {
+    " Cases anchor strategy generation, scoring, and document collection in one workspace": {
+      "": "평가, 비교 또는 실행하고자 하는 각 이주 계획에 대한 사례를 생성합니다. 사례는 하나의 작업 공간에서 전략 생성, 점수 매기기 및 문서 수집을 고정합니다"
+    }
   },
-  "Best value": "Best value",
-  "one-time": "one-time",
-  "No subscriptions": {
-    " Pay once, unlock your full plan": {
-      " 30-day money-back guarantee": {
-        "": "No subscriptions. Pay once, unlock your full plan. 30-day money-back guarantee."
+  "Create first case": "첫 번째 사례 생성",
+  "Create strategy case": "전략 사례 생성",
+  "Creating case": {
+    "": {
+      "": {
+        "": "사례 생성 중"
       }
     }
   },
-  "Start with the essentials and complete your immigration profile later": {
-    "": "Start with the essentials and complete your immigration profile later."
+  "Current stage": "현재 단계",
+  "Data unavailable": "데이터 사용 불가",
+  "Define a migration pathway to evaluate": "평가할 이주 경로 정의",
+  "Destination pending": "목적지 보류 중",
+  "Draft": "초안",
+  "Evaluation signals": "평가 신호",
+  "Example: eligibility_review, document_collection, filing_ready": "예: eligibility_review, document_collection, filing_ready",
+  "Higher values should indicate higher execution or eligibility risk": {
+    "": "더 높은 값은 더 높은 실행 또는 자격 위험을 나타내야 합니다"
   },
-  "Sign in to continue your immigration strategy": {
-    "": "Sign in to continue your immigration strategy."
+  "Immigration strategy cases": "이민 전략 사례",
+  "In review": "검토 중",
+  "Internal Console": "내부 콘솔",
+  "Keep notes focused on blockers, evidence gaps, and next actions": {
+    "": "차단 요소, 증거 격차 및 다음 작업에 집중된 메모를 유지하세요"
   },
-  "Forgot your password?": "Forgot your password?",
-  "Create account": "Create account",
-  "Create one": "Create one",
+  "Latest score": "최신 점수",
+  "Manage immigration strategy records that anchor pathway evaluation, stage tracking, scoring, and later document workflows": {
+    "": "경로 평가, 단계 추적, 점수 매기기 및 이후 문서 워크플로우를 고정하는 이민 전략 기록 관리"
+  },
+  "New case": "새 사례",
+  "New strategy case": "새 전략 사례",
+  "No changes to save": "저장할 변경 사항 없음",
+  "No strategic notes recorded yet for this immigration path": {
+    "": "이 이민 경로에 대해 기록된 전략적 메모가 없습니다"
+  },
+  "No strategy cases yet": "아직 전략 사례가 없습니다",
+  "on record": "기록됨",
+  "Open case": "열린 사례",
+  "Optional score snapshot if you want to retain a manual benchmark": {
+    "": "수동 기준을 유지하려는 경우 선택적 점수 스냅샷"
+  },
+  "Pathway not defined yet": "경로가 아직 정의되지 않았습니다",
+  "Refresh cases": "사례 새로 고침",
+  "Review the highlighted case fields before saving": {
+    "": "저장하기 전에 강조 표시된 사례 필드를 검토하세요"
+  },
+  "Risk score": "위험 점수",
+  "Risk": "위험",
+  "Save case changes": "사례 변경 사항 저장",
+  "Saving changes": {
+    "": {
+      "": {
+        "": "변경 사항 저장 중"
+      }
+    }
+  },
+  "Score": "점수",
+  "Session": "세션",
+  "Stage": "단계",
+  "Start with a target country and pathway": "목표 국가 및 경로로 시작하세요",
+  "Strategy case created successfully": {
+    "": "전략 사례가 성공적으로 생성되었습니다"
+  },
+  "Strategy identity": "전략 정체성",
+  "Strategy notes": "전략 메모",
+  "Target country": "Target country",
+  "Target pathway or program": "목표 경로 또는 프로그램",
+  "The case portfolio could not be loaded": {
+    "": "사례 포트폴리오를 로드할 수 없습니다"
+  },
+  "Track every active migration path in one workspace": "하나의 작업 공간에서 모든 활성 이주 경로를 추적합니다",
+  "U": {
+    "S": {
+      " employment-based migration plan": "미국 고용 기반 이주 계획"
+    }
+  },
+  "United States": "미국",
+  "Update the case strategy record": "사례 전략 기록 업데이트",
+  "Updated": "업데이트됨",
+  "Workspace data could not be loaded": {
+    "": "작업 공간 데이터를 불러올 수 없습니다"
+  },
+  "You are no longer authenticated": {
+    "": "더 이상 인증되지 않았습니다"
+  },
+  "case": "케이스",
+  "cases": "케이스들",
+  "12-18 months": "12-18개월",
+  "3 country comparisons": "3개 국가 비교",
+  "A focused workspace for immigration decisions": "A focused workspace for immigration decisions",
+  "AI checks 47 visa categories and finds your best match": {
+    "": "AI가 47개 비자 카테고리를 확인하고 최적의 매치를 찾습니다"
+  },
+  "Access your immigration dashboard, decision plans, and case workspace": {
+    "": "이민 대시보드, 결정 계획 및 케이스 작업 공간에 접근하세요"
+  },
+  "Action roadmap": "Action roadmap",
+  "Admin": "Admin",
+  "Advanced action plan": "고급 행동 계획",
   "Already have an account?": "Already have an account?",
-  "Need an account?": "Need an account?",
+  "Any criminal record?": "Any criminal record?",
+  "Available capital": "Available capital",
+  "Average time to first plan": "첫 번째 계획까지의 평균 시간",
+  "Back": "뒤로",
+  "Benefits": "장점",
+  "Best value": "Best value",
+  "Best visa option": "최상의 비자 옵션",
+  "Best visa recommendation": "최상의 비자 추천",
+  "Better case preparation": "더 나은 케이스 준비",
+  "Built for immigrants, by immigrants": "이민자를 위해, 이민자에 의해 만들어졌습니다",
+  "Case health": "Case health",
+  "Cases": "케이스",
+  "Check your email": "이메일을 확인하세요",
+  "Checkout failed": "결제가 실패했습니다",
+  "Children": "Children",
+  "Choose a new password for your account": {
+    "": "계정을 위한 새 비밀번호를 선택하세요"
+  },
+  "Comparison": "비교",
+  "Confirm password": "Confirm password",
+  "Confirm your password": {
+    "": "비밀번호를 확인하세요"
+  },
+  "Confusing visa rules that change every year": "매년 바뀌는 혼란스러운 비자 규칙",
+  "Copilot": "Copilot",
+  "Cost estimate": "비용 추정",
+  "Countries": "국가들",
+  "Countries supported": "지원되는 국가들",
+  "Create account": "Create account",
+  "Create an account to start building an immigration profile, evaluate pathways, and manage your cases": {
+    "": "이민 프로필을 구축하고, 경로를 평가하며, 케이스를 관리하기 위해 계정을 생성하세요"
+  },
+  "Create one": "Create one",
+  "Create your Immigrant Guru account": "Immigrant Guru 계정을 생성하세요",
+  "Create your account": "계정 만들기",
   "Creating account": {
     "": {
       "": {
@@ -105,65 +167,210 @@
       }
     }
   },
-  "Signing in": {
-    "": {
-      "": {
-        "": "Signing in..."
+  "Dashboard": "대시보드",
+  "Data Scientist, India to Canada": "데이터 과학자, 인도에서 캐나다로",
+  "Deeper analysis": "심층 분석",
+  "Document checklist": "문서 체크리스트",
+  "Document status": "Document status",
+  "Documents": "문서",
+  "E-2 investor, EB-5, startup visa — explore entrepreneurial immigration routes": {
+    "": "E-2 투자자, EB-5, 스타트업 비자 — 기업가 이민 경로 탐색"
+  },
+  "Education level": "Education level",
+  "Email": "이메일",
+  "English level": "English level",
+  "Enter a valid email address": {
+    "": "Enter a valid email address."
+  },
+  "Enter it below to verify your account": {
+    "": "아래에 입력하여 계정을 확인하세요"
+  },
+  "Enter the 6-digit code from your email": {
+    "": "이메일에서 6자리 코드를 입력하세요"
+  },
+  "Enter the 6-digit code": {
+    "": "6자리 코드를 입력하세요"
+  },
+  "Enter your email and we'll send you a reset code": {
+    "": "이메일을 입력하면 재설정 코드를 보내드립니다"
+  },
+  "Enter your email": {
+    "": "이메일을 입력하세요"
+  },
+  "Error": "Error",
+  "Est": {
+    " cost": "예상 비용"
+  },
+  "Estimated cost": "추정 비용",
+  "Even if you think you don't qualify — we'll show you what's possible": {
+    "": "자격이 없다고 생각하더라도 — 가능한 것을 보여드리겠습니다"
+  },
+  "Everything in Plus": "Plus의 모든 내용",
+  "Everything in Starter": "Starter의 모든 내용",
+  "Everything you need in one place": "필요한 모든 것을 한 곳에서",
+  "Expanded document guidance": "확장된 문서 안내",
+  "Expensive lawyers who charge $5,000+ for basic advice": "기본 조언에 대해 $5,000 이상의 비용을 청구하는 비싼 변호사들",
+  "Explainable readiness signals": "Explainable readiness signals",
+  "F-1, OPT, STEM extension — understand your path from student to professional": {
+    "": "F-1, OPT, STEM 연장 — 학생에서 전문가로 가는 경로 이해하기"
+  },
+  "Filing + legal fees": "제출 + 법적 수수료",
+  "Find my best path": "나의 최적 경로 찾기",
+  "Find the plan that fits your journey": "Find the plan that fits your journey",
+  "Find the right work visa for your skills and experience": {
+    " H-1B, EB-2, O-1, and more": {
+      "": "H-1B, EB-2, O-1 등 당신의 기술과 경험에 맞는 적합한 취업 비자 찾기"
+    }
+  },
+  "Find your best path": "당신의 최적 경로 찾기",
+  "Find your path": "나의 경로 찾기",
+  "Finish": "완료",
+  "First name": "First name",
+  "First name is too long": {
+    "": "이름이 너무 깁니다"
+  },
+  "For comparing options": "옵션 비교를 위한",
+  "For every situation": "모든 상황을 위한",
+  "For one clear path": "하나의 명확한 경로를 위한",
+  "Forgot your password?": "Forgot your password?",
+  "Free": "무료",
+  "Free to start · No credit card · Takes 2 minutes": "시작은 무료 · 신용 카드 필요 없음 · 2분 소요",
+  "From filing to approval": "제출에서 승인까지",
+  "Full path comparison": "전체 경로 비교",
+  "Full plan for 1 country": "1개 국가에 대한 전체 계획",
+  "Full strategic experience": "전체 전략적 경험",
+  "Full strategic recommendation": "전체 전략적 추천",
+  "Generate strategy": "Generate strategy",
+  "Get Started": "시작하기",
+  "Get your personalized visa, readiness score, and action plan in minutes": {
+    "": "몇 분 안에 맞춤 비자 경로, 준비도 점수, 실행 계획을 받아보세요.",
+    " Not months": {
+      "": "몇 분 안에 개인화된 비자, 준비 점수 및 행동 계획을 받으세요  몇 달이 아닙니다"
+    }
+  },
+  "Get your plan": "Get your plan",
+  "Get {plan}": "{plan} 받기",
+  "Go back": "돌아가기",
+  "Go home": "Go home",
+  "Home": "홈",
+  "How it works": "작동 방식",
+  "I spent months Googling visa options": {
+    " Immigrant Guru gave me a clear plan in 10 minutes": {
+      " I wish I found this earlier": {
+        "": "비자 옵션을 구글링하는 데 몇 달을 보냈습니다  Immigrant Guru가 10분 만에 명확한 계획을 제시했습니다  더 일찍 알았더라면 좋았을 텐데"
       }
     }
   },
+  "Immigrant Guru - AI Immigration Strategy Platform": "Immigrant Guru - AI 이민 전략 플랫폼",
+  "Immigrant Guru - Move to a New Country Without Confusion": "Immigrant Guru - 혼란 없이 새로운 나라로 이동하세요",
+  "Immigrant Guru helps you evaluate pathways, compare strategies, and act with clarity": {
+    "": "Immigrant Guru helps you evaluate pathways, compare strategies, and act with clarity."
+  },
+  "Immigration Plan": "이민 계획",
+  "Immigration Score": "Immigration Score",
+  "Immigration shouldn't feel this hard": {
+    "": "이민이 이렇게 힘들 필요는 없습니다"
+  },
+  "Job opportunities": "취업 기회",
+  "Language": "언어",
+  "Last name": "Last name",
+  "Last name is too long": {
+    "": "성이 너무 깁니다"
+  },
+  "Log in": "로그인",
+  "Log out": "로그아웃",
   "Minimum 8 characters": "Minimum 8 characters",
-  "Repeat your password": "Repeat your password",
-  "Enter a valid email address": {
-    "": "Enter a valid email address."
+  "Months of waiting with no visibility": "가시성이 없는 몇 개월의 대기",
+  "Move to a New Country Without Confusion": "혼란 없이 새로운 나라로 이동하세요",
+  "Move to a new country": "새로운 나라로 이주하기",
+  "Move with family": "Move with family",
+  "Multiple visa alternatives": "여러 비자 대안",
+  "My plan": "내 플랜",
+  "National Interest Waiver · United States": "국가 이익 면제 · 미국",
+  "Nationality": "Nationality",
+  "Need an account?": "Need an account?",
+  "New password": "새 비밀번호",
+  "Next": "다음",
+  "Next best action": "Next best action",
+  "Next step:": "다음 단계:",
+  "No cases yet": "No cases yet",
+  "No clear direction — just endless Googling": "명확한 방향 없음 — 끝없는 구글링만",
+  "No confusion, no jargon": "혼란 없음, 전문 용어 없음",
+  "No employer sponsor needed — you can self-petition": {
+    "": "고용주 후원자 필요 없음 — 자가 청원 가능"
+  },
+  "No matter your background, we help you find a way forward": {
+    "": "배경에 관계없이, 우리는 당신이 앞으로 나아갈 길을 찾도록 도와줍니다"
+  },
+  "No subscriptions": {
+    " Pay once, unlock your full plan": {
+      " 30-day money-back guarantee": {
+        "": "No subscriptions. Pay once, unlock your full plan. 30-day money-back guarantee."
+      }
+    }
+  },
+  "One clear plan": {
+    " Everything you need": {
+      "": "하나의 명확한 계획  필요한 모든 것"
+    }
+  },
+  "One-time payment": {
+    " Unlock your full personalized immigration plan": {
+      "": "일회성 결제  전체 개인화된 이민 계획 잠금 해제"
+    }
+  },
+  "Overview": "개요",
+  "Page not found": "Page not found",
+  "Password": "비밀번호",
+  "Password must be at least 8 characters": {
+    "": "비밀번호는 최소 8자 이상이어야 합니다"
   },
   "Password must contain at least 8 characters": {
     "": "Password must contain at least 8 characters."
   },
-  "Page not found": "Page not found",
-  "The page you're looking for doesn't exist or hasn't been built yet": {
-    "": "The page you're looking for doesn't exist or hasn't been built yet."
+  "Password reset!": "비밀번호 재설정!",
+  "Passwords do not match": {
+    "": "비밀번호가 일치하지 않습니다"
   },
-  "Return home": "Return home",
-  "Error": "Error",
-  "Something went wrong": "Something went wrong",
-  "The page hit an unexpected error while rendering": {
-    " Try again, and if it persists, check the server logs": {
-      "": "The page hit an unexpected error while rendering. Try again, and if it persists, check the server logs."
-    }
-  },
-  "Go home": "Go home",
-  "Admin": "Admin",
-  "Step 1 of 4": "Step 1 of 4",
-  "Step 2 of 4": "Step 2 of 4",
-  "Step 3 of 4": "Step 3 of 4",
-  "Step 4 of 4": "Step 4 of 4",
-  "Tell us a bit about yourself": {
-    "": "Tell us a bit about yourself."
-  },
-  "Where do you want to go?": "Where do you want to go?",
-  "Your immigration goals and timing": {
-    "": "Your immigration goals and timing."
-  },
+  "Platform Status": "Platform Status",
+  "Plus": "플러스",
+  "Possible paths": "가능한 경로",
+  "Preferred language": "Preferred language",
+  "Premium": "프리미엄",
+  "Premium dashboard": "프리미엄 대시보드",
+  "Pricing": "요금",
+  "Prior visa refusal?": "Prior visa refusal?",
+  "Priority AI guidance": "우선 AI 안내",
+  "Probability score": "Probability score",
   "Professional experience and finances": {
     "": "Professional experience and finances."
   },
-  "You're ready to see your first strategy": "You're ready to see your first strategy",
-  "Nationality": "Nationality",
-  "Where do you live now?": "Where do you live now?",
+  "Profile": "프로필",
+  "Profile, finance, case": "프로필, 재정, 사례",
+  "Readiness": "준비 상태",
+  "Readiness score": "Readiness score",
+  "Ready": "준비 완료",
+  "Recommended pathway": "Recommended pathway",
+  "Redirecting…": "리디렉션 중…",
   "Relationship status": "Relationship status",
-  "Children": "Children",
-  "Preferred language": "Preferred language",
-  "Target country": "Target country",
   "Relocation timeline": "Relocation timeline",
-  "Prior visa refusal?": "Prior visa refusal?",
-  "Any criminal record?": "Any criminal record?",
-  "What do you do?": "What do you do?",
-  "Years of experience": "Years of experience",
-  "Education level": "Education level",
-  "English level": "English level",
-  "Available capital": "Available capital",
+  "Remember your password?": "비밀번호를 기억하시나요?",
+  "Repeat your password": "Repeat your password",
+  "Resend code": "코드 재전송",
+  "Resend code in {n}s": "{n}초 후 코드 재전송",
+  "Reset code": "코드 재설정",
+  "Reset password": "비밀번호 재설정",
+  "Resetting": {
+    "": {
+      "": {
+        "": "재설정 중"
+      }
+    }
+  },
+  "Retry": "다시 시도",
+  "Return home": "Return home",
   "Review and continue": "Review and continue",
+  "Risks": "위험",
   "Saving": {
     "": {
       "": {
@@ -171,23 +378,411 @@
       }
     }
   },
-  "Your session is no longer available": {
-    " Sign in again to continue onboarding": {
-      "": "Your session is no longer available. Sign in again to continue onboarding."
+  "Scenario simulation": "Scenario simulation",
+  "See how it works": "작동 방식 보기",
+  "Select language": "언어 선택",
+  "Send reset code": "재설정 코드 보내기",
+  "Sending": {
+    "": {
+      "": {
+        "": "전송 중"
+      }
     }
   },
-  "Your profile could not be saved right now": {
-    " Retry before moving to the next step": {
-      "": "Your profile could not be saved right now. Retry before moving to the next step."
+  "Set new password": "새 비밀번호 설정",
+  "Sign in": "로그인",
+  "Sign in to continue your case strategy": "사례 전략을 계속 진행하려면 로그인하세요",
+  "Sign in to continue your immigration strategy": {
+    "": "Sign in to continue your immigration strategy."
+  },
+  "Sign out": "로그아웃",
+  "Sign up": "회원가입",
+  "Signing in": {
+    "": {
+      "": {
+        "": "Signing in..."
+      }
     }
+  },
+  "Simple pricing": "간단한 요금",
+  "Six powerful tools working together to give you clarity, confidence, and a concrete plan": {
+    "": "Six powerful tools working together to give you clarity, confidence, and a concrete plan."
+  },
+  "Software Engineer, Turkey to USA": "소프트웨어 엔지니어, 터키에서 미국으로",
+  "Software Engineering, AI/ML, Product": "소프트웨어 공학, AI/ML, 제품",
+  "Something went wrong": {
+    "": "문제가 발생했습니다",
+    " Please try again": {
+      "": "문제가 발생했습니다  다시 시도해 주세요"
+    }
+  },
+  "Spouse, children, parents — know which family visa fits and how long it takes": {
+    "": "배우자, 자녀, 부모 — 어떤 가족 비자가 적합한지 및 소요 시간을 알아보세요"
+  },
+  "Start a business": "Start a business",
+  "Start free": {
+    "": "Start free",
+    " Upgrade when you're ready for your full immigration plan": {
+      "": "Start free. Upgrade when you're ready for your full immigration plan."
+    }
+  },
+  "Start with the essentials and complete your immigration profile later": {
+    "": "Start with the essentials and complete your immigration profile later."
+  },
+  "Start your plan": "플랜 시작하기",
+  "Starter": "스타터",
+  "Step 1 of 4": "Step 1 of 4",
+  "Step 2 of 4": "Step 2 of 4",
+  "Step 3 of 4": "Step 3 of 4",
+  "Step 4 of 4": "Step 4 of 4",
+  "Step-by-step roadmap": "단계별 로드맵",
+  "Stop guessing": {
+    " Get a clear plan for your immigration journey — in minutes, not months": {
+      "": "추측 중단  몇 분 안에 이민 여정을 위한 명확한 계획을 세우세요 — 몇 달이 아닌"
+    }
+  },
+  "Strategy": "전략",
+  "Study abroad": "Study abroad",
+  "Suggested cities": "추천 도시",
+  "Suitability": "적합성",
+  "System health": "System health",
+  "Tell us a bit about yourself": {
+    "": "Tell us a bit about yourself."
+  },
+  "Tell us about you": "Tell us about you",
+  "Tell us about yourself": {
+    " Our AI analyzes 47 visa categories, checks your readiness, and gives you a step-by-step plan with timeline, cost, and documents — in minutes": {
+      "": "자신에 대해 알려주세요  우리의 AI가 47개 비자 카테고리를 분석하고, 준비 상태를 확인하며, 타임라인, 비용 및 문서와 함께 단계별 계획을 제공합니다 — 몇 분 안에"
+    }
+  },
+  "The page hit an unexpected error while rendering": {
+    " Try again, and if it persists, check the server logs": {
+      "": "The page hit an unexpected error while rendering. Try again, and if it persists, check the server logs."
+    }
+  },
+  "The page you're looking for doesn't exist or hasn't been built yet": {
+    "": "The page you're looking for doesn't exist or hasn't been built yet."
   },
   "The platform could not load your profile draft": {
     " Retry before continuing": {
       "": "The platform could not load your profile draft. Retry before continuing."
     }
   },
-  "Document status": "Document status",
-  "Case health": "Case health",
-  "Action roadmap": "Action roadmap",
-  "No cases yet": "No cases yet"
+  "The problem": "문제",
+  "The readiness score showed me exactly what I was missing": {
+    " I uploaded 3 documents and my score jumped from 52 to 81": {
+      "": "준비 점수가 내가 놓치고 있는 것을 정확히 보여주었습니다  3개의 문서를 업로드하니 점수가 52에서 81로 상승했습니다"
+    }
+  },
+  "The solution": "해결책",
+  "There's always a way — we help you find it": {
+    "": "항상 방법이 있습니다 — 우리는 당신이 그것을 찾도록 도와줍니다"
+  },
+  "Three steps": {
+    " No confusion": {
+      "": "세 단계  혼란 없음"
+    }
+  },
+  "Timeline": "타임라인",
+  "Timeline estimate": "타임라인 추정",
+  "Toggle menu": "메뉴 전환",
+  "Try it now": "지금 시도해 보세요",
+  "Turkey, India, Brazil": {
+    "": {
+      "": {
+        "": "터키, 인도, 브라질"
+      }
+    }
+  },
+  "United States, Canada": {
+    "": {
+      "": {
+        "": "미국, 캐나다"
+      }
+    }
+  },
+  "Upload document": "Upload document",
+  "Upload your resume and education documents to increase your readiness score to 90+": {
+    "": "이력서와 교육 문서를 업로드하여 준비 점수를 90 이상으로 높이세요"
+  },
+  "Verification code": "인증 코드",
+  "Verify code": "코드 확인",
+  "Verify email": "이메일 확인",
+  "Verifying": {
+    "": {
+      "": {
+        "": "확인 중"
+      }
+    }
+  },
+  "Visa categories analyzed": "분석된 비자 카테고리",
+  "Visa types": "비자 유형",
+  "Visa, timeline, documents, cost — everything in one clear view": {
+    "": "비자, 일정, 문서, 비용 — 모든 것을 한눈에 보기"
+  },
+  "We analyze multiple countries, visa types, and pathways to match you with the best option based on your profile": {
+    "": "우리는 여러 국가, 비자 유형 및 경로를 분석하여 귀하의 프로필에 가장 적합한 옵션을 찾아드립니다"
+  },
+  "We analyze your options": "We analyze your options",
+  "We sent a 6-digit code to": "6자리 코드를 {countryName}으로 보냈습니다",
+  "We show you what to do": "해야 할 일을 보여드립니다",
+  "We turn everything into one clear plan": {
+    "": "모든 것을 하나의 명확한 계획으로 만듭니다"
+  },
+  "Welcome back": "다시 오신 것을 환영합니다",
+  "What do you do?": "What do you do?",
+  "What you get": "당신이 얻는 것",
+  "Whatever your reason, we can help": {
+    "": "어떤 이유든, 우리는 도와드릴 수 있습니다"
+  },
+  "Where are you from?": "어디서 오셨나요?",
+  "Where do you live now?": "Where do you live now?",
+  "Where do you want to go?": "Where do you want to go?",
+  "Work abroad": "Work abroad",
+  "Wrong email?": "잘못된 이메일인가요?",
+  "Years of experience": "Years of experience",
+  "You're ready to see your first strategy": "You're ready to see your first strategy",
+  "Your background, education, experience, and goals": {
+    " Takes 2 minutes": {
+      "": "귀하의 배경, 교육, 경험 및 목표  2분 소요"
+    }
+  },
+  "Your best path": "귀하의 최적 경로",
+  "Your best path, ranked by fit": "적합도에 따라 순위가 매겨진 귀하의 최적 경로",
+  "Your immigration goals and timing": {
+    "": "Your immigration goals and timing."
+  },
+  "Your new life starts here": {
+    "": "귀하의 새로운 삶이 여기서 시작됩니다"
+  },
+  "Your password has been updated": {
+    " You can now sign in": {
+      "": "비밀번호가 업데이트되었습니다  이제 로그인할 수 있습니다"
+    }
+  },
+  "Your personalized result": "귀하의 개인화된 결과",
+  "Your profile could not be saved right now": {
+    " Retry before moving to the next step": {
+      "": "Your profile could not be saved right now. Retry before moving to the next step."
+    }
+  },
+  "Your session is no longer available": {
+    " Sign in again to continue onboarding": {
+      "": "Your session is no longer available. Sign in again to continue onboarding."
+    }
+  },
+  "one-time": "one-time",
+  "without confusion": {
+    "": "혼란 없이"
+  },
+  "FAQ": "자주 묻는 질문",
+  "tools": {
+    "pageTitle": "무료 이민 도구",
+    "pageSubtitle": "빠른 답변 — 등록이 필요 없습니다.",
+    "eligibilityChecker": {
+      "title": "적합성 검사기",
+      "description": "6개의 질문에 답변하고, 아마도 자격이 있는 비자를 확인하세요."
+    },
+    "costEstimator": {
+      "title": "비용 추정 도구",
+      "description": "해외 이사에 대한 전체 비용 — 비자 수수료만이 아닙니다."
+    },
+    "timelineCalculator": {
+      "title": "일정 계산기",
+      "description": "단계별로 언제 도착할지 예측하세요."
+    }
+  },
+  "eligibilityChecker": {
+    "pageTitle": "무료 비자 적합성 검사기",
+    "pageSubtitle": "6개의 간단한 질문에 답변하세요. 아마도 자격이 있는 비자의 간략한 목록을 확인하세요 — 등록이 필요 없습니다.",
+    "faq1": {
+      "question": "적합성 검사기가 무료인가요?",
+      "answer": "네. 완전히 브라우저에서 작동하며 계정이 필요하지 않습니다."
+    },
+    "faq2": {
+      "question": "얼마나 정확한가요?",
+      "answer": "모든 경로에 대해 공개된 적합성 규칙을 사용합니다. 강력한 초기 필터이지만 AI 지원의 완전한 분석이나 법률 조언을 대체하지는 않습니다."
+    },
+    "faq3": {
+      "question": "내 답변을 저장하나요?",
+      "answer": "아니요. 도구는 브라우저에서 로컬로 작동합니다. 결과를 프로필에 저장하고 싶다면 등록하세요."
+    },
+    "emailCapture": {
+      "title": "완전한 AI 지원 분석",
+      "subtitle": "이메일로 개인화된 Plan A/B/C 및 준비 점수를 받으세요."
+    }
+  },
+  "costEstimator": {
+    "pageTitle": "이민 비용 추정 도구",
+    "pageSubtitle": "경로를 선택하고 가족 규모를 추가한 후 실제 총 비용을 확인하세요 — 비자 수수료만이 아닙니다.",
+    "faq1": {
+      "question": "추정에 무엇이 포함되나요?",
+      "answer": "정부 수수료, 법률/대리인 수수료, 정착 자금, 항공권, 초기 주택 및 10%의 예기치 않은 비용 완충액."
+    },
+    "faq2": {
+      "question": "이것이 내 특별한 상황에 맞나요?",
+      "answer": "모든 경로에 대해 좋은 가이드 추정입니다. 실제 비용은 가족 규모, 도시 및 변호사 선택에 따라 달라집니다. 개인화된 내역을 원하시면 등록하세요."
+    },
+    "emailCapture": {
+      "title": "이메일로 전체 비용 내역",
+      "subtitle": "목표 국가에 따라 정리된 행 기반 비용을 포함한 표."
+    }
+  },
+  "timelineCalculator": {
+    "pageTitle": "일정 계산기",
+    "pageSubtitle": "경로를 선택하세요. 언제 도착할지 확인하세요 — 준비, 신청, 처리 및 도착 포함.",
+    "faq1": {
+      "question": "준비 기간이 포함되는 이유는 무엇인가요?",
+      "answer": "신청할 때 시작되지 않고 — 서류를 모으기 시작할 때 시작됩니다. 모든 경로에 대해 현실적인 준비 창을 추가하고 있습니다."
+    },
+    "faq2": {
+      "question": "이 추정은 얼마나 정확한가요?",
+      "answer": "발표된 평균 처리 시간을 반영합니다. 개별 사례는 RFE, 국가 쿼터 및 증거의 완전성에 따라 더 빠르거나 느릴 수 있습니다."
+    },
+    "emailCapture": {
+      "title": "주간 일정 추적기",
+      "subtitle": "도착일까지 간단한 주간 계획을 이메일로 보내드립니다."
+    }
+  },
+  "visaIndex": {
+    "pageTitle": "모든 비자",
+    "pageSubtitle": "우리가 다루는 모든 경로에 대한 비용, 일정 및 적합성.",
+    "months": "월"
+  },
+  "bestCountries": {
+    "pageTitle": "직업별 최고의 국가",
+    "pageSubtitle": "순위가 매겨진 이민 목적지를 보려면 직업을 선택하세요.",
+    "cardTitle": "{profession}을 위한 최고의 국가",
+    "breadcrumb": "최고의 국가",
+    "rankedSubtitle": "비용, 일정 및 영주권에 따라 정렬되었습니다. 데이터는 2026년 기준으로 업데이트되었습니다.",
+    "topPathway": "최고의 경로",
+    "seeAllPathways": "모든 경로 보기",
+    "visaDetails": "{code} 세부정보",
+    "otherProfessions": "다른 직업들"
+  },
+  "compare": {
+    "pageTitle": "비자 비교",
+    "pageSubtitle": "가장 일반적인 경로 결정의 나란히 비교.",
+    "vs": "대",
+    "comparingSubtitle": "{nameA}와 {nameB}의 비용, 시간 및 적합성을 비교합니다 — 잘못된 경로에 몇 달을 낭비하지 않도록.",
+    "rowFullName": "전체 이름",
+    "rowCategory": "카테고리",
+    "rowDestination": "목표 국가",
+    "rowTypicalDuration": "일반적인 기간",
+    "rowCostUsd": "비용 (USD)",
+    "rowLeadsToPR": "영주권으로 이어짐",
+    "yes": "네",
+    "no": "아니요",
+    "bestFor": "가장 적합",
+    "otherComparisons": "다른 비자 비교"
+  },
+  "visaMatch": {
+    "pageTitle": "비자 매칭",
+    "pageSubtitle": "첫 3개의 경로를 보려면 목표 국가와 프로필을 선택하세요.",
+    "cardSubtitle": "{profession}을(를) 위한 최고의 비자",
+    "breadcrumb": "비자 매칭",
+    "rankedSubtitle": "{profession}을(를) 위한 {count}개의 이민 경로가 {countryName} 목표로 정렬되었습니다. 각 옵션은 적합성, 비용, 기간 및 위험에 따라 점수가 매겨졌습니다.",
+    "getPersonalizedMatch": "개인화된 매칭을 받으세요",
+    "freeEligibilityCheck": "무료 적합성 검사",
+    "typicalTimeline": "일반적인 일정",
+    "typicalCost": "일반적인 비용",
+    "duration": "기간",
+    "strengths": "강점",
+    "moreVisaGuides": "{countryName}을(를) 위한 더 많은 비자 가이드"
+  },
+  "moveTo": {
+    "pageTitle": "국가 이사 가이드",
+    "pageSubtitle": "출신지 및 목표 국가에 따른 단계별 가이드.",
+    "fromLabel": "{flag} {name}에서",
+    "cardSubtitle": "{demonym} 시민을 위한 가이드",
+    "h1": "{fromName}에서 {toName} 도시로 이사",
+    "intro": "{demonym} 시민을 위한 {toName} 도시로 이사하는 실용 가이드. 경로를 선택하고, 일정을 이해하고, 개인화된 준비 점수를 받으세요.",
+    "topVisaPathways": "{toName}을(를) 위한 최고의 비자 경로",
+    "howToStepByStep": "단계별 이사 방법",
+    "moreCountryGuides": "더 많은 국가 가이드"
+  },
+  "Onboarding could not load": "온보딩을 불러올 수 없습니다",
+  "Review the highlighted profile fields before continuing": {
+    "": "계속하기 전에 강조 표시된 프로필 필드를 검토하십시오"
+  },
+  "Skip": "건너뛰기",
+  "Who are you?": "당신은 누구인가요?",
+  "Select your nationality": "국적을 선택하십시오",
+  "Select current country": "현재 국가를 선택하십시오",
+  "e": {
+    "g": {
+      " English, Turkish": {
+        "": {
+          "": {
+            "": "예: 영어, 터키어..."
+          }
+        }
+      },
+      " Software Engineer, Doctor, Designer": {
+        "": {
+          "": {
+            "": "예: 소프트웨어 엔지니어, 의사, 디자이너..."
+          }
+        }
+      },
+      " 50000": "예: 50000"
+    }
+  },
+  "Your background": "귀하의 배경",
+  "English proficiency": "영어 능력",
+  "Available capital (USD)": "사용 가능한 자본 (USD)",
+  "Your dream destination and timeline": {
+    "": "귀하의 꿈의 목적지와 일정"
+  },
+  "When do you want to move?": "언제 이사하고 싶으신가요?",
+  "Have you had a visa refusal before?": "이전에 비자 거부를 당한 적이 있나요?",
+  "This helps us give accurate recommendations": {
+    " Your data is private and secure": {
+      "": "이는 정확한 추천을 제공하는 데 도움이 됩니다  귀하의 데이터는 비공개이며 안전합니다"
+    }
+  },
+  "You're all set!": "모든 준비가 완료되었습니다!",
+  "Amazing! Your profile is almost complete": {
+    " We can build great strategies for you": {
+      "": "놀랍습니다! 귀하의 프로필이 거의 완성되었습니다  우리는 귀하를 위한 훌륭한 전략을 구축할 수 있습니다"
+    }
+  },
+  "Great start! You can always complete more details from your profile page": {
+    "": "좋은 시작입니다! 프로필 페이지에서 언제든지 더 많은 세부정보를 완성할 수 있습니다"
+  },
+  "No worries! You can fill in more details anytime from your dashboard": {
+    "": "걱정하지 마세요! 대시보드에서 언제든지 더 많은 세부정보를 입력할 수 있습니다"
+  },
+  "See your AI analysis": "귀하의 AI 분석 보기",
+  "there": "거기",
+  "Immigrant": "이민자",
+  "Guru": "구루",
+  "Hey {name}, welcome aboard!": "안녕하세요 {name}, 환영합니다!",
+  "Let's build your immigration profile in under 2 minutes": {
+    " The more we know, the better strategies we can craft for you": {
+      "": "2분 이내에 귀하의 이민 프로필을 구축해 봅시다  우리가 아는 것이 많을수록 귀하를 위한 더 나은 전략을 만들 수 있습니다"
+    }
+  },
+  "Let's go": "시작합시다",
+  "Takes about 2 minutes": {
+    " You can skip anything": {
+      "": "약 2분 소요됩니다  무엇이든 건너뛸 수 있습니다"
+    }
+  },
+  "score": {
+    "outOf100": "100점 만점에",
+    "thisProfileIs": "이 프로필은 {readiness} 수준입니다.",
+    "scoredOn": "Immigrant Guru는 교육, 경력, 언어, 목표 국가 적합성 및 8가지 다른 차원에 따라 이 프로필을 평가했습니다.",
+    "getMyOwnScore": "내 점수를 받다",
+    "shareOnX": "X에서 공유"
+  },
+  "visa": {
+    "cost": "비용",
+    "prPath": "영주권 경로",
+    "idealFor": "적합한 사람들",
+    "requirements": "요구 사항",
+    "risksAndRejection": "위험 및 일반적인 거부 사유",
+    "checkReadiness": "{code} 준비 상태를 확인하세요",
+    "moreVisaGuides": "{countryName}을(를) 위한 더 많은 비자 가이드"
+  }
 }

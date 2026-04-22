@@ -1,103 +1,165 @@
 {
-  "Immigrant Guru - AI Immigration Strategy Platform": "Immigrant Guru - AI Immigration Strategy Platform",
-  "Immigrant Guru - Move to a New Country Without Confusion": "Immigrant Guru - Move to a New Country Without Confusion",
-  "Language": "Language",
-  "Select language": "Select language",
-  "How it works": "How it works",
-  "Find your path": "Find your path",
-  "Pricing": "Pricing",
-  "Home": "Home",
-  "Sign in": "Sign in",
-  "Sign up": "Sign up",
-  "Dashboard": "Dashboard",
-  "Log out": "Log out",
-  "Move to a New Country Without Confusion": "Move to a New Country Without Confusion",
-  "Get your personalized visa, readiness score, and action plan in minutes": {
-    "": "Get your personalized visa, readiness score, and action plan in minutes."
+  "Active": "فعال",
+  "Cancel": "لغوه",
+  "Capture the destination, program, current stage, and risk signals that anchor strategy generation, scoring, and document workflows": {
+    "": "د منزل، پروګرام، اوسنی پړاو، او خطر نښې نیولو چې ستراتیژي تولید، نمره ورکولو، او سند کار پروسې ته نښلوي"
   },
-  "Benefits": "Benefits",
-  "Everything you need in one place": "Everything you need in one place",
-  "Simple pricing": "Simple pricing",
-  "Free": "Free",
-  "Starter": "Starter",
-  "Plus": "Plus",
-  "Premium": "Premium",
-  "Create your account": "Create your account",
-  "Welcome back": "Welcome back",
-  "First name": "First name",
-  "Last name": "Last name",
-  "Email": "Email",
-  "Password": "Password",
-  "Confirm password": "Confirm password",
-  "Overview": "Overview",
-  "Profile": "Profile",
-  "Cases": "Cases",
-  "Strategy": "Strategy",
-  "Timeline": "Timeline",
-  "Documents": "Documents",
-  "Risks": "Risks",
-  "Copilot": "Copilot",
-  "Comparison": "Comparison",
-  "Retry": "Retry",
-  "Back": "Back",
-  "Next": "Next",
-  "Finish": "Finish",
-  "Generate strategy": "Generate strategy",
-  "Upload document": "Upload document",
-  "Scenario simulation": "Scenario simulation",
-  "My plan": "My plan",
-  "Sign out": "Sign out",
-  "Log in": "Log in",
-  "Start your plan": "Start your plan",
-  "Readiness score": "Readiness score",
-  "Probability score": "Probability score",
-  "Recommended pathway": "Recommended pathway",
-  "Next best action": "Next best action",
-  "Immigrant Guru helps you evaluate pathways, compare strategies, and act with clarity": {
-    "": "Immigrant Guru helps you evaluate pathways, compare strategies, and act with clarity."
+  "Case Detail": "د قضیې تفصیل",
+  "Case planning workspace": "د قضیې پلان جوړونې کاري ځای",
+  "Case portfolio": "د قضیې پورټفولیو",
+  "Case status": "د قضیې حالت",
+  "Case title": "د قضیې سرلیک",
+  "Closed": "بند",
+  "Close": "بندول",
+  "Close new case": "نوې قضیه بندول",
+  "Collect recommendation letters and evidence of impact": {
+    "": "د سپارښتنې لیکونه او د اغیزې شواهد راټول کړئ"
   },
-  "A focused workspace for immigration decisions": "A focused workspace for immigration decisions",
-  "Six powerful tools working together to give you clarity, confidence, and a concrete plan": {
-    "": "Six powerful tools working together to give you clarity, confidence, and a concrete plan."
+  "Continue your immigration planning": {
+    " Keep profile and case data aligned": {
+      "": "د خپل کډوالۍ پلان جوړونې ته دوام ورکړئ  پروفایل او د قضیې معلوماتو همغږي وساتئ"
+    }
   },
-  "Immigration Score": "Immigration Score",
-  "Explainable readiness signals": "Explainable readiness signals",
-  "System health": "System health",
-  "Platform Status": "Platform Status",
-  "Work abroad": "Work abroad",
-  "Study abroad": "Study abroad",
-  "Move with family": "Move with family",
-  "Start a business": "Start a business",
-  "Tell us about you": "Tell us about you",
-  "We analyze your options": "We analyze your options",
-  "Get your plan": "Get your plan",
-  "Find the plan that fits your journey": "Find the plan that fits your journey",
-  "Start free": {
-    " Upgrade when you're ready for your full immigration plan": {
-      "": "Start free. Upgrade when you're ready for your full immigration plan."
-    },
-    "": "Start free"
+  "Create a case for each migration plan you want to evaluate, compare, or execute": {
+    " Cases anchor strategy generation, scoring, and document collection in one workspace": {
+      "": "د هر کډوالۍ پلان لپاره یوه قضیه جوړه کړئ چې تاسو غواړئ ارزونه، پرتله، یا پلي کړئ  قضیې ستراتیژي تولید، نمره ورکولو، او د سند راټولولو ته په یوه کاري ځای کې نښلوي"
+    }
   },
-  "Best value": "Best value",
-  "one-time": "one-time",
-  "No subscriptions": {
-    " Pay once, unlock your full plan": {
-      " 30-day money-back guarantee": {
-        "": "No subscriptions. Pay once, unlock your full plan. 30-day money-back guarantee."
+  "Create first case": "لومړۍ قضیه جوړه کړئ",
+  "Create strategy case": "د ستراتیژۍ قضیه جوړه کړئ",
+  "Creating case": {
+    "": {
+      "": {
+        "": "قضیه جوړول"
       }
     }
   },
-  "Start with the essentials and complete your immigration profile later": {
-    "": "Start with the essentials and complete your immigration profile later."
+  "Current stage": "اوسنی پړاو",
+  "Data unavailable": "معلومات شتون نلري",
+  "Define a migration pathway to evaluate": "د ارزونې لپاره د کډوالۍ لاره تعریف کړئ",
+  "Destination pending": "منزل په تمه دی",
+  "Draft": "مسوده",
+  "Evaluation signals": "د ارزونې نښې",
+  "Example: eligibility_review, document_collection, filing_ready": "مثال: eligibility_review, document_collection, filing_ready",
+  "Higher values should indicate higher execution or eligibility risk": {
+    "": "لوړې ارزښتونه باید د لوړې پلي کولو یا وړتیا خطر ښودنه وکړي"
   },
-  "Sign in to continue your immigration strategy": {
-    "": "Sign in to continue your immigration strategy."
+  "Immigration strategy cases": "د کډوالۍ ستراتیژۍ قضیې",
+  "In review": "په بیاکتنه کې",
+  "Internal Console": "داخلي کنسول",
+  "Keep notes focused on blockers, evidence gaps, and next actions": {
+    "": "یادښتونه د خنډونو، د شواهدو خالي ځایونو، او راتلونکو کړنو په اړه متمرکز وساتئ"
   },
-  "Forgot your password?": "Forgot your password?",
-  "Create account": "Create account",
-  "Create one": "Create one",
+  "Latest score": "وروستی نمره",
+  "Manage immigration strategy records that anchor pathway evaluation, stage tracking, scoring, and later document workflows": {
+    "": "د کډوالۍ ستراتیژۍ ریکارډونه اداره کړئ چې د لارې ارزونې، پړاو تعقیب، نمره ورکولو، او وروسته د سند کار پروسې ته نښلوي"
+  },
+  "New case": "نوې قضیه",
+  "New strategy case": "نوې ستراتیژۍ قضیه",
+  "No changes to save": "د خوندي کولو لپاره هیڅ بدلون نشته",
+  "No strategic notes recorded yet for this immigration path": {
+    "": "د دې کډوالۍ لارې لپاره لا تر اوسه هیڅ ستراتیژیک یادښتونه ثبت شوي ندي"
+  },
+  "No strategy cases yet": "لا تر اوسه هیڅ ستراتیژۍ قضیې نشته",
+  "on record": "په ریکارډ کې",
+  "Open case": "پرانیستې قضیه",
+  "Optional score snapshot if you want to retain a manual benchmark": {
+    "": "اختیاري نمره عکس که تاسو غواړئ چې یو دستی معیار وساتئ"
+  },
+  "Pathway not defined yet": "لاره لا تر اوسه تعریف شوې نده",
+  "Refresh cases": "قضیې تازه کړئ",
+  "Review the highlighted case fields before saving": {
+    "": "د خوندي کولو دمخه د روښانه شوي قضیې ساحې بیاکتنه وکړئ"
+  },
+  "Risk score": "د خطر نمره",
+  "Risk": "خطر",
+  "Save case changes": "د قضیې بدلونونه خوندي کړئ",
+  "Saving changes": {
+    "": {
+      "": {
+        "": "بدلونونه خوندي کول"
+      }
+    }
+  },
+  "Score": "نمره",
+  "Session": "غونډه",
+  "Stage": "پړاو",
+  "Start with a target country and pathway": "د هدف هیواد او لاره سره پیل کړئ",
+  "Strategy case created successfully": {
+    "": "د ستراتیژۍ قضیه په بریالیتوب سره جوړه شوه"
+  },
+  "Strategy identity": "د ستراتیژۍ هویت",
+  "Strategy notes": "د ستراتیژۍ یادښتونه",
+  "Target country": "Target country",
+  "Target pathway or program": "هدف لاره یا پروګرام",
+  "The case portfolio could not be loaded": {
+    "": "د قضیې پورټفولیو بار نشو کړای"
+  },
+  "Track every active migration path in one workspace": "په یوه کاري ځای کې هر فعال کډوالۍ لاره تعقیب کړئ",
+  "U": {
+    "S": {
+      " employment-based migration plan": "د متحده ایالاتو د کار پر بنسټ کډوالۍ پلان"
+    }
+  },
+  "United States": "متحده ایالات",
+  "Update the case strategy record": "د قضیې ستراتیژۍ ریکارډ تازه کړئ",
+  "Updated": "تازه شوی",
+  "Workspace data could not be loaded": {
+    "": "د کاري ځای معلومات بار نشول"
+  },
+  "You are no longer authenticated": {
+    "": "تاسو نور تصدیق نه یاست"
+  },
+  "case": "قضیه",
+  "cases": "قضیې",
+  "12-18 months": "۱۲-۱۸ میاشتې",
+  "3 country comparisons": "۳ هیوادونو پرتله کول",
+  "A focused workspace for immigration decisions": "A focused workspace for immigration decisions",
+  "AI checks 47 visa categories and finds your best match": {
+    "": "AI ۴۷ ویزه کټګورۍ چیک کوي او ستاسو غوره ملګری مومي"
+  },
+  "Access your immigration dashboard, decision plans, and case workspace": {
+    "": "خپل مهاجرت ډشبورډ، پریکړې پلانونه، او قضیې کاري ځای ته لاسرسی ومومئ"
+  },
+  "Action roadmap": "Action roadmap",
+  "Admin": "Admin",
+  "Advanced action plan": "پرمختللی عمل پلان",
   "Already have an account?": "Already have an account?",
-  "Need an account?": "Need an account?",
+  "Any criminal record?": "Any criminal record?",
+  "Available capital": "Available capital",
+  "Average time to first plan": "لومړي پلان ته اوسط وخت",
+  "Back": "Back",
+  "Benefits": "Benefits",
+  "Best value": "Best value",
+  "Best visa option": "غوره ویزه انتخاب",
+  "Best visa recommendation": "غوره ویزه سپارښتنه",
+  "Better case preparation": "د قضیې غوره چمتووالی",
+  "Built for immigrants, by immigrants": "د مهاجرت لپاره جوړ شوی، د مهاجرت لخوا",
+  "Case health": "Case health",
+  "Cases": "Cases",
+  "Check your email": "خپل ایمیل چیک کړئ",
+  "Checkout failed": "چک آوټ ناکام شو",
+  "Children": "Children",
+  "Choose a new password for your account": {
+    "": "د خپل حساب لپاره نوې پټنوم غوره کړئ"
+  },
+  "Comparison": "Comparison",
+  "Confirm password": "Confirm password",
+  "Confirm your password": {
+    "": "خپل پټنوم تایید کړئ"
+  },
+  "Confusing visa rules that change every year": "د ویزې مغشوش قواعد چې هر کال بدلیږي",
+  "Copilot": "Copilot",
+  "Cost estimate": "د لګښت تخمین",
+  "Countries": "هیوادونه",
+  "Countries supported": "ملاتړ شوي هیوادونه",
+  "Create account": "Create account",
+  "Create an account to start building an immigration profile, evaluate pathways, and manage your cases": {
+    "": "د مهاجرت پروفایل جوړولو، لارې ارزولو، او خپلې قضیې مدیریت کولو لپاره حساب جوړ کړئ"
+  },
+  "Create one": "Create one",
+  "Create your Immigrant Guru account": "خپل Immigrant Guru حساب جوړ کړئ",
+  "Create your account": "Create your account",
   "Creating account": {
     "": {
       "": {
@@ -105,65 +167,210 @@
       }
     }
   },
-  "Signing in": {
-    "": {
-      "": {
-        "": "Signing in..."
+  "Dashboard": "Dashboard",
+  "Data Scientist, India to Canada": "د معلوماتو ساینس پوه، هند څخه کاناډا ته",
+  "Deeper analysis": "ژوره تحلیل",
+  "Document checklist": "د اسنادو چک لیست",
+  "Document status": "Document status",
+  "Documents": "Documents",
+  "E-2 investor, EB-5, startup visa — explore entrepreneurial immigration routes": {
+    "": "E-2 پانګه اچوونکی، EB-5، د پیل ویزه — د کارآفرینۍ مهاجرت لارې وپلټئ"
+  },
+  "Education level": "Education level",
+  "Email": "Email",
+  "English level": "English level",
+  "Enter a valid email address": {
+    "": "Enter a valid email address."
+  },
+  "Enter it below to verify your account": {
+    "": "د خپل حساب تایید لپاره دلته ولیکئ"
+  },
+  "Enter the 6-digit code from your email": {
+    "": "د خپل ایمیل څخه ۶-عددي کوډ ولیکئ"
+  },
+  "Enter the 6-digit code": {
+    "": "۶-عددي کوډ ولیکئ"
+  },
+  "Enter your email and we'll send you a reset code": {
+    "": "خپل ایمیل ولیکئ او موږ به تاسو ته د بیا تنظیم کولو کوډ واستوو"
+  },
+  "Enter your email": {
+    "": "خپل ایمیل ولیکئ"
+  },
+  "Error": "Error",
+  "Est": {
+    " cost": "اټکلي لګښت"
+  },
+  "Estimated cost": "اټکلي لګښت",
+  "Even if you think you don't qualify — we'll show you what's possible": {
+    "": "حتی که تاسو فکر کوئ چې تاسو شرایط نه لرئ — موږ به تاسو ته وښیو چې څه ممکن دي"
+  },
+  "Everything in Plus": "په Plus کې هر څه",
+  "Everything in Starter": "په Starter کې هر څه",
+  "Everything you need in one place": "Everything you need in one place",
+  "Expanded document guidance": "پراخ اسنادو لارښود",
+  "Expensive lawyers who charge $5,000+ for basic advice": "ګران وکیلان چې د بنسټیزو مشورو لپاره $۵,۰۰۰+ چارج کوي",
+  "Explainable readiness signals": "Explainable readiness signals",
+  "F-1, OPT, STEM extension — understand your path from student to professional": {
+    "": "F-1، OPT، STEM غزونه — د محصل څخه مسلکي ته د خپل لارې پوهیدل"
+  },
+  "Filing + legal fees": "د دوسیو + قانوني فیسونه",
+  "Find my best path": "زما غوره لاره ومومئ",
+  "Find the plan that fits your journey": "Find the plan that fits your journey",
+  "Find the right work visa for your skills and experience": {
+    " H-1B, EB-2, O-1, and more": {
+      "": "د خپلو مهارتونو او تجربې لپاره سم کاري ویزه ومومئ H-1B، EB-2، O-1، او نور"
+    }
+  },
+  "Find your best path": "خپله غوره لاره ومومئ",
+  "Find your path": "Find your path",
+  "Finish": "Finish",
+  "First name": "First name",
+  "First name is too long": {
+    "": "لومړی نوم ډیر اوږد دی"
+  },
+  "For comparing options": "د انتخابونو پرتله کولو لپاره",
+  "For every situation": "د هر وضعیت لپاره",
+  "For one clear path": "د یوې واضح لارې لپاره",
+  "Forgot your password?": "Forgot your password?",
+  "Free": "Free",
+  "Free to start · No credit card · Takes 2 minutes": "د پیل لپاره وړیا · هیڅ کریډیټ کارت · ۲ دقیقې نیسي",
+  "From filing to approval": "د دوسیو څخه تر تصویب پورې",
+  "Full path comparison": "د بشپړ لارې پرتله کول",
+  "Full plan for 1 country": "د ۱ هیواد لپاره بشپړ پلان",
+  "Full strategic experience": "بشپړ ستراتیژیک تجربه",
+  "Full strategic recommendation": "بشپړ ستراتیژیک سپارښتنه",
+  "Generate strategy": "Generate strategy",
+  "Get Started": "پیل وکړئ",
+  "Get your personalized visa, readiness score, and action plan in minutes": {
+    "": "Get your personalized visa, readiness score, and action plan in minutes.",
+    " Not months": {
+      "": "په دقیقو کې خپل شخصي ویزه، چمتووالي نمره، او عمل پلان ترلاسه کړئ نه میاشتې"
+    }
+  },
+  "Get your plan": "Get your plan",
+  "Get {plan}": "{plan} ترلاسه کړئ",
+  "Go back": "شاتګ وکړئ",
+  "Go home": "Go home",
+  "Home": "Home",
+  "How it works": "How it works",
+  "I spent months Googling visa options": {
+    " Immigrant Guru gave me a clear plan in 10 minutes": {
+      " I wish I found this earlier": {
+        "": "ما د ویزو انتخابونو په اړه میاشتې ګوګل وکړل Immigrant Guru ما ته په ۱۰ دقیقو کې یوه روښانه پلان راکړه زه هیله لرم چې دا مخکې ومومم"
       }
     }
   },
+  "Immigrant Guru - AI Immigration Strategy Platform": "Immigrant Guru - AI Immigration Strategy Platform",
+  "Immigrant Guru - Move to a New Country Without Confusion": "Immigrant Guru - Move to a New Country Without Confusion",
+  "Immigrant Guru helps you evaluate pathways, compare strategies, and act with clarity": {
+    "": "Immigrant Guru helps you evaluate pathways, compare strategies, and act with clarity."
+  },
+  "Immigration Plan": "د مهاجرت پلان",
+  "Immigration Score": "Immigration Score",
+  "Immigration shouldn't feel this hard": {
+    "": "مهاجرت باید دومره سخته نه وي"
+  },
+  "Job opportunities": "د کار فرصتونه",
+  "Language": "Language",
+  "Last name": "Last name",
+  "Last name is too long": {
+    "": "تخلص ډیر اوږد دی"
+  },
+  "Log in": "Log in",
+  "Log out": "Log out",
   "Minimum 8 characters": "Minimum 8 characters",
-  "Repeat your password": "Repeat your password",
-  "Enter a valid email address": {
-    "": "Enter a valid email address."
+  "Months of waiting with no visibility": "د لیدو پرته د انتظار میاشتې",
+  "Move to a New Country Without Confusion": "Move to a New Country Without Confusion",
+  "Move to a new country": "نوي هیواد ته لاړ شئ",
+  "Move with family": "Move with family",
+  "Multiple visa alternatives": "د ویزې څو بدیلونه",
+  "My plan": "My plan",
+  "National Interest Waiver · United States": "د ملي ګټو معافیت · متحده ایالات",
+  "Nationality": "Nationality",
+  "Need an account?": "Need an account?",
+  "New password": "نوې پټنوم",
+  "Next": "Next",
+  "Next best action": "Next best action",
+  "Next step:": "راتلونکی ګام:",
+  "No cases yet": "No cases yet",
+  "No clear direction — just endless Googling": "هیڅ واضح لارښود نشته — یوازې پای ته نه رسېدونکی ګوګل کول",
+  "No confusion, no jargon": "هیڅ ګډوډي نشته، هیڅ اصطلاحات نشته",
+  "No employer sponsor needed — you can self-petition": {
+    "": "د کارفرما سپانسر ته اړتیا نشته — تاسو کولی شئ ځان ته غوښتنه وکړئ"
+  },
+  "No matter your background, we help you find a way forward": {
+    "": "ستاسو د شالید پروا نه لري، موږ تاسو سره مرسته کوو چې د مخکې تګ لاره ومومئ"
+  },
+  "No subscriptions": {
+    " Pay once, unlock your full plan": {
+      " 30-day money-back guarantee": {
+        "": "No subscriptions. Pay once, unlock your full plan. 30-day money-back guarantee."
+      }
+    }
+  },
+  "One clear plan": {
+    " Everything you need": {
+      "": "یو واضح پلان  هر څه چې تاسو ورته اړتیا لرئ"
+    }
+  },
+  "One-time payment": {
+    " Unlock your full personalized immigration plan": {
+      "": "یو ځل تادیه  خپل بشپړ شخصي مهاجرت پلان خلاص کړئ"
+    }
+  },
+  "Overview": "Overview",
+  "Page not found": "Page not found",
+  "Password": "Password",
+  "Password must be at least 8 characters": {
+    "": "پټنوم باید لږ تر لږه 8 حروف وي"
   },
   "Password must contain at least 8 characters": {
     "": "Password must contain at least 8 characters."
   },
-  "Page not found": "Page not found",
-  "The page you're looking for doesn't exist or hasn't been built yet": {
-    "": "The page you're looking for doesn't exist or hasn't been built yet."
+  "Password reset!": "پټنوم بیا تنظیم شو!",
+  "Passwords do not match": {
+    "": "پټنومونه سره سمون نه خوري"
   },
-  "Return home": "Return home",
-  "Error": "Error",
-  "Something went wrong": "Something went wrong",
-  "The page hit an unexpected error while rendering": {
-    " Try again, and if it persists, check the server logs": {
-      "": "The page hit an unexpected error while rendering. Try again, and if it persists, check the server logs."
-    }
-  },
-  "Go home": "Go home",
-  "Admin": "Admin",
-  "Step 1 of 4": "Step 1 of 4",
-  "Step 2 of 4": "Step 2 of 4",
-  "Step 3 of 4": "Step 3 of 4",
-  "Step 4 of 4": "Step 4 of 4",
-  "Tell us a bit about yourself": {
-    "": "Tell us a bit about yourself."
-  },
-  "Where do you want to go?": "Where do you want to go?",
-  "Your immigration goals and timing": {
-    "": "Your immigration goals and timing."
-  },
+  "Platform Status": "Platform Status",
+  "Plus": "Plus",
+  "Possible paths": "ممکنه لارې",
+  "Preferred language": "Preferred language",
+  "Premium": "Premium",
+  "Premium dashboard": "پریمیوم ډشبورډ",
+  "Pricing": "Pricing",
+  "Prior visa refusal?": "Prior visa refusal?",
+  "Priority AI guidance": "د لومړیتوب AI لارښود",
+  "Probability score": "Probability score",
   "Professional experience and finances": {
     "": "Professional experience and finances."
   },
-  "You're ready to see your first strategy": "You're ready to see your first strategy",
-  "Nationality": "Nationality",
-  "Where do you live now?": "Where do you live now?",
+  "Profile": "Profile",
+  "Profile, finance, case": "پروفایل، مالي، قضیه",
+  "Readiness": "چمتووالی",
+  "Readiness score": "Readiness score",
+  "Ready": "چمتو",
+  "Recommended pathway": "Recommended pathway",
+  "Redirecting…": "بیا لېږدول…",
   "Relationship status": "Relationship status",
-  "Children": "Children",
-  "Preferred language": "Preferred language",
-  "Target country": "Target country",
   "Relocation timeline": "Relocation timeline",
-  "Prior visa refusal?": "Prior visa refusal?",
-  "Any criminal record?": "Any criminal record?",
-  "What do you do?": "What do you do?",
-  "Years of experience": "Years of experience",
-  "Education level": "Education level",
-  "English level": "English level",
-  "Available capital": "Available capital",
+  "Remember your password?": "خپل پټنوم یاد دی؟",
+  "Repeat your password": "Repeat your password",
+  "Resend code": "کوډ بیا واستوئ",
+  "Resend code in {n}s": "کوډ په {n}s کې بیا واستوئ",
+  "Reset code": "کوډ بیا تنظیم کړئ",
+  "Reset password": "پټنوم بیا تنظیم کړئ",
+  "Resetting": {
+    "": {
+      "": {
+        "": "بیا تنظیم کول"
+      }
+    }
+  },
+  "Retry": "Retry",
+  "Return home": "Return home",
   "Review and continue": "Review and continue",
+  "Risks": "Risks",
   "Saving": {
     "": {
       "": {
@@ -171,23 +378,411 @@
       }
     }
   },
-  "Your session is no longer available": {
-    " Sign in again to continue onboarding": {
-      "": "Your session is no longer available. Sign in again to continue onboarding."
+  "Scenario simulation": "Scenario simulation",
+  "See how it works": "وګورئ چې څنګه کار کوي",
+  "Select language": "Select language",
+  "Send reset code": "د بیا تنظیم کولو کوډ واستوئ",
+  "Sending": {
+    "": {
+      "": {
+        "": "لیږل"
+      }
     }
   },
-  "Your profile could not be saved right now": {
-    " Retry before moving to the next step": {
-      "": "Your profile could not be saved right now. Retry before moving to the next step."
+  "Set new password": "نوې پټنوم وټاکئ",
+  "Sign in": "Sign in",
+  "Sign in to continue your case strategy": "د خپلې قضیې ستراتیژۍ ته دوام ورکولو لپاره ننه شئ",
+  "Sign in to continue your immigration strategy": {
+    "": "Sign in to continue your immigration strategy."
+  },
+  "Sign out": "Sign out",
+  "Sign up": "Sign up",
+  "Signing in": {
+    "": {
+      "": {
+        "": "Signing in..."
+      }
     }
+  },
+  "Simple pricing": "Simple pricing",
+  "Six powerful tools working together to give you clarity, confidence, and a concrete plan": {
+    "": "Six powerful tools working together to give you clarity, confidence, and a concrete plan."
+  },
+  "Software Engineer, Turkey to USA": "سافټویر انجنیر، ترکیه څخه امریکا ته",
+  "Software Engineering, AI/ML, Product": "سافټویر انجینرۍ، AI/ML، محصول",
+  "Something went wrong": {
+    "": "یوه ستونزه رامنځته شوه",
+    " Please try again": {
+      "": "یوه ستونزه رامنځته شوه  مهرباني وکړئ بیا هڅه وکړئ"
+    }
+  },
+  "Spouse, children, parents — know which family visa fits and how long it takes": {
+    "": "میړه، ماشومان، والدین — پوه شئ چې کومه کورنۍ ویزه مناسب ده او څومره وخت نیسي"
+  },
+  "Start a business": "Start a business",
+  "Start free": {
+    "": "Start free",
+    " Upgrade when you're ready for your full immigration plan": {
+      "": "Start free. Upgrade when you're ready for your full immigration plan."
+    }
+  },
+  "Start with the essentials and complete your immigration profile later": {
+    "": "Start with the essentials and complete your immigration profile later."
+  },
+  "Start your plan": "Start your plan",
+  "Starter": "Starter",
+  "Step 1 of 4": "Step 1 of 4",
+  "Step 2 of 4": "Step 2 of 4",
+  "Step 3 of 4": "Step 3 of 4",
+  "Step 4 of 4": "Step 4 of 4",
+  "Step-by-step roadmap": "د ګام په ګام نقشه",
+  "Stop guessing": {
+    " Get a clear plan for your immigration journey — in minutes, not months": {
+      "": "اټکل مه کوئ  د خپلې مهاجرت سفر لپاره یو واضح پلان ترلاسه کړئ — په دقیقو کې، نه په میاشتو کې"
+    }
+  },
+  "Strategy": "Strategy",
+  "Study abroad": "Study abroad",
+  "Suggested cities": "وړاندیز شوي ښارونه",
+  "Suitability": "مناسبیت",
+  "System health": "System health",
+  "Tell us a bit about yourself": {
+    "": "Tell us a bit about yourself."
+  },
+  "Tell us about you": "Tell us about you",
+  "Tell us about yourself": {
+    " Our AI analyzes 47 visa categories, checks your readiness, and gives you a step-by-step plan with timeline, cost, and documents — in minutes": {
+      "": "موږ ته د ځان په اړه ووایاست  زموږ AI 47 ویزه کټګورۍ تحلیلوي، ستاسو چمتووالی چک کوي، او تاسو ته د وخت، لګښت، او اسنادو سره یو ګام په ګام پلان درکوي — په دقیقو کې"
+    }
+  },
+  "The page hit an unexpected error while rendering": {
+    " Try again, and if it persists, check the server logs": {
+      "": "The page hit an unexpected error while rendering. Try again, and if it persists, check the server logs."
+    }
+  },
+  "The page you're looking for doesn't exist or hasn't been built yet": {
+    "": "The page you're looking for doesn't exist or hasn't been built yet."
   },
   "The platform could not load your profile draft": {
     " Retry before continuing": {
       "": "The platform could not load your profile draft. Retry before continuing."
     }
   },
-  "Document status": "Document status",
-  "Case health": "Case health",
-  "Action roadmap": "Action roadmap",
-  "No cases yet": "No cases yet"
+  "The problem": "ستونزه",
+  "The readiness score showed me exactly what I was missing": {
+    " I uploaded 3 documents and my score jumped from 52 to 81": {
+      "": "د چمتووالي نمره ما ته دقیقا وښودله چې زه څه نه لرم  ما 3 اسناد اپلوډ کړل او زما نمره له 52 څخه 81 ته لوړه شوه"
+    }
+  },
+  "The solution": "حل",
+  "There's always a way — we help you find it": {
+    "": "تل یوه لاره شته — موږ تاسو سره مرسته کوو چې دا ومومئ"
+  },
+  "Three steps": {
+    " No confusion": {
+      "": "درې ګامونه  هیڅ ګډوډي نشته"
+    }
+  },
+  "Timeline": "Timeline",
+  "Timeline estimate": "د وخت اټکل",
+  "Toggle menu": "مینو بدلول",
+  "Try it now": "اوس یې هڅه وکړئ",
+  "Turkey, India, Brazil": {
+    "": {
+      "": {
+        "": "ترکیه، هند، برازیل"
+      }
+    }
+  },
+  "United States, Canada": {
+    "": {
+      "": {
+        "": "متحده ایالات، کاناډا"
+      }
+    }
+  },
+  "Upload document": "Upload document",
+  "Upload your resume and education documents to increase your readiness score to 90+": {
+    "": "خپل ریزومه او د زده کړې اسناد اپلوډ کړئ ترڅو خپل چمتووالی نمره 90+ ته لوړه کړئ"
+  },
+  "Verification code": "د تایید کوډ",
+  "Verify code": "کوډ تایید کړئ",
+  "Verify email": "د بریښنالیک تصدیق کړئ",
+  "Verifying": {
+    "": {
+      "": {
+        "": "تصدیق کول"
+      }
+    }
+  },
+  "Visa categories analyzed": "د ویزې کټګورۍ تحلیل شوې",
+  "Visa types": "د ویزو ډولونه",
+  "Visa, timeline, documents, cost — everything in one clear view": {
+    "": "ویزه، مهال ویش، اسناد، لګښت — هر څه په یوه روښانه لید کې"
+  },
+  "We analyze multiple countries, visa types, and pathways to match you with the best option based on your profile": {
+    "": "موږ څو هیوادونه، د ویزو ډولونه، او لارې تحلیل کوو ترڅو تاسو ته د خپل پروفایل پراساس غوره انتخاب سره مرسته وکړو"
+  },
+  "We analyze your options": "We analyze your options",
+  "We sent a 6-digit code to": "موږ ته ۶-شمیره کوډ واستاوه",
+  "We show you what to do": "موږ تاسو ته ښیو چې څه وکړئ",
+  "We turn everything into one clear plan": {
+    "": "موږ هر څه په یوه روښانه پلان بدل کړو"
+  },
+  "Welcome back": "Welcome back",
+  "What do you do?": "What do you do?",
+  "What you get": "تاسو څه ترلاسه کوئ",
+  "Whatever your reason, we can help": {
+    "": "هر څه چې ستاسو دلیل وي، موږ مرسته کولی شو"
+  },
+  "Where are you from?": "تاسو له کوم ځایه یاست؟",
+  "Where do you live now?": "Where do you live now?",
+  "Where do you want to go?": "Where do you want to go?",
+  "Work abroad": "Work abroad",
+  "Wrong email?": "ناسم بریښنالیک؟",
+  "Years of experience": "Years of experience",
+  "You're ready to see your first strategy": "You're ready to see your first strategy",
+  "Your background, education, experience, and goals": {
+    " Takes 2 minutes": {
+      "": "ستاسو شالید، زده کړه، تجربه، او هدفونه  ۲ دقیقې نیسي"
+    }
+  },
+  "Your best path": "ستاسو غوره لاره",
+  "Your best path, ranked by fit": "ستاسو غوره لاره، د مناسبیت له مخې درجه بندي شوې",
+  "Your immigration goals and timing": {
+    "": "Your immigration goals and timing."
+  },
+  "Your new life starts here": {
+    "": "ستاسو نوې ژوند دلته پیل کیږي"
+  },
+  "Your password has been updated": {
+    " You can now sign in": {
+      "": "ستاسو پټ نوم تازه شوی  تاسو اوس د ننه کیدو توان لرئ"
+    }
+  },
+  "Your personalized result": "ستاسو شخصي نتیجه",
+  "Your profile could not be saved right now": {
+    " Retry before moving to the next step": {
+      "": "Your profile could not be saved right now. Retry before moving to the next step."
+    }
+  },
+  "Your session is no longer available": {
+    " Sign in again to continue onboarding": {
+      "": "Your session is no longer available. Sign in again to continue onboarding."
+    }
+  },
+  "one-time": "one-time",
+  "without confusion": {
+    "": "پرته له ګډوډۍ"
+  },
+  "FAQ": "د پوښتنو ځوابونه",
+  "tools": {
+    "pageTitle": "وړیا کډوالۍ وسایل",
+    "pageSubtitle": "چټک ځوابونه — ثبت نام ته اړتیا نشته.",
+    "eligibilityChecker": {
+      "title": "د وړتیا چکونکی",
+      "description": "6 پوښتنو ته ځواب ورکړئ، ممکنه ویزې چې تاسو یې حق لرئ وګورئ."
+    },
+    "costEstimator": {
+      "title": "د لګښت اټکل وسیله",
+      "description": "بهر ته د کډوالۍ بشپړ لګښت — یوازې د ویزې فیس نه."
+    },
+    "timelineCalculator": {
+      "title": "د وخت مهال ویش حسابونکی",
+      "description": "مرحله په مرحله اټکل کړئ چې کله به ورسیږئ."
+    }
+  },
+  "eligibilityChecker": {
+    "pageTitle": "وړیا د ویزې وړتیا چکونکی",
+    "pageSubtitle": "6 لنډو پوښتنو ته ځواب ورکړئ. ممکنه ویزو چې تاسو یې حق لرئ لنډ لیست وګورئ — ثبت نام ته اړتیا نشته.",
+    "faq1": {
+      "question": "آیا د وړتیا چکونکی وړیا دی؟",
+      "answer": "هو. په بشپړه توګه ستاسو په براوزر کې کار کوي او حساب ته اړتیا نلري."
+    },
+    "faq2": {
+      "question": "چک څومره دقیق دی؟",
+      "answer": "د هرې لارې لپاره د عامه وړتیا قواعد کاروي. دا یو قوي لومړی فلټر دی مګر د AI ملاتړ لرونکي بشپړ تحلیل یا حقوقي مشورې ځای نه نیسي."
+    },
+    "faq3": {
+      "question": "آیا زما ځوابونه ثبتوي؟",
+      "answer": "نه. وسیله ستاسو په براوزر کې محلي کار کوي. که تاسو غواړئ چې ستاسو پایلې ستاسو په پروفایل کې ثبت شي، نو ثبت نام وکړئ."
+    },
+    "emailCapture": {
+      "title": "بشپړ AI ملاتړ لرونکی تحلیل",
+      "subtitle": "د بریښنالیک له لارې شخصي پلان A/B/C او چمتووالي نمره ترلاسه کړئ."
+    }
+  },
+  "costEstimator": {
+    "pageTitle": "د کډوالۍ لګښت اټکل وسیله",
+    "pageSubtitle": "یوه لاره انتخاب کړئ، د خپلې کورنۍ اندازه اضافه کړئ او حقیقي ټول لګښت وګورئ — یوازې د ویزې فیس نه.",
+    "faq1": {
+      "question": "اټکل کې څه شامل دي؟",
+      "answer": "دولتي فیسونه، حقوقي/اجنټ فیسونه، د استوګنې فنډونه، د الوتکې ټکټ، لومړی استوګنځی او %10 غیر متوقع لګښت بفر."
+    },
+    "faq2": {
+      "question": "آیا دا زما ځانګړي حالت لپاره سم دی؟",
+      "answer": "د هرې لارې لپاره یوه ښه لارښود اټکل دی. ستاسو حقیقي لګښت د کورنۍ اندازې، ښار او وکیل انتخاب پورې اړه لري. د شخصي تفصیل لپاره ثبت نام وکړئ."
+    },
+    "emailCapture": {
+      "title": "د بریښنالیک له لارې بشپړ لګښت تفصیل",
+      "subtitle": "د هدف هیواد له مخې تنظیم شوي د کرښې پراساس لګښتونه شامل دي."
+    }
+  },
+  "timelineCalculator": {
+    "pageTitle": "د وخت مهال ویش حسابونکی",
+    "pageSubtitle": "یوه لاره انتخاب کړئ. کله به ورسیږئ وګورئ — چمتووالی، غوښتنه، پروسس او رسیدل شامل دي.",
+    "faq1": {
+      "question": "د چمتووالي موده ولې شامل ده؟",
+      "answer": "ساعت د غوښتنې پر مهال نه پیل کیږي — کله چې تاسو د اسنادو راټولولو پیل کوئ پیل کیږي. موږ د هرې لارې لپاره حقیقي چمتووالي کړکۍ اضافه کوو."
+    },
+    "faq2": {
+      "question": "دا اټکل څومره دقیق دی؟",
+      "answer": "د خپرېدونکو اوسط پروسس موده منعکس کوي. فردي قضیې د RFE، د هیواد کوټې او د شواهدو بشپړتیا له مخې چټک یا ورو کیدی شي."
+    },
+    "emailCapture": {
+      "title": "د اونۍ مهال ویش تعقیبونکی",
+      "subtitle": "تر رسیدو ورځې پورې تاسو ته یو ساده اونیز پلان د بریښنالیک له لارې لیږو."
+    }
+  },
+  "visaIndex": {
+    "pageTitle": "ټول ویزې",
+    "pageSubtitle": "د هرې لارې لپاره لګښت، مهال ویش او وړتیا.",
+    "months": "میاشت"
+  },
+  "bestCountries": {
+    "pageTitle": "د مسلک له مخې غوره هیوادونه",
+    "pageSubtitle": "د رینک شوي کډوالۍ منزلونه د لیدو لپاره خپل مسلک انتخاب کړئ.",
+    "cardTitle": "د {profession} لپاره غوره هیوادونه",
+    "breadcrumb": "غوره هیوادونه",
+    "rankedSubtitle": "د لګښت، مهال ویش او دایمي استوګنې له مخې رینک شوی. معلومات د 2026 لپاره تازه دي.",
+    "topPathway": "غوره لاره",
+    "seeAllPathways": "ټولې لارې وګورئ",
+    "visaDetails": "د {code} تفصیلات",
+    "otherProfessions": "نور مسلکونه"
+  },
+  "compare": {
+    "pageTitle": "د ویزې پرتله کول",
+    "pageSubtitle": "د تر ټولو عام لارو پریکړو پرتله کول.",
+    "vs": "په مقابل کې",
+    "comparingSubtitle": "د {nameA} او {nameB} لګښت، وخت او توافق په پرتله کیږي — ترڅو تاسو د ناسمې لارې لپاره میاشتې ضایع نه کړئ.",
+    "rowFullName": "بشپړ نوم",
+    "rowCategory": "کټګوري",
+    "rowDestination": "هدف هیواد",
+    "rowTypicalDuration": "معمولي موده",
+    "rowCostUsd": "لګښت (USD)",
+    "rowLeadsToPR": "دایمي استوګنې ته لاره برابروي",
+    "yes": "هو",
+    "no": "نه",
+    "bestFor": "تر ټولو مناسب",
+    "otherComparisons": "نور د ویزې پرتله کول"
+  },
+  "visaMatch": {
+    "pageTitle": "ویزه همغږي",
+    "pageSubtitle": "د خپلو لومړیو ۳ لارو د لیدو لپاره خپل هدف هیواد او پروفایل وټاکئ.",
+    "cardSubtitle": "د {profession} لپاره غوره ویزې",
+    "breadcrumb": "ویزه همغږي",
+    "rankedSubtitle": "د {profession} لپاره {count} د کډوالۍ لارې ترتیب شوې؛ د {countryName} هدف سره. هر انتخاب د توافق، لګښت، موده او خطر له مخې نمره شوې.",
+    "getPersonalizedMatch": "خپل شخصي همغږي ترلاسه کړئ",
+    "freeEligibilityCheck": "وړیا د وړتیا چک",
+    "typicalTimeline": "معمولي مهال ویش",
+    "typicalCost": "معمولي لګښت",
+    "duration": "موده",
+    "strengths": "قوي ټکي",
+    "moreVisaGuides": "د {countryName} لپاره نور ویزه لارښود"
+  },
+  "moveTo": {
+    "pageTitle": "د هیواد د کډوالۍ لارښودونه",
+    "pageSubtitle": "د اصل او هدف هیواد له مخې ګام په ګام لارښودونه.",
+    "fromLabel": "{flag} د {name} نه",
+    "cardSubtitle": "د {demonym} اتباعو لپاره لارښود",
+    "h1": "د {fromName} له لارې د {toName} ښار ته کډه شئ",
+    "intro": "د {demonym} اتباعو لپاره د {toName} ښار ته کډه کولو لپاره عملي لارښود. یوه لاره وټاکئ، مهال ویش او لګښت درک کړئ، شخصي چمتووالي نمره ترلاسه کړئ.",
+    "topVisaPathways": "د {toName} لپاره غوره ویزه لارې",
+    "howToStepByStep": "ګام په ګام څنګه کډه شئ",
+    "moreCountryGuides": "نور هیواد لارښودونه"
+  },
+  "Onboarding could not load": "د onboarding بار نشو کولی",
+  "Review the highlighted profile fields before continuing": {
+    "": "د دوام لپاره د روښانه پروفایل ساحو بیاکتنه وکړئ"
+  },
+  "Skip": "تیریږئ",
+  "Who are you?": "تاسو څوک یاست؟",
+  "Select your nationality": "خپله مليت وټاکئ",
+  "Select current country": "اوسنی هیواد وټاکئ",
+  "e": {
+    "g": {
+      " English, Turkish": {
+        "": {
+          "": {
+            "": "مثلاً: انګلیسي، ترکي..."
+          }
+        }
+      },
+      " Software Engineer, Doctor, Designer": {
+        "": {
+          "": {
+            "": "مثلاً: د سافټویر انجنیر، ډاکټر، ډیزاینر..."
+          }
+        }
+      },
+      " 50000": "مثلاً: ۵۰۰۰۰"
+    }
+  },
+  "Your background": "ستاسو شالید",
+  "English proficiency": "د انګلیسي ژبې مهارت",
+  "Available capital (USD)": "موجوده پانګه (USD)",
+  "Your dream destination and timeline": {
+    "": "ستاسو د خوب منزل او مهال ویش"
+  },
+  "When do you want to move?": "تاسو کله غواړئ چې لاړ شئ؟",
+  "Have you had a visa refusal before?": "آیا تاسو مخکې د ویزې ردول لرل؟",
+  "This helps us give accurate recommendations": {
+    " Your data is private and secure": {
+      "": "دا موږ سره مرسته کوي چې دقیقې سپارښتنې ورکړو  ستاسو معلومات شخصي او خوندي دي"
+    }
+  },
+  "You're all set!": "تاسو ټول چمتو یاست!",
+  "Amazing! Your profile is almost complete": {
+    " We can build great strategies for you": {
+      "": "حیرانونکې! ستاسو پروفایل تقریباً بشپړ دی  موږ کولی شو ستاسو لپاره غوره ستراتیژۍ جوړې کړو"
+    }
+  },
+  "Great start! You can always complete more details from your profile page": {
+    "": "عالي پیل! تاسو تل کولی شئ د خپل پروفایل پاڼې څخه نور تفصیلات بشپړ کړئ"
+  },
+  "No worries! You can fill in more details anytime from your dashboard": {
+    "": "اندیښنه مه کوئ! تاسو کولی شئ هر وخت له خپل داشبورډ څخه نور تفصیلات ډک کړئ"
+  },
+  "See your AI analysis": "خپل AI تحلیل وګورئ",
+  "there": "هلته",
+  "Immigrant": "مهاجر",
+  "Guru": "ګورو",
+  "Hey {name}, welcome aboard!": "سلام {name}، خوش آمدید!",
+  "Let's build your immigration profile in under 2 minutes": {
+    " The more we know, the better strategies we can craft for you": {
+      "": "راځئ چې ستاسو د مهاجرت پروفایل په ۲ دقیقو کې جوړ کړو  هر څومره چې موږ پوهیږو، هغومره غوره ستراتیژۍ موږ کولی شو ستاسو لپاره جوړ کړو"
+    }
+  },
+  "Let's go": "لاړ شئ",
+  "Takes about 2 minutes": {
+    " You can skip anything": {
+      "": "شاوخوا ۲ دقیقې نیسي  تاسو کولی شئ هر څه تیریږئ"
+    }
+  },
+  "score": {
+    "outOf100": "د ۱۰۰ له مخې",
+    "thisProfileIs": "دا پروفایل د {readiness} کچې کې دی",
+    "scoredOn": "Immigrant Guru دې پروفایل ته د زده کړې، کاري تجربې، ژبې، هدف هیواد توافق او ۸ نورو ابعادو له مخې نمره ورکړه.",
+    "getMyOwnScore": "خپل سکور ترلاسه کړئ",
+    "shareOnX": "په X کې شریک کړئ"
+  },
+  "visa": {
+    "cost": "لګښت",
+    "prPath": "د دایمي استوګنې لاره",
+    "idealFor": "وړ کسان",
+    "requirements": "اړتیاوې",
+    "risksAndRejection": "خطرونه او عام رد دلایل",
+    "checkReadiness": "د {code} چمتووالی چک کړئ",
+    "moreVisaGuides": "د {countryName} لپاره نور ویزه لارښود"
+  }
 }

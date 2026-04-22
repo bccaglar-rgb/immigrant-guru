@@ -1,103 +1,165 @@
 {
-  "Immigrant Guru - AI Immigration Strategy Platform": "Immigrant Guru - AI移民策略平台",
-  "Immigrant Guru - Move to a New Country Without Confusion": "Immigrant Guru - 无困惑地迁往新国家",
-  "Language": "语言",
-  "Select language": "选择语言",
-  "How it works": "工作原理",
-  "Find your path": "找到你的路径",
-  "Pricing": "价格",
-  "Home": "首页",
-  "Sign in": "登录",
-  "Sign up": "注册",
-  "Dashboard": "控制台",
-  "Log out": "退出登录",
-  "Move to a New Country Without Confusion": "无困惑地迁往新国家",
-  "Get your personalized visa, readiness score, and action plan in minutes": {
-    "": "几分钟内获得个性化签证路径、准备度评分和行动计划。"
+  "Active": "活动",
+  "Cancel": "取消",
+  "Capture the destination, program, current stage, and risk signals that anchor strategy generation, scoring, and document workflows": {
+    "": "捕捉目的地、项目、当前阶段和风险信号，以支持战略生成、评分和文档工作流程"
   },
-  "Benefits": "优势",
-  "Everything you need in one place": "你需要的一切都在一个地方",
-  "Simple pricing": "简单定价",
-  "Free": "免费",
-  "Starter": "入门版",
-  "Plus": "增强版",
-  "Premium": "高级版",
-  "Create your account": "创建账户",
-  "Welcome back": "欢迎回来",
-  "First name": "First name",
-  "Last name": "Last name",
-  "Email": "电子邮箱",
-  "Password": "密码",
-  "Confirm password": "Confirm password",
-  "Overview": "概览",
-  "Profile": "资料",
-  "Cases": "案例",
-  "Strategy": "策略",
-  "Timeline": "时间线",
-  "Documents": "文件",
-  "Risks": "风险",
-  "Copilot": "Copilot",
-  "Comparison": "对比",
-  "Retry": "重试",
-  "Back": "返回",
-  "Next": "下一步",
-  "Finish": "完成",
-  "Generate strategy": "Generate strategy",
-  "Upload document": "Upload document",
-  "Scenario simulation": "Scenario simulation",
-  "My plan": "我的计划",
-  "Sign out": "退出登录",
-  "Log in": "登录",
-  "Start your plan": "开始你的计划",
-  "Readiness score": "Readiness score",
-  "Probability score": "Probability score",
-  "Recommended pathway": "Recommended pathway",
-  "Next best action": "Next best action",
-  "Immigrant Guru helps you evaluate pathways, compare strategies, and act with clarity": {
-    "": "Immigrant Guru helps you evaluate pathways, compare strategies, and act with clarity."
+  "Case Detail": "案件详情",
+  "Case planning workspace": "案件规划工作区",
+  "Case portfolio": "案件组合",
+  "Case status": "案件状态",
+  "Case title": "案件标题",
+  "Closed": "已关闭",
+  "Close": "关闭",
+  "Close new case": "关闭新案件",
+  "Collect recommendation letters and evidence of impact": {
+    "": "收集推荐信和影响证据"
   },
-  "A focused workspace for immigration decisions": "A focused workspace for immigration decisions",
-  "Six powerful tools working together to give you clarity, confidence, and a concrete plan": {
-    "": "Six powerful tools working together to give you clarity, confidence, and a concrete plan."
+  "Continue your immigration planning": {
+    " Keep profile and case data aligned": {
+      "": "继续您的移民规划，保持个人资料和案件数据一致"
+    }
   },
-  "Immigration Score": "Immigration Score",
-  "Explainable readiness signals": "Explainable readiness signals",
-  "System health": "System health",
-  "Platform Status": "Platform Status",
-  "Work abroad": "Work abroad",
-  "Study abroad": "Study abroad",
-  "Move with family": "Move with family",
-  "Start a business": "Start a business",
-  "Tell us about you": "Tell us about you",
-  "We analyze your options": "We analyze your options",
-  "Get your plan": "Get your plan",
-  "Find the plan that fits your journey": "Find the plan that fits your journey",
-  "Start free": {
-    " Upgrade when you're ready for your full immigration plan": {
-      "": "Start free. Upgrade when you're ready for your full immigration plan."
-    },
-    "": "Start free"
+  "Create a case for each migration plan you want to evaluate, compare, or execute": {
+    " Cases anchor strategy generation, scoring, and document collection in one workspace": {
+      "": "为每个您想评估、比较或执行的移民计划创建一个案件，案件在一个工作区中支持战略生成、评分和文档收集"
+    }
   },
-  "Best value": "Best value",
-  "one-time": "one-time",
-  "No subscriptions": {
-    " Pay once, unlock your full plan": {
-      " 30-day money-back guarantee": {
-        "": "No subscriptions. Pay once, unlock your full plan. 30-day money-back guarantee."
+  "Create first case": "创建第一个案件",
+  "Create strategy case": "创建战略案件",
+  "Creating case": {
+    "": {
+      "": {
+        "": "正在创建案件"
       }
     }
   },
-  "Start with the essentials and complete your immigration profile later": {
-    "": "Start with the essentials and complete your immigration profile later."
+  "Current stage": "当前阶段",
+  "Data unavailable": "数据不可用",
+  "Define a migration pathway to evaluate": "定义一个要评估的移民路径",
+  "Destination pending": "目的地待定",
+  "Draft": "草稿",
+  "Evaluation signals": "评估信号",
+  "Example: eligibility_review, document_collection, filing_ready": "示例：eligibility_review, document_collection, filing_ready",
+  "Higher values should indicate higher execution or eligibility risk": {
+    "": "较高的值应表示较高的执行或资格风险"
   },
-  "Sign in to continue your immigration strategy": {
-    "": "Sign in to continue your immigration strategy."
+  "Immigration strategy cases": "移民战略案件",
+  "In review": "审核中",
+  "Internal Console": "内部控制台",
+  "Keep notes focused on blockers, evidence gaps, and next actions": {
+    "": "保持笔记集中于阻碍因素、证据缺口和下一步行动"
   },
-  "Forgot your password?": "Forgot your password?",
-  "Create account": "Create account",
-  "Create one": "Create one",
+  "Latest score": "最新评分",
+  "Manage immigration strategy records that anchor pathway evaluation, stage tracking, scoring, and later document workflows": {
+    "": "管理移民战略记录，以支持路径评估、阶段跟踪、评分和后续文档工作流程"
+  },
+  "New case": "新案件",
+  "New strategy case": "新战略案件",
+  "No changes to save": "没有更改需要保存",
+  "No strategic notes recorded yet for this immigration path": {
+    "": "此移民路径尚未记录战略笔记"
+  },
+  "No strategy cases yet": "尚无战略案件",
+  "on record": "记录在案",
+  "Open case": "打开案件",
+  "Optional score snapshot if you want to retain a manual benchmark": {
+    "": "可选评分快照，如果您想保留手动基准"
+  },
+  "Pathway not defined yet": "路径尚未定义",
+  "Refresh cases": "刷新案件",
+  "Review the highlighted case fields before saving": {
+    "": "在保存之前查看突出显示的案件字段"
+  },
+  "Risk score": "风险评分",
+  "Risk": "风险",
+  "Save case changes": "保存案件更改",
+  "Saving changes": {
+    "": {
+      "": {
+        "": "正在保存更改"
+      }
+    }
+  },
+  "Score": "评分",
+  "Session": "会话",
+  "Stage": "阶段",
+  "Start with a target country and pathway": "从目标国家和路径开始",
+  "Strategy case created successfully": {
+    "": "战略案件创建成功"
+  },
+  "Strategy identity": "战略身份",
+  "Strategy notes": "战略笔记",
+  "Target country": "Target country",
+  "Target pathway or program": "目标路径或项目",
+  "The case portfolio could not be loaded": {
+    "": "案件组合无法加载"
+  },
+  "Track every active migration path in one workspace": "在一个工作区中跟踪每个活动的移民路径",
+  "U": {
+    "S": {
+      " employment-based migration plan": "美国基于就业的移民计划"
+    }
+  },
+  "United States": "美国",
+  "Update the case strategy record": "更新案件战略记录",
+  "Updated": "已更新",
+  "Workspace data could not be loaded": {
+    "": "工作区数据无法加载"
+  },
+  "You are no longer authenticated": {
+    "": "您已不再认证"
+  },
+  "case": "案件",
+  "cases": "案件",
+  "12-18 months": "12-18 个月",
+  "3 country comparisons": "3 个国家比较",
+  "A focused workspace for immigration decisions": "A focused workspace for immigration decisions",
+  "AI checks 47 visa categories and finds your best match": {
+    "": "AI 检查 47 种签证类别并找到您最佳匹配"
+  },
+  "Access your immigration dashboard, decision plans, and case workspace": {
+    "": "访问您的移民仪表板、决策计划和案件工作区"
+  },
+  "Action roadmap": "Action roadmap",
+  "Admin": "Admin",
+  "Advanced action plan": "高级行动计划",
   "Already have an account?": "Already have an account?",
-  "Need an account?": "Need an account?",
+  "Any criminal record?": "Any criminal record?",
+  "Available capital": "Available capital",
+  "Average time to first plan": "第一个计划的平均时间",
+  "Back": "返回",
+  "Benefits": "优势",
+  "Best value": "Best value",
+  "Best visa option": "最佳签证选项",
+  "Best visa recommendation": "最佳签证推荐",
+  "Better case preparation": "更好的案件准备",
+  "Built for immigrants, by immigrants": "为移民而建，由移民打造",
+  "Case health": "Case health",
+  "Cases": "案例",
+  "Check your email": "检查您的电子邮件",
+  "Checkout failed": "结账失败",
+  "Children": "Children",
+  "Choose a new password for your account": {
+    "": "为您的账户选择一个新密码"
+  },
+  "Comparison": "对比",
+  "Confirm password": "Confirm password",
+  "Confirm your password": {
+    "": "确认您的密码"
+  },
+  "Confusing visa rules that change every year": "每年都在变化的复杂签证规则",
+  "Copilot": "Copilot",
+  "Cost estimate": "成本估算",
+  "Countries": "国家",
+  "Countries supported": "支持的国家",
+  "Create account": "Create account",
+  "Create an account to start building an immigration profile, evaluate pathways, and manage your cases": {
+    "": "创建一个账户以开始建立移民档案、评估路径并管理您的案件"
+  },
+  "Create one": "Create one",
+  "Create your Immigrant Guru account": "创建您的 Immigrant Guru 账户",
+  "Create your account": "创建账户",
   "Creating account": {
     "": {
       "": {
@@ -105,65 +167,210 @@
       }
     }
   },
-  "Signing in": {
-    "": {
-      "": {
-        "": "Signing in..."
+  "Dashboard": "控制台",
+  "Data Scientist, India to Canada": "数据科学家，印度到加拿大",
+  "Deeper analysis": "更深入的分析",
+  "Document checklist": "文件清单",
+  "Document status": "Document status",
+  "Documents": "文件",
+  "E-2 investor, EB-5, startup visa — explore entrepreneurial immigration routes": {
+    "": "E-2 投资者，EB-5，创业签证 — 探索创业移民路线"
+  },
+  "Education level": "Education level",
+  "Email": "电子邮箱",
+  "English level": "English level",
+  "Enter a valid email address": {
+    "": "Enter a valid email address."
+  },
+  "Enter it below to verify your account": {
+    "": "在下面输入以验证您的账户"
+  },
+  "Enter the 6-digit code from your email": {
+    "": "输入您电子邮件中的 6 位数字代码"
+  },
+  "Enter the 6-digit code": {
+    "": "输入 6 位数字代码"
+  },
+  "Enter your email and we'll send you a reset code": {
+    "": "输入您的电子邮件，我们将向您发送重置代码"
+  },
+  "Enter your email": {
+    "": "输入您的电子邮件"
+  },
+  "Error": "Error",
+  "Est": {
+    " cost": "估计成本"
+  },
+  "Estimated cost": "估计费用",
+  "Even if you think you don't qualify — we'll show you what's possible": {
+    "": "即使您认为自己不符合资格 — 我们将向您展示可能性"
+  },
+  "Everything in Plus": "Plus 中的所有内容",
+  "Everything in Starter": "Starter 中的所有内容",
+  "Everything you need in one place": "你需要的一切都在一个地方",
+  "Expanded document guidance": "扩展的文件指导",
+  "Expensive lawyers who charge $5,000+ for basic advice": "收费超过 $5,000 的昂贵律师提供基本建议",
+  "Explainable readiness signals": "Explainable readiness signals",
+  "F-1, OPT, STEM extension — understand your path from student to professional": {
+    "": "F-1，OPT，STEM 延期 — 了解您从学生到专业人士的路径"
+  },
+  "Filing + legal fees": "申请 + 法律费用",
+  "Find my best path": "找到我最佳的路径",
+  "Find the plan that fits your journey": "Find the plan that fits your journey",
+  "Find the right work visa for your skills and experience": {
+    " H-1B, EB-2, O-1, and more": {
+      "": "为您的技能和经验找到合适的工作签证 H-1B，EB-2，O-1 等"
+    }
+  },
+  "Find your best path": "找到您最佳的路径",
+  "Find your path": "找到你的路径",
+  "Finish": "完成",
+  "First name": "First name",
+  "First name is too long": {
+    "": "名字太长"
+  },
+  "For comparing options": "用于比较选项",
+  "For every situation": "适用于每种情况",
+  "For one clear path": "为一条清晰的路径",
+  "Forgot your password?": "Forgot your password?",
+  "Free": "免费",
+  "Free to start · No credit card · Takes 2 minutes": "免费开始 · 无需信用卡 · 只需 2 分钟",
+  "From filing to approval": "从申请到批准",
+  "Full path comparison": "完整路径比较",
+  "Full plan for 1 country": "1 个国家的完整计划",
+  "Full strategic experience": "完整的战略经验",
+  "Full strategic recommendation": "完整的战略推荐",
+  "Generate strategy": "Generate strategy",
+  "Get Started": "开始",
+  "Get your personalized visa, readiness score, and action plan in minutes": {
+    "": "几分钟内获得个性化签证路径、准备度评分和行动计划。",
+    " Not months": {
+      "": "在几分钟内获取您的个性化签证、准备评分和行动计划，而不是几个月"
+    }
+  },
+  "Get your plan": "Get your plan",
+  "Get {plan}": "获取 {plan}",
+  "Go back": "返回",
+  "Go home": "Go home",
+  "Home": "首页",
+  "How it works": "工作原理",
+  "I spent months Googling visa options": {
+    " Immigrant Guru gave me a clear plan in 10 minutes": {
+      " I wish I found this earlier": {
+        "": "我花了几个月在谷歌上搜索签证选项，Immigrant Guru 在 10 分钟内给了我一个清晰的计划，我希望我能早点找到这个"
       }
     }
   },
+  "Immigrant Guru - AI Immigration Strategy Platform": "Immigrant Guru - AI移民策略平台",
+  "Immigrant Guru - Move to a New Country Without Confusion": "Immigrant Guru - 无困惑地迁往新国家",
+  "Immigrant Guru helps you evaluate pathways, compare strategies, and act with clarity": {
+    "": "Immigrant Guru helps you evaluate pathways, compare strategies, and act with clarity."
+  },
+  "Immigration Plan": "移民计划",
+  "Immigration Score": "Immigration Score",
+  "Immigration shouldn't feel this hard": {
+    "": "移民不应该这么困难"
+  },
+  "Job opportunities": "工作机会",
+  "Language": "语言",
+  "Last name": "Last name",
+  "Last name is too long": {
+    "": "姓氏太长"
+  },
+  "Log in": "登录",
+  "Log out": "退出登录",
   "Minimum 8 characters": "Minimum 8 characters",
-  "Repeat your password": "Repeat your password",
-  "Enter a valid email address": {
-    "": "Enter a valid email address."
+  "Months of waiting with no visibility": "等待几个月却没有任何进展",
+  "Move to a New Country Without Confusion": "无困惑地迁往新国家",
+  "Move to a new country": "移居到一个新国家",
+  "Move with family": "Move with family",
+  "Multiple visa alternatives": "多种签证选择",
+  "My plan": "我的计划",
+  "National Interest Waiver · United States": "国家利益豁免 · 美国",
+  "Nationality": "Nationality",
+  "Need an account?": "Need an account?",
+  "New password": "新密码",
+  "Next": "下一步",
+  "Next best action": "Next best action",
+  "Next step:": "下一步：",
+  "No cases yet": "No cases yet",
+  "No clear direction — just endless Googling": "没有明确的方向——只是无尽的谷歌搜索",
+  "No confusion, no jargon": "没有混淆，没有行话",
+  "No employer sponsor needed — you can self-petition": {
+    "": "不需要雇主担保——您可以自我申请"
+  },
+  "No matter your background, we help you find a way forward": {
+    "": "无论您的背景如何，我们都帮助您找到前进的道路"
+  },
+  "No subscriptions": {
+    " Pay once, unlock your full plan": {
+      " 30-day money-back guarantee": {
+        "": "No subscriptions. Pay once, unlock your full plan. 30-day money-back guarantee."
+      }
+    }
+  },
+  "One clear plan": {
+    " Everything you need": {
+      "": "一个明确的计划  您所需的一切"
+    }
+  },
+  "One-time payment": {
+    " Unlock your full personalized immigration plan": {
+      "": "一次性付款  解锁您的完整个性化移民计划"
+    }
+  },
+  "Overview": "概览",
+  "Page not found": "Page not found",
+  "Password": "密码",
+  "Password must be at least 8 characters": {
+    "": "密码必须至少为8个字符"
   },
   "Password must contain at least 8 characters": {
     "": "Password must contain at least 8 characters."
   },
-  "Page not found": "Page not found",
-  "The page you're looking for doesn't exist or hasn't been built yet": {
-    "": "The page you're looking for doesn't exist or hasn't been built yet."
+  "Password reset!": "密码重置！",
+  "Passwords do not match": {
+    "": "密码不匹配"
   },
-  "Return home": "Return home",
-  "Error": "Error",
-  "Something went wrong": "Something went wrong",
-  "The page hit an unexpected error while rendering": {
-    " Try again, and if it persists, check the server logs": {
-      "": "The page hit an unexpected error while rendering. Try again, and if it persists, check the server logs."
-    }
-  },
-  "Go home": "Go home",
-  "Admin": "Admin",
-  "Step 1 of 4": "Step 1 of 4",
-  "Step 2 of 4": "Step 2 of 4",
-  "Step 3 of 4": "Step 3 of 4",
-  "Step 4 of 4": "Step 4 of 4",
-  "Tell us a bit about yourself": {
-    "": "Tell us a bit about yourself."
-  },
-  "Where do you want to go?": "Where do you want to go?",
-  "Your immigration goals and timing": {
-    "": "Your immigration goals and timing."
-  },
+  "Platform Status": "Platform Status",
+  "Plus": "增强版",
+  "Possible paths": "可能的路径",
+  "Preferred language": "Preferred language",
+  "Premium": "高级版",
+  "Premium dashboard": "高级仪表板",
+  "Pricing": "价格",
+  "Prior visa refusal?": "Prior visa refusal?",
+  "Priority AI guidance": "优先AI指导",
+  "Probability score": "Probability score",
   "Professional experience and finances": {
     "": "Professional experience and finances."
   },
-  "You're ready to see your first strategy": "You're ready to see your first strategy",
-  "Nationality": "Nationality",
-  "Where do you live now?": "Where do you live now?",
+  "Profile": "资料",
+  "Profile, finance, case": "个人资料、财务、案件",
+  "Readiness": "准备情况",
+  "Readiness score": "Readiness score",
+  "Ready": "准备好了",
+  "Recommended pathway": "Recommended pathway",
+  "Redirecting…": "正在重定向…",
   "Relationship status": "Relationship status",
-  "Children": "Children",
-  "Preferred language": "Preferred language",
-  "Target country": "Target country",
   "Relocation timeline": "Relocation timeline",
-  "Prior visa refusal?": "Prior visa refusal?",
-  "Any criminal record?": "Any criminal record?",
-  "What do you do?": "What do you do?",
-  "Years of experience": "Years of experience",
-  "Education level": "Education level",
-  "English level": "English level",
-  "Available capital": "Available capital",
+  "Remember your password?": "记得您的密码吗？",
+  "Repeat your password": "Repeat your password",
+  "Resend code": "重新发送代码",
+  "Resend code in {n}s": "{n}秒后重新发送代码",
+  "Reset code": "重置代码",
+  "Reset password": "重置密码",
+  "Resetting": {
+    "": {
+      "": {
+        "": "正在重置"
+      }
+    }
+  },
+  "Retry": "重试",
+  "Return home": "Return home",
   "Review and continue": "Review and continue",
+  "Risks": "风险",
   "Saving": {
     "": {
       "": {
@@ -171,23 +378,411 @@
       }
     }
   },
-  "Your session is no longer available": {
-    " Sign in again to continue onboarding": {
-      "": "Your session is no longer available. Sign in again to continue onboarding."
+  "Scenario simulation": "Scenario simulation",
+  "See how it works": "查看它是如何工作的",
+  "Select language": "选择语言",
+  "Send reset code": "发送重置代码",
+  "Sending": {
+    "": {
+      "": {
+        "": "正在发送"
+      }
     }
   },
-  "Your profile could not be saved right now": {
-    " Retry before moving to the next step": {
-      "": "Your profile could not be saved right now. Retry before moving to the next step."
+  "Set new password": "设置新密码",
+  "Sign in": "登录",
+  "Sign in to continue your case strategy": "登录以继续您的案件策略",
+  "Sign in to continue your immigration strategy": {
+    "": "Sign in to continue your immigration strategy."
+  },
+  "Sign out": "退出登录",
+  "Sign up": "注册",
+  "Signing in": {
+    "": {
+      "": {
+        "": "Signing in..."
+      }
     }
+  },
+  "Simple pricing": "简单定价",
+  "Six powerful tools working together to give you clarity, confidence, and a concrete plan": {
+    "": "Six powerful tools working together to give you clarity, confidence, and a concrete plan."
+  },
+  "Software Engineer, Turkey to USA": "软件工程师，土耳其到美国",
+  "Software Engineering, AI/ML, Product": "软件工程，人工智能/机器学习，产品",
+  "Something went wrong": {
+    "": "出了点问题",
+    " Please try again": {
+      "": "出了点问题  请再试一次"
+    }
+  },
+  "Spouse, children, parents — know which family visa fits and how long it takes": {
+    "": "配偶、孩子、父母——了解哪个家庭签证适合您以及需要多长时间"
+  },
+  "Start a business": "Start a business",
+  "Start free": {
+    "": "Start free",
+    " Upgrade when you're ready for your full immigration plan": {
+      "": "Start free. Upgrade when you're ready for your full immigration plan."
+    }
+  },
+  "Start with the essentials and complete your immigration profile later": {
+    "": "Start with the essentials and complete your immigration profile later."
+  },
+  "Start your plan": "开始你的计划",
+  "Starter": "入门版",
+  "Step 1 of 4": "Step 1 of 4",
+  "Step 2 of 4": "Step 2 of 4",
+  "Step 3 of 4": "Step 3 of 4",
+  "Step 4 of 4": "Step 4 of 4",
+  "Step-by-step roadmap": "分步路线图",
+  "Stop guessing": {
+    " Get a clear plan for your immigration journey — in minutes, not months": {
+      "": "不要猜测  获取您移民旅程的明确计划——几分钟内，而不是几个月"
+    }
+  },
+  "Strategy": "策略",
+  "Study abroad": "Study abroad",
+  "Suggested cities": "推荐城市",
+  "Suitability": "适用性",
+  "System health": "System health",
+  "Tell us a bit about yourself": {
+    "": "Tell us a bit about yourself."
+  },
+  "Tell us about you": "Tell us about you",
+  "Tell us about yourself": {
+    " Our AI analyzes 47 visa categories, checks your readiness, and gives you a step-by-step plan with timeline, cost, and documents — in minutes": {
+      "": "告诉我们关于您自己的信息  我们的AI分析47个签证类别，检查您的准备情况，并为您提供一个分步计划，包括时间表、费用和文件——在几分钟内"
+    }
+  },
+  "The page hit an unexpected error while rendering": {
+    " Try again, and if it persists, check the server logs": {
+      "": "The page hit an unexpected error while rendering. Try again, and if it persists, check the server logs."
+    }
+  },
+  "The page you're looking for doesn't exist or hasn't been built yet": {
+    "": "The page you're looking for doesn't exist or hasn't been built yet."
   },
   "The platform could not load your profile draft": {
     " Retry before continuing": {
       "": "The platform could not load your profile draft. Retry before continuing."
     }
   },
-  "Document status": "Document status",
-  "Case health": "Case health",
-  "Action roadmap": "Action roadmap",
-  "No cases yet": "No cases yet"
+  "The problem": "问题",
+  "The readiness score showed me exactly what I was missing": {
+    " I uploaded 3 documents and my score jumped from 52 to 81": {
+      "": "准备情况评分准确地告诉我我缺少什么  我上传了3个文件，我的分数从52跃升到81"
+    }
+  },
+  "The solution": "解决方案",
+  "There's always a way — we help you find it": {
+    "": "总有办法——我们帮助您找到它"
+  },
+  "Three steps": {
+    " No confusion": {
+      "": "三个步骤  没有混淆"
+    }
+  },
+  "Timeline": "时间线",
+  "Timeline estimate": "时间估算",
+  "Toggle menu": "切换菜单",
+  "Try it now": "立即尝试",
+  "Turkey, India, Brazil": {
+    "": {
+      "": {
+        "": "土耳其、印度、巴西"
+      }
+    }
+  },
+  "United States, Canada": {
+    "": {
+      "": {
+        "": "美国、加拿大"
+      }
+    }
+  },
+  "Upload document": "Upload document",
+  "Upload your resume and education documents to increase your readiness score to 90+": {
+    "": "上传您的简历和教育文件，以将您的准备情况评分提高到90以上"
+  },
+  "Verification code": "验证码",
+  "Verify code": "验证代码",
+  "Verify email": "验证电子邮件",
+  "Verifying": {
+    "": {
+      "": {
+        "": "正在验证"
+      }
+    }
+  },
+  "Visa categories analyzed": "分析的签证类别",
+  "Visa types": "签证类型",
+  "Visa, timeline, documents, cost — everything in one clear view": {
+    "": "签证、时间线、文件、费用 — 一目了然"
+  },
+  "We analyze multiple countries, visa types, and pathways to match you with the best option based on your profile": {
+    "": "我们分析多个国家、签证类型和途径，以根据您的个人资料为您匹配最佳选项"
+  },
+  "We analyze your options": "We analyze your options",
+  "We sent a 6-digit code to": "我们已发送一个6位数的代码到",
+  "We show you what to do": "我们告诉您该怎么做",
+  "We turn everything into one clear plan": {
+    "": "我们将一切转化为一个清晰的计划"
+  },
+  "Welcome back": "欢迎回来",
+  "What do you do?": "What do you do?",
+  "What you get": "您将获得的内容",
+  "Whatever your reason, we can help": {
+    "": "无论您的理由是什么，我们都能提供帮助"
+  },
+  "Where are you from?": "您来自哪里？",
+  "Where do you live now?": "Where do you live now?",
+  "Where do you want to go?": "Where do you want to go?",
+  "Work abroad": "Work abroad",
+  "Wrong email?": "错误的电子邮件？",
+  "Years of experience": "Years of experience",
+  "You're ready to see your first strategy": "You're ready to see your first strategy",
+  "Your background, education, experience, and goals": {
+    " Takes 2 minutes": {
+      "": "您的背景、教育、经验和目标 需要2分钟"
+    }
+  },
+  "Your best path": "您的最佳路径",
+  "Your best path, ranked by fit": "按适合度排名的最佳路径",
+  "Your immigration goals and timing": {
+    "": "Your immigration goals and timing."
+  },
+  "Your new life starts here": {
+    "": "您的新生活从这里开始"
+  },
+  "Your password has been updated": {
+    " You can now sign in": {
+      "": "您的密码已更新  您现在可以登录"
+    }
+  },
+  "Your personalized result": "您的个性化结果",
+  "Your profile could not be saved right now": {
+    " Retry before moving to the next step": {
+      "": "Your profile could not be saved right now. Retry before moving to the next step."
+    }
+  },
+  "Your session is no longer available": {
+    " Sign in again to continue onboarding": {
+      "": "Your session is no longer available. Sign in again to continue onboarding."
+    }
+  },
+  "one-time": "one-time",
+  "without confusion": {
+    "": "没有混淆"
+  },
+  "FAQ": "常见问题",
+  "tools": {
+    "pageTitle": "免费移民工具",
+    "pageSubtitle": "快速回答 — 无需注册。",
+    "eligibilityChecker": {
+      "title": "资格检查器",
+      "description": "回答6个问题，查看您可能符合的签证。"
+    },
+    "costEstimator": {
+      "title": "成本估算工具",
+      "description": "移居国外的全部费用 — 不仅仅是签证费用。"
+    },
+    "timelineCalculator": {
+      "title": "时间表计算器",
+      "description": "逐步预测您何时到达。"
+    }
+  },
+  "eligibilityChecker": {
+    "pageTitle": "免费签证资格检查器",
+    "pageSubtitle": "回答6个简短问题。查看您可能符合的签证短名单 — 无需注册。",
+    "faq1": {
+      "question": "资格检查器是免费的吗？",
+      "answer": "是的。完全在您的浏览器中运行，无需账户。"
+    },
+    "faq2": {
+      "question": "检查有多准确？",
+      "answer": "使用每条路径的公开资格规则。是一个强大的初步过滤器，但不能替代AI支持的全面分析或法律建议。"
+    },
+    "faq3": {
+      "question": "会保存我的答案吗？",
+      "answer": "不会。工具在您的浏览器中本地运行。如果您希望将结果保存到您的个人资料中，请注册。"
+    },
+    "emailCapture": {
+      "title": "完整的AI支持分析",
+      "subtitle": "通过电子邮件获取个性化的计划A/B/C和准备分数。"
+    }
+  },
+  "costEstimator": {
+    "pageTitle": "移民成本估算工具",
+    "pageSubtitle": "选择一条路径，添加您的家庭规模，查看实际的总成本 — 不仅仅是签证费用。",
+    "faq1": {
+      "question": "估算包括哪些内容？",
+      "answer": "政府费用、法律/代理费用、安置基金、机票、首个住所和10%的意外费用缓冲。"
+    },
+    "faq2": {
+      "question": "这对我的特殊情况正确吗？",
+      "answer": "对每条路径来说都是一个良好的指导性估算。您的实际成本会根据家庭规模、城市和律师选择而有所不同。请注册以获取个性化的明细。"
+    },
+    "emailCapture": {
+      "title": "通过电子邮件获取完整的成本明细",
+      "subtitle": "包含根据目标国家调整的逐行成本的表格。"
+    }
+  },
+  "timelineCalculator": {
+    "pageTitle": "时间表计算器",
+    "pageSubtitle": "选择一条路径。查看您何时到达 — 包括准备、申请、处理和到达。",
+    "faq1": {
+      "question": "为什么包括准备时间？",
+      "answer": "小时数在您申请时不会开始 — 而是在您开始收集文件时开始。我们为每条路径添加了实际的准备窗口。"
+    },
+    "faq2": {
+      "question": "这个估算有多准确？",
+      "answer": "反映已发布的平均处理时间。个别案件可能因RFE、国家配额和证据的完整性而更快或更慢。"
+    },
+    "emailCapture": {
+      "title": "每周时间表跟踪器",
+      "subtitle": "我们将在到达日期之前通过电子邮件向您发送简单的每周计划。"
+    }
+  },
+  "visaIndex": {
+    "pageTitle": "所有签证",
+    "pageSubtitle": "我们涵盖的每条路径的成本、时间表和资格。",
+    "months": "月"
+  },
+  "bestCountries": {
+    "pageTitle": "按职业划分的最佳国家",
+    "pageSubtitle": "选择您的职业以查看排名的移民目的地。",
+    "cardTitle": "{profession}的最佳国家",
+    "breadcrumb": "最佳国家",
+    "rankedSubtitle": "根据成本、时间表和永久居留排名。数据更新至2026年。",
+    "topPathway": "最佳路径",
+    "seeAllPathways": "查看所有路径",
+    "visaDetails": "{code} 详情",
+    "otherProfessions": "其他职业"
+  },
+  "compare": {
+    "pageTitle": "签证比较",
+    "pageSubtitle": "最常见路径决策的并排比较。",
+    "vs": "vs",
+    "comparingSubtitle": "{nameA}与{nameB}在成本、时间和合规性方面进行比较 — 以免在错误的路径上浪费数月时间。",
+    "rowFullName": "全名",
+    "rowCategory": "类别",
+    "rowDestination": "目标国家",
+    "rowTypicalDuration": "典型时间",
+    "rowCostUsd": "成本（美元）",
+    "rowLeadsToPR": "导致永久居留",
+    "yes": "是",
+    "no": "否",
+    "bestFor": "最合适",
+    "otherComparisons": "其他签证比较"
+  },
+  "visaMatch": {
+    "pageTitle": "签证匹配",
+    "pageSubtitle": "查看您的前三条路径，请选择目标国家和您的个人资料。",
+    "cardSubtitle": "{profession} 的最佳签证",
+    "breadcrumb": "签证匹配",
+    "rankedSubtitle": "为 {profession} 排列了 {count} 移民路径；目标国家为 {countryName}。每个选项根据兼容性、成本、时间和风险进行评分。",
+    "getPersonalizedMatch": "获取个性化匹配",
+    "freeEligibilityCheck": "免费资格检查",
+    "typicalTimeline": "典型时间表",
+    "typicalCost": "典型成本",
+    "duration": "持续时间",
+    "strengths": "优势",
+    "moreVisaGuides": "更多关于 {countryName} 的签证指南"
+  },
+  "moveTo": {
+    "pageTitle": "国家搬迁指南",
+    "pageSubtitle": "根据来源和目标国家的逐步指南。",
+    "fromLabel": "{flag} 来自 {name}",
+    "cardSubtitle": "针对 {demonym} 公民的指南",
+    "h1": "从 {fromName} 搬到 {toName} 城市",
+    "intro": "针对 {demonym} 公民搬到 {toName} 城市的实用指南。选择一条路径，了解时间表和成本，获取个性化准备分数。",
+    "topVisaPathways": "{toName} 的最佳签证路径",
+    "howToStepByStep": "如何逐步搬迁",
+    "moreCountryGuides": "更多国家指南"
+  },
+  "Onboarding could not load": "无法加载入职培训",
+  "Review the highlighted profile fields before continuing": {
+    "": "在继续之前，请查看突出显示的个人资料字段"
+  },
+  "Skip": "跳过",
+  "Who are you?": "您是谁？",
+  "Select your nationality": "选择您的国籍",
+  "Select current country": "选择当前国家",
+  "e": {
+    "g": {
+      " English, Turkish": {
+        "": {
+          "": {
+            "": "例如：英语，土耳其语..."
+          }
+        }
+      },
+      " Software Engineer, Doctor, Designer": {
+        "": {
+          "": {
+            "": "例如：软件工程师，医生，设计师..."
+          }
+        }
+      },
+      " 50000": "例如：50000"
+    }
+  },
+  "Your background": "您的背景",
+  "English proficiency": "英语水平",
+  "Available capital (USD)": "可用资金（美元）",
+  "Your dream destination and timeline": {
+    "": "您梦想的目的地和时间线"
+  },
+  "When do you want to move?": "您想什么时候搬家？",
+  "Have you had a visa refusal before?": "您之前有过签证拒签吗？",
+  "This helps us give accurate recommendations": {
+    " Your data is private and secure": {
+      "": "这有助于我们提供准确的建议  您的数据是私密和安全的"
+    }
+  },
+  "You're all set!": "一切准备就绪！",
+  "Amazing! Your profile is almost complete": {
+    " We can build great strategies for you": {
+      "": "太棒了！您的个人资料几乎完成  我们可以为您制定出色的策略"
+    }
+  },
+  "Great start! You can always complete more details from your profile page": {
+    "": "良好的开始！您可以随时从个人资料页面补充更多细节"
+  },
+  "No worries! You can fill in more details anytime from your dashboard": {
+    "": "不用担心！您可以随时从仪表板填写更多细节"
+  },
+  "See your AI analysis": "查看您的AI分析",
+  "there": "在那里",
+  "Immigrant": "移民",
+  "Guru": "大师",
+  "Hey {name}, welcome aboard!": "嘿 {name}，欢迎加入！",
+  "Let's build your immigration profile in under 2 minutes": {
+    " The more we know, the better strategies we can craft for you": {
+      "": "让我们在2分钟内建立您的移民档案  我们了解得越多，就能为您制定更好的策略"
+    }
+  },
+  "Let's go": "走吧",
+  "Takes about 2 minutes": {
+    " You can skip anything": {
+      "": "大约需要2分钟  您可以跳过任何内容"
+    }
+  },
+  "score": {
+    "outOf100": "满分 100",
+    "thisProfileIs": "此个人资料的 {readiness} 水平",
+    "scoredOn": "Immigrant Guru 根据教育、工作经验、语言、目标国家兼容性和其他 8 个维度对该个人资料进行了评分。",
+    "getMyOwnScore": "获取我的分数",
+    "shareOnX": "在 X 上分享"
+  },
+  "visa": {
+    "cost": "成本",
+    "prPath": "永久居留路径",
+    "idealFor": "合格人员",
+    "requirements": "要求",
+    "risksAndRejection": "风险和常见拒签原因",
+    "checkReadiness": "检查我的 {code} 准备情况",
+    "moreVisaGuides": "更多关于 {countryName} 的签证指南"
+  }
 }

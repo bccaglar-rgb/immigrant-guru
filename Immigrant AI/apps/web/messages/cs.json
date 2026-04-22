@@ -1,103 +1,165 @@
 {
-  "Immigrant Guru - AI Immigration Strategy Platform": "Immigrant Guru - AI Immigration Strategy Platform",
-  "Immigrant Guru - Move to a New Country Without Confusion": "Immigrant Guru - Move to a New Country Without Confusion",
-  "Language": "Language",
-  "Select language": "Select language",
-  "How it works": "How it works",
-  "Find your path": "Find your path",
-  "Pricing": "Pricing",
-  "Home": "Home",
-  "Sign in": "Sign in",
-  "Sign up": "Sign up",
-  "Dashboard": "Dashboard",
-  "Log out": "Log out",
-  "Move to a New Country Without Confusion": "Move to a New Country Without Confusion",
-  "Get your personalized visa, readiness score, and action plan in minutes": {
-    "": "Get your personalized visa, readiness score, and action plan in minutes."
+  "Active": "Aktivní",
+  "Cancel": "Zrušit",
+  "Capture the destination, program, current stage, and risk signals that anchor strategy generation, scoring, and document workflows": {
+    "": "Zachyťte cílovou destinaci, program, aktuální fázi a signály rizika, které zakotvují generování strategie, hodnocení a pracovní postupy dokumentů"
   },
-  "Benefits": "Benefits",
-  "Everything you need in one place": "Everything you need in one place",
-  "Simple pricing": "Simple pricing",
-  "Free": "Free",
-  "Starter": "Starter",
-  "Plus": "Plus",
-  "Premium": "Premium",
-  "Create your account": "Create your account",
-  "Welcome back": "Welcome back",
-  "First name": "First name",
-  "Last name": "Last name",
-  "Email": "Email",
-  "Password": "Password",
-  "Confirm password": "Confirm password",
-  "Overview": "Overview",
-  "Profile": "Profile",
-  "Cases": "Cases",
-  "Strategy": "Strategy",
-  "Timeline": "Timeline",
-  "Documents": "Documents",
-  "Risks": "Risks",
-  "Copilot": "Copilot",
-  "Comparison": "Comparison",
-  "Retry": "Retry",
-  "Back": "Back",
-  "Next": "Next",
-  "Finish": "Finish",
-  "Generate strategy": "Generate strategy",
-  "Upload document": "Upload document",
-  "Scenario simulation": "Scenario simulation",
-  "My plan": "My plan",
-  "Sign out": "Sign out",
-  "Log in": "Log in",
-  "Start your plan": "Start your plan",
-  "Readiness score": "Readiness score",
-  "Probability score": "Probability score",
-  "Recommended pathway": "Recommended pathway",
-  "Next best action": "Next best action",
-  "Immigrant Guru helps you evaluate pathways, compare strategies, and act with clarity": {
-    "": "Immigrant Guru helps you evaluate pathways, compare strategies, and act with clarity."
+  "Case Detail": "Podrobnosti o případu",
+  "Case planning workspace": "Pracovní prostor pro plánování případu",
+  "Case portfolio": "Portfolio případů",
+  "Case status": "Stav případu",
+  "Case title": "Název případu",
+  "Closed": "Uzavřeno",
+  "Close": "Zavřít",
+  "Close new case": "Zavřít nový případ",
+  "Collect recommendation letters and evidence of impact": {
+    "": "Shromážděte doporučující dopisy a důkazy o dopadu"
   },
-  "A focused workspace for immigration decisions": "A focused workspace for immigration decisions",
-  "Six powerful tools working together to give you clarity, confidence, and a concrete plan": {
-    "": "Six powerful tools working together to give you clarity, confidence, and a concrete plan."
+  "Continue your immigration planning": {
+    " Keep profile and case data aligned": {
+      "": "Pokračujte ve svém imigračním plánování  Udržujte profil a data případu v souladu"
+    }
   },
-  "Immigration Score": "Immigration Score",
-  "Explainable readiness signals": "Explainable readiness signals",
-  "System health": "System health",
-  "Platform Status": "Platform Status",
-  "Work abroad": "Work abroad",
-  "Study abroad": "Study abroad",
-  "Move with family": "Move with family",
-  "Start a business": "Start a business",
-  "Tell us about you": "Tell us about you",
-  "We analyze your options": "We analyze your options",
-  "Get your plan": "Get your plan",
-  "Find the plan that fits your journey": "Find the plan that fits your journey",
-  "Start free": {
-    " Upgrade when you're ready for your full immigration plan": {
-      "": "Start free. Upgrade when you're ready for your full immigration plan."
-    },
-    "": "Start free"
+  "Create a case for each migration plan you want to evaluate, compare, or execute": {
+    " Cases anchor strategy generation, scoring, and document collection in one workspace": {
+      "": "Vytvořte případ pro každý migrační plán, který chcete vyhodnotit, porovnat nebo realizovat  Případy zakotvují generování strategie, hodnocení a shromažďování dokumentů v jednom pracovním prostoru"
+    }
   },
-  "Best value": "Best value",
-  "one-time": "one-time",
-  "No subscriptions": {
-    " Pay once, unlock your full plan": {
-      " 30-day money-back guarantee": {
-        "": "No subscriptions. Pay once, unlock your full plan. 30-day money-back guarantee."
+  "Create first case": "Vytvořit první případ",
+  "Create strategy case": "Vytvořit strategický případ",
+  "Creating case": {
+    "": {
+      "": {
+        "": "Vytváření případu"
       }
     }
   },
-  "Start with the essentials and complete your immigration profile later": {
-    "": "Start with the essentials and complete your immigration profile later."
+  "Current stage": "Aktuální fáze",
+  "Data unavailable": "Data nejsou k dispozici",
+  "Define a migration pathway to evaluate": "Definujte migrační cestu k vyhodnocení",
+  "Destination pending": "Cíl čeká",
+  "Draft": "Návrh",
+  "Evaluation signals": "Signály hodnocení",
+  "Example: eligibility_review, document_collection, filing_ready": "Příklad: eligibility_review, document_collection, filing_ready",
+  "Higher values should indicate higher execution or eligibility risk": {
+    "": "Vyšší hodnoty by měly naznačovat vyšší riziko realizace nebo způsobilosti"
   },
-  "Sign in to continue your immigration strategy": {
-    "": "Sign in to continue your immigration strategy."
+  "Immigration strategy cases": "Případy imigrační strategie",
+  "In review": "V přezkumu",
+  "Internal Console": "Interní konzole",
+  "Keep notes focused on blockers, evidence gaps, and next actions": {
+    "": "Udržujte poznámky zaměřené na blokátory, mezery v důkazech a další kroky"
   },
-  "Forgot your password?": "Forgot your password?",
-  "Create account": "Create account",
-  "Create one": "Create one",
+  "Latest score": "Nejnovější skóre",
+  "Manage immigration strategy records that anchor pathway evaluation, stage tracking, scoring, and later document workflows": {
+    "": "Spravujte záznamy imigrační strategie, které zakotvují hodnocení cest, sledování fází, hodnocení a pozdější pracovní postupy dokumentů"
+  },
+  "New case": "Nový případ",
+  "New strategy case": "Nový strategický případ",
+  "No changes to save": "Žádné změny k uložení",
+  "No strategic notes recorded yet for this immigration path": {
+    "": "Pro tuto imigrační cestu zatím nebyly zaznamenány žádné strategické poznámky"
+  },
+  "No strategy cases yet": "Zatím žádné strategické případy",
+  "on record": "v záznamu",
+  "Open case": "Otevřít případ",
+  "Optional score snapshot if you want to retain a manual benchmark": {
+    "": "Volitelný snímek skóre, pokud chcete uchovat manuální referenční hodnotu"
+  },
+  "Pathway not defined yet": "Cesta zatím není definována",
+  "Refresh cases": "Obnovit případy",
+  "Review the highlighted case fields before saving": {
+    "": "Zkontrolujte zvýrazněná pole případu před uložením"
+  },
+  "Risk score": "Skóre rizika",
+  "Risk": "Riziko",
+  "Save case changes": "Uložit změny případu",
+  "Saving changes": {
+    "": {
+      "": {
+        "": "Ukládání změn"
+      }
+    }
+  },
+  "Score": "Skóre",
+  "Session": "Relace",
+  "Stage": "Fáze",
+  "Start with a target country and pathway": "Začněte s cílovou zemí a cestou",
+  "Strategy case created successfully": {
+    "": "Strategický případ byl úspěšně vytvořen"
+  },
+  "Strategy identity": "Identita strategie",
+  "Strategy notes": "Poznámky ke strategii",
+  "Target country": "Target country",
+  "Target pathway or program": "Cílová cesta nebo program",
+  "The case portfolio could not be loaded": {
+    "": "Portfolio případů se nepodařilo načíst"
+  },
+  "Track every active migration path in one workspace": "Sledujte každou aktivní migrační cestu v jednom pracovním prostoru",
+  "U": {
+    "S": {
+      " employment-based migration plan": "Plán migrace na základě zaměstnání v USA"
+    }
+  },
+  "United States": "Spojené státy",
+  "Update the case strategy record": "Aktualizujte záznam strategie případu",
+  "Updated": "Aktualizováno",
+  "Workspace data could not be loaded": {
+    "": "Data pracovního prostoru se nepodařilo načíst"
+  },
+  "You are no longer authenticated": {
+    "": "Již nejste autentizováni"
+  },
+  "case": "případ",
+  "cases": "případy",
+  "12-18 months": "12-18 měsíců",
+  "3 country comparisons": "3 srovnání zemí",
+  "A focused workspace for immigration decisions": "A focused workspace for immigration decisions",
+  "AI checks 47 visa categories and finds your best match": {
+    "": "AI kontroluje 47 kategorií víz a nachází vaše nejlepší shody"
+  },
+  "Access your immigration dashboard, decision plans, and case workspace": {
+    "": "Získejte přístup k vašemu imigračnímu panelu, rozhodovacím plánům a pracovnímu prostoru pro případy"
+  },
+  "Action roadmap": "Action roadmap",
+  "Admin": "Admin",
+  "Advanced action plan": "Pokročilý akční plán",
   "Already have an account?": "Already have an account?",
-  "Need an account?": "Need an account?",
+  "Any criminal record?": "Any criminal record?",
+  "Available capital": "Available capital",
+  "Average time to first plan": "Průměrný čas k prvnímu plánu",
+  "Back": "Back",
+  "Benefits": "Benefits",
+  "Best value": "Best value",
+  "Best visa option": "Nejlepší vízová možnost",
+  "Best visa recommendation": "Nejlepší doporučení víza",
+  "Better case preparation": "Lepší příprava případu",
+  "Built for immigrants, by immigrants": "Vytvořeno pro imigranty, imigranty",
+  "Case health": "Case health",
+  "Cases": "Cases",
+  "Check your email": "Zkontrolujte svůj e-mail",
+  "Checkout failed": "Platba se nezdařila",
+  "Children": "Children",
+  "Choose a new password for your account": {
+    "": "Zvolte nové heslo pro svůj účet"
+  },
+  "Comparison": "Comparison",
+  "Confirm password": "Confirm password",
+  "Confirm your password": {
+    "": "Potvrďte své heslo"
+  },
+  "Confusing visa rules that change every year": "Matoucí vízová pravidla, která se každý rok mění",
+  "Copilot": "Copilot",
+  "Cost estimate": "Odhad nákladů",
+  "Countries": "Země",
+  "Countries supported": "Podporované země",
+  "Create account": "Create account",
+  "Create an account to start building an immigration profile, evaluate pathways, and manage your cases": {
+    "": "Vytvořte si účet a začněte budovat imigrační profil, hodnotit cesty a spravovat své případy"
+  },
+  "Create one": "Create one",
+  "Create your Immigrant Guru account": "Vytvořte si účet Immigrant Guru",
+  "Create your account": "Create your account",
   "Creating account": {
     "": {
       "": {
@@ -105,65 +167,210 @@
       }
     }
   },
-  "Signing in": {
-    "": {
-      "": {
-        "": "Signing in..."
+  "Dashboard": "Dashboard",
+  "Data Scientist, India to Canada": "Datový vědec, Indie do Kanady",
+  "Deeper analysis": "Hlubší analýza",
+  "Document checklist": "Kontrolní seznam dokumentů",
+  "Document status": "Document status",
+  "Documents": "Documents",
+  "E-2 investor, EB-5, startup visa — explore entrepreneurial immigration routes": {
+    "": "E-2 investor, EB-5, vízum pro startupy — prozkoumejte podnikatelské imigrační cesty"
+  },
+  "Education level": "Education level",
+  "Email": "Email",
+  "English level": "English level",
+  "Enter a valid email address": {
+    "": "Enter a valid email address."
+  },
+  "Enter it below to verify your account": {
+    "": "Zadejte to níže pro ověření vašeho účtu"
+  },
+  "Enter the 6-digit code from your email": {
+    "": "Zadejte 6místný kód z vašeho e-mailu"
+  },
+  "Enter the 6-digit code": {
+    "": "Zadejte 6místný kód"
+  },
+  "Enter your email and we'll send you a reset code": {
+    "": "Zadejte svůj e-mail a my vám pošleme kód pro resetování"
+  },
+  "Enter your email": {
+    "": "Zadejte svůj e-mail"
+  },
+  "Error": "Error",
+  "Est": {
+    " cost": "Odhad. nákladů"
+  },
+  "Estimated cost": "Odhadované náklady",
+  "Even if you think you don't qualify — we'll show you what's possible": {
+    "": "I když si myslíte, že se nequalifikujete — ukážeme vám, co je možné"
+  },
+  "Everything in Plus": "Všechno v Plus",
+  "Everything in Starter": "Všechno v Starter",
+  "Everything you need in one place": "Everything you need in one place",
+  "Expanded document guidance": "Rozšířené pokyny k dokumentům",
+  "Expensive lawyers who charge $5,000+ for basic advice": "Drahé právníky, kteří si účtují 5 000 $ a více za základní poradenství",
+  "Explainable readiness signals": "Explainable readiness signals",
+  "F-1, OPT, STEM extension — understand your path from student to professional": {
+    "": "F-1, OPT, prodloužení STEM — pochopte svou cestu od studenta k profesionálovi"
+  },
+  "Filing + legal fees": "Poplatky za podání + právní poplatky",
+  "Find my best path": "Najděte svou nejlepší cestu",
+  "Find the plan that fits your journey": "Find the plan that fits your journey",
+  "Find the right work visa for your skills and experience": {
+    " H-1B, EB-2, O-1, and more": {
+      "": "Najděte správné pracovní vízum pro vaše dovednosti a zkušenosti H-1B, EB-2, O-1 a další"
+    }
+  },
+  "Find your best path": "Najděte svou nejlepší cestu",
+  "Find your path": "Find your path",
+  "Finish": "Finish",
+  "First name": "First name",
+  "First name is too long": {
+    "": "Křestní jméno je příliš dlouhé"
+  },
+  "For comparing options": "Pro porovnání možností",
+  "For every situation": "Pro každou situaci",
+  "For one clear path": "Pro jednu jasnou cestu",
+  "Forgot your password?": "Forgot your password?",
+  "Free": "Free",
+  "Free to start · No credit card · Takes 2 minutes": "Zdarma na začátek · Žádná kreditní karta · Trvá 2 minuty",
+  "From filing to approval": "Od podání po schválení",
+  "Full path comparison": "Kompletní srovnání cest",
+  "Full plan for 1 country": "Kompletní plán pro 1 zemi",
+  "Full strategic experience": "Kompletní strategická zkušenost",
+  "Full strategic recommendation": "Kompletní strategické doporučení",
+  "Generate strategy": "Generate strategy",
+  "Get Started": "Začněte",
+  "Get your personalized visa, readiness score, and action plan in minutes": {
+    "": "Get your personalized visa, readiness score, and action plan in minutes.",
+    " Not months": {
+      "": "Získejte své personalizované vízum, skóre připravenosti a akční plán během minut, ne měsíců"
+    }
+  },
+  "Get your plan": "Get your plan",
+  "Get {plan}": "Získejte {plan}",
+  "Go back": "Jít zpět",
+  "Go home": "Go home",
+  "Home": "Home",
+  "How it works": "How it works",
+  "I spent months Googling visa options": {
+    " Immigrant Guru gave me a clear plan in 10 minutes": {
+      " I wish I found this earlier": {
+        "": "Strávil jsem měsíce hledáním vízových možností, Immigrant Guru mi dal jasný plán za 10 minut, přál bych si, abych to našel dříve"
       }
     }
   },
+  "Immigrant Guru - AI Immigration Strategy Platform": "Immigrant Guru - AI Immigration Strategy Platform",
+  "Immigrant Guru - Move to a New Country Without Confusion": "Immigrant Guru - Move to a New Country Without Confusion",
+  "Immigrant Guru helps you evaluate pathways, compare strategies, and act with clarity": {
+    "": "Immigrant Guru helps you evaluate pathways, compare strategies, and act with clarity."
+  },
+  "Immigration Plan": "Imigrační plán",
+  "Immigration Score": "Immigration Score",
+  "Immigration shouldn't feel this hard": {
+    "": "Imigrace by neměla být tak těžká"
+  },
+  "Job opportunities": "Pracovní příležitosti",
+  "Language": "Language",
+  "Last name": "Last name",
+  "Last name is too long": {
+    "": "Příjmení je příliš dlouhé"
+  },
+  "Log in": "Log in",
+  "Log out": "Log out",
   "Minimum 8 characters": "Minimum 8 characters",
-  "Repeat your password": "Repeat your password",
-  "Enter a valid email address": {
-    "": "Enter a valid email address."
+  "Months of waiting with no visibility": "Měsíce čekání bez viditelnosti",
+  "Move to a New Country Without Confusion": "Move to a New Country Without Confusion",
+  "Move to a new country": "Přestěhovat se do nové země",
+  "Move with family": "Move with family",
+  "Multiple visa alternatives": "Více alternativ víz",
+  "My plan": "My plan",
+  "National Interest Waiver · United States": "Národní zájem - Spojené státy",
+  "Nationality": "Nationality",
+  "Need an account?": "Need an account?",
+  "New password": "Nové heslo",
+  "Next": "Next",
+  "Next best action": "Next best action",
+  "Next step:": "Další krok:",
+  "No cases yet": "No cases yet",
+  "No clear direction — just endless Googling": "Žádný jasný směr - jen nekonečné Googlování",
+  "No confusion, no jargon": "Žádné zmatení, žádný žargon",
+  "No employer sponsor needed — you can self-petition": {
+    "": "Není potřeba sponzor zaměstnavatele - můžete se ucházet sami"
+  },
+  "No matter your background, we help you find a way forward": {
+    "": "Bez ohledu na váš původ vám pomůžeme najít cestu vpřed"
+  },
+  "No subscriptions": {
+    " Pay once, unlock your full plan": {
+      " 30-day money-back guarantee": {
+        "": "No subscriptions. Pay once, unlock your full plan. 30-day money-back guarantee."
+      }
+    }
+  },
+  "One clear plan": {
+    " Everything you need": {
+      "": "Jeden jasný plán  Vše, co potřebujete"
+    }
+  },
+  "One-time payment": {
+    " Unlock your full personalized immigration plan": {
+      "": "Jednorázová platba  Odemkněte svůj plně personalizovaný imigrační plán"
+    }
+  },
+  "Overview": "Overview",
+  "Page not found": "Page not found",
+  "Password": "Password",
+  "Password must be at least 8 characters": {
+    "": "Heslo musí mít alespoň 8 znaků"
   },
   "Password must contain at least 8 characters": {
     "": "Password must contain at least 8 characters."
   },
-  "Page not found": "Page not found",
-  "The page you're looking for doesn't exist or hasn't been built yet": {
-    "": "The page you're looking for doesn't exist or hasn't been built yet."
+  "Password reset!": "Obnovení hesla!",
+  "Passwords do not match": {
+    "": "Hesla se neshodují"
   },
-  "Return home": "Return home",
-  "Error": "Error",
-  "Something went wrong": "Something went wrong",
-  "The page hit an unexpected error while rendering": {
-    " Try again, and if it persists, check the server logs": {
-      "": "The page hit an unexpected error while rendering. Try again, and if it persists, check the server logs."
-    }
-  },
-  "Go home": "Go home",
-  "Admin": "Admin",
-  "Step 1 of 4": "Step 1 of 4",
-  "Step 2 of 4": "Step 2 of 4",
-  "Step 3 of 4": "Step 3 of 4",
-  "Step 4 of 4": "Step 4 of 4",
-  "Tell us a bit about yourself": {
-    "": "Tell us a bit about yourself."
-  },
-  "Where do you want to go?": "Where do you want to go?",
-  "Your immigration goals and timing": {
-    "": "Your immigration goals and timing."
-  },
+  "Platform Status": "Platform Status",
+  "Plus": "Plus",
+  "Possible paths": "Možné cesty",
+  "Preferred language": "Preferred language",
+  "Premium": "Premium",
+  "Premium dashboard": "Prémiový panel",
+  "Pricing": "Pricing",
+  "Prior visa refusal?": "Prior visa refusal?",
+  "Priority AI guidance": "Prioritní AI poradenství",
+  "Probability score": "Probability score",
   "Professional experience and finances": {
     "": "Professional experience and finances."
   },
-  "You're ready to see your first strategy": "You're ready to see your first strategy",
-  "Nationality": "Nationality",
-  "Where do you live now?": "Where do you live now?",
+  "Profile": "Profile",
+  "Profile, finance, case": "Profil, finance, případ",
+  "Readiness": "Připravenost",
+  "Readiness score": "Readiness score",
+  "Ready": "Připraveno",
+  "Recommended pathway": "Recommended pathway",
+  "Redirecting…": "Přesměrování…",
   "Relationship status": "Relationship status",
-  "Children": "Children",
-  "Preferred language": "Preferred language",
-  "Target country": "Target country",
   "Relocation timeline": "Relocation timeline",
-  "Prior visa refusal?": "Prior visa refusal?",
-  "Any criminal record?": "Any criminal record?",
-  "What do you do?": "What do you do?",
-  "Years of experience": "Years of experience",
-  "Education level": "Education level",
-  "English level": "English level",
-  "Available capital": "Available capital",
+  "Remember your password?": "Pamatujete si své heslo?",
+  "Repeat your password": "Repeat your password",
+  "Resend code": "Znovu odeslat kód",
+  "Resend code in {n}s": "Znovu odešlete kód za {n}s",
+  "Reset code": "Obnovit kód",
+  "Reset password": "Obnovit heslo",
+  "Resetting": {
+    "": {
+      "": {
+        "": "Obnovuje se"
+      }
+    }
+  },
+  "Retry": "Retry",
+  "Return home": "Return home",
   "Review and continue": "Review and continue",
+  "Risks": "Risks",
   "Saving": {
     "": {
       "": {
@@ -171,23 +378,411 @@
       }
     }
   },
-  "Your session is no longer available": {
-    " Sign in again to continue onboarding": {
-      "": "Your session is no longer available. Sign in again to continue onboarding."
+  "Scenario simulation": "Scenario simulation",
+  "See how it works": "Podívejte se, jak to funguje",
+  "Select language": "Select language",
+  "Send reset code": "Odeslat kód pro obnovení",
+  "Sending": {
+    "": {
+      "": {
+        "": "Odesílání"
+      }
     }
   },
-  "Your profile could not be saved right now": {
-    " Retry before moving to the next step": {
-      "": "Your profile could not be saved right now. Retry before moving to the next step."
+  "Set new password": "Nastavit nové heslo",
+  "Sign in": "Sign in",
+  "Sign in to continue your case strategy": "Přihlaste se, abyste pokračovali ve strategii případu",
+  "Sign in to continue your immigration strategy": {
+    "": "Sign in to continue your immigration strategy."
+  },
+  "Sign out": "Sign out",
+  "Sign up": "Sign up",
+  "Signing in": {
+    "": {
+      "": {
+        "": "Signing in..."
+      }
     }
+  },
+  "Simple pricing": "Simple pricing",
+  "Six powerful tools working together to give you clarity, confidence, and a concrete plan": {
+    "": "Six powerful tools working together to give you clarity, confidence, and a concrete plan."
+  },
+  "Software Engineer, Turkey to USA": "Softwarový inženýr, Turecko do USA",
+  "Software Engineering, AI/ML, Product": "Softwarové inženýrství, AI/ML, Produkt",
+  "Something went wrong": {
+    "": "Něco se pokazilo",
+    " Please try again": {
+      "": "Něco se pokazilo  Zkuste to prosím znovu"
+    }
+  },
+  "Spouse, children, parents — know which family visa fits and how long it takes": {
+    "": "Manžel/ka, děti, rodiče - zjistěte, které rodinné vízum se hodí a jak dlouho to trvá"
+  },
+  "Start a business": "Start a business",
+  "Start free": {
+    "": "Start free",
+    " Upgrade when you're ready for your full immigration plan": {
+      "": "Start free. Upgrade when you're ready for your full immigration plan."
+    }
+  },
+  "Start with the essentials and complete your immigration profile later": {
+    "": "Start with the essentials and complete your immigration profile later."
+  },
+  "Start your plan": "Start your plan",
+  "Starter": "Starter",
+  "Step 1 of 4": "Step 1 of 4",
+  "Step 2 of 4": "Step 2 of 4",
+  "Step 3 of 4": "Step 3 of 4",
+  "Step 4 of 4": "Step 4 of 4",
+  "Step-by-step roadmap": "Krok za krokem mapa",
+  "Stop guessing": {
+    " Get a clear plan for your immigration journey — in minutes, not months": {
+      "": "Přestaňte hádat  Získejte jasný plán pro vaši imigrační cestu - za minuty, ne měsíce"
+    }
+  },
+  "Strategy": "Strategy",
+  "Study abroad": "Study abroad",
+  "Suggested cities": "Navrhovaná města",
+  "Suitability": "Vhodnost",
+  "System health": "System health",
+  "Tell us a bit about yourself": {
+    "": "Tell us a bit about yourself."
+  },
+  "Tell us about you": "Tell us about you",
+  "Tell us about yourself": {
+    " Our AI analyzes 47 visa categories, checks your readiness, and gives you a step-by-step plan with timeline, cost, and documents — in minutes": {
+      "": "Řekněte nám o sobě  Naše AI analyzuje 47 vízových kategorií, kontroluje vaši připravenost a dává vám krok za krokem plán s časovým harmonogramem, náklady a dokumenty - za minuty"
+    }
+  },
+  "The page hit an unexpected error while rendering": {
+    " Try again, and if it persists, check the server logs": {
+      "": "The page hit an unexpected error while rendering. Try again, and if it persists, check the server logs."
+    }
+  },
+  "The page you're looking for doesn't exist or hasn't been built yet": {
+    "": "The page you're looking for doesn't exist or hasn't been built yet."
   },
   "The platform could not load your profile draft": {
     " Retry before continuing": {
       "": "The platform could not load your profile draft. Retry before continuing."
     }
   },
-  "Document status": "Document status",
-  "Case health": "Case health",
-  "Action roadmap": "Action roadmap",
-  "No cases yet": "No cases yet"
+  "The problem": "Problém",
+  "The readiness score showed me exactly what I was missing": {
+    " I uploaded 3 documents and my score jumped from 52 to 81": {
+      "": "Skóre připravenosti mi přesně ukázalo, co mi chybělo  Nahrál jsem 3 dokumenty a moje skóre vyskočilo z 52 na 81"
+    }
+  },
+  "The solution": "Řešení",
+  "There's always a way — we help you find it": {
+    "": "Vždy existuje cesta - pomůžeme vám ji najít"
+  },
+  "Three steps": {
+    " No confusion": {
+      "": "Tři kroky  Žádné zmatení"
+    }
+  },
+  "Timeline": "Timeline",
+  "Timeline estimate": "Odhad časového harmonogramu",
+  "Toggle menu": "Přepnout menu",
+  "Try it now": "Vyzkoušejte to nyní",
+  "Turkey, India, Brazil": {
+    "": {
+      "": {
+        "": "Turecko, Indie, Brazílie"
+      }
+    }
+  },
+  "United States, Canada": {
+    "": {
+      "": {
+        "": "Spojené státy, Kanada"
+      }
+    }
+  },
+  "Upload document": "Upload document",
+  "Upload your resume and education documents to increase your readiness score to 90+": {
+    "": "Nahrajte svůj životopis a vzdělávací dokumenty, abyste zvýšili své skóre připravenosti na 90+"
+  },
+  "Verification code": "Ověřovací kód",
+  "Verify code": "Ověřit kód",
+  "Verify email": "Ověřit e-mail",
+  "Verifying": {
+    "": {
+      "": {
+        "": "Ověřování"
+      }
+    }
+  },
+  "Visa categories analyzed": "Analyzované kategorie víz",
+  "Visa types": "Typy víz",
+  "Visa, timeline, documents, cost — everything in one clear view": {
+    "": "Víza, časová osa, dokumenty, náklady — vše na jednom přehledném místě"
+  },
+  "We analyze multiple countries, visa types, and pathways to match you with the best option based on your profile": {
+    "": "Analyzujeme více zemí, typy víz a cesty, abychom vás spojili s nejlepší možností na základě vašeho profilu"
+  },
+  "We analyze your options": "We analyze your options",
+  "We sent a 6-digit code to": "Poslali jsme 6místný kód na",
+  "We show you what to do": "Ukážeme vám, co dělat",
+  "We turn everything into one clear plan": {
+    "": "Vše proměníme v jeden jasný plán"
+  },
+  "Welcome back": "Welcome back",
+  "What do you do?": "What do you do?",
+  "What you get": "Co získáte",
+  "Whatever your reason, we can help": {
+    "": "Ať už je váš důvod jakýkoli, můžeme pomoci"
+  },
+  "Where are you from?": "Odkud pocházíte?",
+  "Where do you live now?": "Where do you live now?",
+  "Where do you want to go?": "Where do you want to go?",
+  "Work abroad": "Work abroad",
+  "Wrong email?": "Špatný e-mail?",
+  "Years of experience": "Years of experience",
+  "You're ready to see your first strategy": "You're ready to see your first strategy",
+  "Your background, education, experience, and goals": {
+    " Takes 2 minutes": {
+      "": "Vaše pozadí, vzdělání, zkušenosti a cíle  Trvá to 2 minuty"
+    }
+  },
+  "Your best path": "Vaše nejlepší cesta",
+  "Your best path, ranked by fit": "Vaše nejlepší cesta, seřazená podle vhodnosti",
+  "Your immigration goals and timing": {
+    "": "Your immigration goals and timing."
+  },
+  "Your new life starts here": {
+    "": "Váš nový život začíná zde"
+  },
+  "Your password has been updated": {
+    " You can now sign in": {
+      "": "Vaše heslo bylo aktualizováno  Nyní se můžete přihlásit"
+    }
+  },
+  "Your personalized result": "Váš personalizovaný výsledek",
+  "Your profile could not be saved right now": {
+    " Retry before moving to the next step": {
+      "": "Your profile could not be saved right now. Retry before moving to the next step."
+    }
+  },
+  "Your session is no longer available": {
+    " Sign in again to continue onboarding": {
+      "": "Your session is no longer available. Sign in again to continue onboarding."
+    }
+  },
+  "one-time": "one-time",
+  "without confusion": {
+    "": "bez zmatku"
+  },
+  "FAQ": "Často kladené otázky",
+  "tools": {
+    "pageTitle": "Bezplatné imigrační nástroje",
+    "pageSubtitle": "Rychlé odpovědi — registrace není nutná.",
+    "eligibilityChecker": {
+      "title": "Kontrolor způsobilosti",
+      "description": "Odpovězte na 6 otázek a zjistěte, na jaké víza pravděpodobně máte nárok."
+    },
+    "costEstimator": {
+      "title": "Nástroj pro odhad nákladů",
+      "description": "Celkové náklady na přestěhování do zahraničí — nejen vízové poplatky."
+    },
+    "timelineCalculator": {
+      "title": "Kalkulátor časového plánu",
+      "description": "Odhadněte, kdy pravděpodobně dorazíte, krok za krokem."
+    }
+  },
+  "eligibilityChecker": {
+    "pageTitle": "Bezplatný kontrolor způsobilosti pro víza",
+    "pageSubtitle": "Odpovězte na 6 krátkých otázek. Zjistěte pravděpodobně krátký seznam víz, na která máte nárok — registrace není nutná.",
+    "faq1": {
+      "question": "Je kontrolor způsobilosti zdarma?",
+      "answer": "Ano. Funguje zcela ve vašem prohlížeči a nevyžaduje účet."
+    },
+    "faq2": {
+      "question": "Jak přesná je kontrola?",
+      "answer": "Používá veřejná pravidla způsobilosti pro každou cestu. Je to silný první filtr, ale nenahrazuje to plnou analýzu podporovanou AI nebo právní poradenství."
+    },
+    "faq3": {
+      "question": "Ukládá moje odpovědi?",
+      "answer": "Ne. Nástroj funguje lokálně ve vašem prohlížeči. Pokud chcete, aby byly vaše výsledky uloženy do profilu, zaregistrujte se."
+    },
+    "emailCapture": {
+      "title": "Plná analýza podporovaná AI",
+      "subtitle": "Získejte personalizovaný plán A/B/C a skóre připravenosti e-mailem."
+    }
+  },
+  "costEstimator": {
+    "pageTitle": "Nástroj pro odhad nákladů na imigraci",
+    "pageSubtitle": "Vyberte cestu, přidejte velikost rodiny a zjistěte realistické celkové náklady — nejen vízové poplatky.",
+    "faq1": {
+      "question": "Co je zahrnuto v odhadu?",
+      "answer": "Státní poplatky, právní/agenturní poplatky, fondy na usazení, letenka, první bydlení a 10% rezerva na nečekané výdaje."
+    },
+    "faq2": {
+      "question": "Je to správné pro moji konkrétní situaci?",
+      "answer": "Je to dobrý orientační odhad pro každou cestu. Skutečné náklady se liší podle velikosti rodiny, města a výběru právníka. Pro personalizovaný rozpis se zaregistrujte."
+    },
+    "emailCapture": {
+      "title": "Úplný rozpis nákladů e-mailem",
+      "subtitle": "Tabulka obsahující náklady na řádkové bázi přizpůsobené vaší cílové zemi."
+    }
+  },
+  "timelineCalculator": {
+    "pageTitle": "Kalkulátor časového plánu",
+    "pageSubtitle": "Vyberte cestu. Zjistěte, kdy dorazíte — včetně přípravy, žádosti, zpracování a příjezdu.",
+    "faq1": {
+      "question": "Proč je doba přípravy zahrnuta?",
+      "answer": "Čas nezačíná, když podáte žádost — začíná, když začnete shromažďovat dokumenty. Přidáváme realistické okno přípravy pro každou cestu."
+    },
+    "faq2": {
+      "question": "Jak přesný je tento odhad?",
+      "answer": "Odráží zveřejněné průměrné doby zpracování. Individuální případy mohou být rychlejší nebo pomalejší v závislosti na RFE, kvótách země a úplnosti důkazů."
+    },
+    "emailCapture": {
+      "title": "Týdenní sledovač časového plánu",
+      "subtitle": "Až do dne příjezdu vám zašleme jednoduchý týdenní plán e-mailem."
+    }
+  },
+  "visaIndex": {
+    "pageTitle": "Všechna víza",
+    "pageSubtitle": "Náklady, časový plán a způsobilost pro každou cestu, kterou pokrýváme.",
+    "months": "měsíc"
+  },
+  "bestCountries": {
+    "pageTitle": "Nejlepší země podle povolání",
+    "pageSubtitle": "Vyberte své povolání a zobrazte hodnocené imigrační destinace.",
+    "cardTitle": "Nejlepší země pro {profession}",
+    "breadcrumb": "Nejlepší země",
+    "rankedSubtitle": "Seřazeno podle nákladů, časového plánu a trvalého pobytu. Data jsou aktuální pro rok 2026.",
+    "topPathway": "Nejlepší cesta",
+    "seeAllPathways": "Zobrazit všechny cesty",
+    "visaDetails": "Detaily {code}",
+    "otherProfessions": "Ostatní povolání"
+  },
+  "compare": {
+    "pageTitle": "Srovnání víz",
+    "pageSubtitle": "Vedlejší srovnání nejběžnějších rozhodnutí o cestě.",
+    "vs": "vs",
+    "comparingSubtitle": "{nameA} a {nameB} jsou porovnávány z hlediska nákladů, času a způsobilosti — abyste neztráceli měsíce na špatné cestě.",
+    "rowFullName": "Celé jméno",
+    "rowCategory": "Kategorie",
+    "rowDestination": "Cílová země",
+    "rowTypicalDuration": "Typická doba",
+    "rowCostUsd": "Náklady (USD)",
+    "rowLeadsToPR": "Vede k trvalému pobytu",
+    "yes": "Ano",
+    "no": "Ne",
+    "bestFor": "Nejvhodnější",
+    "otherComparisons": "Ostatní srovnání víz"
+  },
+  "visaMatch": {
+    "pageTitle": "Shoda víz",
+    "pageSubtitle": "Vyberte svou cílovou zemi a profil, abyste viděli své první 3 cesty.",
+    "cardSubtitle": "Nejlepší víza pro {profession}",
+    "breadcrumb": "Shoda víz",
+    "rankedSubtitle": "Bylo seřazeno {count} imigračních cest pro {profession}; s cílem {countryName}. Každá možnost byla hodnocena podle shody, nákladů, doby a rizika.",
+    "getPersonalizedMatch": "Získejte svou personalizovanou shodu",
+    "freeEligibilityCheck": "Bezplatná kontrola způsobilosti",
+    "typicalTimeline": "Typický časový rámec",
+    "typicalCost": "Typické náklady",
+    "duration": "Doba",
+    "strengths": "Silné stránky",
+    "moreVisaGuides": "Další průvodce vízy pro {countryName}"
+  },
+  "moveTo": {
+    "pageTitle": "Průvodci pro stěhování do země",
+    "pageSubtitle": "Krok za krokem průvodci podle původu a cílové země.",
+    "fromLabel": "{flag} od {name}",
+    "cardSubtitle": "Průvodce pro občany {demonym}",
+    "h1": "Stěhujte se do města {toName} přes {fromName}",
+    "intro": "Praktický průvodce pro stěhování do města {toName} pro občany {demonym}. Vyberte si cestu, pochopte časový rámec a náklady, získejte personalizované skóre připravenosti.",
+    "topVisaPathways": "Nejlepší cesty víz pro {toName}",
+    "howToStepByStep": "Jak se krok za krokem stěhovat",
+    "moreCountryGuides": "Další průvodci pro země"
+  },
+  "Onboarding could not load": "Načítání onboardingového procesu se nezdařilo",
+  "Review the highlighted profile fields before continuing": {
+    "": "Zkontrolujte zvýrazněná pole profilu před pokračováním"
+  },
+  "Skip": "Přeskočit",
+  "Who are you?": "Kdo jste?",
+  "Select your nationality": "Vyberte svou národnost",
+  "Select current country": "Vyberte aktuální zemi",
+  "e": {
+    "g": {
+      " English, Turkish": {
+        "": {
+          "": {
+            "": "např. angličtina, turečtina..."
+          }
+        }
+      },
+      " Software Engineer, Doctor, Designer": {
+        "": {
+          "": {
+            "": "např. softwarový inženýr, lékař, designér..."
+          }
+        }
+      },
+      " 50000": "např. 50000"
+    }
+  },
+  "Your background": "Vaše pozadí",
+  "English proficiency": "Úroveň angličtiny",
+  "Available capital (USD)": "Dostupný kapitál (USD)",
+  "Your dream destination and timeline": {
+    "": "Vaše vysněná destinace a časová osa"
+  },
+  "When do you want to move?": "Kdy se chcete přestěhovat?",
+  "Have you had a visa refusal before?": "Měli jste někdy odmítnutí víza?",
+  "This helps us give accurate recommendations": {
+    " Your data is private and secure": {
+      "": "To nám pomáhá poskytnout přesná doporučení  Vaše data jsou soukromá a zabezpečená"
+    }
+  },
+  "You're all set!": "Jste připraveni!",
+  "Amazing! Your profile is almost complete": {
+    " We can build great strategies for you": {
+      "": "Úžasné! Váš profil je téměř kompletní  Můžeme pro vás vytvořit skvělé strategie"
+    }
+  },
+  "Great start! You can always complete more details from your profile page": {
+    "": "Skvělý začátek! Vždy můžete doplnit další podrobnosti na stránce profilu"
+  },
+  "No worries! You can fill in more details anytime from your dashboard": {
+    "": "Žádné obavy! Další podrobnosti můžete vyplnit kdykoli z vašeho řídicího panelu"
+  },
+  "See your AI analysis": "Podívejte se na svou analýzu AI",
+  "there": "tam",
+  "Immigrant": "Imigrant",
+  "Guru": "Guru",
+  "Hey {name}, welcome aboard!": "Ahoj {name}, vítejte na palubě!",
+  "Let's build your immigration profile in under 2 minutes": {
+    " The more we know, the better strategies we can craft for you": {
+      "": "Vytvořme váš imigrační profil za méně než 2 minuty  Čím více víme, tím lepší strategie pro vás můžeme vytvořit"
+    }
+  },
+  "Let's go": "Jdeme na to",
+  "Takes about 2 minutes": {
+    " You can skip anything": {
+      "": "Trvá to asi 2 minuty  Můžete přeskočit cokoliv"
+    }
+  },
+  "score": {
+    "outOf100": "Na stupnici od 100",
+    "thisProfileIs": "Tento profil je na úrovni {readiness}",
+    "scoredOn": "Immigrant Guru ohodnotil tento profil na základě vzdělání, pracovních zkušeností, jazyka, shody s cílovou zemí a 8 dalších dimenzí.",
+    "getMyOwnScore": "Získejte své vlastní skóre",
+    "shareOnX": "Sdílet na X"
+  },
+  "visa": {
+    "cost": "Náklady",
+    "prPath": "Cesta k trvalému pobytu",
+    "idealFor": "Způsobilé osoby",
+    "requirements": "Požadavky",
+    "risksAndRejection": "Rizika a běžné důvody zamítnutí",
+    "checkReadiness": "Zkontrolujte svou připravenost {code}",
+    "moreVisaGuides": "Další průvodce vízy pro {countryName}"
+  }
 }

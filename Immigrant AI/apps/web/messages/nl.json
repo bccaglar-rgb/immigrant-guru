@@ -1,103 +1,165 @@
 {
-  "Immigrant Guru - AI Immigration Strategy Platform": "Immigrant Guru - AI Immigration Strategy Platform",
-  "Immigrant Guru - Move to a New Country Without Confusion": "Immigrant Guru - Move to a New Country Without Confusion",
-  "Language": "Language",
-  "Select language": "Select language",
-  "How it works": "How it works",
-  "Find your path": "Find your path",
-  "Pricing": "Pricing",
-  "Home": "Home",
-  "Sign in": "Sign in",
-  "Sign up": "Sign up",
-  "Dashboard": "Dashboard",
-  "Log out": "Log out",
-  "Move to a New Country Without Confusion": "Move to a New Country Without Confusion",
-  "Get your personalized visa, readiness score, and action plan in minutes": {
-    "": "Get your personalized visa, readiness score, and action plan in minutes."
+  "Active": "Actief",
+  "Cancel": "Annuleren",
+  "Capture the destination, program, current stage, and risk signals that anchor strategy generation, scoring, and document workflows": {
+    "": "Leg de bestemming, het programma, de huidige fase en risicovectoren vast die de strategie-generatie, scoring en documentwerkstromen verankeren"
   },
-  "Benefits": "Benefits",
-  "Everything you need in one place": "Everything you need in one place",
-  "Simple pricing": "Simple pricing",
-  "Free": "Free",
-  "Starter": "Starter",
-  "Plus": "Plus",
-  "Premium": "Premium",
-  "Create your account": "Create your account",
-  "Welcome back": "Welcome back",
-  "First name": "First name",
-  "Last name": "Last name",
-  "Email": "Email",
-  "Password": "Password",
-  "Confirm password": "Confirm password",
-  "Overview": "Overview",
-  "Profile": "Profile",
-  "Cases": "Cases",
-  "Strategy": "Strategy",
-  "Timeline": "Timeline",
-  "Documents": "Documents",
-  "Risks": "Risks",
-  "Copilot": "Copilot",
-  "Comparison": "Comparison",
-  "Retry": "Retry",
-  "Back": "Back",
-  "Next": "Next",
-  "Finish": "Finish",
-  "Generate strategy": "Generate strategy",
-  "Upload document": "Upload document",
-  "Scenario simulation": "Scenario simulation",
-  "My plan": "My plan",
-  "Sign out": "Sign out",
-  "Log in": "Log in",
-  "Start your plan": "Start your plan",
-  "Readiness score": "Readiness score",
-  "Probability score": "Probability score",
-  "Recommended pathway": "Recommended pathway",
-  "Next best action": "Next best action",
-  "Immigrant Guru helps you evaluate pathways, compare strategies, and act with clarity": {
-    "": "Immigrant Guru helps you evaluate pathways, compare strategies, and act with clarity."
+  "Case Detail": "Geval Detail",
+  "Case planning workspace": "Werkruimte voor gevalplanning",
+  "Case portfolio": "Geval portfolio",
+  "Case status": "Geval status",
+  "Case title": "Geval titel",
+  "Closed": "Gesloten",
+  "Close": "Sluiten",
+  "Close new case": "Sluit nieuw geval",
+  "Collect recommendation letters and evidence of impact": {
+    "": "Verzamel aanbevelingsbrieven en bewijs van impact"
   },
-  "A focused workspace for immigration decisions": "A focused workspace for immigration decisions",
-  "Six powerful tools working together to give you clarity, confidence, and a concrete plan": {
-    "": "Six powerful tools working together to give you clarity, confidence, and a concrete plan."
+  "Continue your immigration planning": {
+    " Keep profile and case data aligned": {
+      "": "Ga door met je immigratieplanning  Houd profiel- en gevalgegevens op elkaar afgestemd"
+    }
   },
-  "Immigration Score": "Immigration Score",
-  "Explainable readiness signals": "Explainable readiness signals",
-  "System health": "System health",
-  "Platform Status": "Platform Status",
-  "Work abroad": "Work abroad",
-  "Study abroad": "Study abroad",
-  "Move with family": "Move with family",
-  "Start a business": "Start a business",
-  "Tell us about you": "Tell us about you",
-  "We analyze your options": "We analyze your options",
-  "Get your plan": "Get your plan",
-  "Find the plan that fits your journey": "Find the plan that fits your journey",
-  "Start free": {
-    " Upgrade when you're ready for your full immigration plan": {
-      "": "Start free. Upgrade when you're ready for your full immigration plan."
-    },
-    "": "Start free"
+  "Create a case for each migration plan you want to evaluate, compare, or execute": {
+    " Cases anchor strategy generation, scoring, and document collection in one workspace": {
+      "": "Maak een geval voor elk migratieplan dat je wilt evalueren, vergelijken of uitvoeren  Gevallen verankeren strategie-generatie, scoring en documentverzameling in één werkruimte"
+    }
   },
-  "Best value": "Best value",
-  "one-time": "one-time",
-  "No subscriptions": {
-    " Pay once, unlock your full plan": {
-      " 30-day money-back guarantee": {
-        "": "No subscriptions. Pay once, unlock your full plan. 30-day money-back guarantee."
+  "Create first case": "Maak eerste geval",
+  "Create strategy case": "Maak strategie geval",
+  "Creating case": {
+    "": {
+      "": {
+        "": "Geval aanmaken"
       }
     }
   },
-  "Start with the essentials and complete your immigration profile later": {
-    "": "Start with the essentials and complete your immigration profile later."
+  "Current stage": "Huidige fase",
+  "Data unavailable": "Gegevens niet beschikbaar",
+  "Define a migration pathway to evaluate": "Definieer een migratietraject om te evalueren",
+  "Destination pending": "Bestemming in afwachting",
+  "Draft": "Concept",
+  "Evaluation signals": "Evaluatie signalen",
+  "Example: eligibility_review, document_collection, filing_ready": "Voorbeeld: eligibility_review, document_collection, filing_ready",
+  "Higher values should indicate higher execution or eligibility risk": {
+    "": "Hogere waarden zouden een hoger uitvoerings- of geschiktheidsrisico moeten aangeven"
   },
-  "Sign in to continue your immigration strategy": {
-    "": "Sign in to continue your immigration strategy."
+  "Immigration strategy cases": "Immigratiestrategie gevallen",
+  "In review": "In beoordeling",
+  "Internal Console": "Interne Console",
+  "Keep notes focused on blockers, evidence gaps, and next actions": {
+    "": "Houd aantekeningen gericht op blokkades, bewijsleemtes en volgende acties"
   },
-  "Forgot your password?": "Forgot your password?",
-  "Create account": "Create account",
-  "Create one": "Create one",
+  "Latest score": "Laatste score",
+  "Manage immigration strategy records that anchor pathway evaluation, stage tracking, scoring, and later document workflows": {
+    "": "Beheer immigratiestrategie records die de evaluatie van paden, fase-tracking, scoring en later documentwerkstromen verankeren"
+  },
+  "New case": "Nieuw geval",
+  "New strategy case": "Nieuw strategie geval",
+  "No changes to save": "Geen wijzigingen om op te slaan",
+  "No strategic notes recorded yet for this immigration path": {
+    "": "Nog geen strategische aantekeningen vastgelegd voor dit immigratiepad"
+  },
+  "No strategy cases yet": "Nog geen strategie gevallen",
+  "on record": "op record",
+  "Open case": "Open geval",
+  "Optional score snapshot if you want to retain a manual benchmark": {
+    "": "Optionele score snapshot als je een handmatige benchmark wilt behouden"
+  },
+  "Pathway not defined yet": "Pad nog niet gedefinieerd",
+  "Refresh cases": "Vernieuw gevallen",
+  "Review the highlighted case fields before saving": {
+    "": "Bekijk de gemarkeerde gevalvelden voordat je opslaat"
+  },
+  "Risk score": "Risicoscore",
+  "Risk": "Risico",
+  "Save case changes": "Sla gevalwijzigingen op",
+  "Saving changes": {
+    "": {
+      "": {
+        "": "Wijzigingen opslaan"
+      }
+    }
+  },
+  "Score": "Score",
+  "Session": "Sessie",
+  "Stage": "Fase",
+  "Start with a target country and pathway": "Begin met een doelland en pad",
+  "Strategy case created successfully": {
+    "": "Strategie geval succesvol aangemaakt"
+  },
+  "Strategy identity": "Strategie identiteit",
+  "Strategy notes": "Strategie aantekeningen",
+  "Target country": "Target country",
+  "Target pathway or program": "Doelpad of programma",
+  "The case portfolio could not be loaded": {
+    "": "Het geval portfolio kon niet worden geladen"
+  },
+  "Track every active migration path in one workspace": "Volg elk actief migratietraject in één werkruimte",
+  "U": {
+    "S": {
+      " employment-based migration plan": "U.S. werkgebaseerd migratieplan"
+    }
+  },
+  "United States": "Verenigde Staten",
+  "Update the case strategy record": "Werk de gevalstrategierecord bij",
+  "Updated": "Bijgewerkt",
+  "Workspace data could not be loaded": {
+    "": "Werkruimtegegevens konden niet worden geladen"
+  },
+  "You are no longer authenticated": {
+    "": "U bent niet langer geauthenticeerd"
+  },
+  "case": "zaak",
+  "cases": "zaken",
+  "12-18 months": "12-18 maanden",
+  "3 country comparisons": "3 landvergelijkingen",
+  "A focused workspace for immigration decisions": "A focused workspace for immigration decisions",
+  "AI checks 47 visa categories and finds your best match": {
+    "": "AI controleert 47 visacategorieën en vindt uw beste match"
+  },
+  "Access your immigration dashboard, decision plans, and case workspace": {
+    "": "Toegang tot uw immigratiedashboard, besluitplannen en zaakwerkruimte"
+  },
+  "Action roadmap": "Action roadmap",
+  "Admin": "Admin",
+  "Advanced action plan": "Geavanceerd actieplan",
   "Already have an account?": "Already have an account?",
-  "Need an account?": "Need an account?",
+  "Any criminal record?": "Any criminal record?",
+  "Available capital": "Available capital",
+  "Average time to first plan": "Gemiddelde tijd tot het eerste plan",
+  "Back": "Back",
+  "Benefits": "Benefits",
+  "Best value": "Best value",
+  "Best visa option": "Beste visumoptie",
+  "Best visa recommendation": "Beste visumaanbeveling",
+  "Better case preparation": "Betere zaakvoorbereiding",
+  "Built for immigrants, by immigrants": "Gebouwd voor immigranten, door immigranten",
+  "Case health": "Case health",
+  "Cases": "Cases",
+  "Check your email": "Controleer uw e-mail",
+  "Checkout failed": "Afrekenen mislukt",
+  "Children": "Children",
+  "Choose a new password for your account": {
+    "": "Kies een nieuw wachtwoord voor uw account"
+  },
+  "Comparison": "Comparison",
+  "Confirm password": "Confirm password",
+  "Confirm your password": {
+    "": "Bevestig uw wachtwoord"
+  },
+  "Confusing visa rules that change every year": "Verwarrende visumregels die elk jaar veranderen",
+  "Copilot": "Copilot",
+  "Cost estimate": "Kostenschatting",
+  "Countries": "Landen",
+  "Countries supported": "Ondersteunde landen",
+  "Create account": "Create account",
+  "Create an account to start building an immigration profile, evaluate pathways, and manage your cases": {
+    "": "Maak een account aan om een immigratieprofiel op te bouwen, paden te evalueren en uw zaken te beheren"
+  },
+  "Create one": "Create one",
+  "Create your Immigrant Guru account": "Maak uw Immigrant Guru-account aan",
+  "Create your account": "Create your account",
   "Creating account": {
     "": {
       "": {
@@ -105,65 +167,210 @@
       }
     }
   },
-  "Signing in": {
-    "": {
-      "": {
-        "": "Signing in..."
+  "Dashboard": "Dashboard",
+  "Data Scientist, India to Canada": "Data Scientist, India naar Canada",
+  "Deeper analysis": "Diepere analyse",
+  "Document checklist": "Documentenlijst",
+  "Document status": "Document status",
+  "Documents": "Documents",
+  "E-2 investor, EB-5, startup visa — explore entrepreneurial immigration routes": {
+    "": "E-2 investeerder, EB-5, startupvisum — verken ondernemende immigratieroutes"
+  },
+  "Education level": "Education level",
+  "Email": "Email",
+  "English level": "English level",
+  "Enter a valid email address": {
+    "": "Enter a valid email address."
+  },
+  "Enter it below to verify your account": {
+    "": "Voer het hieronder in om uw account te verifiëren"
+  },
+  "Enter the 6-digit code from your email": {
+    "": "Voer de 6-cijferige code uit uw e-mail in"
+  },
+  "Enter the 6-digit code": {
+    "": "Voer de 6-cijferige code in"
+  },
+  "Enter your email and we'll send you a reset code": {
+    "": "Voer uw e-mail in en we sturen u een resetcode"
+  },
+  "Enter your email": {
+    "": "Voer uw e-mail in"
+  },
+  "Error": "Error",
+  "Est": {
+    " cost": "Geschatte kosten"
+  },
+  "Estimated cost": "Geschatte kosten",
+  "Even if you think you don't qualify — we'll show you what's possible": {
+    "": "Zelfs als u denkt dat u niet in aanmerking komt — we laten u zien wat mogelijk is"
+  },
+  "Everything in Plus": "Alles in Plus",
+  "Everything in Starter": "Alles in Starter",
+  "Everything you need in one place": "Everything you need in one place",
+  "Expanded document guidance": "Uitgebreide documentbegeleiding",
+  "Expensive lawyers who charge $5,000+ for basic advice": "Dure advocaten die $5.000+ vragen voor basisadvies",
+  "Explainable readiness signals": "Explainable readiness signals",
+  "F-1, OPT, STEM extension — understand your path from student to professional": {
+    "": "F-1, OPT, STEM-verlenging — begrijp uw pad van student naar professional"
+  },
+  "Filing + legal fees": "Indienen + juridische kosten",
+  "Find my best path": "Vind mijn beste pad",
+  "Find the plan that fits your journey": "Find the plan that fits your journey",
+  "Find the right work visa for your skills and experience": {
+    " H-1B, EB-2, O-1, and more": {
+      "": "Vind het juiste werkvisum voor uw vaardigheden en ervaring H-1B, EB-2, O-1, en meer"
+    }
+  },
+  "Find your best path": "Vind uw beste pad",
+  "Find your path": "Find your path",
+  "Finish": "Finish",
+  "First name": "First name",
+  "First name is too long": {
+    "": "Voornaam is te lang"
+  },
+  "For comparing options": "Voor het vergelijken van opties",
+  "For every situation": "Voor elke situatie",
+  "For one clear path": "Voor één duidelijk pad",
+  "Forgot your password?": "Forgot your password?",
+  "Free": "Free",
+  "Free to start · No credit card · Takes 2 minutes": "Gratis om te beginnen · Geen creditcard · Duurt 2 minuten",
+  "From filing to approval": "Van indienen tot goedkeuring",
+  "Full path comparison": "Volledige padvergelijking",
+  "Full plan for 1 country": "Volledig plan voor 1 land",
+  "Full strategic experience": "Volledige strategische ervaring",
+  "Full strategic recommendation": "Volledige strategische aanbeveling",
+  "Generate strategy": "Generate strategy",
+  "Get Started": "Aan de slag",
+  "Get your personalized visa, readiness score, and action plan in minutes": {
+    "": "Get your personalized visa, readiness score, and action plan in minutes.",
+    " Not months": {
+      "": "Ontvang uw gepersonaliseerde visum, gereedheidsscore en actieplan in minuten Niet maanden"
+    }
+  },
+  "Get your plan": "Get your plan",
+  "Get {plan}": "Krijg {plan}",
+  "Go back": "Ga terug",
+  "Go home": "Go home",
+  "Home": "Home",
+  "How it works": "How it works",
+  "I spent months Googling visa options": {
+    " Immigrant Guru gave me a clear plan in 10 minutes": {
+      " I wish I found this earlier": {
+        "": "Ik heb maandenlang gegoogeld naar visumopties Immigrant Guru gaf me een duidelijk plan in 10 minuten Ik wou dat ik dit eerder had gevonden"
       }
     }
   },
+  "Immigrant Guru - AI Immigration Strategy Platform": "Immigrant Guru - AI Immigration Strategy Platform",
+  "Immigrant Guru - Move to a New Country Without Confusion": "Immigrant Guru - Move to a New Country Without Confusion",
+  "Immigrant Guru helps you evaluate pathways, compare strategies, and act with clarity": {
+    "": "Immigrant Guru helps you evaluate pathways, compare strategies, and act with clarity."
+  },
+  "Immigration Plan": "Immigratieplan",
+  "Immigration Score": "Immigration Score",
+  "Immigration shouldn't feel this hard": {
+    "": "Immigratie zou niet zo moeilijk moeten zijn"
+  },
+  "Job opportunities": "Banenmogelijkheden",
+  "Language": "Language",
+  "Last name": "Last name",
+  "Last name is too long": {
+    "": "Achternaam is te lang"
+  },
+  "Log in": "Log in",
+  "Log out": "Log out",
   "Minimum 8 characters": "Minimum 8 characters",
-  "Repeat your password": "Repeat your password",
-  "Enter a valid email address": {
-    "": "Enter a valid email address."
+  "Months of waiting with no visibility": "Maanden wachten zonder zichtbaarheid",
+  "Move to a New Country Without Confusion": "Move to a New Country Without Confusion",
+  "Move to a new country": "Verhuizen naar een nieuw land",
+  "Move with family": "Move with family",
+  "Multiple visa alternatives": "Meerdere visumalternatieven",
+  "My plan": "My plan",
+  "National Interest Waiver · United States": "National Interest Waiver · Verenigde Staten",
+  "Nationality": "Nationality",
+  "Need an account?": "Need an account?",
+  "New password": "Nieuw wachtwoord",
+  "Next": "Next",
+  "Next best action": "Next best action",
+  "Next step:": "Volgende stap:",
+  "No cases yet": "No cases yet",
+  "No clear direction — just endless Googling": "Geen duidelijke richting — alleen eindeloos Googelen",
+  "No confusion, no jargon": "Geen verwarring, geen jargon",
+  "No employer sponsor needed — you can self-petition": {
+    "": "Geen werkgever sponsor nodig — je kunt zelf een aanvraag indienen"
+  },
+  "No matter your background, we help you find a way forward": {
+    "": "Ongeacht je achtergrond, we helpen je een weg vooruit te vinden"
+  },
+  "No subscriptions": {
+    " Pay once, unlock your full plan": {
+      " 30-day money-back guarantee": {
+        "": "No subscriptions. Pay once, unlock your full plan. 30-day money-back guarantee."
+      }
+    }
+  },
+  "One clear plan": {
+    " Everything you need": {
+      "": "Eén duidelijk plan  Alles wat je nodig hebt"
+    }
+  },
+  "One-time payment": {
+    " Unlock your full personalized immigration plan": {
+      "": "Eenmalige betaling  Ontgrendel je volledige gepersonaliseerde immigratieplan"
+    }
+  },
+  "Overview": "Overview",
+  "Page not found": "Page not found",
+  "Password": "Password",
+  "Password must be at least 8 characters": {
+    "": "Wachtwoord moet minimaal 8 tekens zijn"
   },
   "Password must contain at least 8 characters": {
     "": "Password must contain at least 8 characters."
   },
-  "Page not found": "Page not found",
-  "The page you're looking for doesn't exist or hasn't been built yet": {
-    "": "The page you're looking for doesn't exist or hasn't been built yet."
+  "Password reset!": "Wachtwoord resetten!",
+  "Passwords do not match": {
+    "": "Wachtwoorden komen niet overeen"
   },
-  "Return home": "Return home",
-  "Error": "Error",
-  "Something went wrong": "Something went wrong",
-  "The page hit an unexpected error while rendering": {
-    " Try again, and if it persists, check the server logs": {
-      "": "The page hit an unexpected error while rendering. Try again, and if it persists, check the server logs."
-    }
-  },
-  "Go home": "Go home",
-  "Admin": "Admin",
-  "Step 1 of 4": "Step 1 of 4",
-  "Step 2 of 4": "Step 2 of 4",
-  "Step 3 of 4": "Step 3 of 4",
-  "Step 4 of 4": "Step 4 of 4",
-  "Tell us a bit about yourself": {
-    "": "Tell us a bit about yourself."
-  },
-  "Where do you want to go?": "Where do you want to go?",
-  "Your immigration goals and timing": {
-    "": "Your immigration goals and timing."
-  },
+  "Platform Status": "Platform Status",
+  "Plus": "Plus",
+  "Possible paths": "Mogelijke paden",
+  "Preferred language": "Preferred language",
+  "Premium": "Premium",
+  "Premium dashboard": "Premium dashboard",
+  "Pricing": "Pricing",
+  "Prior visa refusal?": "Prior visa refusal?",
+  "Priority AI guidance": "Prioriteit AI begeleiding",
+  "Probability score": "Probability score",
   "Professional experience and finances": {
     "": "Professional experience and finances."
   },
-  "You're ready to see your first strategy": "You're ready to see your first strategy",
-  "Nationality": "Nationality",
-  "Where do you live now?": "Where do you live now?",
+  "Profile": "Profile",
+  "Profile, finance, case": "Profiel, financiën, zaak",
+  "Readiness": "Gereedheid",
+  "Readiness score": "Readiness score",
+  "Ready": "Klaar",
+  "Recommended pathway": "Recommended pathway",
+  "Redirecting…": "Omleiden…",
   "Relationship status": "Relationship status",
-  "Children": "Children",
-  "Preferred language": "Preferred language",
-  "Target country": "Target country",
   "Relocation timeline": "Relocation timeline",
-  "Prior visa refusal?": "Prior visa refusal?",
-  "Any criminal record?": "Any criminal record?",
-  "What do you do?": "What do you do?",
-  "Years of experience": "Years of experience",
-  "Education level": "Education level",
-  "English level": "English level",
-  "Available capital": "Available capital",
+  "Remember your password?": "Vergeet je wachtwoord?",
+  "Repeat your password": "Repeat your password",
+  "Resend code": "Code opnieuw verzenden",
+  "Resend code in {n}s": "Code opnieuw verzenden in {n}s",
+  "Reset code": "Resetcode",
+  "Reset password": "Wachtwoord resetten",
+  "Resetting": {
+    "": {
+      "": {
+        "": "Bezig met resetten"
+      }
+    }
+  },
+  "Retry": "Retry",
+  "Return home": "Return home",
   "Review and continue": "Review and continue",
+  "Risks": "Risks",
   "Saving": {
     "": {
       "": {
@@ -171,23 +378,411 @@
       }
     }
   },
-  "Your session is no longer available": {
-    " Sign in again to continue onboarding": {
-      "": "Your session is no longer available. Sign in again to continue onboarding."
+  "Scenario simulation": "Scenario simulation",
+  "See how it works": "Zie hoe het werkt",
+  "Select language": "Select language",
+  "Send reset code": "Stuur resetcode",
+  "Sending": {
+    "": {
+      "": {
+        "": "Verzenden"
+      }
     }
   },
-  "Your profile could not be saved right now": {
-    " Retry before moving to the next step": {
-      "": "Your profile could not be saved right now. Retry before moving to the next step."
+  "Set new password": "Stel nieuw wachtwoord in",
+  "Sign in": "Sign in",
+  "Sign in to continue your case strategy": "Meld je aan om je casusstrategie voort te zetten",
+  "Sign in to continue your immigration strategy": {
+    "": "Sign in to continue your immigration strategy."
+  },
+  "Sign out": "Sign out",
+  "Sign up": "Sign up",
+  "Signing in": {
+    "": {
+      "": {
+        "": "Signing in..."
+      }
     }
+  },
+  "Simple pricing": "Simple pricing",
+  "Six powerful tools working together to give you clarity, confidence, and a concrete plan": {
+    "": "Six powerful tools working together to give you clarity, confidence, and a concrete plan."
+  },
+  "Software Engineer, Turkey to USA": "Software Engineer, Turkije naar VS",
+  "Software Engineering, AI/ML, Product": "Software Engineering, AI/ML, Product",
+  "Something went wrong": {
+    "": "Er is iets misgegaan",
+    " Please try again": {
+      "": "Er is iets misgegaan  Probeer het opnieuw"
+    }
+  },
+  "Spouse, children, parents — know which family visa fits and how long it takes": {
+    "": "Echtgenoot, kinderen, ouders — weet welke gezinsvisum past en hoe lang het duurt"
+  },
+  "Start a business": "Start a business",
+  "Start free": {
+    "": "Start free",
+    " Upgrade when you're ready for your full immigration plan": {
+      "": "Start free. Upgrade when you're ready for your full immigration plan."
+    }
+  },
+  "Start with the essentials and complete your immigration profile later": {
+    "": "Start with the essentials and complete your immigration profile later."
+  },
+  "Start your plan": "Start your plan",
+  "Starter": "Starter",
+  "Step 1 of 4": "Step 1 of 4",
+  "Step 2 of 4": "Step 2 of 4",
+  "Step 3 of 4": "Step 3 of 4",
+  "Step 4 of 4": "Step 4 of 4",
+  "Step-by-step roadmap": "Stapsgewijze roadmap",
+  "Stop guessing": {
+    " Get a clear plan for your immigration journey — in minutes, not months": {
+      "": "Stop met raden  Krijg een duidelijk plan voor je immigratiereis — in minuten, niet maanden"
+    }
+  },
+  "Strategy": "Strategy",
+  "Study abroad": "Study abroad",
+  "Suggested cities": "Voorgestelde steden",
+  "Suitability": "Geschiktheid",
+  "System health": "System health",
+  "Tell us a bit about yourself": {
+    "": "Tell us a bit about yourself."
+  },
+  "Tell us about you": "Tell us about you",
+  "Tell us about yourself": {
+    " Our AI analyzes 47 visa categories, checks your readiness, and gives you a step-by-step plan with timeline, cost, and documents — in minutes": {
+      "": "Vertel ons over jezelf  Onze AI analyseert 47 visumcategorieën, controleert je gereedheid en geeft je een stapsgewijs plan met tijdlijn, kosten en documenten — in minuten"
+    }
+  },
+  "The page hit an unexpected error while rendering": {
+    " Try again, and if it persists, check the server logs": {
+      "": "The page hit an unexpected error while rendering. Try again, and if it persists, check the server logs."
+    }
+  },
+  "The page you're looking for doesn't exist or hasn't been built yet": {
+    "": "The page you're looking for doesn't exist or hasn't been built yet."
   },
   "The platform could not load your profile draft": {
     " Retry before continuing": {
       "": "The platform could not load your profile draft. Retry before continuing."
     }
   },
-  "Document status": "Document status",
-  "Case health": "Case health",
-  "Action roadmap": "Action roadmap",
-  "No cases yet": "No cases yet"
+  "The problem": "Het probleem",
+  "The readiness score showed me exactly what I was missing": {
+    " I uploaded 3 documents and my score jumped from 52 to 81": {
+      "": "De gereedheidsscore liet me precies zien wat ik miste  Ik uploadde 3 documenten en mijn score sprong van 52 naar 81"
+    }
+  },
+  "The solution": "De oplossing",
+  "There's always a way — we help you find it": {
+    "": "Er is altijd een weg — we helpen je het te vinden"
+  },
+  "Three steps": {
+    " No confusion": {
+      "": "Drie stappen  Geen verwarring"
+    }
+  },
+  "Timeline": "Timeline",
+  "Timeline estimate": "Tijdlijn schatting",
+  "Toggle menu": "Menu in-/uitklappen",
+  "Try it now": "Probeer het nu",
+  "Turkey, India, Brazil": {
+    "": {
+      "": {
+        "": "Turkije, India, Brazilië"
+      }
+    }
+  },
+  "United States, Canada": {
+    "": {
+      "": {
+        "": "Verenigde Staten, Canada"
+      }
+    }
+  },
+  "Upload document": "Upload document",
+  "Upload your resume and education documents to increase your readiness score to 90+": {
+    "": "Upload je cv en opleidingsdocumenten om je gereedheidsscore naar 90+ te verhogen"
+  },
+  "Verification code": "Verificatiecode",
+  "Verify code": "Verifieer code",
+  "Verify email": "Bevestig e-mail",
+  "Verifying": {
+    "": {
+      "": {
+        "": "Bevestigen"
+      }
+    }
+  },
+  "Visa categories analyzed": "Geanalyseerde visacategorieën",
+  "Visa types": "Visatypes",
+  "Visa, timeline, documents, cost — everything in one clear view": {
+    "": "Visum, tijdlijn, documenten, kosten — alles in één duidelijk overzicht"
+  },
+  "We analyze multiple countries, visa types, and pathways to match you with the best option based on your profile": {
+    "": "We analyseren meerdere landen, visatypes en paden om je te matchen met de beste optie op basis van je profiel"
+  },
+  "We analyze your options": "We analyze your options",
+  "We sent a 6-digit code to": "We hebben een 6-cijferige code gestuurd naar",
+  "We show you what to do": "We laten je zien wat je moet doen",
+  "We turn everything into one clear plan": {
+    "": "We maken alles tot één duidelijk plan"
+  },
+  "Welcome back": "Welcome back",
+  "What do you do?": "What do you do?",
+  "What you get": "Wat je krijgt",
+  "Whatever your reason, we can help": {
+    "": "Wat je reden ook is, we kunnen helpen"
+  },
+  "Where are you from?": "Waar kom je vandaan?",
+  "Where do you live now?": "Where do you live now?",
+  "Where do you want to go?": "Where do you want to go?",
+  "Work abroad": "Work abroad",
+  "Wrong email?": "Verkeerd e-mailadres?",
+  "Years of experience": "Years of experience",
+  "You're ready to see your first strategy": "You're ready to see your first strategy",
+  "Your background, education, experience, and goals": {
+    " Takes 2 minutes": {
+      "": "Je achtergrond, opleiding, ervaring en doelen  Duurt 2 minuten"
+    }
+  },
+  "Your best path": "Jouw beste pad",
+  "Your best path, ranked by fit": "Jouw beste pad, gerangschikt op geschiktheid",
+  "Your immigration goals and timing": {
+    "": "Your immigration goals and timing."
+  },
+  "Your new life starts here": {
+    "": "Jouw nieuwe leven begint hier"
+  },
+  "Your password has been updated": {
+    " You can now sign in": {
+      "": "Je wachtwoord is bijgewerkt  Je kunt nu inloggen"
+    }
+  },
+  "Your personalized result": "Jouw gepersonaliseerde resultaat",
+  "Your profile could not be saved right now": {
+    " Retry before moving to the next step": {
+      "": "Your profile could not be saved right now. Retry before moving to the next step."
+    }
+  },
+  "Your session is no longer available": {
+    " Sign in again to continue onboarding": {
+      "": "Your session is no longer available. Sign in again to continue onboarding."
+    }
+  },
+  "one-time": "one-time",
+  "without confusion": {
+    "": "zonder verwarring"
+  },
+  "FAQ": "FAQ",
+  "tools": {
+    "pageTitle": "Gratis immigratietools",
+    "pageSubtitle": "Snelle antwoorden — registratie is niet nodig.",
+    "eligibilityChecker": {
+      "title": "Geschiktheidschecker",
+      "description": "Beantwoord 6 vragen en zie waarschijnlijk de visa waarvoor u in aanmerking komt."
+    },
+    "costEstimator": {
+      "title": "Kostenramingstool",
+      "description": "De totale kosten van verhuizen naar het buitenland — niet alleen de visumkosten."
+    },
+    "timelineCalculator": {
+      "title": "Tijdlijncalculator",
+      "description": "Voorspel stap voor stap wanneer u aankomt."
+    }
+  },
+  "eligibilityChecker": {
+    "pageTitle": "Gratis visumgeschiktheidschecker",
+    "pageSubtitle": "Beantwoord 6 korte vragen. Zie waarschijnlijk een korte lijst van de visa waarvoor u in aanmerking komt — registratie is niet nodig.",
+    "faq1": {
+      "question": "Is de geschiktheidschecker gratis?",
+      "answer": "Ja. Het werkt volledig in uw browser en vereist geen account."
+    },
+    "faq2": {
+      "question": "Hoe nauwkeurig is de controle?",
+      "answer": "Het gebruikt openbare geschiktheidsregels voor elke route. Het is een sterke eerste filter, maar vervangt geen AI-ondersteunde volledige analyse of juridisch advies."
+    },
+    "faq3": {
+      "question": "Slaat het mijn antwoorden op?",
+      "answer": "Nee. De tool werkt lokaal in uw browser. Als u wilt dat uw resultaten worden opgeslagen in uw profiel, registreer dan."
+    },
+    "emailCapture": {
+      "title": "Volledige AI-ondersteunde analyse",
+      "subtitle": "Ontvang gepersonaliseerde Plan A/B/C en voorbereidingsscore via e-mail."
+    }
+  },
+  "costEstimator": {
+    "pageTitle": "Immigratie kostenramingstool",
+    "pageSubtitle": "Kies een route, voeg uw gezinsgrootte toe en zie de realistische totale kosten — niet alleen de visumkosten.",
+    "faq1": {
+      "question": "Wat is inbegrepen in de schatting?",
+      "answer": "Overheidskosten, juridische/makelaar kosten, vestigingsfondsen, vliegtickets, eerste huisvesting en een buffer van 10% voor onvoorziene uitgaven."
+    },
+    "faq2": {
+      "question": "Is dit correct voor mijn specifieke situatie?",
+      "answer": "Het is een goede richtlijn voor elke route. Uw werkelijke kosten variëren op basis van gezinsgrootte, stad en keuze van advocaat. Registreer voor een gepersonaliseerde uitsplitsing."
+    },
+    "emailCapture": {
+      "title": "Volledige kostenuitsplitsing via e-mail",
+      "subtitle": "Tabel met regelmatige kosten, aangepast aan uw doelland."
+    }
+  },
+  "timelineCalculator": {
+    "pageTitle": "Tijdlijncalculator",
+    "pageSubtitle": "Kies een route. Zie wanneer u aankomt — inclusief voorbereiding, aanvraag, verwerking en aankomst.",
+    "faq1": {
+      "question": "Waarom is de voorbereidingstijd inbegrepen?",
+      "answer": "De klok begint niet te lopen wanneer u de aanvraag indient — deze begint wanneer u begint met het verzamelen van documenten. We voegen een realistische voorbereidingstijd toe voor elke route."
+    },
+    "faq2": {
+      "question": "Hoe nauwkeurig is deze schatting?",
+      "answer": "Het weerspiegelt de gepubliceerde gemiddelde verwerkingstijden. Individuele gevallen kunnen sneller of langzamer zijn, afhankelijk van RFE's, landquota en de volledigheid van bewijs."
+    },
+    "emailCapture": {
+      "title": "Wekelijkse tijdlijnvolger",
+      "subtitle": "Tot de aankomstdatum sturen we u een eenvoudig wekelijkse planning per e-mail."
+    }
+  },
+  "visaIndex": {
+    "pageTitle": "Alle visa",
+    "pageSubtitle": "Kosten, tijdlijn en geschiktheid voor elke route die we dekken.",
+    "months": "maand"
+  },
+  "bestCountries": {
+    "pageTitle": "Beste landen per beroep",
+    "pageSubtitle": "Kies uw beroep om gerangschikte immigratiedoelen te zien.",
+    "cardTitle": "Beste landen voor {profession}",
+    "breadcrumb": "Beste landen",
+    "rankedSubtitle": "Gerangschikt op kosten, tijdlijn en permanente verblijfsvergunning. Gegevens zijn bijgewerkt voor 2026.",
+    "topPathway": "Beste route",
+    "seeAllPathways": "Bekijk alle routes",
+    "visaDetails": "{code} details",
+    "otherProfessions": "Andere beroepen"
+  },
+  "compare": {
+    "pageTitle": "Visumvergelijkingen",
+    "pageSubtitle": "Zij-aan-zij vergelijkingen van de meest voorkomende routebeslissingen.",
+    "vs": "vs",
+    "comparingSubtitle": "{nameA} wordt vergeleken met {nameB} op kosten, tijd en geschiktheid — zodat u geen maanden aan de verkeerde route besteedt.",
+    "rowFullName": "Volledige naam",
+    "rowCategory": "Categorie",
+    "rowDestination": "Doelland",
+    "rowTypicalDuration": "Typische duur",
+    "rowCostUsd": "Kosten (USD)",
+    "rowLeadsToPR": "Leidt tot permanente verblijfsvergunning",
+    "yes": "Ja",
+    "no": "Nee",
+    "bestFor": "Meest geschikt",
+    "otherComparisons": "Andere visumvergelijkingen"
+  },
+  "visaMatch": {
+    "pageTitle": "Visum matching",
+    "pageSubtitle": "Selecteer uw doel land en profiel om uw eerste 3 routes te zien.",
+    "cardSubtitle": "Beste visa voor {profession}",
+    "breadcrumb": "Visum Matching",
+    "rankedSubtitle": "{count} immigratieroutes voor {profession} gerangschikt; met als doel {countryName}. Elke optie is beoordeeld op geschiktheid, kosten, tijd en risico.",
+    "getPersonalizedMatch": "Ontvang uw gepersonaliseerde matching",
+    "freeEligibilityCheck": "Gratis geschiktheid controle",
+    "typicalTimeline": "Typische tijdlijn",
+    "typicalCost": "Typische kosten",
+    "duration": "Duur",
+    "strengths": "Sterke punten",
+    "moreVisaGuides": "Meer visumgidsen voor {countryName}"
+  },
+  "moveTo": {
+    "pageTitle": "Land verhuisgidsen",
+    "pageSubtitle": "Stapsgewijze gidsen op basis van herkomst en doel land.",
+    "fromLabel": "{flag} van {name}",
+    "cardSubtitle": "Gids voor {demonym} burgers",
+    "h1": "Verhuis van {fromName} naar {toName} stad",
+    "intro": "Praktische gids voor {demonym} burgers die naar {toName} stad willen verhuizen. Kies een route, begrijp de tijdlijn en kosten, ontvang een gepersonaliseerde voorbereidingsscore.",
+    "topVisaPathways": "Beste visumroutes voor {toName}",
+    "howToStepByStep": "Stapsgewijs hoe te verhuizen",
+    "moreCountryGuides": "Meer landgidsen"
+  },
+  "Onboarding could not load": "Onboarding kon niet worden geladen",
+  "Review the highlighted profile fields before continuing": {
+    "": "Controleer de gemarkeerde profielvelden voordat je verdergaat"
+  },
+  "Skip": "Overslaan",
+  "Who are you?": "Wie ben jij?",
+  "Select your nationality": "Selecteer je nationaliteit",
+  "Select current country": "Selecteer huidig land",
+  "e": {
+    "g": {
+      " English, Turkish": {
+        "": {
+          "": {
+            "": "bijv. Engels, Turks..."
+          }
+        }
+      },
+      " Software Engineer, Doctor, Designer": {
+        "": {
+          "": {
+            "": "bijv. Software Engineer, Arts, Ontwerper..."
+          }
+        }
+      },
+      " 50000": "bijv. 50000"
+    }
+  },
+  "Your background": "Jouw achtergrond",
+  "English proficiency": "Engelse taalvaardigheid",
+  "Available capital (USD)": "Beschikbaar kapitaal (USD)",
+  "Your dream destination and timeline": {
+    "": "Jouw droombestemming en tijdlijn"
+  },
+  "When do you want to move?": "Wanneer wil je verhuizen?",
+  "Have you had a visa refusal before?": "Heb je eerder een visumweigering gehad?",
+  "This helps us give accurate recommendations": {
+    " Your data is private and secure": {
+      "": "Dit helpt ons om nauwkeurige aanbevelingen te doen  Jouw gegevens zijn privé en veilig"
+    }
+  },
+  "You're all set!": "Je bent helemaal klaar!",
+  "Amazing! Your profile is almost complete": {
+    " We can build great strategies for you": {
+      "": "Geweldig! Je profiel is bijna compleet  We kunnen geweldige strategieën voor je opstellen"
+    }
+  },
+  "Great start! You can always complete more details from your profile page": {
+    "": "Geweldige start! Je kunt altijd meer details invullen vanaf je profielpagina"
+  },
+  "No worries! You can fill in more details anytime from your dashboard": {
+    "": "Geen zorgen! Je kunt op elk moment meer details invullen vanaf je dashboard"
+  },
+  "See your AI analysis": "Zie je AI-analyse",
+  "there": "daar",
+  "Immigrant": "Immigrant",
+  "Guru": "Guru",
+  "Hey {name}, welcome aboard!": "Hey {name}, welkom aan boord!",
+  "Let's build your immigration profile in under 2 minutes": {
+    " The more we know, the better strategies we can craft for you": {
+      "": "Laten we je immigratieprofiel in minder dan 2 minuten opbouwen  Hoe meer we weten, hoe betere strategieën we voor je kunnen maken"
+    }
+  },
+  "Let's go": "Laten we gaan",
+  "Takes about 2 minutes": {
+    " You can skip anything": {
+      "": "Duurt ongeveer 2 minuten  Je kunt alles overslaan"
+    }
+  },
+  "score": {
+    "outOf100": "Op een schaal van 100",
+    "thisProfileIs": "Dit profiel is op {readiness} niveau",
+    "scoredOn": "Immigrant Guru heeft dit profiel beoordeeld op basis van opleiding, werkervaring, taal, geschiktheid voor het doel land en 8 andere dimensies.",
+    "getMyOwnScore": "Ontvang mijn eigen score",
+    "shareOnX": "Deel op X"
+  },
+  "visa": {
+    "cost": "Kosten",
+    "prPath": "Permanente verblijfsroute",
+    "idealFor": "Geschikte personen",
+    "requirements": "Vereisten",
+    "risksAndRejection": "Risico's en veelvoorkomende afwijsredenen",
+    "checkReadiness": "Controleer mijn voorbereiding voor {code}",
+    "moreVisaGuides": "Meer visumgidsen voor {countryName}"
+  }
 }

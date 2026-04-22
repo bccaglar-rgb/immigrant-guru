@@ -1,103 +1,165 @@
 {
-  "Immigrant Guru - AI Immigration Strategy Platform": "Immigrant Guru - AI Immigration Strategy Platform",
-  "Immigrant Guru - Move to a New Country Without Confusion": "Immigrant Guru - Move to a New Country Without Confusion",
-  "Language": "Language",
-  "Select language": "Select language",
-  "How it works": "How it works",
-  "Find your path": "Find your path",
-  "Pricing": "Pricing",
-  "Home": "Home",
-  "Sign in": "Sign in",
-  "Sign up": "Sign up",
-  "Dashboard": "Dashboard",
-  "Log out": "Log out",
-  "Move to a New Country Without Confusion": "Move to a New Country Without Confusion",
-  "Get your personalized visa, readiness score, and action plan in minutes": {
-    "": "Get your personalized visa, readiness score, and action plan in minutes."
+  "Active": "Aktif",
+  "Cancel": "Batalkan",
+  "Capture the destination, program, current stage, and risk signals that anchor strategy generation, scoring, and document workflows": {
+    "": "Tangkap tujuan, program, tahap saat ini, dan sinyal risiko yang menjadi dasar pembuatan strategi, penilaian, dan alur dokumen"
   },
-  "Benefits": "Benefits",
-  "Everything you need in one place": "Everything you need in one place",
-  "Simple pricing": "Simple pricing",
-  "Free": "Free",
-  "Starter": "Starter",
-  "Plus": "Plus",
-  "Premium": "Premium",
-  "Create your account": "Create your account",
-  "Welcome back": "Welcome back",
-  "First name": "First name",
-  "Last name": "Last name",
-  "Email": "Email",
-  "Password": "Password",
-  "Confirm password": "Confirm password",
-  "Overview": "Overview",
-  "Profile": "Profile",
-  "Cases": "Cases",
-  "Strategy": "Strategy",
-  "Timeline": "Timeline",
-  "Documents": "Documents",
-  "Risks": "Risks",
-  "Copilot": "Copilot",
-  "Comparison": "Comparison",
-  "Retry": "Retry",
-  "Back": "Back",
-  "Next": "Next",
-  "Finish": "Finish",
-  "Generate strategy": "Generate strategy",
-  "Upload document": "Upload document",
-  "Scenario simulation": "Scenario simulation",
-  "My plan": "My plan",
-  "Sign out": "Sign out",
-  "Log in": "Log in",
-  "Start your plan": "Start your plan",
-  "Readiness score": "Readiness score",
-  "Probability score": "Probability score",
-  "Recommended pathway": "Recommended pathway",
-  "Next best action": "Next best action",
-  "Immigrant Guru helps you evaluate pathways, compare strategies, and act with clarity": {
-    "": "Immigrant Guru helps you evaluate pathways, compare strategies, and act with clarity."
+  "Case Detail": "Detail Kasus",
+  "Case planning workspace": "Ruang kerja perencanaan kasus",
+  "Case portfolio": "Portofolio Kasus",
+  "Case status": "Status Kasus",
+  "Case title": "Judul Kasus",
+  "Closed": "Ditutup",
+  "Close": "Tutup",
+  "Close new case": "Tutup kasus baru",
+  "Collect recommendation letters and evidence of impact": {
+    "": "Kumpulkan surat rekomendasi dan bukti dampak"
   },
-  "A focused workspace for immigration decisions": "A focused workspace for immigration decisions",
-  "Six powerful tools working together to give you clarity, confidence, and a concrete plan": {
-    "": "Six powerful tools working together to give you clarity, confidence, and a concrete plan."
+  "Continue your immigration planning": {
+    " Keep profile and case data aligned": {
+      "": "Lanjutkan perencanaan imigrasi Anda  Jaga profil dan data kasus tetap selaras"
+    }
   },
-  "Immigration Score": "Immigration Score",
-  "Explainable readiness signals": "Explainable readiness signals",
-  "System health": "System health",
-  "Platform Status": "Platform Status",
-  "Work abroad": "Work abroad",
-  "Study abroad": "Study abroad",
-  "Move with family": "Move with family",
-  "Start a business": "Start a business",
-  "Tell us about you": "Tell us about you",
-  "We analyze your options": "We analyze your options",
-  "Get your plan": "Get your plan",
-  "Find the plan that fits your journey": "Find the plan that fits your journey",
-  "Start free": {
-    " Upgrade when you're ready for your full immigration plan": {
-      "": "Start free. Upgrade when you're ready for your full immigration plan."
-    },
-    "": "Start free"
+  "Create a case for each migration plan you want to evaluate, compare, or execute": {
+    " Cases anchor strategy generation, scoring, and document collection in one workspace": {
+      "": "Buat kasus untuk setiap rencana migrasi yang ingin Anda evaluasi, bandingkan, atau eksekusi  Kasus menjadi dasar pembuatan strategi, penilaian, dan pengumpulan dokumen dalam satu ruang kerja"
+    }
   },
-  "Best value": "Best value",
-  "one-time": "one-time",
-  "No subscriptions": {
-    " Pay once, unlock your full plan": {
-      " 30-day money-back guarantee": {
-        "": "No subscriptions. Pay once, unlock your full plan. 30-day money-back guarantee."
+  "Create first case": "Buat kasus pertama",
+  "Create strategy case": "Buat kasus strategi",
+  "Creating case": {
+    "": {
+      "": {
+        "": "Membuat kasus"
       }
     }
   },
-  "Start with the essentials and complete your immigration profile later": {
-    "": "Start with the essentials and complete your immigration profile later."
+  "Current stage": "Tahap saat ini",
+  "Data unavailable": "Data tidak tersedia",
+  "Define a migration pathway to evaluate": "Definisikan jalur migrasi untuk dievaluasi",
+  "Destination pending": "Tujuan tertunda",
+  "Draft": "Draf",
+  "Evaluation signals": "Sinyal evaluasi",
+  "Example: eligibility_review, document_collection, filing_ready": "Contoh: eligibility_review, document_collection, filing_ready",
+  "Higher values should indicate higher execution or eligibility risk": {
+    "": "Nilai yang lebih tinggi harus menunjukkan risiko eksekusi atau kelayakan yang lebih tinggi"
   },
-  "Sign in to continue your immigration strategy": {
-    "": "Sign in to continue your immigration strategy."
+  "Immigration strategy cases": "Kasus strategi imigrasi",
+  "In review": "Dalam tinjauan",
+  "Internal Console": "Konsol Internal",
+  "Keep notes focused on blockers, evidence gaps, and next actions": {
+    "": "Simpan catatan yang fokus pada penghalang, celah bukti, dan tindakan selanjutnya"
   },
-  "Forgot your password?": "Forgot your password?",
-  "Create account": "Create account",
-  "Create one": "Create one",
+  "Latest score": "Skor terbaru",
+  "Manage immigration strategy records that anchor pathway evaluation, stage tracking, scoring, and later document workflows": {
+    "": "Kelola catatan strategi imigrasi yang menjadi dasar evaluasi jalur, pelacakan tahap, penilaian, dan alur dokumen selanjutnya"
+  },
+  "New case": "Kasus baru",
+  "New strategy case": "Kasus strategi baru",
+  "No changes to save": "Tidak ada perubahan yang disimpan",
+  "No strategic notes recorded yet for this immigration path": {
+    "": "Belum ada catatan strategis yang dicatat untuk jalur imigrasi ini"
+  },
+  "No strategy cases yet": "Belum ada kasus strategi",
+  "on record": "dalam catatan",
+  "Open case": "Buka kasus",
+  "Optional score snapshot if you want to retain a manual benchmark": {
+    "": "Cuplikan skor opsional jika Anda ingin mempertahankan tolok ukur manual"
+  },
+  "Pathway not defined yet": "Jalur belum didefinisikan",
+  "Refresh cases": "Segarkan kasus",
+  "Review the highlighted case fields before saving": {
+    "": "Tinjau bidang kasus yang disorot sebelum menyimpan"
+  },
+  "Risk score": "Skor risiko",
+  "Risk": "Risiko",
+  "Save case changes": "Simpan perubahan kasus",
+  "Saving changes": {
+    "": {
+      "": {
+        "": "Menyimpan perubahan"
+      }
+    }
+  },
+  "Score": "Skor",
+  "Session": "Sesi",
+  "Stage": "Tahap",
+  "Start with a target country and pathway": "Mulai dengan negara target dan jalur",
+  "Strategy case created successfully": {
+    "": "Kasus strategi berhasil dibuat"
+  },
+  "Strategy identity": "Identitas strategi",
+  "Strategy notes": "Catatan strategi",
+  "Target country": "Target country",
+  "Target pathway or program": "Jalur atau program target",
+  "The case portfolio could not be loaded": {
+    "": "Portofolio kasus tidak dapat dimuat"
+  },
+  "Track every active migration path in one workspace": "Lacak setiap jalur migrasi aktif dalam satu ruang kerja",
+  "U": {
+    "S": {
+      " employment-based migration plan": "Rencana migrasi berbasis pekerjaan AS"
+    }
+  },
+  "United States": "Amerika Serikat",
+  "Update the case strategy record": "Perbarui catatan strategi kasus",
+  "Updated": "Diperbarui",
+  "Workspace data could not be loaded": {
+    "": "Data ruang kerja tidak dapat dimuat"
+  },
+  "You are no longer authenticated": {
+    "": "Anda tidak lagi terautentikasi"
+  },
+  "case": "kasus",
+  "cases": "kasus-kasus",
+  "12-18 months": "12-18 bulan",
+  "3 country comparisons": "3 perbandingan negara",
+  "A focused workspace for immigration decisions": "A focused workspace for immigration decisions",
+  "AI checks 47 visa categories and finds your best match": {
+    "": "AI memeriksa 47 kategori visa dan menemukan kecocokan terbaik untuk Anda"
+  },
+  "Access your immigration dashboard, decision plans, and case workspace": {
+    "": "Akses dasbor imigrasi Anda, rencana keputusan, dan ruang kerja kasus"
+  },
+  "Action roadmap": "Action roadmap",
+  "Admin": "Admin",
+  "Advanced action plan": "Rencana tindakan lanjutan",
   "Already have an account?": "Already have an account?",
-  "Need an account?": "Need an account?",
+  "Any criminal record?": "Any criminal record?",
+  "Available capital": "Available capital",
+  "Average time to first plan": "Waktu rata-rata untuk rencana pertama",
+  "Back": "Back",
+  "Benefits": "Benefits",
+  "Best value": "Best value",
+  "Best visa option": "Opsi visa terbaik",
+  "Best visa recommendation": "Rekomendasi visa terbaik",
+  "Better case preparation": "Persiapan kasus yang lebih baik",
+  "Built for immigrants, by immigrants": "Dibangun untuk imigran, oleh imigran",
+  "Case health": "Case health",
+  "Cases": "Cases",
+  "Check your email": "Periksa email Anda",
+  "Checkout failed": "Pembayaran gagal",
+  "Children": "Children",
+  "Choose a new password for your account": {
+    "": "Pilih kata sandi baru untuk akun Anda"
+  },
+  "Comparison": "Comparison",
+  "Confirm password": "Confirm password",
+  "Confirm your password": {
+    "": "Konfirmasi kata sandi Anda"
+  },
+  "Confusing visa rules that change every year": "Aturan visa yang membingungkan yang berubah setiap tahun",
+  "Copilot": "Copilot",
+  "Cost estimate": "Perkiraan biaya",
+  "Countries": "Negara-negara",
+  "Countries supported": "Negara-negara yang didukung",
+  "Create account": "Create account",
+  "Create an account to start building an immigration profile, evaluate pathways, and manage your cases": {
+    "": "Buat akun untuk mulai membangun profil imigrasi, mengevaluasi jalur, dan mengelola kasus Anda"
+  },
+  "Create one": "Create one",
+  "Create your Immigrant Guru account": "Buat akun Immigrant Guru Anda",
+  "Create your account": "Create your account",
   "Creating account": {
     "": {
       "": {
@@ -105,65 +167,210 @@
       }
     }
   },
-  "Signing in": {
-    "": {
-      "": {
-        "": "Signing in..."
+  "Dashboard": "Dashboard",
+  "Data Scientist, India to Canada": "Ilmuwan Data, India ke Kanada",
+  "Deeper analysis": "Analisis yang lebih mendalam",
+  "Document checklist": "Daftar periksa dokumen",
+  "Document status": "Document status",
+  "Documents": "Documents",
+  "E-2 investor, EB-5, startup visa — explore entrepreneurial immigration routes": {
+    "": "Investor E-2, EB-5, visa startup — jelajahi jalur imigrasi kewirausahaan"
+  },
+  "Education level": "Education level",
+  "Email": "Email",
+  "English level": "English level",
+  "Enter a valid email address": {
+    "": "Enter a valid email address."
+  },
+  "Enter it below to verify your account": {
+    "": "Masukkan di bawah ini untuk memverifikasi akun Anda"
+  },
+  "Enter the 6-digit code from your email": {
+    "": "Masukkan kode 6 digit dari email Anda"
+  },
+  "Enter the 6-digit code": {
+    "": "Masukkan kode 6 digit"
+  },
+  "Enter your email and we'll send you a reset code": {
+    "": "Masukkan email Anda dan kami akan mengirimkan kode reset kepada Anda"
+  },
+  "Enter your email": {
+    "": "Masukkan email Anda"
+  },
+  "Error": "Error",
+  "Est": {
+    " cost": "Est. biaya"
+  },
+  "Estimated cost": "Biaya yang diperkirakan",
+  "Even if you think you don't qualify — we'll show you what's possible": {
+    "": "Bahkan jika Anda berpikir Anda tidak memenuhi syarat — kami akan menunjukkan apa yang mungkin"
+  },
+  "Everything in Plus": "Segala sesuatu dalam Plus",
+  "Everything in Starter": "Segala sesuatu dalam Starter",
+  "Everything you need in one place": "Everything you need in one place",
+  "Expanded document guidance": "Panduan dokumen yang diperluas",
+  "Expensive lawyers who charge $5,000+ for basic advice": "Pengacara mahal yang mengenakan biaya $5,000+ untuk nasihat dasar",
+  "Explainable readiness signals": "Explainable readiness signals",
+  "F-1, OPT, STEM extension — understand your path from student to professional": {
+    "": "F-1, OPT, perpanjangan STEM — pahami jalur Anda dari pelajar ke profesional"
+  },
+  "Filing + legal fees": "Biaya pengajuan + biaya hukum",
+  "Find my best path": "Temukan jalur terbaik saya",
+  "Find the plan that fits your journey": "Find the plan that fits your journey",
+  "Find the right work visa for your skills and experience": {
+    " H-1B, EB-2, O-1, and more": {
+      "": "Temukan visa kerja yang tepat untuk keterampilan dan pengalaman Anda H-1B, EB-2, O-1, dan lainnya"
+    }
+  },
+  "Find your best path": "Temukan jalur terbaik Anda",
+  "Find your path": "Find your path",
+  "Finish": "Finish",
+  "First name": "First name",
+  "First name is too long": {
+    "": "Nama depan terlalu panjang"
+  },
+  "For comparing options": "Untuk membandingkan opsi",
+  "For every situation": "Untuk setiap situasi",
+  "For one clear path": "Untuk satu jalur yang jelas",
+  "Forgot your password?": "Forgot your password?",
+  "Free": "Free",
+  "Free to start · No credit card · Takes 2 minutes": "Gratis untuk memulai · Tidak perlu kartu kredit · Memerlukan 2 menit",
+  "From filing to approval": "Dari pengajuan hingga persetujuan",
+  "Full path comparison": "Perbandingan jalur penuh",
+  "Full plan for 1 country": "Rencana penuh untuk 1 negara",
+  "Full strategic experience": "Pengalaman strategis penuh",
+  "Full strategic recommendation": "Rekomendasi strategis penuh",
+  "Generate strategy": "Generate strategy",
+  "Get Started": "Mulai",
+  "Get your personalized visa, readiness score, and action plan in minutes": {
+    "": "Get your personalized visa, readiness score, and action plan in minutes.",
+    " Not months": {
+      "": "Dapatkan visa yang dipersonalisasi, skor kesiapan, dan rencana tindakan Anda dalam hitungan menit Bukan bulan"
+    }
+  },
+  "Get your plan": "Get your plan",
+  "Get {plan}": "Dapatkan {plan}",
+  "Go back": "Kembali",
+  "Go home": "Go home",
+  "Home": "Home",
+  "How it works": "How it works",
+  "I spent months Googling visa options": {
+    " Immigrant Guru gave me a clear plan in 10 minutes": {
+      " I wish I found this earlier": {
+        "": "Saya menghabiskan berbulan-bulan mencari opsi visa Immigrant Guru memberi saya rencana yang jelas dalam 10 menit Saya berharap saya menemukan ini lebih awal"
       }
     }
   },
+  "Immigrant Guru - AI Immigration Strategy Platform": "Immigrant Guru - AI Immigration Strategy Platform",
+  "Immigrant Guru - Move to a New Country Without Confusion": "Immigrant Guru - Move to a New Country Without Confusion",
+  "Immigrant Guru helps you evaluate pathways, compare strategies, and act with clarity": {
+    "": "Immigrant Guru helps you evaluate pathways, compare strategies, and act with clarity."
+  },
+  "Immigration Plan": "Rencana Imigrasi",
+  "Immigration Score": "Immigration Score",
+  "Immigration shouldn't feel this hard": {
+    "": "Imigrasi tidak seharusnya terasa sesulit ini"
+  },
+  "Job opportunities": "Peluang kerja",
+  "Language": "Language",
+  "Last name": "Last name",
+  "Last name is too long": {
+    "": "Nama belakang terlalu panjang"
+  },
+  "Log in": "Log in",
+  "Log out": "Log out",
   "Minimum 8 characters": "Minimum 8 characters",
-  "Repeat your password": "Repeat your password",
-  "Enter a valid email address": {
-    "": "Enter a valid email address."
+  "Months of waiting with no visibility": "Bulan menunggu tanpa kejelasan",
+  "Move to a New Country Without Confusion": "Move to a New Country Without Confusion",
+  "Move to a new country": "Pindah ke negara baru",
+  "Move with family": "Move with family",
+  "Multiple visa alternatives": "Beberapa alternatif visa",
+  "My plan": "My plan",
+  "National Interest Waiver · United States": "National Interest Waiver · Amerika Serikat",
+  "Nationality": "Nationality",
+  "Need an account?": "Need an account?",
+  "New password": "Kata sandi baru",
+  "Next": "Next",
+  "Next best action": "Next best action",
+  "Next step:": "Langkah selanjutnya:",
+  "No cases yet": "No cases yet",
+  "No clear direction — just endless Googling": "Tidak ada arah yang jelas — hanya pencarian tanpa henti di Google",
+  "No confusion, no jargon": "Tidak ada kebingungan, tidak ada jargon",
+  "No employer sponsor needed — you can self-petition": {
+    "": "Tidak perlu sponsor majikan — Anda dapat mengajukan permohonan sendiri"
+  },
+  "No matter your background, we help you find a way forward": {
+    "": "Tidak peduli latar belakang Anda, kami membantu Anda menemukan jalan ke depan"
+  },
+  "No subscriptions": {
+    " Pay once, unlock your full plan": {
+      " 30-day money-back guarantee": {
+        "": "No subscriptions. Pay once, unlock your full plan. 30-day money-back guarantee."
+      }
+    }
+  },
+  "One clear plan": {
+    " Everything you need": {
+      "": "Satu rencana yang jelas  Semua yang Anda butuhkan"
+    }
+  },
+  "One-time payment": {
+    " Unlock your full personalized immigration plan": {
+      "": "Pembayaran sekali  Buka rencana imigrasi pribadi Anda sepenuhnya"
+    }
+  },
+  "Overview": "Overview",
+  "Page not found": "Page not found",
+  "Password": "Password",
+  "Password must be at least 8 characters": {
+    "": "Kata sandi harus terdiri dari setidaknya 8 karakter"
   },
   "Password must contain at least 8 characters": {
     "": "Password must contain at least 8 characters."
   },
-  "Page not found": "Page not found",
-  "The page you're looking for doesn't exist or hasn't been built yet": {
-    "": "The page you're looking for doesn't exist or hasn't been built yet."
+  "Password reset!": "Reset kata sandi!",
+  "Passwords do not match": {
+    "": "Kata sandi tidak cocok"
   },
-  "Return home": "Return home",
-  "Error": "Error",
-  "Something went wrong": "Something went wrong",
-  "The page hit an unexpected error while rendering": {
-    " Try again, and if it persists, check the server logs": {
-      "": "The page hit an unexpected error while rendering. Try again, and if it persists, check the server logs."
-    }
-  },
-  "Go home": "Go home",
-  "Admin": "Admin",
-  "Step 1 of 4": "Step 1 of 4",
-  "Step 2 of 4": "Step 2 of 4",
-  "Step 3 of 4": "Step 3 of 4",
-  "Step 4 of 4": "Step 4 of 4",
-  "Tell us a bit about yourself": {
-    "": "Tell us a bit about yourself."
-  },
-  "Where do you want to go?": "Where do you want to go?",
-  "Your immigration goals and timing": {
-    "": "Your immigration goals and timing."
-  },
+  "Platform Status": "Platform Status",
+  "Plus": "Plus",
+  "Possible paths": "Jalur yang mungkin",
+  "Preferred language": "Preferred language",
+  "Premium": "Premium",
+  "Premium dashboard": "Dasbor Premium",
+  "Pricing": "Pricing",
+  "Prior visa refusal?": "Prior visa refusal?",
+  "Priority AI guidance": "Panduan AI prioritas",
+  "Probability score": "Probability score",
   "Professional experience and finances": {
     "": "Professional experience and finances."
   },
-  "You're ready to see your first strategy": "You're ready to see your first strategy",
-  "Nationality": "Nationality",
-  "Where do you live now?": "Where do you live now?",
+  "Profile": "Profile",
+  "Profile, finance, case": "Profil, keuangan, kasus",
+  "Readiness": "Kesiapan",
+  "Readiness score": "Readiness score",
+  "Ready": "Siap",
+  "Recommended pathway": "Recommended pathway",
+  "Redirecting…": "Mengalihkan…",
   "Relationship status": "Relationship status",
-  "Children": "Children",
-  "Preferred language": "Preferred language",
-  "Target country": "Target country",
   "Relocation timeline": "Relocation timeline",
-  "Prior visa refusal?": "Prior visa refusal?",
-  "Any criminal record?": "Any criminal record?",
-  "What do you do?": "What do you do?",
-  "Years of experience": "Years of experience",
-  "Education level": "Education level",
-  "English level": "English level",
-  "Available capital": "Available capital",
+  "Remember your password?": "Ingat kata sandi Anda?",
+  "Repeat your password": "Repeat your password",
+  "Resend code": "Kirim ulang kode",
+  "Resend code in {n}s": "Kirim ulang kode dalam {n}s",
+  "Reset code": "Reset kode",
+  "Reset password": "Reset kata sandi",
+  "Resetting": {
+    "": {
+      "": {
+        "": "Mengatur ulang"
+      }
+    }
+  },
+  "Retry": "Retry",
+  "Return home": "Return home",
   "Review and continue": "Review and continue",
+  "Risks": "Risks",
   "Saving": {
     "": {
       "": {
@@ -171,23 +378,411 @@
       }
     }
   },
-  "Your session is no longer available": {
-    " Sign in again to continue onboarding": {
-      "": "Your session is no longer available. Sign in again to continue onboarding."
+  "Scenario simulation": "Scenario simulation",
+  "See how it works": "Lihat bagaimana cara kerjanya",
+  "Select language": "Select language",
+  "Send reset code": "Kirim kode reset",
+  "Sending": {
+    "": {
+      "": {
+        "": "Mengirim"
+      }
     }
   },
-  "Your profile could not be saved right now": {
-    " Retry before moving to the next step": {
-      "": "Your profile could not be saved right now. Retry before moving to the next step."
+  "Set new password": "Atur kata sandi baru",
+  "Sign in": "Sign in",
+  "Sign in to continue your case strategy": "Masuk untuk melanjutkan strategi kasus Anda",
+  "Sign in to continue your immigration strategy": {
+    "": "Sign in to continue your immigration strategy."
+  },
+  "Sign out": "Sign out",
+  "Sign up": "Sign up",
+  "Signing in": {
+    "": {
+      "": {
+        "": "Signing in..."
+      }
     }
+  },
+  "Simple pricing": "Simple pricing",
+  "Six powerful tools working together to give you clarity, confidence, and a concrete plan": {
+    "": "Six powerful tools working together to give you clarity, confidence, and a concrete plan."
+  },
+  "Software Engineer, Turkey to USA": "Insinyur Perangkat Lunak, Turki ke AS",
+  "Software Engineering, AI/ML, Product": "Rekayasa Perangkat Lunak, AI/ML, Produk",
+  "Something went wrong": {
+    "": "Sesuatu yang salah",
+    " Please try again": {
+      "": "Sesuatu yang salah  Silakan coba lagi"
+    }
+  },
+  "Spouse, children, parents — know which family visa fits and how long it takes": {
+    "": "Pasangan, anak-anak, orang tua — ketahui visa keluarga mana yang cocok dan berapa lama prosesnya"
+  },
+  "Start a business": "Start a business",
+  "Start free": {
+    "": "Start free",
+    " Upgrade when you're ready for your full immigration plan": {
+      "": "Start free. Upgrade when you're ready for your full immigration plan."
+    }
+  },
+  "Start with the essentials and complete your immigration profile later": {
+    "": "Start with the essentials and complete your immigration profile later."
+  },
+  "Start your plan": "Start your plan",
+  "Starter": "Starter",
+  "Step 1 of 4": "Step 1 of 4",
+  "Step 2 of 4": "Step 2 of 4",
+  "Step 3 of 4": "Step 3 of 4",
+  "Step 4 of 4": "Step 4 of 4",
+  "Step-by-step roadmap": "Peta jalan langkah demi langkah",
+  "Stop guessing": {
+    " Get a clear plan for your immigration journey — in minutes, not months": {
+      "": "Hentikan menebak  Dapatkan rencana yang jelas untuk perjalanan imigrasi Anda — dalam hitungan menit, bukan bulan"
+    }
+  },
+  "Strategy": "Strategy",
+  "Study abroad": "Study abroad",
+  "Suggested cities": "Kota yang disarankan",
+  "Suitability": "Kelayakan",
+  "System health": "System health",
+  "Tell us a bit about yourself": {
+    "": "Tell us a bit about yourself."
+  },
+  "Tell us about you": "Tell us about you",
+  "Tell us about yourself": {
+    " Our AI analyzes 47 visa categories, checks your readiness, and gives you a step-by-step plan with timeline, cost, and documents — in minutes": {
+      "": "Ceritakan tentang diri Anda  AI kami menganalisis 47 kategori visa, memeriksa kesiapan Anda, dan memberi Anda rencana langkah demi langkah dengan garis waktu, biaya, dan dokumen — dalam hitungan menit"
+    }
+  },
+  "The page hit an unexpected error while rendering": {
+    " Try again, and if it persists, check the server logs": {
+      "": "The page hit an unexpected error while rendering. Try again, and if it persists, check the server logs."
+    }
+  },
+  "The page you're looking for doesn't exist or hasn't been built yet": {
+    "": "The page you're looking for doesn't exist or hasn't been built yet."
   },
   "The platform could not load your profile draft": {
     " Retry before continuing": {
       "": "The platform could not load your profile draft. Retry before continuing."
     }
   },
-  "Document status": "Document status",
-  "Case health": "Case health",
-  "Action roadmap": "Action roadmap",
-  "No cases yet": "No cases yet"
+  "The problem": "Masalahnya",
+  "The readiness score showed me exactly what I was missing": {
+    " I uploaded 3 documents and my score jumped from 52 to 81": {
+      "": "Skor kesiapan menunjukkan saya persis apa yang saya kurang  Saya mengunggah 3 dokumen dan skor saya melonjak dari 52 ke 81"
+    }
+  },
+  "The solution": "Solusinya",
+  "There's always a way — we help you find it": {
+    "": "Selalu ada jalan — kami membantu Anda menemukannya"
+  },
+  "Three steps": {
+    " No confusion": {
+      "": "Tiga langkah  Tidak ada kebingungan"
+    }
+  },
+  "Timeline": "Timeline",
+  "Timeline estimate": "Perkiraan garis waktu",
+  "Toggle menu": "Togol menu",
+  "Try it now": "Coba sekarang",
+  "Turkey, India, Brazil": {
+    "": {
+      "": {
+        "": "Turki, India, Brasil"
+      }
+    }
+  },
+  "United States, Canada": {
+    "": {
+      "": {
+        "": "Amerika Serikat, Kanada"
+      }
+    }
+  },
+  "Upload document": "Upload document",
+  "Upload your resume and education documents to increase your readiness score to 90+": {
+    "": "Unggah resume dan dokumen pendidikan Anda untuk meningkatkan skor kesiapan Anda menjadi 90+"
+  },
+  "Verification code": "Kode verifikasi",
+  "Verify code": "Verifikasi kode",
+  "Verify email": "Verifikasi email",
+  "Verifying": {
+    "": {
+      "": {
+        "": "Memverifikasi"
+      }
+    }
+  },
+  "Visa categories analyzed": "Kategori visa yang dianalisis",
+  "Visa types": "Jenis visa",
+  "Visa, timeline, documents, cost — everything in one clear view": {
+    "": "Visa, timeline, dokumen, biaya — semuanya dalam satu tampilan yang jelas"
+  },
+  "We analyze multiple countries, visa types, and pathways to match you with the best option based on your profile": {
+    "": "Kami menganalisis berbagai negara, jenis visa, dan jalur untuk mencocokkan Anda dengan opsi terbaik berdasarkan profil Anda"
+  },
+  "We analyze your options": "We analyze your options",
+  "We sent a 6-digit code to": "Kami mengirimkan kode 6-digit ke",
+  "We show you what to do": "Kami menunjukkan apa yang harus dilakukan",
+  "We turn everything into one clear plan": {
+    "": "Kami mengubah semuanya menjadi satu rencana yang jelas"
+  },
+  "Welcome back": "Welcome back",
+  "What do you do?": "What do you do?",
+  "What you get": "Apa yang Anda dapatkan",
+  "Whatever your reason, we can help": {
+    "": "Apa pun alasan Anda, kami bisa membantu"
+  },
+  "Where are you from?": "Dari mana Anda berasal?",
+  "Where do you live now?": "Where do you live now?",
+  "Where do you want to go?": "Where do you want to go?",
+  "Work abroad": "Work abroad",
+  "Wrong email?": "Email salah?",
+  "Years of experience": "Years of experience",
+  "You're ready to see your first strategy": "You're ready to see your first strategy",
+  "Your background, education, experience, and goals": {
+    " Takes 2 minutes": {
+      "": "Latar belakang, pendidikan, pengalaman, dan tujuan Anda Memerlukan 2 menit"
+    }
+  },
+  "Your best path": "Jalur terbaik Anda",
+  "Your best path, ranked by fit": "Jalur terbaik Anda, diurutkan berdasarkan kesesuaian",
+  "Your immigration goals and timing": {
+    "": "Your immigration goals and timing."
+  },
+  "Your new life starts here": {
+    "": "Hidup baru Anda dimulai di sini"
+  },
+  "Your password has been updated": {
+    " You can now sign in": {
+      "": "Kata sandi Anda telah diperbarui Anda sekarang dapat masuk"
+    }
+  },
+  "Your personalized result": "Hasil yang dipersonalisasi untuk Anda",
+  "Your profile could not be saved right now": {
+    " Retry before moving to the next step": {
+      "": "Your profile could not be saved right now. Retry before moving to the next step."
+    }
+  },
+  "Your session is no longer available": {
+    " Sign in again to continue onboarding": {
+      "": "Your session is no longer available. Sign in again to continue onboarding."
+    }
+  },
+  "one-time": "one-time",
+  "without confusion": {
+    "": "tanpa kebingungan"
+  },
+  "FAQ": "FAQ",
+  "tools": {
+    "pageTitle": "Alat imigrasi gratis",
+    "pageSubtitle": "Jawaban cepat — tidak perlu mendaftar.",
+    "eligibilityChecker": {
+      "title": "Penguji kelayakan",
+      "description": "Jawab 6 pertanyaan, lihat kemungkinan visa yang Anda dapatkan."
+    },
+    "costEstimator": {
+      "title": "Alat perkiraan biaya",
+      "description": "Biaya total pindah ke luar negeri — bukan hanya biaya visa."
+    },
+    "timelineCalculator": {
+      "title": "Kalkulator jadwal",
+      "description": "Perkirakan kapan Anda akan tiba langkah demi langkah."
+    }
+  },
+  "eligibilityChecker": {
+    "pageTitle": "Penguji kelayakan visa gratis",
+    "pageSubtitle": "Jawab 6 pertanyaan singkat. Lihat daftar pendek visa yang mungkin Anda dapatkan — tidak perlu mendaftar.",
+    "faq1": {
+      "question": "Apakah penguji kelayakan gratis?",
+      "answer": "Ya. Bekerja sepenuhnya di browser Anda dan tidak memerlukan akun."
+    },
+    "faq2": {
+      "question": "Seberapa akurat kontrolnya?",
+      "answer": "Menggunakan aturan kelayakan publik untuk setiap jalur. Ini adalah filter awal yang kuat tetapi tidak menggantikan analisis lengkap yang didukung AI atau nasihat hukum."
+    },
+    "faq3": {
+      "question": "Apakah itu menyimpan jawaban saya?",
+      "answer": "Tidak. Alat ini bekerja secara lokal di browser Anda. Jika Anda ingin hasil Anda disimpan di profil Anda, silakan mendaftar."
+    },
+    "emailCapture": {
+      "title": "Analisis lengkap yang didukung AI",
+      "subtitle": "Dapatkan rencana A/B/C yang dipersonalisasi dan skor kesiapan melalui email."
+    }
+  },
+  "costEstimator": {
+    "pageTitle": "Alat perkiraan biaya imigrasi",
+    "pageSubtitle": "Pilih jalur, tambahkan ukuran keluarga Anda, dan lihat total biaya yang realistis — bukan hanya biaya visa.",
+    "faq1": {
+      "question": "Apa saja yang termasuk dalam perkiraan?",
+      "answer": "Biaya pemerintah, biaya hukum/agen, dana pemukiman, tiket pesawat, tempat tinggal awal, dan cadangan biaya tak terduga sebesar 10%."
+    },
+    "faq2": {
+      "question": "Apakah ini benar untuk situasi khusus saya?",
+      "answer": "Ini adalah perkiraan yang baik untuk setiap jalur. Biaya nyata Anda bervariasi tergantung pada ukuran keluarga, kota, dan pilihan pengacara. Daftar untuk mendapatkan rincian yang dipersonalisasi."
+    },
+    "emailCapture": {
+      "title": "Rincian biaya lengkap melalui email",
+      "subtitle": "Tabel yang mencakup biaya berbasis baris yang disesuaikan dengan negara tujuan Anda."
+    }
+  },
+  "timelineCalculator": {
+    "pageTitle": "Kalkulator jadwal",
+    "pageSubtitle": "Pilih jalur. Lihat kapan Anda akan tiba — termasuk persiapan, aplikasi, pemrosesan, dan kedatangan.",
+    "faq1": {
+      "question": "Mengapa waktu persiapan termasuk?",
+      "answer": "Waktu tidak dimulai saat Anda mengajukan permohonan — itu dimulai saat Anda mulai mengumpulkan dokumen. Kami menambahkan jendela persiapan yang realistis untuk setiap jalur."
+    },
+    "faq2": {
+      "question": "Seberapa akurat perkiraan ini?",
+      "answer": "Mencerminkan waktu pemrosesan rata-rata yang dipublikasikan. Kasus individu dapat lebih cepat atau lebih lambat tergantung pada RFE, kuota negara, dan kelengkapan bukti."
+    },
+    "emailCapture": {
+      "title": "Pelacak jadwal mingguan",
+      "subtitle": "Kami akan mengirimkan rencana mingguan sederhana melalui email hingga hari kedatangan Anda."
+    }
+  },
+  "visaIndex": {
+    "pageTitle": "Semua visa",
+    "pageSubtitle": "Biaya, jadwal, dan kelayakan untuk setiap jalur yang kami cakup.",
+    "months": "bulan"
+  },
+  "bestCountries": {
+    "pageTitle": "Negara terbaik berdasarkan profesi",
+    "pageSubtitle": "Pilih profesi Anda untuk melihat tujuan imigrasi yang terperingkat.",
+    "cardTitle": "Negara terbaik untuk {profession}",
+    "breadcrumb": "Negara terbaik",
+    "rankedSubtitle": "Diurutkan berdasarkan biaya, jadwal, dan status tempat tinggal permanen. Data diperbarui untuk 2026.",
+    "topPathway": "Jalur terbaik",
+    "seeAllPathways": "Lihat semua jalur",
+    "visaDetails": "Detail {code}",
+    "otherProfessions": "Profesi lainnya"
+  },
+  "compare": {
+    "pageTitle": "Perbandingan visa",
+    "pageSubtitle": "Perbandingan berdampingan untuk keputusan jalur yang paling umum.",
+    "vs": "vs",
+    "comparingSubtitle": "Perbandingan biaya, waktu, dan kesesuaian antara {nameA} dan {nameB} — agar Anda tidak menghabiskan bulan-bulan di jalur yang salah.",
+    "rowFullName": "Nama lengkap",
+    "rowCategory": "Kategori",
+    "rowDestination": "Negara tujuan",
+    "rowTypicalDuration": "Durasi tipikal",
+    "rowCostUsd": "Biaya (USD)",
+    "rowLeadsToPR": "Mengarah ke status tempat tinggal permanen",
+    "yes": "Ya",
+    "no": "Tidak",
+    "bestFor": "Paling sesuai",
+    "otherComparisons": "Perbandingan visa lainnya"
+  },
+  "visaMatch": {
+    "pageTitle": "Pencocokan visa",
+    "pageSubtitle": "Pilih negara tujuan dan profil Anda untuk melihat 3 jalur pertama Anda.",
+    "cardSubtitle": "Visa terbaik untuk {profession}",
+    "breadcrumb": "Pencocokan Visa",
+    "rankedSubtitle": "{count} jalur imigrasi untuk {profession} telah diurutkan; dengan tujuan {countryName}. Setiap opsi dinilai berdasarkan kesesuaian, biaya, durasi, dan risiko.",
+    "getPersonalizedMatch": "Dapatkan pencocokan yang dipersonalisasi",
+    "freeEligibilityCheck": "Pemeriksaan kelayakan gratis",
+    "typicalTimeline": "Garis waktu tipikal",
+    "typicalCost": "Biaya tipikal",
+    "duration": "Durasi",
+    "strengths": "Kekuatan",
+    "moreVisaGuides": "Panduan visa lebih lanjut untuk {countryName}"
+  },
+  "moveTo": {
+    "pageTitle": "Panduan pindah negara",
+    "pageSubtitle": "Panduan langkah demi langkah berdasarkan negara asal dan tujuan.",
+    "fromLabel": "Dari {flag} {name}",
+    "cardSubtitle": "Panduan untuk warga {demonym}",
+    "h1": "Pindah ke {toName} dari {fromName}",
+    "intro": "Panduan praktis untuk pindah ke kota {toName} bagi warga {demonym}. Pilih jalur, pahami garis waktu dan biaya, dapatkan skor persiapan yang dipersonalisasi.",
+    "topVisaPathways": "Jalur visa terbaik untuk {toName}",
+    "howToStepByStep": "Cara pindah langkah demi langkah",
+    "moreCountryGuides": "Panduan negara lebih lanjut"
+  },
+  "Onboarding could not load": "Proses onboarding tidak dapat dimuat",
+  "Review the highlighted profile fields before continuing": {
+    "": "Tinjau bidang profil yang disorot sebelum melanjutkan"
+  },
+  "Skip": "Lewati",
+  "Who are you?": "Siapa Anda?",
+  "Select your nationality": "Pilih kewarganegaraan Anda",
+  "Select current country": "Pilih negara saat ini",
+  "e": {
+    "g": {
+      " English, Turkish": {
+        "": {
+          "": {
+            "": "mis. Bahasa Inggris, Bahasa Turki..."
+          }
+        }
+      },
+      " Software Engineer, Doctor, Designer": {
+        "": {
+          "": {
+            "": "mis. Insinyur Perangkat Lunak, Dokter, Desainer..."
+          }
+        }
+      },
+      " 50000": "mis. 50000"
+    }
+  },
+  "Your background": "Latar belakang Anda",
+  "English proficiency": "Kemampuan bahasa Inggris",
+  "Available capital (USD)": "Modal yang tersedia (USD)",
+  "Your dream destination and timeline": {
+    "": "Tujuan impian Anda dan timeline"
+  },
+  "When do you want to move?": "Kapan Anda ingin pindah?",
+  "Have you had a visa refusal before?": "Apakah Anda pernah ditolak visa sebelumnya?",
+  "This helps us give accurate recommendations": {
+    " Your data is private and secure": {
+      "": "Ini membantu kami memberikan rekomendasi yang akurat Data Anda bersifat pribadi dan aman"
+    }
+  },
+  "You're all set!": "Anda sudah siap!",
+  "Amazing! Your profile is almost complete": {
+    " We can build great strategies for you": {
+      "": "Luar biasa! Profil Anda hampir lengkap Kami dapat membangun strategi hebat untuk Anda"
+    }
+  },
+  "Great start! You can always complete more details from your profile page": {
+    "": "Awal yang baik! Anda selalu dapat melengkapi lebih banyak detail dari halaman profil Anda"
+  },
+  "No worries! You can fill in more details anytime from your dashboard": {
+    "": "Tidak perlu khawatir! Anda dapat mengisi lebih banyak detail kapan saja dari dasbor Anda"
+  },
+  "See your AI analysis": "Lihat analisis AI Anda",
+  "there": "di sana",
+  "Immigrant": "Imigran",
+  "Guru": "Guru",
+  "Hey {name}, welcome aboard!": "Hai {name}, selamat datang!",
+  "Let's build your immigration profile in under 2 minutes": {
+    " The more we know, the better strategies we can craft for you": {
+      "": "Mari kita bangun profil imigrasi Anda dalam waktu kurang dari 2 menit Semakin banyak yang kami ketahui, semakin baik strategi yang dapat kami buat untuk Anda"
+    }
+  },
+  "Let's go": "Ayo pergi",
+  "Takes about 2 minutes": {
+    " You can skip anything": {
+      "": "Memerlukan waktu sekitar 2 menit Anda dapat melewati apa pun"
+    }
+  },
+  "score": {
+    "outOf100": "Dari 100",
+    "thisProfileIs": "Profil ini berada pada tingkat {readiness}",
+    "scoredOn": "Immigrant Guru menilai profil ini berdasarkan pendidikan, pengalaman kerja, bahasa, kesesuaian negara tujuan, dan 8 dimensi lainnya.",
+    "getMyOwnScore": "Dapatkan skor saya sendiri",
+    "shareOnX": "Bagikan di X"
+  },
+  "visa": {
+    "cost": "Biaya",
+    "prPath": "Jalur untuk tempat tinggal permanen",
+    "idealFor": "Orang yang memenuhi syarat",
+    "requirements": "Persyaratan",
+    "risksAndRejection": "Risiko dan alasan penolakan yang umum",
+    "checkReadiness": "Periksa persiapan saya untuk {code}",
+    "moreVisaGuides": "Panduan visa lebih lanjut untuk {countryName}"
+  }
 }

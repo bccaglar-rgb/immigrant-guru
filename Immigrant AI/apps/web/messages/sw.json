@@ -1,103 +1,165 @@
 {
-  "Immigrant Guru - AI Immigration Strategy Platform": "Immigrant Guru - AI Immigration Strategy Platform",
-  "Immigrant Guru - Move to a New Country Without Confusion": "Immigrant Guru - Move to a New Country Without Confusion",
-  "Language": "Language",
-  "Select language": "Select language",
-  "How it works": "How it works",
-  "Find your path": "Find your path",
-  "Pricing": "Pricing",
-  "Home": "Home",
-  "Sign in": "Sign in",
-  "Sign up": "Sign up",
-  "Dashboard": "Dashboard",
-  "Log out": "Log out",
-  "Move to a New Country Without Confusion": "Move to a New Country Without Confusion",
-  "Get your personalized visa, readiness score, and action plan in minutes": {
-    "": "Get your personalized visa, readiness score, and action plan in minutes."
+  "Active": "Hai",
+  "Cancel": "Futa",
+  "Capture the destination, program, current stage, and risk signals that anchor strategy generation, scoring, and document workflows": {
+    "": "Chukua marudio, mpango, hatua ya sasa, na ishara za hatari ambazo zinaweka msingi wa uzalishaji wa mkakati, upimaji, na michakato ya hati"
   },
-  "Benefits": "Benefits",
-  "Everything you need in one place": "Everything you need in one place",
-  "Simple pricing": "Simple pricing",
-  "Free": "Free",
-  "Starter": "Starter",
-  "Plus": "Plus",
-  "Premium": "Premium",
-  "Create your account": "Create your account",
-  "Welcome back": "Welcome back",
-  "First name": "First name",
-  "Last name": "Last name",
-  "Email": "Email",
-  "Password": "Password",
-  "Confirm password": "Confirm password",
-  "Overview": "Overview",
-  "Profile": "Profile",
-  "Cases": "Cases",
-  "Strategy": "Strategy",
-  "Timeline": "Timeline",
-  "Documents": "Documents",
-  "Risks": "Risks",
-  "Copilot": "Copilot",
-  "Comparison": "Comparison",
-  "Retry": "Retry",
-  "Back": "Back",
-  "Next": "Next",
-  "Finish": "Finish",
-  "Generate strategy": "Generate strategy",
-  "Upload document": "Upload document",
-  "Scenario simulation": "Scenario simulation",
-  "My plan": "My plan",
-  "Sign out": "Sign out",
-  "Log in": "Log in",
-  "Start your plan": "Start your plan",
-  "Readiness score": "Readiness score",
-  "Probability score": "Probability score",
-  "Recommended pathway": "Recommended pathway",
-  "Next best action": "Next best action",
-  "Immigrant Guru helps you evaluate pathways, compare strategies, and act with clarity": {
-    "": "Immigrant Guru helps you evaluate pathways, compare strategies, and act with clarity."
+  "Case Detail": "Maelezo ya Kesi",
+  "Case planning workspace": "Nafasi ya kupanga kesi",
+  "Case portfolio": "Portfolio ya Kesi",
+  "Case status": "Hali ya Kesi",
+  "Case title": "Kichwa cha Kesi",
+  "Closed": "Imefungwa",
+  "Close": "Funga",
+  "Close new case": "Funga kesi mpya",
+  "Collect recommendation letters and evidence of impact": {
+    "": "Kusanya barua za mapendekezo na ushahidi wa athari"
   },
-  "A focused workspace for immigration decisions": "A focused workspace for immigration decisions",
-  "Six powerful tools working together to give you clarity, confidence, and a concrete plan": {
-    "": "Six powerful tools working together to give you clarity, confidence, and a concrete plan."
+  "Continue your immigration planning": {
+    " Keep profile and case data aligned": {
+      "": "Endelea na mipango yako ya uhamiaji  Hifadhi wasifu na data za kesi zikiwa sambamba"
+    }
   },
-  "Immigration Score": "Immigration Score",
-  "Explainable readiness signals": "Explainable readiness signals",
-  "System health": "System health",
-  "Platform Status": "Platform Status",
-  "Work abroad": "Work abroad",
-  "Study abroad": "Study abroad",
-  "Move with family": "Move with family",
-  "Start a business": "Start a business",
-  "Tell us about you": "Tell us about you",
-  "We analyze your options": "We analyze your options",
-  "Get your plan": "Get your plan",
-  "Find the plan that fits your journey": "Find the plan that fits your journey",
-  "Start free": {
-    " Upgrade when you're ready for your full immigration plan": {
-      "": "Start free. Upgrade when you're ready for your full immigration plan."
-    },
-    "": "Start free"
+  "Create a case for each migration plan you want to evaluate, compare, or execute": {
+    " Cases anchor strategy generation, scoring, and document collection in one workspace": {
+      "": "Unda kesi kwa kila mpango wa uhamiaji unayotaka kutathmini, kulinganisha, au kutekeleza  Kesi zinaweka msingi wa uzalishaji wa mkakati, upimaji, na ukusanyaji wa hati katika nafasi moja"
+    }
   },
-  "Best value": "Best value",
-  "one-time": "one-time",
-  "No subscriptions": {
-    " Pay once, unlock your full plan": {
-      " 30-day money-back guarantee": {
-        "": "No subscriptions. Pay once, unlock your full plan. 30-day money-back guarantee."
+  "Create first case": "Unda kesi ya kwanza",
+  "Create strategy case": "Unda kesi ya mkakati",
+  "Creating case": {
+    "": {
+      "": {
+        "": "Kuunda kesi"
       }
     }
   },
-  "Start with the essentials and complete your immigration profile later": {
-    "": "Start with the essentials and complete your immigration profile later."
+  "Current stage": "Hatua ya sasa",
+  "Data unavailable": "Data haipatikani",
+  "Define a migration pathway to evaluate": "Tafuta njia ya uhamiaji ili kutathmini",
+  "Destination pending": "Marudio yanangoja",
+  "Draft": "Rasimu",
+  "Evaluation signals": "Ishara za tathmini",
+  "Example: eligibility_review, document_collection, filing_ready": "Mfano: eligibility_review, document_collection, filing_ready",
+  "Higher values should indicate higher execution or eligibility risk": {
+    "": "Thamani za juu zinapaswa kuonyesha hatari ya utekelezaji au uhalali"
   },
-  "Sign in to continue your immigration strategy": {
-    "": "Sign in to continue your immigration strategy."
+  "Immigration strategy cases": "Kesi za mkakati wa uhamiaji",
+  "In review": "Katika mapitio",
+  "Internal Console": "Console ya Ndani",
+  "Keep notes focused on blockers, evidence gaps, and next actions": {
+    "": "Hifadhi maelezo yanayolenga vizuizi, mapengo ya ushahidi, na hatua zinazofuata"
   },
-  "Forgot your password?": "Forgot your password?",
-  "Create account": "Create account",
-  "Create one": "Create one",
+  "Latest score": "Alama ya hivi karibuni",
+  "Manage immigration strategy records that anchor pathway evaluation, stage tracking, scoring, and later document workflows": {
+    "": "Simamia rekodi za mkakati wa uhamiaji ambazo zinaweka msingi wa tathmini ya njia, ufuatiliaji wa hatua, upimaji, na michakato ya hati baadaye"
+  },
+  "New case": "Kesi mpya",
+  "New strategy case": "Kesi mpya ya mkakati",
+  "No changes to save": "Hakuna mabadiliko ya kuhifadhi",
+  "No strategic notes recorded yet for this immigration path": {
+    "": "Hakuna maelezo ya mkakati yaliyorekodiwa bado kwa njia hii ya uhamiaji"
+  },
+  "No strategy cases yet": "Hakuna kesi za mkakati bado",
+  "on record": "kwenye rekodi",
+  "Open case": "Fungua kesi",
+  "Optional score snapshot if you want to retain a manual benchmark": {
+    "": "Picha ya alama ya hiari ikiwa unataka kuhifadhi kipimo cha mikono"
+  },
+  "Pathway not defined yet": "Njia haijafafanuliwa bado",
+  "Refresh cases": "Fanya kesi ziwe mpya",
+  "Review the highlighted case fields before saving": {
+    "": "Kagua maeneo ya kesi yaliyoangaziwa kabla ya kuhifadhi"
+  },
+  "Risk score": "Alama ya hatari",
+  "Risk": "Hatari",
+  "Save case changes": "Hifadhi mabadiliko ya kesi",
+  "Saving changes": {
+    "": {
+      "": {
+        "": "Inahifadhi mabadiliko"
+      }
+    }
+  },
+  "Score": "Alama",
+  "Session": "Kikao",
+  "Stage": "Hatua",
+  "Start with a target country and pathway": "Anza na nchi lengwa na njia",
+  "Strategy case created successfully": {
+    "": "Kesi ya mkakati imeundwa kwa mafanikio"
+  },
+  "Strategy identity": "Utambulisho wa mkakati",
+  "Strategy notes": "Maelezo ya mkakati",
+  "Target country": "Target country",
+  "Target pathway or program": "Njia au mpango wa lengo",
+  "The case portfolio could not be loaded": {
+    "": "Portfolio ya kesi haiwezi kupakuliwa"
+  },
+  "Track every active migration path in one workspace": "Fuata kila njia ya uhamiaji inayofanya kazi katika nafasi moja",
+  "U": {
+    "S": {
+      " employment-based migration plan": "Mpango wa uhamiaji wa msingi wa ajira wa Marekani"
+    }
+  },
+  "United States": "Marekani",
+  "Update the case strategy record": "Sasisha rekodi ya mkakati wa kesi",
+  "Updated": "Imeboreshwa",
+  "Workspace data could not be loaded": {
+    "": "Data za ofisi hazikuweza kupakiwa"
+  },
+  "You are no longer authenticated": {
+    "": "Hujasajiliwa tena"
+  },
+  "case": "kesi",
+  "cases": "kesi",
+  "12-18 months": "miezi 12-18",
+  "3 country comparisons": "kulinganisha nchi 3",
+  "A focused workspace for immigration decisions": "A focused workspace for immigration decisions",
+  "AI checks 47 visa categories and finds your best match": {
+    "": "AI inakagua makundi 47 ya visa na inapata mechi bora kwako"
+  },
+  "Access your immigration dashboard, decision plans, and case workspace": {
+    "": "Fikia dashibodi yako ya uhamiaji, mipango ya maamuzi, na ofisi ya kesi"
+  },
+  "Action roadmap": "Action roadmap",
+  "Admin": "Admin",
+  "Advanced action plan": "Mpango wa hatua za juu",
   "Already have an account?": "Already have an account?",
-  "Need an account?": "Need an account?",
+  "Any criminal record?": "Any criminal record?",
+  "Available capital": "Available capital",
+  "Average time to first plan": "Wakati wa wastani hadi mpango wa kwanza",
+  "Back": "Back",
+  "Benefits": "Benefits",
+  "Best value": "Best value",
+  "Best visa option": "Chaguo bora la visa",
+  "Best visa recommendation": "Mapendekezo bora ya visa",
+  "Better case preparation": "Maandalizi bora ya kesi",
+  "Built for immigrants, by immigrants": "Imejengwa kwa wahamiaji, na wahamiaji",
+  "Case health": "Case health",
+  "Cases": "Cases",
+  "Check your email": "Angalia barua pepe yako",
+  "Checkout failed": "Malipo yamefeli",
+  "Children": "Children",
+  "Choose a new password for your account": {
+    "": "Chagua nenosiri jipya kwa akaunti yako"
+  },
+  "Comparison": "Comparison",
+  "Confirm password": "Confirm password",
+  "Confirm your password": {
+    "": "Thibitisha nenosiri lako"
+  },
+  "Confusing visa rules that change every year": "Sheria za visa zinazochanganya ambazo hubadilika kila mwaka",
+  "Copilot": "Copilot",
+  "Cost estimate": "Makadirio ya gharama",
+  "Countries": "Nchi",
+  "Countries supported": "Nchi zinazoungwa mkono",
+  "Create account": "Create account",
+  "Create an account to start building an immigration profile, evaluate pathways, and manage your cases": {
+    "": "Unda akaunti ili kuanza kujenga wasifu wa uhamiaji, kutathmini njia, na kusimamia kesi zako"
+  },
+  "Create one": "Create one",
+  "Create your Immigrant Guru account": "Unda akaunti yako ya Immigrant Guru",
+  "Create your account": "Create your account",
   "Creating account": {
     "": {
       "": {
@@ -105,65 +167,210 @@
       }
     }
   },
-  "Signing in": {
-    "": {
-      "": {
-        "": "Signing in..."
+  "Dashboard": "Dashboard",
+  "Data Scientist, India to Canada": "Mtaalamu wa Takwimu, India hadi Canada",
+  "Deeper analysis": "Uchambuzi wa kina",
+  "Document checklist": "Orodha ya nyaraka",
+  "Document status": "Document status",
+  "Documents": "Documents",
+  "E-2 investor, EB-5, startup visa — explore entrepreneurial immigration routes": {
+    "": "Mwekezaji wa E-2, EB-5, visa ya kuanzisha — chunguza njia za uhamiaji za ujasiriamali"
+  },
+  "Education level": "Education level",
+  "Email": "Email",
+  "English level": "English level",
+  "Enter a valid email address": {
+    "": "Enter a valid email address."
+  },
+  "Enter it below to verify your account": {
+    "": "Ingiza hapa chini ili kuthibitisha akaunti yako"
+  },
+  "Enter the 6-digit code from your email": {
+    "": "Ingiza msimbo wa tarakimu 6 kutoka kwa barua pepe yako"
+  },
+  "Enter the 6-digit code": {
+    "": "Ingiza msimbo wa tarakimu 6"
+  },
+  "Enter your email and we'll send you a reset code": {
+    "": "Ingiza barua pepe yako na tutakutumia msimbo wa kurekebisha"
+  },
+  "Enter your email": {
+    "": "Ingiza barua pepe yako"
+  },
+  "Error": "Error",
+  "Est": {
+    " cost": "Gharama iliyokadiriwa"
+  },
+  "Estimated cost": "Gharama inayokadiriwa",
+  "Even if you think you don't qualify — we'll show you what's possible": {
+    "": "Hata kama unafikiri hujafaulu — tutakuonyesha kile kinachowezekana"
+  },
+  "Everything in Plus": "Kila kitu kilichomo kwenye Plus",
+  "Everything in Starter": "Kila kitu kilichomo kwenye Starter",
+  "Everything you need in one place": "Everything you need in one place",
+  "Expanded document guidance": "Mwongozo wa nyaraka ulioongezwa",
+  "Expensive lawyers who charge $5,000+ for basic advice": "Wanasheria wapumbavu wanaotoza $5,000+ kwa ushauri wa msingi",
+  "Explainable readiness signals": "Explainable readiness signals",
+  "F-1, OPT, STEM extension — understand your path from student to professional": {
+    "": "F-1, OPT, upanuzi wa STEM — elewa njia yako kutoka mwanafunzi hadi mtaalamu"
+  },
+  "Filing + legal fees": "Kuingiza + ada za kisheria",
+  "Find my best path": "Pata njia yangu bora",
+  "Find the plan that fits your journey": "Find the plan that fits your journey",
+  "Find the right work visa for your skills and experience": {
+    " H-1B, EB-2, O-1, and more": {
+      "": "Pata visa sahihi ya kazi kwa ujuzi na uzoefu wako H-1B, EB-2, O-1, na zaidi"
+    }
+  },
+  "Find your best path": "Pata njia yako bora",
+  "Find your path": "Find your path",
+  "Finish": "Finish",
+  "First name": "First name",
+  "First name is too long": {
+    "": "Jina la kwanza ni refu sana"
+  },
+  "For comparing options": "Kwa kulinganisha chaguzi",
+  "For every situation": "Kwa kila hali",
+  "For one clear path": "Kwa njia moja wazi",
+  "Forgot your password?": "Forgot your password?",
+  "Free": "Free",
+  "Free to start · No credit card · Takes 2 minutes": "Bure kuanza · Hakuna kadi ya mkopo · Inachukua dakika 2",
+  "From filing to approval": "Kutoka kuwasilisha hadi kuidhinishwa",
+  "Full path comparison": "Kulinganisha njia kamili",
+  "Full plan for 1 country": "Mpango kamili wa nchi 1",
+  "Full strategic experience": "Uzoefu kamili wa kimkakati",
+  "Full strategic recommendation": "Mapendekezo kamili ya kimkakati",
+  "Generate strategy": "Generate strategy",
+  "Get Started": "Anza",
+  "Get your personalized visa, readiness score, and action plan in minutes": {
+    "": "Get your personalized visa, readiness score, and action plan in minutes.",
+    " Not months": {
+      "": "Pata visa yako ya kibinafsi, alama ya readiness, na mpango wa hatua ndani ya dakika Si miezi"
+    }
+  },
+  "Get your plan": "Get your plan",
+  "Get {plan}": "Pata {plan}",
+  "Go back": "Rudi nyuma",
+  "Go home": "Go home",
+  "Home": "Home",
+  "How it works": "How it works",
+  "I spent months Googling visa options": {
+    " Immigrant Guru gave me a clear plan in 10 minutes": {
+      " I wish I found this earlier": {
+        "": "Nilitumia miezi nikitafuta chaguzi za visa Immigrant Guru ilinipa mpango wazi ndani ya dakika 10 ningependa ningepata hii mapema"
       }
     }
   },
+  "Immigrant Guru - AI Immigration Strategy Platform": "Immigrant Guru - AI Immigration Strategy Platform",
+  "Immigrant Guru - Move to a New Country Without Confusion": "Immigrant Guru - Move to a New Country Without Confusion",
+  "Immigrant Guru helps you evaluate pathways, compare strategies, and act with clarity": {
+    "": "Immigrant Guru helps you evaluate pathways, compare strategies, and act with clarity."
+  },
+  "Immigration Plan": "Mpango wa Uhamiaji",
+  "Immigration Score": "Immigration Score",
+  "Immigration shouldn't feel this hard": {
+    "": "Uhamiaji haupaswi kuwa mgumu hivi"
+  },
+  "Job opportunities": "Fursa za kazi",
+  "Language": "Language",
+  "Last name": "Last name",
+  "Last name is too long": {
+    "": "Jina la ukoo ni refu sana"
+  },
+  "Log in": "Log in",
+  "Log out": "Log out",
   "Minimum 8 characters": "Minimum 8 characters",
-  "Repeat your password": "Repeat your password",
-  "Enter a valid email address": {
-    "": "Enter a valid email address."
+  "Months of waiting with no visibility": "Miezi ya kusubiri bila uwazi",
+  "Move to a New Country Without Confusion": "Move to a New Country Without Confusion",
+  "Move to a new country": "Hamia nchi mpya",
+  "Move with family": "Move with family",
+  "Multiple visa alternatives": "Mbadala wa visa nyingi",
+  "My plan": "My plan",
+  "National Interest Waiver · United States": "Kutoa Maslahi ya Kitaifa · Marekani",
+  "Nationality": "Nationality",
+  "Need an account?": "Need an account?",
+  "New password": "Nywila mpya",
+  "Next": "Next",
+  "Next best action": "Next best action",
+  "Next step:": "Hatua inayofuata:",
+  "No cases yet": "No cases yet",
+  "No clear direction — just endless Googling": "Hakuna mwelekeo wazi — ni kutafuta bila mwisho kwenye Google",
+  "No confusion, no jargon": "Hakuna mkanganyiko, hakuna jargon",
+  "No employer sponsor needed — you can self-petition": {
+    "": "Hakuna mdhamini wa mwajiri anahitajika — unaweza kujitafutia mwenyewe"
+  },
+  "No matter your background, we help you find a way forward": {
+    "": "Haijalishi asili yako, tunakusaidia kupata njia ya mbele"
+  },
+  "No subscriptions": {
+    " Pay once, unlock your full plan": {
+      " 30-day money-back guarantee": {
+        "": "No subscriptions. Pay once, unlock your full plan. 30-day money-back guarantee."
+      }
+    }
+  },
+  "One clear plan": {
+    " Everything you need": {
+      "": "Mpango mmoja wazi  Kila kitu unachohitaji"
+    }
+  },
+  "One-time payment": {
+    " Unlock your full personalized immigration plan": {
+      "": "Malipo ya mara moja  Fungua mpango wako wa uhamiaji wa kibinafsi kikamilifu"
+    }
+  },
+  "Overview": "Overview",
+  "Page not found": "Page not found",
+  "Password": "Password",
+  "Password must be at least 8 characters": {
+    "": "Nywila inapaswa kuwa na angalau herufi 8"
   },
   "Password must contain at least 8 characters": {
     "": "Password must contain at least 8 characters."
   },
-  "Page not found": "Page not found",
-  "The page you're looking for doesn't exist or hasn't been built yet": {
-    "": "The page you're looking for doesn't exist or hasn't been built yet."
+  "Password reset!": "Kurekebisha nywila!",
+  "Passwords do not match": {
+    "": "Nywila hazifanani"
   },
-  "Return home": "Return home",
-  "Error": "Error",
-  "Something went wrong": "Something went wrong",
-  "The page hit an unexpected error while rendering": {
-    " Try again, and if it persists, check the server logs": {
-      "": "The page hit an unexpected error while rendering. Try again, and if it persists, check the server logs."
-    }
-  },
-  "Go home": "Go home",
-  "Admin": "Admin",
-  "Step 1 of 4": "Step 1 of 4",
-  "Step 2 of 4": "Step 2 of 4",
-  "Step 3 of 4": "Step 3 of 4",
-  "Step 4 of 4": "Step 4 of 4",
-  "Tell us a bit about yourself": {
-    "": "Tell us a bit about yourself."
-  },
-  "Where do you want to go?": "Where do you want to go?",
-  "Your immigration goals and timing": {
-    "": "Your immigration goals and timing."
-  },
+  "Platform Status": "Platform Status",
+  "Plus": "Plus",
+  "Possible paths": "Njia zinazowezekana",
+  "Preferred language": "Preferred language",
+  "Premium": "Premium",
+  "Premium dashboard": "Dashibodi ya Premium",
+  "Pricing": "Pricing",
+  "Prior visa refusal?": "Prior visa refusal?",
+  "Priority AI guidance": "Mwongozo wa AI wa Kipaumbele",
+  "Probability score": "Probability score",
   "Professional experience and finances": {
     "": "Professional experience and finances."
   },
-  "You're ready to see your first strategy": "You're ready to see your first strategy",
-  "Nationality": "Nationality",
-  "Where do you live now?": "Where do you live now?",
+  "Profile": "Profile",
+  "Profile, finance, case": "Profaili, fedha, kesi",
+  "Readiness": "Uwezo",
+  "Readiness score": "Readiness score",
+  "Ready": "Tayari",
+  "Recommended pathway": "Recommended pathway",
+  "Redirecting…": "Kupeleka…",
   "Relationship status": "Relationship status",
-  "Children": "Children",
-  "Preferred language": "Preferred language",
-  "Target country": "Target country",
   "Relocation timeline": "Relocation timeline",
-  "Prior visa refusal?": "Prior visa refusal?",
-  "Any criminal record?": "Any criminal record?",
-  "What do you do?": "What do you do?",
-  "Years of experience": "Years of experience",
-  "Education level": "Education level",
-  "English level": "English level",
-  "Available capital": "Available capital",
+  "Remember your password?": "Je, unakumbuka nywila yako?",
+  "Repeat your password": "Repeat your password",
+  "Resend code": "Tuma tena msimbo",
+  "Resend code in {n}s": "Tuma tena msimbo katika {n}s",
+  "Reset code": "Kurekebisha msimbo",
+  "Reset password": "Kurekebisha nywila",
+  "Resetting": {
+    "": {
+      "": {
+        "": "Kurekebisha"
+      }
+    }
+  },
+  "Retry": "Retry",
+  "Return home": "Return home",
   "Review and continue": "Review and continue",
+  "Risks": "Risks",
   "Saving": {
     "": {
       "": {
@@ -171,23 +378,411 @@
       }
     }
   },
-  "Your session is no longer available": {
-    " Sign in again to continue onboarding": {
-      "": "Your session is no longer available. Sign in again to continue onboarding."
+  "Scenario simulation": "Scenario simulation",
+  "See how it works": "Angalia jinsi inavyofanya kazi",
+  "Select language": "Select language",
+  "Send reset code": "Tuma msimbo wa kurekebisha",
+  "Sending": {
+    "": {
+      "": {
+        "": "Inatuma"
+      }
     }
   },
-  "Your profile could not be saved right now": {
-    " Retry before moving to the next step": {
-      "": "Your profile could not be saved right now. Retry before moving to the next step."
+  "Set new password": "Weka nywila mpya",
+  "Sign in": "Sign in",
+  "Sign in to continue your case strategy": "Ingia ili kuendelea na mkakati wako wa kesi",
+  "Sign in to continue your immigration strategy": {
+    "": "Sign in to continue your immigration strategy."
+  },
+  "Sign out": "Sign out",
+  "Sign up": "Sign up",
+  "Signing in": {
+    "": {
+      "": {
+        "": "Signing in..."
+      }
     }
+  },
+  "Simple pricing": "Simple pricing",
+  "Six powerful tools working together to give you clarity, confidence, and a concrete plan": {
+    "": "Six powerful tools working together to give you clarity, confidence, and a concrete plan."
+  },
+  "Software Engineer, Turkey to USA": "Mhandisi wa Programu, Uturuki hadi Marekani",
+  "Software Engineering, AI/ML, Product": "Uhandisi wa Programu, AI/ML, Bidhaa",
+  "Something went wrong": {
+    "": "Kitu kimeenda vibaya",
+    " Please try again": {
+      "": "Kitu kimeenda vibaya  Tafadhali jaribu tena"
+    }
+  },
+  "Spouse, children, parents — know which family visa fits and how long it takes": {
+    "": "Mke/mume, watoto, wazazi — jua ni visa ipi ya familia inafaa na inachukua muda gani"
+  },
+  "Start a business": "Start a business",
+  "Start free": {
+    "": "Start free",
+    " Upgrade when you're ready for your full immigration plan": {
+      "": "Start free. Upgrade when you're ready for your full immigration plan."
+    }
+  },
+  "Start with the essentials and complete your immigration profile later": {
+    "": "Start with the essentials and complete your immigration profile later."
+  },
+  "Start your plan": "Start your plan",
+  "Starter": "Starter",
+  "Step 1 of 4": "Step 1 of 4",
+  "Step 2 of 4": "Step 2 of 4",
+  "Step 3 of 4": "Step 3 of 4",
+  "Step 4 of 4": "Step 4 of 4",
+  "Step-by-step roadmap": "Ramani ya hatua kwa hatua",
+  "Stop guessing": {
+    " Get a clear plan for your immigration journey — in minutes, not months": {
+      "": "Acha kukisia  Pata mpango wazi kwa safari yako ya uhamiaji — kwa dakika, si miezi"
+    }
+  },
+  "Strategy": "Strategy",
+  "Study abroad": "Study abroad",
+  "Suggested cities": "Miji iliyo pendekezwa",
+  "Suitability": "Ufanisi",
+  "System health": "System health",
+  "Tell us a bit about yourself": {
+    "": "Tell us a bit about yourself."
+  },
+  "Tell us about you": "Tell us about you",
+  "Tell us about yourself": {
+    " Our AI analyzes 47 visa categories, checks your readiness, and gives you a step-by-step plan with timeline, cost, and documents — in minutes": {
+      "": "Tuambie kuhusu wewe  AI yetu inachambua makundi 47 ya visa, inakagua uwezo wako, na inakupa mpango wa hatua kwa hatua wenye muda, gharama, na nyaraka — kwa dakika"
+    }
+  },
+  "The page hit an unexpected error while rendering": {
+    " Try again, and if it persists, check the server logs": {
+      "": "The page hit an unexpected error while rendering. Try again, and if it persists, check the server logs."
+    }
+  },
+  "The page you're looking for doesn't exist or hasn't been built yet": {
+    "": "The page you're looking for doesn't exist or hasn't been built yet."
   },
   "The platform could not load your profile draft": {
     " Retry before continuing": {
       "": "The platform could not load your profile draft. Retry before continuing."
     }
   },
-  "Document status": "Document status",
-  "Case health": "Case health",
-  "Action roadmap": "Action roadmap",
-  "No cases yet": "No cases yet"
+  "The problem": "Shida",
+  "The readiness score showed me exactly what I was missing": {
+    " I uploaded 3 documents and my score jumped from 52 to 81": {
+      "": "Alama ya uwezo ilinionyesha hasa kile nilichokosa  Nilipakia nyaraka 3 na alama yangu iliruka kutoka 52 hadi 81"
+    }
+  },
+  "The solution": "Suluhisho",
+  "There's always a way — we help you find it": {
+    "": "Kila wakati kuna njia — tunakusaidia kuipata"
+  },
+  "Three steps": {
+    " No confusion": {
+      "": "Hatua tatu  Hakuna mkanganyiko"
+    }
+  },
+  "Timeline": "Timeline",
+  "Timeline estimate": "Makadirio ya muda",
+  "Toggle menu": "Badilisha menyu",
+  "Try it now": "Jaribu sasa",
+  "Turkey, India, Brazil": {
+    "": {
+      "": {
+        "": "Uturuki, India, Brazil"
+      }
+    }
+  },
+  "United States, Canada": {
+    "": {
+      "": {
+        "": "Marekani, Kanada"
+      }
+    }
+  },
+  "Upload document": "Upload document",
+  "Upload your resume and education documents to increase your readiness score to 90+": {
+    "": "Pakia wasifu wako na nyaraka za elimu ili kuongeza alama yako ya uwezo hadi 90+"
+  },
+  "Verification code": "Msimbo wa uthibitisho",
+  "Verify code": "Thibitisha msimbo",
+  "Verify email": "Thibitisha barua pepe",
+  "Verifying": {
+    "": {
+      "": {
+        "": "Inathibitisha"
+      }
+    }
+  },
+  "Visa categories analyzed": "Makundi ya visa yaliyotathminiwa",
+  "Visa types": "Aina za visa",
+  "Visa, timeline, documents, cost — everything in one clear view": {
+    "": "Visa, muda, nyaraka, gharama — kila kitu katika mtazamo mmoja wazi"
+  },
+  "We analyze multiple countries, visa types, and pathways to match you with the best option based on your profile": {
+    "": "Tunachambua nchi nyingi, aina za visa, na njia ili kukufananisha na chaguo bora kulingana na wasifu wako"
+  },
+  "We analyze your options": "We analyze your options",
+  "We sent a 6-digit code to": "Tumetuma msimbo wa tarakimu 6 kwa",
+  "We show you what to do": "Tunaonyesha unachopaswa kufanya",
+  "We turn everything into one clear plan": {
+    "": "Tunageuza kila kitu kuwa mpango mmoja wazi"
+  },
+  "Welcome back": "Welcome back",
+  "What do you do?": "What do you do?",
+  "What you get": "Unachopata",
+  "Whatever your reason, we can help": {
+    "": "Sababu yako yoyote, tunaweza kusaidia"
+  },
+  "Where are you from?": "Unatoka wapi?",
+  "Where do you live now?": "Where do you live now?",
+  "Where do you want to go?": "Where do you want to go?",
+  "Work abroad": "Work abroad",
+  "Wrong email?": "Barua pepe si sahihi?",
+  "Years of experience": "Years of experience",
+  "You're ready to see your first strategy": "You're ready to see your first strategy",
+  "Your background, education, experience, and goals": {
+    " Takes 2 minutes": {
+      "": "Historia yako, elimu, uzoefu, na malengo Inachukua dakika 2"
+    }
+  },
+  "Your best path": "Njia yako bora",
+  "Your best path, ranked by fit": "Njia yako bora, iliyoorodheshwa kwa kufaa",
+  "Your immigration goals and timing": {
+    "": "Your immigration goals and timing."
+  },
+  "Your new life starts here": {
+    "": "Maisha yako mapya yanaanza hapa"
+  },
+  "Your password has been updated": {
+    " You can now sign in": {
+      "": "Nenosiri lako limeboreshwa Sasa unaweza kuingia"
+    }
+  },
+  "Your personalized result": "Matokeo yako ya kibinafsi",
+  "Your profile could not be saved right now": {
+    " Retry before moving to the next step": {
+      "": "Your profile could not be saved right now. Retry before moving to the next step."
+    }
+  },
+  "Your session is no longer available": {
+    " Sign in again to continue onboarding": {
+      "": "Your session is no longer available. Sign in again to continue onboarding."
+    }
+  },
+  "one-time": "one-time",
+  "without confusion": {
+    "": "bila mkanganyiko"
+  },
+  "FAQ": "Maswali Yanayoulizwa Mara kwa Mara",
+  "tools": {
+    "pageTitle": "Zana za uhamiaji za bure",
+    "pageSubtitle": "Majibu ya haraka — usajili hauhitajika.",
+    "eligibilityChecker": {
+      "title": "Kihesabu cha ufanisi",
+      "description": "Jibu maswali 6, uone visa unavyoweza kupata."
+    },
+    "costEstimator": {
+      "title": "Kihesabu cha makadirio ya gharama",
+      "description": "Gharama kamili ya kuhamia nje ya nchi — si ada ya visa pekee."
+    },
+    "timelineCalculator": {
+      "title": "Kihesabu cha ratiba",
+      "description": "Kadiria ni lini utawasili hatua kwa hatua."
+    }
+  },
+  "eligibilityChecker": {
+    "pageTitle": "Kihesabu cha ufanisi wa visa bure",
+    "pageSubtitle": "Jibu maswali 6 mafupi. Uone orodha fupi ya visa unavyoweza kupata — usajili hauhitajika.",
+    "faq1": {
+      "question": "Je, kihesabu cha ufanisi ni bure?",
+      "answer": "Ndio. Kazi yake inafanyika kabisa kwenye kivinjari chako na haitahitaji akaunti."
+    },
+    "faq2": {
+      "question": "Je, udhibiti ni sahihi kiasi gani?",
+      "answer": "Inatumia sheria za ufanisi za umma kwa kila njia. Ni kichujio cha kwanza chenye nguvu lakini hakichukui nafasi ya uchambuzi kamili unaosaidiwa na AI au ushauri wa kisheria."
+    },
+    "faq3": {
+      "question": "Je, inahifadhi majibu yangu?",
+      "answer": "Hapana. Kifaa kinafanya kazi kwa ndani kwenye kivinjari chako. Ikiwa unataka matokeo yako yahifadhiwe kwenye wasifu wako, tafadhali jisajili."
+    },
+    "emailCapture": {
+      "title": "Uchambuzi kamili unaosaidiwa na AI",
+      "subtitle": "Pata mpango wa kibinafsi wa A/B/C na alama ya maandalizi kupitia barua pepe."
+    }
+  },
+  "costEstimator": {
+    "pageTitle": "Kihesabu cha makadirio ya gharama za uhamiaji",
+    "pageSubtitle": "Chagua njia, ongeza ukubwa wa familia yako na uone gharama halisi ya jumla — si ada ya visa pekee.",
+    "faq1": {
+      "question": "Ni nini kinachojumuishwa katika makadirio?",
+      "answer": "Ada za serikali, ada za kisheria/wakala, fedha za makazi, tiketi za ndege, makazi ya kwanza na %10 ya akiba ya gharama zisizotarajiwa."
+    },
+    "faq2": {
+      "question": "Je, hii ni sahihi kwa hali yangu maalum?",
+      "answer": "Ni makadirio mazuri ya mwongozo kwa kila njia. Gharama halisi yako itategemea ukubwa wa familia, jiji na uchaguzi wa wakili. Tafadhali jisajili kwa ripoti ya kibinafsi."
+    },
+    "emailCapture": {
+      "title": "Ripoti kamili ya gharama kupitia barua pepe",
+      "subtitle": "Jedwali linalojumuisha gharama za msingi kulingana na nchi yako ya lengo."
+    }
+  },
+  "timelineCalculator": {
+    "pageTitle": "Kihesabu cha ratiba",
+    "pageSubtitle": "Chagua njia. Uone ni lini utawasili — ikiwa ni pamoja na maandalizi, maombi, usindikaji na kuwasili.",
+    "faq1": {
+      "question": "Kwa nini muda wa maandalizi unajumuishwa?",
+      "answer": "Saa haianzi unapofanya maombi — inaanza unapokusanya nyaraka. Tunaongeza dirisha la maandalizi halisi kwa kila njia."
+    },
+    "faq2": {
+      "question": "Je, makadirio haya ni sahihi kiasi gani?",
+      "answer": "Yanawakilisha muda wa usindikaji wa wastani uliochapishwa. Mambo binafsi yanaweza kuwa haraka au polepole kulingana na RFE, kotakota za nchi na ukamilifu wa ushahidi."
+    },
+    "emailCapture": {
+      "title": "Mfuatiliaji wa ratiba ya kila wiki",
+      "subtitle": "Tutakutumia mpango rahisi wa kila wiki kupitia barua pepe hadi siku ya kuwasili."
+    }
+  },
+  "visaIndex": {
+    "pageTitle": "Visa zote",
+    "pageSubtitle": "Gharama, ratiba na ufanisi kwa kila njia tunayoijumuisha.",
+    "months": "mwezi"
+  },
+  "bestCountries": {
+    "pageTitle": "Nchi bora kulingana na taaluma",
+    "pageSubtitle": "Chagua taaluma yako ili kuona maeneo bora ya uhamiaji.",
+    "cardTitle": "Nchi bora kwa {profession}",
+    "breadcrumb": "Nchi bora",
+    "rankedSubtitle": "Imeorodheshwa kulingana na gharama, ratiba na makazi ya kudumu. Takwimu ni za mwaka 2026.",
+    "topPathway": "Njia bora",
+    "seeAllPathways": "Tazama njia zote",
+    "visaDetails": "Maelezo ya {code}",
+    "otherProfessions": "Taaluma nyingine"
+  },
+  "compare": {
+    "pageTitle": "Mlinganisho wa visa",
+    "pageSubtitle": "Mlinganisho wa karibu wa maamuzi ya njia maarufu.",
+    "vs": "vs",
+    "comparingSubtitle": "{nameA} ikilinganishwa na {nameB} kwa gharama, muda na ufanisi — ili usipoteze miezi kwenye njia isiyo sahihi.",
+    "rowFullName": "Jina kamili",
+    "rowCategory": "Kategoria",
+    "rowDestination": "Nchi ya lengo",
+    "rowTypicalDuration": "Muda wa kawaida",
+    "rowCostUsd": "Gharama (USD)",
+    "rowLeadsToPR": "Inasababisha makazi ya kudumu",
+    "yes": "Ndio",
+    "no": "Hapana",
+    "bestFor": "Inafaa zaidi",
+    "otherComparisons": "Mlinganisho wa visa nyingine"
+  },
+  "visaMatch": {
+    "pageTitle": "Ulinganifu wa visa",
+    "pageSubtitle": "Chagua nchi yako ya lengo na wasifu wako ili kuona njia zako 3 za kwanza.",
+    "cardSubtitle": "Visa bora kwa {profession}",
+    "breadcrumb": "Ulinganifu wa Visa",
+    "rankedSubtitle": "Njia {count} za uhamiaji zimeorodheshwa kwa {profession}; kwa lengo la {countryName}. Kila chaguo kimepangiwa alama kulingana na ulinganifu, gharama, muda na hatari.",
+    "getPersonalizedMatch": "Pata ulinganifu wako wa kibinafsi",
+    "freeEligibilityCheck": "Ukaguzi wa ufanisi wa bure",
+    "typicalTimeline": "Ratiba ya kawaida",
+    "typicalCost": "Gharama ya kawaida",
+    "duration": "Muda",
+    "strengths": "Nguvu",
+    "moreVisaGuides": "Mwongozo zaidi wa visa kwa {countryName}"
+  },
+  "moveTo": {
+    "pageTitle": "Mwongozo wa kuhamia nchi",
+    "pageSubtitle": "Mwongozo wa hatua kwa hatua kulingana na nchi ya asili na lengo.",
+    "fromLabel": "{flag} kutoka {name}",
+    "cardSubtitle": "Mwongozo kwa raia wa {demonym}",
+    "h1": "Hamia mjini {toName} kutoka {fromName}",
+    "intro": "Mwongozo wa vitendo wa kuhamia mjini {toName} kwa raia wa {demonym}. Chagua njia, elewa ratiba na gharama, pata alama ya maandalizi ya kibinafsi.",
+    "topVisaPathways": "Njia bora za visa kwa {toName}",
+    "howToStepByStep": "Jinsi ya kuhamia hatua kwa hatua",
+    "moreCountryGuides": "Mwongozo wa nchi zaidi"
+  },
+  "Onboarding could not load": "Upatanishi haukuweza kupakia",
+  "Review the highlighted profile fields before continuing": {
+    "": "Kagua maeneo ya wasifu yaliyotajwa kabla ya kuendelea"
+  },
+  "Skip": "Punguza",
+  "Who are you?": "Wewe ni nani?",
+  "Select your nationality": "Chagua utaifa wako",
+  "Select current country": "Chagua nchi ya sasa",
+  "e": {
+    "g": {
+      " English, Turkish": {
+        "": {
+          "": {
+            "": "mfano. Kiingereza, Kituruki..."
+          }
+        }
+      },
+      " Software Engineer, Doctor, Designer": {
+        "": {
+          "": {
+            "": "mfano. Mhandisi wa Programu, Daktari, Mbunifu..."
+          }
+        }
+      },
+      " 50000": "mfano. 50000"
+    }
+  },
+  "Your background": "Historia yako",
+  "English proficiency": "Ujuzi wa Kiingereza",
+  "Available capital (USD)": "Mtaji ulipo (USD)",
+  "Your dream destination and timeline": {
+    "": "Mahali unalotamani na muda"
+  },
+  "When do you want to move?": "Unataka kuhamia lini?",
+  "Have you had a visa refusal before?": "Je, umewahi kukataliwa visa kabla?",
+  "This helps us give accurate recommendations": {
+    " Your data is private and secure": {
+      "": "Hii inatusaidia kutoa mapendekezo sahihi Data yako ni ya faragha na salama"
+    }
+  },
+  "You're all set!": "Uko tayari!",
+  "Amazing! Your profile is almost complete": {
+    " We can build great strategies for you": {
+      "": "Ajabu! Wasifu wako karibu kukamilika Tunaweza kujenga mikakati bora kwako"
+    }
+  },
+  "Great start! You can always complete more details from your profile page": {
+    "": "Mwanzo mzuri! Unaweza kila wakati kukamilisha maelezo zaidi kutoka kwenye ukurasa wako wa wasifu"
+  },
+  "No worries! You can fill in more details anytime from your dashboard": {
+    "": "Usijali! Unaweza kujaza maelezo zaidi wakati wowote kutoka kwenye dashibodi yako"
+  },
+  "See your AI analysis": "Angalia uchambuzi wako wa AI",
+  "there": "pale",
+  "Immigrant": "Mhamiaji",
+  "Guru": "Guru",
+  "Hey {name}, welcome aboard!": "Hey {name}, karibuni!",
+  "Let's build your immigration profile in under 2 minutes": {
+    " The more we know, the better strategies we can craft for you": {
+      "": "Hebu tujenge wasifu wako wa uhamiaji chini ya dakika 2 Kadri tunavyojua, ndivyo mikakati bora tunavyoweza kuunda kwako"
+    }
+  },
+  "Let's go": "Hebu tuende",
+  "Takes about 2 minutes": {
+    " You can skip anything": {
+      "": "Inachukua takriban dakika 2 Unaweza kupunguza chochote"
+    }
+  },
+  "score": {
+    "outOf100": "Kati ya 100",
+    "thisProfileIs": "Profaili hii iko katika kiwango cha {readiness}",
+    "scoredOn": "Immigrant Guru ilipanga profaili hii kulingana na elimu, uzoefu wa kazi, lugha, ulinganifu wa nchi ya lengo na vipimo vingine 8.",
+    "getMyOwnScore": "Pata alama yangu",
+    "shareOnX": "Shiriki kwenye X"
+  },
+  "visa": {
+    "cost": "Gharama",
+    "prPath": "Njia ya makazi ya kudumu",
+    "idealFor": "Watu wanaofaa",
+    "requirements": "Mahitaji",
+    "risksAndRejection": "Hatari na sababu za kawaida za kukataliwa",
+    "checkReadiness": "Kagua maandalizi yangu ya {code}",
+    "moreVisaGuides": "Mwongozo zaidi wa visa kwa {countryName}"
+  }
 }

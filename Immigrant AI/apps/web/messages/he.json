@@ -1,103 +1,165 @@
 {
-  "Immigrant Guru - AI Immigration Strategy Platform": "Immigrant Guru - AI Immigration Strategy Platform",
-  "Immigrant Guru - Move to a New Country Without Confusion": "Immigrant Guru - Move to a New Country Without Confusion",
-  "Language": "Language",
-  "Select language": "Select language",
-  "How it works": "How it works",
-  "Find your path": "Find your path",
-  "Pricing": "Pricing",
-  "Home": "Home",
-  "Sign in": "Sign in",
-  "Sign up": "Sign up",
-  "Dashboard": "Dashboard",
-  "Log out": "Log out",
-  "Move to a New Country Without Confusion": "Move to a New Country Without Confusion",
-  "Get your personalized visa, readiness score, and action plan in minutes": {
-    "": "Get your personalized visa, readiness score, and action plan in minutes."
+  "Active": "פעיל",
+  "Cancel": "לבטל",
+  "Capture the destination, program, current stage, and risk signals that anchor strategy generation, scoring, and document workflows": {
+    "": "לתפוס את היעד, התוכנית, השלב הנוכחי, וסימני הסיכון שמבוססים על יצירת אסטרטגיה, ניקוד, וזרימות עבודה של מסמכים"
   },
-  "Benefits": "Benefits",
-  "Everything you need in one place": "Everything you need in one place",
-  "Simple pricing": "Simple pricing",
-  "Free": "Free",
-  "Starter": "Starter",
-  "Plus": "Plus",
-  "Premium": "Premium",
-  "Create your account": "Create your account",
-  "Welcome back": "Welcome back",
-  "First name": "First name",
-  "Last name": "Last name",
-  "Email": "Email",
-  "Password": "Password",
-  "Confirm password": "Confirm password",
-  "Overview": "Overview",
-  "Profile": "Profile",
-  "Cases": "Cases",
-  "Strategy": "Strategy",
-  "Timeline": "Timeline",
-  "Documents": "Documents",
-  "Risks": "Risks",
-  "Copilot": "Copilot",
-  "Comparison": "Comparison",
-  "Retry": "Retry",
-  "Back": "Back",
-  "Next": "Next",
-  "Finish": "Finish",
-  "Generate strategy": "Generate strategy",
-  "Upload document": "Upload document",
-  "Scenario simulation": "Scenario simulation",
-  "My plan": "My plan",
-  "Sign out": "Sign out",
-  "Log in": "Log in",
-  "Start your plan": "Start your plan",
-  "Readiness score": "Readiness score",
-  "Probability score": "Probability score",
-  "Recommended pathway": "Recommended pathway",
-  "Next best action": "Next best action",
-  "Immigrant Guru helps you evaluate pathways, compare strategies, and act with clarity": {
-    "": "Immigrant Guru helps you evaluate pathways, compare strategies, and act with clarity."
+  "Case Detail": "פרטי המקרה",
+  "Case planning workspace": "חלל תכנון המקרה",
+  "Case portfolio": "תיק המקרים",
+  "Case status": "מצב המקרה",
+  "Case title": "כותרת המקרה",
+  "Closed": "סגור",
+  "Close": "סגור",
+  "Close new case": "סגור מקרה חדש",
+  "Collect recommendation letters and evidence of impact": {
+    "": "אסוף מכתבי המלצה והוכחות להשפעה"
   },
-  "A focused workspace for immigration decisions": "A focused workspace for immigration decisions",
-  "Six powerful tools working together to give you clarity, confidence, and a concrete plan": {
-    "": "Six powerful tools working together to give you clarity, confidence, and a concrete plan."
+  "Continue your immigration planning": {
+    " Keep profile and case data aligned": {
+      "": "המשך בתכנון ההגירה שלך  שמור על פרופיל ונתוני מקרה מתואמים"
+    }
   },
-  "Immigration Score": "Immigration Score",
-  "Explainable readiness signals": "Explainable readiness signals",
-  "System health": "System health",
-  "Platform Status": "Platform Status",
-  "Work abroad": "Work abroad",
-  "Study abroad": "Study abroad",
-  "Move with family": "Move with family",
-  "Start a business": "Start a business",
-  "Tell us about you": "Tell us about you",
-  "We analyze your options": "We analyze your options",
-  "Get your plan": "Get your plan",
-  "Find the plan that fits your journey": "Find the plan that fits your journey",
-  "Start free": {
-    " Upgrade when you're ready for your full immigration plan": {
-      "": "Start free. Upgrade when you're ready for your full immigration plan."
-    },
-    "": "Start free"
+  "Create a case for each migration plan you want to evaluate, compare, or execute": {
+    " Cases anchor strategy generation, scoring, and document collection in one workspace": {
+      "": "צור מקרה עבור כל תוכנית הגירה שברצונך להעריך, להשוות או לבצע  מקרים מבססים את יצירת האסטרטגיה, הניקוד, ואיסוף המסמכים בחלל עבודה אחד"
+    }
   },
-  "Best value": "Best value",
-  "one-time": "one-time",
-  "No subscriptions": {
-    " Pay once, unlock your full plan": {
-      " 30-day money-back guarantee": {
-        "": "No subscriptions. Pay once, unlock your full plan. 30-day money-back guarantee."
+  "Create first case": "צור מקרה ראשון",
+  "Create strategy case": "צור מקרה אסטרטגיה",
+  "Creating case": {
+    "": {
+      "": {
+        "": "יצירת מקרה"
       }
     }
   },
-  "Start with the essentials and complete your immigration profile later": {
-    "": "Start with the essentials and complete your immigration profile later."
+  "Current stage": "שלב נוכחי",
+  "Data unavailable": "נתונים אינם זמינים",
+  "Define a migration pathway to evaluate": "הגדר נתיב הגירה להערכה",
+  "Destination pending": "יעד ממתין",
+  "Draft": "טיוטה",
+  "Evaluation signals": "סימני הערכה",
+  "Example: eligibility_review, document_collection, filing_ready": "דוגמה: eligibility_review, document_collection, filing_ready",
+  "Higher values should indicate higher execution or eligibility risk": {
+    "": "ערכים גבוהים יותר צריכים לציין סיכון גבוה יותר לביצוע או זכאות"
   },
-  "Sign in to continue your immigration strategy": {
-    "": "Sign in to continue your immigration strategy."
+  "Immigration strategy cases": "מקרים של אסטרטגיית הגירה",
+  "In review": "בבדיקה",
+  "Internal Console": "קונסולה פנימית",
+  "Keep notes focused on blockers, evidence gaps, and next actions": {
+    "": "שמור על הערות ממוקדות על חסמים, פערי הוכחות, ופעולות הבאות"
   },
-  "Forgot your password?": "Forgot your password?",
-  "Create account": "Create account",
-  "Create one": "Create one",
+  "Latest score": "ניקוד אחרון",
+  "Manage immigration strategy records that anchor pathway evaluation, stage tracking, scoring, and later document workflows": {
+    "": "נהל רשומות אסטרטגיית הגירה שמבוססות על הערכת נתיב, מעקב אחר שלבים, ניקוד, וזרימות עבודה של מסמכים מאוחר יותר"
+  },
+  "New case": "מקרה חדש",
+  "New strategy case": "מקרה אסטרטגיה חדש",
+  "No changes to save": "אין שינויים לשמור",
+  "No strategic notes recorded yet for this immigration path": {
+    "": "עדיין לא נרשמו הערות אסטרטגיות עבור נתיב ההגירה הזה"
+  },
+  "No strategy cases yet": "עדיין אין מקרים אסטרטגיים",
+  "on record": "ברשומות",
+  "Open case": "פתח מקרה",
+  "Optional score snapshot if you want to retain a manual benchmark": {
+    "": "תצלום ניקוד אופציונלי אם אתה רוצה לשמור על מדד ידני"
+  },
+  "Pathway not defined yet": "נתיב לא הוגדר עדיין",
+  "Refresh cases": "רענן מקרים",
+  "Review the highlighted case fields before saving": {
+    "": "בדוק את שדות המקרה המודגשים לפני השמירה"
+  },
+  "Risk score": "ניקוד סיכון",
+  "Risk": "סיכון",
+  "Save case changes": "שמור שינויים במקרה",
+  "Saving changes": {
+    "": {
+      "": {
+        "": "שימור שינויים"
+      }
+    }
+  },
+  "Score": "ניקוד",
+  "Session": "מפגש",
+  "Stage": "שלב",
+  "Start with a target country and pathway": "התחל עם מדינת יעד ונתיב",
+  "Strategy case created successfully": {
+    "": "מקרה אסטרטגיה נוצר בהצלחה"
+  },
+  "Strategy identity": "זהות אסטרטגיה",
+  "Strategy notes": "הערות אסטרטגיה",
+  "Target country": "Target country",
+  "Target pathway or program": "נתיב או תוכנית יעד",
+  "The case portfolio could not be loaded": {
+    "": "תיק המקרים לא יכול היה לטעון"
+  },
+  "Track every active migration path in one workspace": "עקוב אחרי כל נתיב הגירה פעיל בחלל עבודה אחד",
+  "U": {
+    "S": {
+      " employment-based migration plan": "תוכנית הגירה מבוססת תעסוקה בארה\"ב"
+    }
+  },
+  "United States": "ארצות הברית",
+  "Update the case strategy record": "עדכן את רשומת אסטרטגיית המקרה",
+  "Updated": "עודכן",
+  "Workspace data could not be loaded": {
+    "": "נתוני המשרד לא הצליחו לטעון"
+  },
+  "You are no longer authenticated": {
+    "": "אתה כבר לא מאומת"
+  },
+  "case": "מקרה",
+  "cases": "מקרים",
+  "12-18 months": "12-18 חודשים",
+  "3 country comparisons": "3 השוואות מדינות",
+  "A focused workspace for immigration decisions": "A focused workspace for immigration decisions",
+  "AI checks 47 visa categories and finds your best match": {
+    "": "AI בודק 47 קטגוריות ויזה ומוצא את ההתאמה הטובה ביותר שלך"
+  },
+  "Access your immigration dashboard, decision plans, and case workspace": {
+    "": "גש ללוח הבקרה של ההגירה שלך, תוכניות החלטה, ומשרד המקרים"
+  },
+  "Action roadmap": "Action roadmap",
+  "Admin": "Admin",
+  "Advanced action plan": "תוכנית פעולה מתקדמת",
   "Already have an account?": "Already have an account?",
-  "Need an account?": "Need an account?",
+  "Any criminal record?": "Any criminal record?",
+  "Available capital": "Available capital",
+  "Average time to first plan": "זמן ממוצע לתוכנית הראשונה",
+  "Back": "Back",
+  "Benefits": "Benefits",
+  "Best value": "Best value",
+  "Best visa option": "אפשרות הוויזה הטובה ביותר",
+  "Best visa recommendation": "המלצת הוויזה הטובה ביותר",
+  "Better case preparation": "הכנה טובה יותר למקרה",
+  "Built for immigrants, by immigrants": "נבנה עבור מהגרים, על ידי מהגרים",
+  "Case health": "Case health",
+  "Cases": "Cases",
+  "Check your email": "בדוק את האימייל שלך",
+  "Checkout failed": "תהליך התשלום נכשל",
+  "Children": "Children",
+  "Choose a new password for your account": {
+    "": "בחר סיסמה חדשה עבור החשבון שלך"
+  },
+  "Comparison": "Comparison",
+  "Confirm password": "Confirm password",
+  "Confirm your password": {
+    "": "אשר את הסיסמה שלך"
+  },
+  "Confusing visa rules that change every year": "כללי ויזה מבלבלים שמשתנים כל שנה",
+  "Copilot": "Copilot",
+  "Cost estimate": "הערכת עלות",
+  "Countries": "מדינות",
+  "Countries supported": "מדינות נתמכות",
+  "Create account": "Create account",
+  "Create an account to start building an immigration profile, evaluate pathways, and manage your cases": {
+    "": "צור חשבון כדי להתחיל לבנות פרופיל הגירה, להעריך מסלולים, ולנהל את המקרים שלך"
+  },
+  "Create one": "Create one",
+  "Create your Immigrant Guru account": "צור את חשבון Immigrant Guru שלך",
+  "Create your account": "Create your account",
   "Creating account": {
     "": {
       "": {
@@ -105,65 +167,210 @@
       }
     }
   },
-  "Signing in": {
-    "": {
-      "": {
-        "": "Signing in..."
+  "Dashboard": "Dashboard",
+  "Data Scientist, India to Canada": "מדען נתונים, הודו לקנדה",
+  "Deeper analysis": "ניתוח מעמיק",
+  "Document checklist": "רשימת בדיקה של מסמכים",
+  "Document status": "Document status",
+  "Documents": "Documents",
+  "E-2 investor, EB-5, startup visa — explore entrepreneurial immigration routes": {
+    "": "משקיע E-2, EB-5, ויזת סטארטאפ — חקור מסלולי הגירה יזמיים"
+  },
+  "Education level": "Education level",
+  "Email": "Email",
+  "English level": "English level",
+  "Enter a valid email address": {
+    "": "Enter a valid email address."
+  },
+  "Enter it below to verify your account": {
+    "": "הכנס את זה למטה כדי לאמת את החשבון שלך"
+  },
+  "Enter the 6-digit code from your email": {
+    "": "הכנס את הקוד בן 6 הספרות מהאימייל שלך"
+  },
+  "Enter the 6-digit code": {
+    "": "הכנס את הקוד בן 6 הספרות"
+  },
+  "Enter your email and we'll send you a reset code": {
+    "": "הכנס את האימייל שלך ונשלח לך קוד לאיפוס"
+  },
+  "Enter your email": {
+    "": "הכנס את האימייל שלך"
+  },
+  "Error": "Error",
+  "Est": {
+    " cost": "עלות משוערת"
+  },
+  "Estimated cost": "עלות מוערכת",
+  "Even if you think you don't qualify — we'll show you what's possible": {
+    "": "גם אם אתה חושב שאתה לא זכאי — נציג לך מה אפשרי"
+  },
+  "Everything in Plus": "הכל ב-Plus",
+  "Everything in Starter": "הכל ב-Starter",
+  "Everything you need in one place": "Everything you need in one place",
+  "Expanded document guidance": "הנחיות מסמכים מורחבות",
+  "Expensive lawyers who charge $5,000+ for basic advice": "עורכי דין יקרים שגובים מעל $5,000 עבור ייעוץ בסיסי",
+  "Explainable readiness signals": "Explainable readiness signals",
+  "F-1, OPT, STEM extension — understand your path from student to professional": {
+    "": "F-1, OPT, הארכת STEM — הבן את הדרך שלך מסטודנט למקצוען"
+  },
+  "Filing + legal fees": "הגשה + שכר טרחה משפטי",
+  "Find my best path": "מצא את הדרך הטובה ביותר שלי",
+  "Find the plan that fits your journey": "Find the plan that fits your journey",
+  "Find the right work visa for your skills and experience": {
+    " H-1B, EB-2, O-1, and more": {
+      "": "מצא את ויזת העבודה המתאימה לכישורים ולניסיון שלך H-1B, EB-2, O-1, ועוד"
+    }
+  },
+  "Find your best path": "מצא את הדרך הטובה ביותר שלך",
+  "Find your path": "Find your path",
+  "Finish": "Finish",
+  "First name": "First name",
+  "First name is too long": {
+    "": "השם הפרטי ארוך מדי"
+  },
+  "For comparing options": "להשוואת אפשרויות",
+  "For every situation": "לכל מצב",
+  "For one clear path": "עבור דרך ברורה אחת",
+  "Forgot your password?": "Forgot your password?",
+  "Free": "Free",
+  "Free to start · No credit card · Takes 2 minutes": "חינם להתחיל · ללא כרטיס אשראי · לוקח 2 דקות",
+  "From filing to approval": "מהגשה לאישור",
+  "Full path comparison": "השוואת מסלולים מלאה",
+  "Full plan for 1 country": "תוכנית מלאה למדינה אחת",
+  "Full strategic experience": "ניסיון אסטרטגי מלא",
+  "Full strategic recommendation": "המלצה אסטרטגית מלאה",
+  "Generate strategy": "Generate strategy",
+  "Get Started": "התחל",
+  "Get your personalized visa, readiness score, and action plan in minutes": {
+    "": "Get your personalized visa, readiness score, and action plan in minutes.",
+    " Not months": {
+      "": "קבל את הוויזה האישית שלך, ציון מוכנות, ותוכנית פעולה תוך דקות לא חודשים"
+    }
+  },
+  "Get your plan": "Get your plan",
+  "Get {plan}": "קבל {plan}",
+  "Go back": "חזור אחורה",
+  "Go home": "Go home",
+  "Home": "Home",
+  "How it works": "How it works",
+  "I spent months Googling visa options": {
+    " Immigrant Guru gave me a clear plan in 10 minutes": {
+      " I wish I found this earlier": {
+        "": "ביליתי חודשים בחיפוש אפשרויות ויזה Immigrant Guru נתן לי תוכנית ברורה ב-10 דקות אני מאחל שהייתי מוצא את זה קודם"
       }
     }
   },
+  "Immigrant Guru - AI Immigration Strategy Platform": "Immigrant Guru - AI Immigration Strategy Platform",
+  "Immigrant Guru - Move to a New Country Without Confusion": "Immigrant Guru - Move to a New Country Without Confusion",
+  "Immigrant Guru helps you evaluate pathways, compare strategies, and act with clarity": {
+    "": "Immigrant Guru helps you evaluate pathways, compare strategies, and act with clarity."
+  },
+  "Immigration Plan": "תוכנית הגירה",
+  "Immigration Score": "Immigration Score",
+  "Immigration shouldn't feel this hard": {
+    "": "הגירה לא צריכה להרגיש כל כך קשה"
+  },
+  "Job opportunities": "הזדמנויות תעסוקה",
+  "Language": "Language",
+  "Last name": "Last name",
+  "Last name is too long": {
+    "": "שם משפחה ארוך מדי"
+  },
+  "Log in": "Log in",
+  "Log out": "Log out",
   "Minimum 8 characters": "Minimum 8 characters",
-  "Repeat your password": "Repeat your password",
-  "Enter a valid email address": {
-    "": "Enter a valid email address."
+  "Months of waiting with no visibility": "חודשים של המתנה ללא שקיפות",
+  "Move to a New Country Without Confusion": "Move to a New Country Without Confusion",
+  "Move to a new country": "לעבור למדינה חדשה",
+  "Move with family": "Move with family",
+  "Multiple visa alternatives": "מספר חלופות לויזה",
+  "My plan": "My plan",
+  "National Interest Waiver · United States": "פטור מהעניין הלאומי · ארצות הברית",
+  "Nationality": "Nationality",
+  "Need an account?": "Need an account?",
+  "New password": "סיסמה חדשה",
+  "Next": "Next",
+  "Next best action": "Next best action",
+  "Next step:": "שלב הבא:",
+  "No cases yet": "No cases yet",
+  "No clear direction — just endless Googling": "אין כיוון ברור — רק חיפוש אינסופי בגוגל",
+  "No confusion, no jargon": "ללא בלבול, ללא ג'רגון",
+  "No employer sponsor needed — you can self-petition": {
+    "": "אין צורך במעסיק מממן — אתה יכול להגיש בקשה עצמאית"
+  },
+  "No matter your background, we help you find a way forward": {
+    "": "לא משנה מה הרקע שלך, אנחנו עוזרים לך למצוא דרך קדימה"
+  },
+  "No subscriptions": {
+    " Pay once, unlock your full plan": {
+      " 30-day money-back guarantee": {
+        "": "No subscriptions. Pay once, unlock your full plan. 30-day money-back guarantee."
+      }
+    }
+  },
+  "One clear plan": {
+    " Everything you need": {
+      "": "תוכנית אחת ברורה  כל מה שאתה צריך"
+    }
+  },
+  "One-time payment": {
+    " Unlock your full personalized immigration plan": {
+      "": "תשלום חד פעמי  פתח את תוכנית ההגירה האישית המלאה שלך"
+    }
+  },
+  "Overview": "Overview",
+  "Page not found": "Page not found",
+  "Password": "Password",
+  "Password must be at least 8 characters": {
+    "": "הסיסמה חייבת להיות לפחות 8 תווים"
   },
   "Password must contain at least 8 characters": {
     "": "Password must contain at least 8 characters."
   },
-  "Page not found": "Page not found",
-  "The page you're looking for doesn't exist or hasn't been built yet": {
-    "": "The page you're looking for doesn't exist or hasn't been built yet."
+  "Password reset!": "איפוס סיסמה!",
+  "Passwords do not match": {
+    "": "הסיסמאות אינן תואמות"
   },
-  "Return home": "Return home",
-  "Error": "Error",
-  "Something went wrong": "Something went wrong",
-  "The page hit an unexpected error while rendering": {
-    " Try again, and if it persists, check the server logs": {
-      "": "The page hit an unexpected error while rendering. Try again, and if it persists, check the server logs."
-    }
-  },
-  "Go home": "Go home",
-  "Admin": "Admin",
-  "Step 1 of 4": "Step 1 of 4",
-  "Step 2 of 4": "Step 2 of 4",
-  "Step 3 of 4": "Step 3 of 4",
-  "Step 4 of 4": "Step 4 of 4",
-  "Tell us a bit about yourself": {
-    "": "Tell us a bit about yourself."
-  },
-  "Where do you want to go?": "Where do you want to go?",
-  "Your immigration goals and timing": {
-    "": "Your immigration goals and timing."
-  },
+  "Platform Status": "Platform Status",
+  "Plus": "Plus",
+  "Possible paths": "דרכים אפשריות",
+  "Preferred language": "Preferred language",
+  "Premium": "Premium",
+  "Premium dashboard": "לוח מחוונים פרימיום",
+  "Pricing": "Pricing",
+  "Prior visa refusal?": "Prior visa refusal?",
+  "Priority AI guidance": "הנחיות AI בעדיפות",
+  "Probability score": "Probability score",
   "Professional experience and finances": {
     "": "Professional experience and finances."
   },
-  "You're ready to see your first strategy": "You're ready to see your first strategy",
-  "Nationality": "Nationality",
-  "Where do you live now?": "Where do you live now?",
+  "Profile": "Profile",
+  "Profile, finance, case": "פרופיל, כספים, תיק",
+  "Readiness": "מוכנות",
+  "Readiness score": "Readiness score",
+  "Ready": "מוכן",
+  "Recommended pathway": "Recommended pathway",
+  "Redirecting…": "מפנה…",
   "Relationship status": "Relationship status",
-  "Children": "Children",
-  "Preferred language": "Preferred language",
-  "Target country": "Target country",
   "Relocation timeline": "Relocation timeline",
-  "Prior visa refusal?": "Prior visa refusal?",
-  "Any criminal record?": "Any criminal record?",
-  "What do you do?": "What do you do?",
-  "Years of experience": "Years of experience",
-  "Education level": "Education level",
-  "English level": "English level",
-  "Available capital": "Available capital",
+  "Remember your password?": "זוכר את הסיסמה שלך?",
+  "Repeat your password": "Repeat your password",
+  "Resend code": "שלח קוד מחדש",
+  "Resend code in {n}s": "שלח קוד מחדש בעוד {n} שניות",
+  "Reset code": "איפוס קוד",
+  "Reset password": "איפוס סיסמה",
+  "Resetting": {
+    "": {
+      "": {
+        "": "מאפס"
+      }
+    }
+  },
+  "Retry": "Retry",
+  "Return home": "Return home",
   "Review and continue": "Review and continue",
+  "Risks": "Risks",
   "Saving": {
     "": {
       "": {
@@ -171,23 +378,411 @@
       }
     }
   },
-  "Your session is no longer available": {
-    " Sign in again to continue onboarding": {
-      "": "Your session is no longer available. Sign in again to continue onboarding."
+  "Scenario simulation": "Scenario simulation",
+  "See how it works": "ראה איך זה עובד",
+  "Select language": "Select language",
+  "Send reset code": "שלח קוד איפוס",
+  "Sending": {
+    "": {
+      "": {
+        "": "שולח"
+      }
     }
   },
-  "Your profile could not be saved right now": {
-    " Retry before moving to the next step": {
-      "": "Your profile could not be saved right now. Retry before moving to the next step."
+  "Set new password": "קבע סיסמה חדשה",
+  "Sign in": "Sign in",
+  "Sign in to continue your case strategy": "התחבר כדי להמשיך באסטרטגיית התיק שלך",
+  "Sign in to continue your immigration strategy": {
+    "": "Sign in to continue your immigration strategy."
+  },
+  "Sign out": "Sign out",
+  "Sign up": "Sign up",
+  "Signing in": {
+    "": {
+      "": {
+        "": "Signing in..."
+      }
     }
+  },
+  "Simple pricing": "Simple pricing",
+  "Six powerful tools working together to give you clarity, confidence, and a concrete plan": {
+    "": "Six powerful tools working together to give you clarity, confidence, and a concrete plan."
+  },
+  "Software Engineer, Turkey to USA": "מהנדס תוכנה, טורקיה לארה\"ב",
+  "Software Engineering, AI/ML, Product": "הנדסת תוכנה, AI/ML, מוצר",
+  "Something went wrong": {
+    "": "משהו השתבש",
+    " Please try again": {
+      "": "משהו השתבש  אנא נסה שוב"
+    }
+  },
+  "Spouse, children, parents — know which family visa fits and how long it takes": {
+    "": "בן זוג, ילדים, הורים — דע איזו ויזה משפחתית מתאימה וכמה זמן זה לוקח"
+  },
+  "Start a business": "Start a business",
+  "Start free": {
+    "": "Start free",
+    " Upgrade when you're ready for your full immigration plan": {
+      "": "Start free. Upgrade when you're ready for your full immigration plan."
+    }
+  },
+  "Start with the essentials and complete your immigration profile later": {
+    "": "Start with the essentials and complete your immigration profile later."
+  },
+  "Start your plan": "Start your plan",
+  "Starter": "Starter",
+  "Step 1 of 4": "Step 1 of 4",
+  "Step 2 of 4": "Step 2 of 4",
+  "Step 3 of 4": "Step 3 of 4",
+  "Step 4 of 4": "Step 4 of 4",
+  "Step-by-step roadmap": "מפת דרכים שלב אחר שלב",
+  "Stop guessing": {
+    " Get a clear plan for your immigration journey — in minutes, not months": {
+      "": "הפסיקו לנחש  קבלו תוכנית ברורה למסע ההגירה שלכם — בדקות, לא חודשים"
+    }
+  },
+  "Strategy": "Strategy",
+  "Study abroad": "Study abroad",
+  "Suggested cities": "ערים מוצעות",
+  "Suitability": "התאמה",
+  "System health": "System health",
+  "Tell us a bit about yourself": {
+    "": "Tell us a bit about yourself."
+  },
+  "Tell us about you": "Tell us about you",
+  "Tell us about yourself": {
+    " Our AI analyzes 47 visa categories, checks your readiness, and gives you a step-by-step plan with timeline, cost, and documents — in minutes": {
+      "": "ספר לנו על עצמך  ה-AI שלנו מנתח 47 קטגוריות ויזה, בודק את מוכנותך, ומעניק לך תוכנית שלב אחר שלב עם לוח זמנים, עלות, ומסמכים — בדקות"
+    }
+  },
+  "The page hit an unexpected error while rendering": {
+    " Try again, and if it persists, check the server logs": {
+      "": "The page hit an unexpected error while rendering. Try again, and if it persists, check the server logs."
+    }
+  },
+  "The page you're looking for doesn't exist or hasn't been built yet": {
+    "": "The page you're looking for doesn't exist or hasn't been built yet."
   },
   "The platform could not load your profile draft": {
     " Retry before continuing": {
       "": "The platform could not load your profile draft. Retry before continuing."
     }
   },
-  "Document status": "Document status",
-  "Case health": "Case health",
-  "Action roadmap": "Action roadmap",
-  "No cases yet": "No cases yet"
+  "The problem": "הבעיה",
+  "The readiness score showed me exactly what I was missing": {
+    " I uploaded 3 documents and my score jumped from 52 to 81": {
+      "": "ציון המוכנות הראה לי בדיוק מה חסר לי  העליתי 3 מסמכים וציון שלי קפץ מ-52 ל-81"
+    }
+  },
+  "The solution": "הפתרון",
+  "There's always a way — we help you find it": {
+    "": "תמיד יש דרך — אנחנו עוזרים לך למצוא אותה"
+  },
+  "Three steps": {
+    " No confusion": {
+      "": "שלושה צעדים  ללא בלבול"
+    }
+  },
+  "Timeline": "Timeline",
+  "Timeline estimate": "הערכת לוח זמנים",
+  "Toggle menu": "הפעלת תפריט",
+  "Try it now": "נסה את זה עכשיו",
+  "Turkey, India, Brazil": {
+    "": {
+      "": {
+        "": "טורקיה, הודו, ברזיל"
+      }
+    }
+  },
+  "United States, Canada": {
+    "": {
+      "": {
+        "": "ארצות הברית, קנדה"
+      }
+    }
+  },
+  "Upload document": "Upload document",
+  "Upload your resume and education documents to increase your readiness score to 90+": {
+    "": "העלה את קורות החיים שלך ומסמכי ההשכלה שלך כדי להעלות את ציון המוכנות שלך ל-90+"
+  },
+  "Verification code": "קוד אימות",
+  "Verify code": "אמת קוד",
+  "Verify email": "אשר את הדוא\"ל",
+  "Verifying": {
+    "": {
+      "": {
+        "": "מאמתים"
+      }
+    }
+  },
+  "Visa categories analyzed": "קטגוריות ויזה שנבדקו",
+  "Visa types": "סוגי ויזה",
+  "Visa, timeline, documents, cost — everything in one clear view": {
+    "": "ויזה, לוח זמנים, מסמכים, עלות — הכל בתצוגה ברורה אחת"
+  },
+  "We analyze multiple countries, visa types, and pathways to match you with the best option based on your profile": {
+    "": "אנו מנתחים מדינות רבות, סוגי ויזה ודרכים כדי להתאים לך את האפשרות הטובה ביותר בהתבסס על הפרופיל שלך"
+  },
+  "We analyze your options": "We analyze your options",
+  "We sent a 6-digit code to": "שלחנו קוד בן 6 ספרות ל-",
+  "We show you what to do": "אנו מראים לך מה לעשות",
+  "We turn everything into one clear plan": {
+    "": "אנו הופכים הכל לתוכנית ברורה אחת"
+  },
+  "Welcome back": "Welcome back",
+  "What do you do?": "What do you do?",
+  "What you get": "מה שאתה מקבל",
+  "Whatever your reason, we can help": {
+    "": "לא משנה מה הסיבה שלך, אנחנו יכולים לעזור"
+  },
+  "Where are you from?": "מאיפה אתה?",
+  "Where do you live now?": "Where do you live now?",
+  "Where do you want to go?": "Where do you want to go?",
+  "Work abroad": "Work abroad",
+  "Wrong email?": "דוא\"ל שגוי?",
+  "Years of experience": "Years of experience",
+  "You're ready to see your first strategy": "You're ready to see your first strategy",
+  "Your background, education, experience, and goals": {
+    " Takes 2 minutes": {
+      "": "הרקע שלך, השכלה, ניסיון ומטרות לוקחים 2 דקות"
+    }
+  },
+  "Your best path": "הדרך הטובה ביותר שלך",
+  "Your best path, ranked by fit": "הדרך הטובה ביותר שלך, מדורגת לפי התאמה",
+  "Your immigration goals and timing": {
+    "": "Your immigration goals and timing."
+  },
+  "Your new life starts here": {
+    "": "החיים החדשים שלך מתחילים כאן"
+  },
+  "Your password has been updated": {
+    " You can now sign in": {
+      "": "הסיסמה שלך עודכנה  עכשיו אתה יכול להתחבר"
+    }
+  },
+  "Your personalized result": "התוצאה האישית שלך",
+  "Your profile could not be saved right now": {
+    " Retry before moving to the next step": {
+      "": "Your profile could not be saved right now. Retry before moving to the next step."
+    }
+  },
+  "Your session is no longer available": {
+    " Sign in again to continue onboarding": {
+      "": "Your session is no longer available. Sign in again to continue onboarding."
+    }
+  },
+  "one-time": "one-time",
+  "without confusion": {
+    "": "ללא בלבול"
+  },
+  "FAQ": "שאלות נפוצות",
+  "tools": {
+    "pageTitle": "כלים חינמיים להגירה",
+    "pageSubtitle": "תשובות מהירות — אין צורך בהרשמה.",
+    "eligibilityChecker": {
+      "title": "בודק זכאות",
+      "description": "ענה על 6 שאלות, ראה את הוויזות שאתה עשוי להיות זכאי להן."
+    },
+    "costEstimator": {
+      "title": "כלי חישוב עלויות",
+      "description": "העלות הכוללת של המעבר לחו\"ל — לא רק דמי הוויזה."
+    },
+    "timelineCalculator": {
+      "title": "מחשבון לוח זמנים",
+      "description": "חזה מתי תגיע שלב אחר שלב."
+    }
+  },
+  "eligibilityChecker": {
+    "pageTitle": "בודק זכאות לוויזה חינמי",
+    "pageSubtitle": "ענה על 6 שאלות קצרות. ראה את רשימת הוויזות הקצרה שאתה עשוי להיות זכאי להן — אין צורך בהרשמה.",
+    "faq1": {
+      "question": "האם בודק הזכאות חינמי?",
+      "answer": "כן. הוא פועל לחלוטין בדפדפן שלך ואינו דורש חשבון."
+    },
+    "faq2": {
+      "question": "עד כמה הבדיקה מדויקת?",
+      "answer": "הוא משתמש בכללי זכאות ציבוריים לכל מסלול. זהו מסנן ראשוני חזק אך אינו מחליף ניתוח מלא נתמך ב-AI או ייעוץ משפטי."
+    },
+    "faq3": {
+      "question": "האם הוא שומר את תשובותיי?",
+      "answer": "לא. הכלי פועל באופן מקומי בדפדפן שלך. אם אתה רוצה שהתוצאות שלך יישמרו בפרופיל שלך, הירשם."
+    },
+    "emailCapture": {
+      "title": "ניתוח מלא נתמך ב-AI",
+      "subtitle": "קבל תוכנית A/B/C מותאמת אישית ודירוג מוכנות בדוא\"ל."
+    }
+  },
+  "costEstimator": {
+    "pageTitle": "כלי חישוב עלויות הגירה",
+    "pageSubtitle": "בחר מסלול, הוסף את גודל המשפחה שלך וראה את העלות הכוללת המציאותית — לא רק דמי הוויזה.",
+    "faq1": {
+      "question": "מה כלול בהערכה?",
+      "answer": "דמי ממשלה, דמי עורכי דין/סוכנויות, קרנות התיישבות, כרטיסי טיסה, מגורים ראשוניים ומר buffer של 10% להוצאות בלתי צפויות."
+    },
+    "faq2": {
+      "question": "האם זה נכון למצב הפרטי שלי?",
+      "answer": "זו הערכה טובה לכל מסלול. העלות האמיתית שלך משתנה לפי גודל המשפחה, העיר ובחירת עורך הדין. הירשם לקבלת דוח מותאם אישית."
+    },
+    "emailCapture": {
+      "title": "דוח עלויות מלא בדוא\"ל",
+      "subtitle": "טבלה הכוללת עלויות לפי שורות מותאמות למדינת היעד שלך."
+    }
+  },
+  "timelineCalculator": {
+    "pageTitle": "מחשבון לוח זמנים",
+    "pageSubtitle": "בחר מסלול. ראה מתי תגיע — כולל הכנה, בקשה, טיפול והגעה.",
+    "faq1": {
+      "question": "למה זמן ההכנה כלול?",
+      "answer": "השעון לא מתחיל כשאתה מגיש בקשה — הוא מתחיל כשאתה מתחיל לאסוף מסמכים. אנו מוסיפים חלון הכנה מציאותי לכל מסלול."
+    },
+    "faq2": {
+      "question": "עד כמה ההערכה הזו מדויקת?",
+      "answer": "היא משקפת את זמני הטיפול הממוצעים שפורסמו. מקרים פרטיים עשויים להיות מהירים או איטיים יותר בהתאם ל-RFE, מכסות מדינה ולשלמות הראיות."
+    },
+    "emailCapture": {
+      "title": "עוקב אחר לוח זמנים שבועי",
+      "subtitle": "עד יום ההגעה נשלח לך תוכנית שבועית פשוטה בדוא\"ל."
+    }
+  },
+  "visaIndex": {
+    "pageTitle": "כל הוויזות",
+    "pageSubtitle": "עלויות, לוחות זמנים וזכאות עבור כל מסלול שאנו מכסים.",
+    "months": "חודש"
+  },
+  "bestCountries": {
+    "pageTitle": "המדינות הטובות ביותר לפי מקצוע",
+    "pageSubtitle": "בחר את מקצועך כדי לראות את יעדי ההגירה המדורגים.",
+    "cardTitle": "המדינות הטובות ביותר עבור {profession}",
+    "breadcrumb": "המדינות הטובות ביותר",
+    "rankedSubtitle": "מדורגות לפי עלות, לוח זמנים והגירה קבועה. הנתונים מעודכנים לשנת 2026.",
+    "topPathway": "המסלול הטוב ביותר",
+    "seeAllPathways": "ראה את כל המסלולים",
+    "visaDetails": "פרטי {code}",
+    "otherProfessions": "מקצועות אחרים"
+  },
+  "compare": {
+    "pageTitle": "השוואות ויזה",
+    "pageSubtitle": "השוואות צמודות של החלטות מסלול הנפוצות ביותר.",
+    "vs": "מול",
+    "comparingSubtitle": "{nameA} מול {nameB} מושווים לפי עלות, זמן וזכאות — כדי שלא תבזבז חודשים על מסלול שגוי.",
+    "rowFullName": "שם מלא",
+    "rowCategory": "קטגוריה",
+    "rowDestination": "מדינת יעד",
+    "rowTypicalDuration": "משך טיפוסי",
+    "rowCostUsd": "עלות (דולר אמריקאי)",
+    "rowLeadsToPR": "מוביל להגרה קבועה",
+    "yes": "כן",
+    "no": "לא",
+    "bestFor": "המתאים ביותר",
+    "otherComparisons": "השוואות ויזה אחרות"
+  },
+  "visaMatch": {
+    "pageTitle": "התאמת ויזה",
+    "pageSubtitle": "בחר את מדינת היעד שלך ואת הפרופיל שלך כדי לראות את 3 הדרכים הראשונות שלך.",
+    "cardSubtitle": "הוויזות הטובות ביותר עבור {profession}",
+    "breadcrumb": "התאמת ויזה",
+    "rankedSubtitle": "{count} דרכי הגירה עבור {profession} דורגו; עם יעד {countryName}. כל אפשרות דורגה לפי התאמה, עלות, זמן וסיכון.",
+    "getPersonalizedMatch": "קבל את ההתאמה האישית שלך",
+    "freeEligibilityCheck": "בדיקת זכאות חינם",
+    "typicalTimeline": "לוח זמנים טיפוסי",
+    "typicalCost": "עלות טיפוסית",
+    "duration": "משך זמן",
+    "strengths": "חוזקות",
+    "moreVisaGuides": "מדריך ויזה נוסף עבור {countryName}"
+  },
+  "moveTo": {
+    "pageTitle": "מדריכי מעבר למדינה",
+    "pageSubtitle": "מדריכים שלב אחר שלב לפי מדינת המוצא והיעד.",
+    "fromLabel": "{flag} מ-{name}",
+    "cardSubtitle": "מדריך עבור אזרחי {demonym}",
+    "h1": "מעבר לעיר {toName} מ-{fromName}",
+    "intro": "מדריך מעשי למעבר לעיר {toName} עבור אזרחי {demonym}. בחר דרך, הבן את לוח הזמנים והעלות, קבל ציון הכנה מותאם אישית.",
+    "topVisaPathways": "דרכי הוויזה הטובות ביותר עבור {toName}",
+    "howToStepByStep": "איך לעבור שלב אחר שלב",
+    "moreCountryGuides": "מדריך למדינה נוסף"
+  },
+  "Onboarding could not load": "לא ניתן לטעון את תהליך ההצטרפות",
+  "Review the highlighted profile fields before continuing": {
+    "": "עיין בשדות הפרופיל המודגשים לפני ההמשך"
+  },
+  "Skip": "דלג",
+  "Who are you?": "מי אתה?",
+  "Select your nationality": "בחר את הלאום שלך",
+  "Select current country": "בחר את המדינה הנוכחית",
+  "e": {
+    "g": {
+      " English, Turkish": {
+        "": {
+          "": {
+            "": "לדוגמה. אנגלית, טורקית..."
+          }
+        }
+      },
+      " Software Engineer, Doctor, Designer": {
+        "": {
+          "": {
+            "": "לדוגמה. מהנדס תוכנה, רופא, מעצב..."
+          }
+        }
+      },
+      " 50000": "לדוגמה. 50000"
+    }
+  },
+  "Your background": "הרקע שלך",
+  "English proficiency": "רמת האנגלית שלך",
+  "Available capital (USD)": "הון זמין (דולר אמריקאי)",
+  "Your dream destination and timeline": {
+    "": "יעד החלומות שלך ולוח הזמנים"
+  },
+  "When do you want to move?": "מתי אתה רוצה לעבור?",
+  "Have you had a visa refusal before?": "האם הייתה לך סירוב ויזה בעבר?",
+  "This helps us give accurate recommendations": {
+    " Your data is private and secure": {
+      "": "זה עוזר לנו לתת המלצות מדויקות  הנתונים שלך פרטיים ומאובטחים"
+    }
+  },
+  "You're all set!": "אתה מוכן!",
+  "Amazing! Your profile is almost complete": {
+    " We can build great strategies for you": {
+      "": "מדהים! הפרופיל שלך כמעט מושלם  אנחנו יכולים לבנות אסטרטגיות נהדרות עבורך"
+    }
+  },
+  "Great start! You can always complete more details from your profile page": {
+    "": "התחלה מצוינת! תמיד תוכל להשלים פרטים נוספים מעמוד הפרופיל שלך"
+  },
+  "No worries! You can fill in more details anytime from your dashboard": {
+    "": "אין דאגות! תוכל למלא פרטים נוספים בכל עת מלוח הבקרה שלך"
+  },
+  "See your AI analysis": "ראה את הניתוח של ה-AI שלך",
+  "there": "שם",
+  "Immigrant": "מהגר",
+  "Guru": "גורה",
+  "Hey {name}, welcome aboard!": "היי {name}, ברוך הבא!",
+  "Let's build your immigration profile in under 2 minutes": {
+    " The more we know, the better strategies we can craft for you": {
+      "": "בוא נבנה את פרופיל ההגירה שלך בפחות מ-2 דקות  ככל שנדע יותר, כך נוכל ליצור אסטרטגיות טובות יותר עבורך"
+    }
+  },
+  "Let's go": "בוא נתחיל",
+  "Takes about 2 minutes": {
+    " You can skip anything": {
+      "": "לוקח כ-2 דקות  תוכל לדלג על כל דבר"
+    }
+  },
+  "score": {
+    "outOf100": "מתוך 100",
+    "thisProfileIs": "פרופיל זה ברמת {readiness}",
+    "scoredOn": "Immigrant Guru דירג את הפרופיל הזה לפי השכלה, ניסיון תעסוקתי, שפה, התאמה למדינת היעד ו-8 ממדים נוספים.",
+    "getMyOwnScore": "קבל את הציון שלי",
+    "shareOnX": "שתף ב-X"
+  },
+  "visa": {
+    "cost": "עלות",
+    "prPath": "דרך למגורים קבועים",
+    "idealFor": "אנשים מתאימים",
+    "requirements": "דרישות",
+    "risksAndRejection": "סיכונים וסיבות דחייה נפוצות",
+    "checkReadiness": "בדוק את הכנת {code} שלי",
+    "moreVisaGuides": "מדריך ויזה נוסף עבור {countryName}"
+  }
 }
