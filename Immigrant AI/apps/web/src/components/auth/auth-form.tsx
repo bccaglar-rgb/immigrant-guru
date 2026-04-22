@@ -1,12 +1,13 @@
 "use client";
 
-import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { z } from "zod";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Link } from "@/i18n/navigation";
 import { useAuthSession } from "@/hooks/use-auth-session";
 import { loginWithPassword, registerUser, sendVerificationCode, verifyEmail } from "@/lib/auth-client";
 import { resolveSafeAuthRedirectPath } from "@/lib/auth-redirect";
@@ -19,25 +20,8 @@ type AuthFormProps = Readonly<{
 type FormStep = "form" | "verify";
 type FieldErrors = Partial<Record<"email" | "firstName" | "lastName" | "password" | "confirmPassword", string>>;
 
-const signInSchema = z.object({
-  email: z.string().email("Enter a valid email address."),
-  password: z.string().min(8, "Password must contain at least 8 characters.")
-});
-
-const signUpSchema = z
-  .object({
-    firstName: z.string().trim().max(100, "First name is too long.").optional(),
-    lastName: z.string().trim().max(100, "Last name is too long.").optional(),
-    email: z.string().email("Enter a valid email address."),
-    password: z.string().min(8, "Password must contain at least 8 characters."),
-    confirmPassword: z.string().min(8, "Confirm your password.")
-  })
-  .refine((values) => values.password === values.confirmPassword, {
-    message: "Passwords do not match.",
-    path: ["confirmPassword"]
-  });
-
 export function AuthForm({ mode }: AuthFormProps) {
+  const t = useTranslations();
   const router = useRouter();
   const searchParams = useSearchParams();
   const { establishSession, status } = useAuthSession();
@@ -66,13 +50,30 @@ export function AuthForm({ mode }: AuthFormProps) {
     [isSignUp, searchParams]
   );
 
+  const signInSchema = z.object({
+    email: z.string().email(t("Enter a valid email address.")),
+    password: z.string().min(8, t("Password must contain at least 8 characters."))
+  });
+
+  const signUpSchema = z
+    .object({
+      firstName: z.string().trim().max(100, t("First name is too long.")).optional(),
+      lastName: z.string().trim().max(100, t("Last name is too long.")).optional(),
+      email: z.string().email(t("Enter a valid email address.")),
+      password: z.string().min(8, t("Password must contain at least 8 characters.")),
+      confirmPassword: z.string().min(8, t("Confirm your password."))
+    })
+    .refine((values) => values.password === values.confirmPassword, {
+      message: t("Passwords do not match."),
+      path: ["confirmPassword"]
+    });
+
   useEffect(() => {
     if (status === "authenticated") {
       router.replace(nextPath);
     }
   }, [nextPath, router, status]);
 
-  // Countdown timer for resend cooldown
   useEffect(() => {
     if (resendCooldown <= 0) return;
     const timer = setTimeout(() => setResendCooldown((c) => c - 1), 1000);
@@ -108,30 +109,26 @@ export function AuthForm({ mode }: AuthFormProps) {
     if (isSubmitting) return;
     const code = verificationCode.trim();
     if (!code) {
-      setFormError("Enter the 6-digit code from your email.");
+      setFormError(t("Enter the 6-digit code from your email."));
       return;
     }
 
     const submit = async () => {
       setIsSubmitting(true);
       setFormError(null);
-
       try {
         const result = await verifyEmail(pendingEmail, code);
         if (!result.ok) {
           setFormError(result.errorMessage);
           return;
         }
-
         const established = await establishSession(result.data);
         if (!established.ok) {
           console.warn("verify-email: post-verify session hydrate failed", established.errorMessage);
         }
-
-        // Full navigation so the server-side auth context is fresh.
         window.location.href = nextPath;
       } catch (err) {
-        setFormError(err instanceof Error ? err.message : "Something went wrong. Please try again.");
+        setFormError(err instanceof Error ? err.message : t("Something went wrong. Please try again."));
       } finally {
         setIsSubmitting(false);
       }
@@ -167,19 +164,16 @@ export function AuthForm({ mode }: AuthFormProps) {
             applyErrors(validation.error.issues);
             return;
           }
-
           const registerResult = await registerUser({
             email: validation.data.email,
             password: validation.data.password,
             firstName: validation.data.firstName?.trim() || undefined,
             lastName: validation.data.lastName?.trim() || undefined
           });
-
           if (!registerResult.ok) {
             setFormError(registerResult.errorMessage);
             return;
           }
-
           enterVerifyStep(validation.data.email);
           return;
         } else {
@@ -188,11 +182,8 @@ export function AuthForm({ mode }: AuthFormProps) {
             applyErrors(validation.error.issues);
             return;
           }
-
           result = await loginWithPassword(validation.data);
-
           if (!result.ok) {
-            // Email not verified — show verification step
             if (result.status === 403) {
               enterVerifyStep(validation.data.email);
               return;
@@ -207,7 +198,6 @@ export function AuthForm({ mode }: AuthFormProps) {
           setFormError(established.errorMessage);
           return;
         }
-
         router.replace(nextPath);
         router.refresh();
       } finally {
@@ -223,11 +213,11 @@ export function AuthForm({ mode }: AuthFormProps) {
     return (
       <div className="space-y-6">
         <div className="space-y-2">
-          <h2 className="text-2xl font-semibold tracking-tight text-ink">Check your email</h2>
+          <h2 className="text-2xl font-semibold tracking-tight text-ink">{t("Check your email")}</h2>
           <p className="text-sm leading-relaxed text-muted">
-            We sent a 6-digit code to{" "}
-            <span className="font-medium text-ink">{pendingEmail}</span>. Enter it below to
-            verify your account.
+            {t("We sent a 6-digit code to")}{" "}
+            <span className="font-medium text-ink">{pendingEmail}</span>.{" "}
+            {t("Enter it below to verify your account.")}
           </p>
         </div>
 
@@ -236,7 +226,7 @@ export function AuthForm({ mode }: AuthFormProps) {
             autoComplete="one-time-code"
             disabled={isSubmitting}
             inputMode="numeric"
-            label="Verification code"
+            label={t("Verification code")}
             maxLength={6}
             onChange={(e) => {
               setVerificationCode(e.target.value.replace(/\D/g, "").slice(0, 6));
@@ -265,7 +255,7 @@ export function AuthForm({ mode }: AuthFormProps) {
             onClick={handleVerify}
             type="button"
           >
-            {isSubmitting ? "Verifying..." : "Verify email"}
+            {isSubmitting ? t("Verifying...") : t("Verify email")}
           </Button>
 
           <button
@@ -274,18 +264,18 @@ export function AuthForm({ mode }: AuthFormProps) {
             onClick={handleResendCode}
             type="button"
           >
-            {resendCooldown > 0 ? `Resend code in ${resendCooldown}s` : "Resend code"}
+            {resendCooldown > 0 ? t("Resend code in {n}s", { n: resendCooldown }) : t("Resend code")}
           </button>
         </div>
 
         <p className="text-sm text-muted">
-          Wrong email?{" "}
+          {t("Wrong email?")}{" "}
           <button
             className="font-semibold text-accent hover:text-accent-hover transition-colors"
             onClick={() => { setStep("form"); setFormError(null); }}
             type="button"
           >
-            Go back
+            {t("Go back")}
           </button>
         </p>
       </div>
@@ -297,12 +287,12 @@ export function AuthForm({ mode }: AuthFormProps) {
     <div className="space-y-6">
       <div className="space-y-2">
         <h2 className="text-2xl font-semibold tracking-tight text-ink">
-          {isSignUp ? "Create your account" : "Welcome back"}
+          {isSignUp ? t("Create your account") : t("Welcome back")}
         </h2>
         <p className="text-sm leading-relaxed text-muted">
           {isSignUp
-            ? "Start with the essentials and complete your immigration profile later."
-            : "Sign in to continue your immigration strategy."}
+            ? t("Start with the essentials and complete your immigration profile later.")
+            : t("Sign in to continue your immigration strategy.")}
         </p>
       </div>
 
@@ -313,7 +303,7 @@ export function AuthForm({ mode }: AuthFormProps) {
               autoComplete="given-name"
               disabled={isSubmitting}
               error={fieldErrors.firstName}
-              label="First name"
+              label={t("First name")}
               onChange={(event) => handleChange("firstName", event.target.value)}
               placeholder="Aylin"
               value={formState.firstName}
@@ -322,7 +312,7 @@ export function AuthForm({ mode }: AuthFormProps) {
               autoComplete="family-name"
               disabled={isSubmitting}
               error={fieldErrors.lastName}
-              label="Last name"
+              label={t("Last name")}
               onChange={(event) => handleChange("lastName", event.target.value)}
               placeholder="Demir"
               value={formState.lastName}
@@ -334,7 +324,7 @@ export function AuthForm({ mode }: AuthFormProps) {
           autoComplete="email"
           disabled={isSubmitting}
           error={fieldErrors.email}
-          label="Email"
+          label={t("Email")}
           onChange={(event) => handleChange("email", event.target.value)}
           placeholder="you@example.com"
           type="email"
@@ -345,9 +335,9 @@ export function AuthForm({ mode }: AuthFormProps) {
           autoComplete={isSignUp ? "new-password" : "current-password"}
           disabled={isSubmitting}
           error={fieldErrors.password}
-          label="Password"
+          label={t("Password")}
           onChange={(event) => handleChange("password", event.target.value)}
-          placeholder="Minimum 8 characters"
+          placeholder={t("Minimum 8 characters")}
           type="password"
           value={formState.password}
         />
@@ -357,11 +347,11 @@ export function AuthForm({ mode }: AuthFormProps) {
             autoComplete="new-password"
             disabled={isSubmitting}
             error={fieldErrors.confirmPassword}
-            label="Confirm password"
+            label={t("Confirm password")}
             onChange={(event) =>
               handleChange("confirmPassword", event.target.value)
             }
-            placeholder="Repeat your password"
+            placeholder={t("Repeat your password")}
             type="password"
             value={formState.confirmPassword}
           />
@@ -376,24 +366,24 @@ export function AuthForm({ mode }: AuthFormProps) {
         <Button disabled={isSubmitting} fullWidth size="lg" type="submit">
           {isSubmitting
             ? isSignUp
-              ? "Creating account..."
-              : "Signing in..."
+              ? t("Creating account...")
+              : t("Signing in...")
             : isSignUp
-              ? "Create account"
-              : "Sign in"}
+              ? t("Create account")
+              : t("Sign in")}
         </Button>
 
         {!isSignUp && (
           <div className="text-center">
             <Link href="/forgot-password" className="text-sm text-muted hover:text-accent transition-colors">
-              Forgot your password?
+              {t("Forgot your password?")}
             </Link>
           </div>
         )}
       </form>
 
       <p className="text-sm text-muted">
-        {isSignUp ? "Already have an account?" : "Need an account?"}{" "}
+        {isSignUp ? t("Already have an account?") : t("Need an account?")}{" "}
         <Link
           className="font-semibold text-accent transition-colors hover:text-accent-hover"
           href={
@@ -406,7 +396,7 @@ export function AuthForm({ mode }: AuthFormProps) {
                 : "/sign-up"
           }
         >
-          {isSignUp ? "Sign in" : "Create one"}
+          {isSignUp ? t("Sign in") : t("Create one")}
         </Link>
       </p>
     </div>

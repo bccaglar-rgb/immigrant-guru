@@ -1,17 +1,19 @@
 "use client";
 
-import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { useState } from "react";
 
 import { Animate } from "@/components/ui/animate";
 import { AppShell } from "@/components/layout/app-shell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Link } from "@/i18n/navigation";
 import { apiRequest } from "@/lib/api-client";
 
 type Step = "email" | "code" | "newPassword" | "done";
 
 export default function ForgotPasswordPage() {
+  const t = useTranslations();
   const [step, setStep] = useState<Step>("email");
   const [email, setEmail] = useState("");
   const [code, setCode] = useState("");
@@ -20,7 +22,7 @@ export default function ForgotPasswordPage() {
   const [loading, setLoading] = useState(false);
 
   const handleSendCode = async () => {
-    if (!email) { setError("Enter your email."); return; }
+    if (!email) { setError(t("Enter your email.")); return; }
     setLoading(true); setError("");
     const res = await apiRequest({ method: "POST", path: "/auth/forgot-password", body: { email }, retries: 0, timeoutMs: 10000 });
     setLoading(false);
@@ -29,7 +31,7 @@ export default function ForgotPasswordPage() {
   };
 
   const handleVerifyCode = async () => {
-    if (!code) { setError("Enter the 6-digit code."); return; }
+    if (!code) { setError(t("Enter the 6-digit code.")); return; }
     setLoading(true); setError("");
     const res = await apiRequest({ method: "POST", path: "/auth/verify-reset-code", body: { email, code }, retries: 0, timeoutMs: 10000 });
     setLoading(false);
@@ -38,7 +40,7 @@ export default function ForgotPasswordPage() {
   };
 
   const handleResetPassword = async () => {
-    if (newPassword.length < 8) { setError("Password must be at least 8 characters."); return; }
+    if (newPassword.length < 8) { setError(t("Password must be at least 8 characters.")); return; }
     setLoading(true); setError("");
     const res = await apiRequest({ method: "POST", path: "/auth/reset-password", body: { email, code, new_password: newPassword }, retries: 0, timeoutMs: 10000 });
     setLoading(false);
@@ -55,13 +57,13 @@ export default function ForgotPasswordPage() {
 
               {step === "email" && (
                 <>
-                  <h1 className="text-2xl font-semibold tracking-tight text-ink">Forgot your password?</h1>
-                  <p className="mt-2 text-sm text-muted">Enter your email and we&apos;ll send you a reset code.</p>
+                  <h1 className="text-2xl font-semibold tracking-tight text-ink">{t("Forgot your password?")}</h1>
+                  <p className="mt-2 text-sm text-muted">{t("Enter your email and we'll send you a reset code.")}</p>
                   <div className="mt-6 space-y-4">
-                    <Input label="Email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" />
+                    <Input label={t("Email")} type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" />
                     {error && <p className="text-sm text-red">{error}</p>}
                     <Button fullWidth size="lg" onClick={handleSendCode} disabled={loading}>
-                      {loading ? "Sending..." : "Send reset code"}
+                      {loading ? t("Sending...") : t("Send reset code")}
                     </Button>
                   </div>
                 </>
@@ -69,16 +71,16 @@ export default function ForgotPasswordPage() {
 
               {step === "code" && (
                 <>
-                  <h1 className="text-2xl font-semibold tracking-tight text-ink">Check your email</h1>
-                  <p className="mt-2 text-sm text-muted">We sent a 6-digit code to <span className="font-medium text-ink">{email}</span></p>
+                  <h1 className="text-2xl font-semibold tracking-tight text-ink">{t("Check your email")}</h1>
+                  <p className="mt-2 text-sm text-muted">{t("We sent a 6-digit code to")} <span className="font-medium text-ink">{email}</span></p>
                   <div className="mt-6 space-y-4">
-                    <Input label="Reset code" value={code} onChange={(e) => setCode(e.target.value)} placeholder="123456" />
+                    <Input label={t("Reset code")} value={code} onChange={(e) => setCode(e.target.value)} placeholder="123456" />
                     {error && <p className="text-sm text-red">{error}</p>}
                     <Button fullWidth size="lg" onClick={handleVerifyCode} disabled={loading}>
-                      {loading ? "Verifying..." : "Verify code"}
+                      {loading ? t("Verifying...") : t("Verify code")}
                     </Button>
                     <button className="w-full text-sm text-accent hover:text-accent-hover" onClick={handleSendCode} type="button">
-                      Resend code
+                      {t("Resend code")}
                     </button>
                   </div>
                 </>
@@ -86,13 +88,13 @@ export default function ForgotPasswordPage() {
 
               {step === "newPassword" && (
                 <>
-                  <h1 className="text-2xl font-semibold tracking-tight text-ink">Set new password</h1>
-                  <p className="mt-2 text-sm text-muted">Choose a new password for your account.</p>
+                  <h1 className="text-2xl font-semibold tracking-tight text-ink">{t("Set new password")}</h1>
+                  <p className="mt-2 text-sm text-muted">{t("Choose a new password for your account.")}</p>
                   <div className="mt-6 space-y-4">
-                    <Input label="New password" type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder="Minimum 8 characters" />
+                    <Input label={t("New password")} type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder={t("Minimum 8 characters")} />
                     {error && <p className="text-sm text-red">{error}</p>}
                     <Button fullWidth size="lg" onClick={handleResetPassword} disabled={loading}>
-                      {loading ? "Resetting..." : "Reset password"}
+                      {loading ? t("Resetting...") : t("Reset password")}
                     </Button>
                   </div>
                 </>
@@ -102,10 +104,10 @@ export default function ForgotPasswordPage() {
                 <>
                   <div className="text-center">
                     <p className="text-4xl">&#10003;</p>
-                    <h1 className="mt-4 text-2xl font-semibold tracking-tight text-ink">Password reset!</h1>
-                    <p className="mt-2 text-sm text-muted">Your password has been updated. You can now sign in.</p>
+                    <h1 className="mt-4 text-2xl font-semibold tracking-tight text-ink">{t("Password reset!")}</h1>
+                    <p className="mt-2 text-sm text-muted">{t("Your password has been updated. You can now sign in.")}</p>
                     <Link href="/sign-in" className="mt-6 inline-flex h-11 items-center rounded-full bg-accent px-6 text-sm font-semibold text-white hover:bg-accent-hover">
-                      Sign in
+                      {t("Sign in")}
                     </Link>
                   </div>
                 </>
@@ -113,8 +115,8 @@ export default function ForgotPasswordPage() {
 
               {step !== "done" && (
                 <p className="mt-6 text-center text-sm text-muted">
-                  Remember your password?{" "}
-                  <Link href="/sign-in" className="font-semibold text-accent hover:text-accent-hover">Sign in</Link>
+                  {t("Remember your password?")}{" "}
+                  <Link href="/sign-in" className="font-semibold text-accent hover:text-accent-hover">{t("Sign in")}</Link>
                 </p>
               )}
 

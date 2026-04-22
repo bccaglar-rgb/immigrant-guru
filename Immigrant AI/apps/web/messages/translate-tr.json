@@ -1,0 +1,193 @@
+{
+  "Immigrant Guru - AI Immigration Strategy Platform": "Immigrant Guru - Yapay Zeka Göç Strateji Platformu",
+  "Immigrant Guru - Move to a New Country Without Confusion": "Immigrant Guru - Yeni Bir Ülkeye Karmaşa Yaşamadan Taşının",
+  "Language": "Dil",
+  "Select language": "Dil seç",
+  "How it works": "Nasıl çalışır",
+  "Find your path": "Yolunu bul",
+  "Pricing": "Fiyatlandırma",
+  "Home": "Ana sayfa",
+  "Sign in": "Giriş yap",
+  "Sign up": "Kayıt ol",
+  "Dashboard": "Panel",
+  "Log out": "Çıkış yap",
+  "Move to a New Country Without Confusion": "Yeni Bir Ülkeye Karmaşa Yaşamadan Taşının",
+  "Get your personalized visa, readiness score, and action plan in minutes": {
+    "": "Dakikalar içinde kişisel vize yolunuzu, hazırlık skorunuzu ve aksiyon planınızı alın."
+  },
+  "Benefits": "Avantajlar",
+  "Everything you need in one place": "İhtiyacınız olan her şey tek yerde",
+  "Simple pricing": "Basit fiyatlandırma",
+  "Free": "Ücretsiz",
+  "Starter": "Başlangıç",
+  "Plus": "Plus",
+  "Premium": "Premium",
+  "Create your account": "Hesabınızı oluşturun",
+  "Welcome back": "Tekrar hoş geldiniz",
+  "First name": "Ad",
+  "Last name": "Soyad",
+  "Email": "E-posta",
+  "Password": "Şifre",
+  "Confirm password": "Şifreyi onayla",
+  "Overview": "Genel bakış",
+  "Profile": "Profil",
+  "Cases": "Vakalar",
+  "Strategy": "Strateji",
+  "Timeline": "Zaman çizelgesi",
+  "Documents": "Belgeler",
+  "Risks": "Riskler",
+  "Copilot": "Yardımcı",
+  "Comparison": "Karşılaştırma",
+  "Retry": "Tekrar dene",
+  "Back": "Geri",
+  "Next": "İleri",
+  "Finish": "Bitir",
+  "Generate strategy": "Strateji oluştur",
+  "Upload document": "Belge yükle",
+  "Scenario simulation": "Senaryo simülasyonu",
+  "My plan": "Planım",
+  "Sign out": "Çıkış yap",
+  "Log in": "Giriş yap",
+  "Start your plan": "Planını başlat",
+  "Readiness score": "Hazırlık skoru",
+  "Probability score": "Başarı olasılığı skoru",
+  "Recommended pathway": "Önerilen yol",
+  "Next best action": "En iyi sonraki adım",
+  "Immigrant Guru helps you evaluate pathways, compare strategies, and act with clarity": {
+    "": "Immigrant Guru yolları değerlendirmenize, stratejileri karşılaştırmanıza ve netlikle harekete geçmenize yardımcı olur."
+  },
+  "A focused workspace for immigration decisions": "Göç kararları için odaklı bir çalışma alanı",
+  "Six powerful tools working together to give you clarity, confidence, and a concrete plan": {
+    "": "Size netlik, güven ve somut bir plan sunmak için birlikte çalışan altı güçlü araç."
+  },
+  "Immigration Score": "Göçmenlik Skoru",
+  "Explainable readiness signals": "Açıklanabilir hazırlık sinyalleri",
+  "System health": "Sistem durumu",
+  "Platform Status": "Platform durumu",
+  "Work abroad": "Yurt dışında çalış",
+  "Study abroad": "Yurt dışında oku",
+  "Move with family": "Ailenle taşın",
+  "Start a business": "İş kur",
+  "Tell us about you": "Bize kendinizi anlatın",
+  "We analyze your options": "Seçeneklerinizi analiz ediyoruz",
+  "Get your plan": "Planınızı alın",
+  "Find the plan that fits your journey": "Yolculuğunuza uyan planı seçin",
+  "Start free": {
+    " Upgrade when you're ready for your full immigration plan": {
+      "": "Ücretsiz başlayın. Tam göç planınıza hazır olduğunuzda yükseltin."
+    },
+    "": "Ücretsiz başla"
+  },
+  "Best value": "En iyi değer",
+  "one-time": "tek seferlik",
+  "No subscriptions": {
+    " Pay once, unlock your full plan": {
+      " 30-day money-back guarantee": {
+        "": "Abonelik yok. Bir kez ödeyin, tam planınızın kilidini açın. 30 gün para iade garantisi."
+      }
+    }
+  },
+  "Start with the essentials and complete your immigration profile later": {
+    "": "Temel bilgilerle başlayın, göç profilinizi daha sonra tamamlayın."
+  },
+  "Sign in to continue your immigration strategy": {
+    "": "Göç stratejinize devam etmek için giriş yapın."
+  },
+  "Forgot your password?": "Şifrenizi mi unuttunuz?",
+  "Create account": "Hesap oluştur",
+  "Create one": "Bir hesap oluştur",
+  "Already have an account?": "Zaten hesabınız var mı?",
+  "Need an account?": "Bir hesaba mı ihtiyacınız var?",
+  "Creating account": {
+    "": {
+      "": {
+        "": "Hesap oluşturuluyor..."
+      }
+    }
+  },
+  "Signing in": {
+    "": {
+      "": {
+        "": "Giriş yapılıyor..."
+      }
+    }
+  },
+  "Minimum 8 characters": "En az 8 karakter",
+  "Repeat your password": "Şifrenizi tekrar girin",
+  "Enter a valid email address": {
+    "": "Geçerli bir e-posta adresi girin."
+  },
+  "Password must contain at least 8 characters": {
+    "": "Şifre en az 8 karakter olmalıdır."
+  },
+  "Page not found": "Sayfa bulunamadı",
+  "The page you're looking for doesn't exist or hasn't been built yet": {
+    "": "Aradığınız sayfa yok veya henüz oluşturulmadı."
+  },
+  "Return home": "Ana sayfaya dön",
+  "Error": "Hata",
+  "Something went wrong": "Bir şeyler yanlış gitti",
+  "The page hit an unexpected error while rendering": {
+    " Try again, and if it persists, check the server logs": {
+      "": "Sayfa oluşturulurken beklenmeyen bir hatayla karşılaşıldı. Tekrar deneyin; sorun sürerse sunucu kayıtlarını kontrol edin."
+    }
+  },
+  "Go home": "Ana sayfaya git",
+  "Admin": "Yönetici",
+  "Step 1 of 4": "4 adımın 1.si",
+  "Step 2 of 4": "4 adımın 2.si",
+  "Step 3 of 4": "4 adımın 3.sü",
+  "Step 4 of 4": "4 adımın 4.sü",
+  "Tell us a bit about yourself": {
+    "": "Bize biraz kendinizden bahsedin."
+  },
+  "Where do you want to go?": "Nereye gitmek istiyorsunuz?",
+  "Your immigration goals and timing": {
+    "": "Göç hedefleriniz ve zamanlamanız."
+  },
+  "Professional experience and finances": {
+    "": "Profesyonel deneyim ve mali durum."
+  },
+  "You're ready to see your first strategy": "İlk stratejinizi görmeye hazırsınız",
+  "Nationality": "Uyruk",
+  "Where do you live now?": "Şu anda nerede yaşıyorsunuz?",
+  "Relationship status": "İlişki durumu",
+  "Children": "Çocuk sayısı",
+  "Preferred language": "Tercih edilen dil",
+  "Target country": "Hedef ülke",
+  "Relocation timeline": "Taşınma zamanlaması",
+  "Prior visa refusal?": "Önceki vize reddi var mı?",
+  "Any criminal record?": "Adli sicil kaydı var mı?",
+  "What do you do?": "Ne iş yapıyorsunuz?",
+  "Years of experience": "Deneyim yılı",
+  "Education level": "Eğitim seviyesi",
+  "English level": "İngilizce seviyesi",
+  "Available capital": "Kullanılabilir sermaye",
+  "Review and continue": "Gözden geçir ve devam et",
+  "Saving": {
+    "": {
+      "": {
+        "": "Kaydediliyor..."
+      }
+    }
+  },
+  "Your session is no longer available": {
+    " Sign in again to continue onboarding": {
+      "": "Oturumunuz artık geçerli değil. Onboarding'e devam etmek için tekrar giriş yapın."
+    }
+  },
+  "Your profile could not be saved right now": {
+    " Retry before moving to the next step": {
+      "": "Profiliniz şu anda kaydedilemedi. Sonraki adıma geçmeden önce tekrar deneyin."
+    }
+  },
+  "The platform could not load your profile draft": {
+    " Retry before continuing": {
+      "": "Platform profil taslağınızı yükleyemedi. Devam etmeden önce tekrar deneyin."
+    }
+  },
+  "Document status": "Belge durumu",
+  "Case health": "Vaka sağlığı",
+  "Action roadmap": "Aksiyon yol haritası",
+  "No cases yet": "Henüz vaka yok"
+}

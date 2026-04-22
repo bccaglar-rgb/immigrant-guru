@@ -24,10 +24,17 @@
   "Built for immigrants, by immigrants": "Göçmenler için, göçmenler tarafından",
   "Case health": "Vaka sağlığı",
   "Cases": "Vakalar",
+  "Check your email": "E-postanızı kontrol edin",
   "Checkout failed": "Ödeme başarısız",
   "Children": "Çocuk sayısı",
+  "Choose a new password for your account": {
+    "": "Hesabınız için yeni bir şifre seçin."
+  },
   "Comparison": "Karşılaştırma",
   "Confirm password": "Şifreyi onayla",
+  "Confirm your password": {
+    "": "Şifrenizi onaylayın."
+  },
   "Confusing visa rules that change every year": "Her yıl değişen karışık vize kuralları",
   "Copilot": "Yardımcı",
   "Cost estimate": "Maliyet tahmini",
@@ -62,6 +69,21 @@
   "Enter a valid email address": {
     "": "Geçerli bir e-posta adresi girin."
   },
+  "Enter it below to verify your account": {
+    "": "Hesabınızı doğrulamak için aşağıya girin."
+  },
+  "Enter the 6-digit code from your email": {
+    "": "E-postanızdaki 6 haneli kodu girin."
+  },
+  "Enter the 6-digit code": {
+    "": "6 haneli kodu girin."
+  },
+  "Enter your email and we'll send you a reset code": {
+    "": "E-postanızı girin, size sıfırlama kodu göndereceğiz."
+  },
+  "Enter your email": {
+    "": "E-postanızı girin."
+  },
   "Error": "Hata",
   "Est": {
     " cost": "Tahmini maliyet"
@@ -91,6 +113,9 @@
   "Find your path": "Yolunu bul",
   "Finish": "Bitir",
   "First name": "Ad",
+  "First name is too long": {
+    "": "Ad çok uzun."
+  },
   "For comparing options": "Seçenekleri karşılaştırmak için",
   "For every situation": "Her durum için",
   "For one clear path": "Net tek bir yol için",
@@ -112,6 +137,7 @@
   },
   "Get your plan": "Planınızı alın",
   "Get {plan}": "{plan}'a başla",
+  "Go back": "Geri dön",
   "Go home": "Ana sayfaya git",
   "Home": "Ana sayfa",
   "How it works": "Nasıl çalışır",
@@ -135,6 +161,9 @@
   "Job opportunities": "İş fırsatları",
   "Language": "Dil",
   "Last name": "Soyad",
+  "Last name is too long": {
+    "": "Soyad çok uzun."
+  },
   "Log in": "Giriş yap",
   "Log out": "Çıkış yap",
   "Minimum 8 characters": "En az 8 karakter",
@@ -147,6 +176,7 @@
   "National Interest Waiver · United States": "Ulusal Çıkar Muafiyeti · Amerika Birleşik Devletleri",
   "Nationality": "Uyruk",
   "Need an account?": "Bir hesaba mı ihtiyacınız var?",
+  "New password": "Yeni şifre",
   "Next": "İleri",
   "Next best action": "En iyi sonraki adım",
   "Next step:": "Sonraki adım:",
@@ -179,8 +209,15 @@
   "Overview": "Genel bakış",
   "Page not found": "Sayfa bulunamadı",
   "Password": "Şifre",
-  "Password must contain at least 8 characters": {
+  "Password must be at least 8 characters": {
     "": "Şifre en az 8 karakter olmalıdır."
+  },
+  "Password must contain at least 8 characters": {
+    "": "Şifre en az 8 karakter içermelidir."
+  },
+  "Password reset!": "Şifre sıfırlandı!",
+  "Passwords do not match": {
+    "": "Şifreler eşleşmiyor."
   },
   "Platform Status": "Platform durumu",
   "Plus": "Plus",
@@ -204,7 +241,19 @@
   "Redirecting…": "Yönlendiriliyor…",
   "Relationship status": "İlişki durumu",
   "Relocation timeline": "Taşınma zamanlaması",
+  "Remember your password?": "Şifrenizi hatırladınız mı?",
   "Repeat your password": "Şifrenizi tekrar girin",
+  "Resend code": "Kodu tekrar gönder",
+  "Resend code in {n}s": "{n}s sonra tekrar gönder",
+  "Reset code": "Sıfırlama kodu",
+  "Reset password": "Şifreyi sıfırla",
+  "Resetting": {
+    "": {
+      "": {
+        "": "Sıfırlanıyor..."
+      }
+    }
+  },
   "Retry": "Tekrar dene",
   "Return home": "Ana sayfaya dön",
   "Review and continue": "Gözden geçir ve devam et",
@@ -219,6 +268,15 @@
   "Scenario simulation": "Senaryo simülasyonu",
   "See how it works": "Nasıl çalıştığını gör",
   "Select language": "Dil seç",
+  "Send reset code": "Sıfırlama kodu gönder",
+  "Sending": {
+    "": {
+      "": {
+        "": "Gönderiliyor..."
+      }
+    }
+  },
+  "Set new password": "Yeni şifre belirle",
   "Sign in": "Giriş yap",
   "Sign in to continue your case strategy": "Vaka stratejinize devam etmek için giriş yapın",
   "Sign in to continue your immigration strategy": {
@@ -239,7 +297,12 @@
   },
   "Software Engineer, Turkey to USA": "Yazılım Mühendisi, Türkiye'den ABD'ye",
   "Software Engineering, AI/ML, Product": "Yazılım Mühendisliği, AI/ML, Ürün",
-  "Something went wrong": "Bir şeyler yanlış gitti",
+  "Something went wrong": {
+    "": "Bir şeyler yanlış gitti",
+    " Please try again": {
+      "": "Bir şeyler ters gitti. Lütfen tekrar deneyin."
+    }
+  },
   "Spouse, children, parents — know which family visa fits and how long it takes": {
     "": "Eş, çocuklar, ebeveynler — hangi aile vizesinin uygun olduğunu ve ne kadar sürdüğünü öğrenin."
   },
@@ -330,6 +393,16 @@
   "Upload your resume and education documents to increase your readiness score to 90+": {
     "": "Hazırlık skorunuzu 90+ seviyesine çıkarmak için özgeçmişinizi ve eğitim belgelerinizi yükleyin."
   },
+  "Verification code": "Doğrulama kodu",
+  "Verify code": "Kodu doğrula",
+  "Verify email": "E-postayı doğrula",
+  "Verifying": {
+    "": {
+      "": {
+        "": "Doğrulanıyor..."
+      }
+    }
+  },
   "Visa categories analyzed": "Analiz edilen vize kategorileri",
   "Visa types": "Vize türleri",
   "Visa, timeline, documents, cost — everything in one clear view": {
@@ -339,6 +412,7 @@
     "": "Profilinize göre sizi en iyi seçenekle eşleştirmek için birden fazla ülkeyi, vize türünü ve yolu analiz ederiz."
   },
   "We analyze your options": "Seçeneklerinizi analiz ediyoruz",
+  "We sent a 6-digit code to": "Şu adrese 6 haneli bir kod gönderdik:",
   "We show you what to do": "Size ne yapacağınızı gösteririz",
   "We turn everything into one clear plan": {
     "": "Her şeyi tek net plana dönüştürüyoruz."
@@ -353,6 +427,7 @@
   "Where do you live now?": "Şu anda nerede yaşıyorsunuz?",
   "Where do you want to go?": "Nereye gitmek istiyorsunuz?",
   "Work abroad": "Yurt dışında çalış",
+  "Wrong email?": "Yanlış e-posta mı?",
   "Years of experience": "Deneyim yılı",
   "You're ready to see your first strategy": "İlk stratejinizi görmeye hazırsınız",
   "Your background, education, experience, and goals": {
@@ -367,6 +442,11 @@
   },
   "Your new life starts here": {
     "": "Yeni hayatınız burada başlıyor."
+  },
+  "Your password has been updated": {
+    " You can now sign in": {
+      "": "Şifreniz güncellendi. Artık giriş yapabilirsiniz."
+    }
   },
   "Your personalized result": "Kişiselleştirilmiş sonucunuz",
   "Your profile could not be saved right now": {
