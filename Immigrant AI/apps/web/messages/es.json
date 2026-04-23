@@ -124,7 +124,7 @@
   "Action roadmap": "Action roadmap",
   "Admin": "Admin",
   "Advanced action plan": "Plan de acción avanzado",
-  "Already have an account?": "Already have an account?",
+  "Already have an account?": "¿Ya tienes una cuenta?",
   "Any criminal record?": "Any criminal record?",
   "Available capital": "Available capital",
   "Average time to first plan": "Tiempo promedio hasta el primer plan",
@@ -153,7 +153,7 @@
   "Cost estimate": "Estimación de costos",
   "Countries": "Países",
   "Countries supported": "Países soportados",
-  "Create account": "Create account",
+  "Create account": "Crear cuenta",
   "Create an account to start building an immigration profile, evaluate pathways, and manage your cases": {
     "": "Crea una cuenta para comenzar a construir un perfil de inmigración, evaluar caminos y gestionar tus casos"
   },
@@ -279,7 +279,7 @@
   },
   "Log in": "Iniciar sesión",
   "Log out": "Cerrar sesión",
-  "Minimum 8 characters": "Minimum 8 characters",
+  "Minimum 8 characters": "Mínimo 8 caracteres",
   "Months of waiting with no visibility": "Meses de espera sin visibilidad",
   "Move to a New Country Without Confusion": "Mudarse a un nuevo país sin confusión",
   "Move to a new country": "Mudarse a un nuevo país",
@@ -288,7 +288,7 @@
   "My plan": "Mi plan",
   "National Interest Waiver · United States": "Exención por Interés Nacional · Estados Unidos",
   "Nationality": "Nationality",
-  "Need an account?": "Need an account?",
+  "Need an account?": "¿No tienes cuenta?",
   "New password": "Nueva contraseña",
   "Next": "Siguiente",
   "Next best action": "Next best action",
@@ -355,7 +355,7 @@
   "Relationship status": "Relationship status",
   "Relocation timeline": "Relocation timeline",
   "Remember your password?": "¿Recuerdas tu contraseña?",
-  "Repeat your password": "Repeat your password",
+  "Repeat your password": "Repite tu contraseña",
   "Resend code": "Reenviar código",
   "Resend code in {n}s": "Reenviar código en {n}s",
   "Reset code": "Restablecer código",
@@ -400,10 +400,13 @@
   "Signing in": {
     "": {
       "": {
-        "": "Signing in..."
+        "": "Iniciando sesión..."
       }
     }
   },
+  "Signing in...": "Iniciando sesión...",
+  "Creating account...": "Creando cuenta...",
+  "Back to home": "Volver al inicio",
   "Simple pricing": "Precios simples",
   "Six powerful tools working together to give you clarity, confidence, and a concrete plan": {
     "": "Six powerful tools working together to give you clarity, confidence, and a concrete plan."
@@ -427,7 +430,7 @@
     }
   },
   "Start with the essentials and complete your immigration profile later": {
-    "": "Start with the essentials and complete your immigration profile later."
+    "": "Comienza con lo esencial y completa tu perfil de inmigración más tarde."
   },
   "Start your plan": "Inicia tu plan",
   "Starter": "Starter",
@@ -536,9 +539,9 @@
     "": "Cualquiera que sea tu razón, podemos ayudar"
   },
   "Where are you from?": "¿De dónde eres?",
-  "Where do you live now?": "Where do you live now?",
-  "Where do you want to go?": "Where do you want to go?",
-  "Work abroad": "Work abroad",
+  "Where do you live now?": "¿Dónde vives ahora?",
+  "Where do you want to go?": "¿A dónde quieres ir?",
+  "Work abroad": "Trabajar en el extranjero",
   "Wrong email?": "¿Correo electrónico incorrecto?",
   "Years of experience": "Years of experience",
   "You're ready to see your first strategy": "You're ready to see your first strategy",

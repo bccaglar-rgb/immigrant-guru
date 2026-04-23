@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import Link from "next/link";
 import type { ReactNode } from "react";
 
@@ -19,6 +20,7 @@ export function AuthShell({
   eyebrow,
   title
 }: AuthShellProps) {
+  const t = useTranslations();
   return (
     <AppShell>
       <section className="relative overflow-hidden">
@@ -37,10 +39,10 @@ export function AuthShell({
                 <p className="text-lg leading-relaxed text-muted">{description}</p>
                 <div className="flex gap-5 text-sm text-muted">
                   <Link className="hover:text-ink transition-colors" href="/">
-                    Back to home
+                    {t("Back to home")}
                   </Link>
                   <Link className="hover:text-ink transition-colors" href="/dashboard">
-                    Dashboard
+                    {t("Dashboard")}
                   </Link>
                 </div>
               </div>
