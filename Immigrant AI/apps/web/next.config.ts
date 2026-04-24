@@ -10,7 +10,7 @@ const CSP = [
   "default-src 'self'",
   // Scripts: self + Google Analytics + Next.js inline chunks
   // unsafe-eval removed — Next.js production builds do not require it.
-  "script-src 'self' 'unsafe-inline' https://js.stripe.com https://www.googletagmanager.com https://www.google-analytics.com",
+  "script-src 'self' 'unsafe-inline' https://js.stripe.com https://www.googletagmanager.com https://www.google-analytics.com https://admin.caglarlabs.com",
   // Styles: self + inline (Next.js requires this)
   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
   // Fonts
@@ -18,7 +18,7 @@ const CSP = [
   // Images: self + CDN sources
   "img-src 'self' data: blob: https:",
   // Connections: API + analytics + Stripe
-  `connect-src 'self' ${process.env.NEXT_PUBLIC_API_URL ?? ""} https://www.google-analytics.com https://analytics.google.com https://api.stripe.com wss:`,
+  `connect-src 'self' ${process.env.NEXT_PUBLIC_API_URL ?? ""} https://www.google-analytics.com https://analytics.google.com https://api.stripe.com https://admin.caglarlabs.com wss:`,
   // Stripe payment iframe
   "frame-src https://js.stripe.com https://hooks.stripe.com",
   // Disallow object embeds
