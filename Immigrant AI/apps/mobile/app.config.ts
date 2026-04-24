@@ -1,0 +1,89 @@
+import type { ExpoConfig, ConfigContext } from "expo/config";
+
+/**
+ * Expo app config for Immigrant Guru mobile.
+ *
+ * Bundle IDs:
+ *   iOS     : guru.immigrant.app
+ *   Android : guru.immigrant.app
+ *
+ * Runtime env (read via Constants.expoConfig.extra):
+ *   API_URL              — backend base, e.g. https://immigrant.guru/api/v1
+ *   REVENUECAT_IOS_KEY   — RevenueCat public key (iOS)
+ *   REVENUECAT_ANDROID_KEY — RevenueCat public key (Android)
+ *   SENTRY_DSN           — optional error reporting
+ */
+export default ({ config }: ConfigContext): ExpoConfig => ({
+  ...config,
+  name: "Immigrant Guru",
+  slug: "immigrant-guru",
+  version: "0.1.0",
+  orientation: "portrait",
+  icon: "./assets/icon.png",
+  scheme: "immigrantguru",
+  userInterfaceStyle: "automatic",
+  newArchEnabled: true,
+  splash: {
+    image: "./assets/splash.png",
+    resizeMode: "contain",
+    backgroundColor: "#f5f5f7"
+  },
+  assetBundlePatterns: ["**/*"],
+  ios: {
+    bundleIdentifier: "guru.immigrant.app",
+    supportsTablet: true,
+    buildNumber: "1",
+    infoPlist: {
+      ITSAppUsesNonExemptEncryption: false,
+      NSUserNotificationsUsageDescription:
+        "We use notifications to alert you when your immigration analysis is ready and to remind you of upcoming plan renewals."
+    }
+  },
+  android: {
+    package: "guru.immigrant.app",
+    versionCode: 1,
+    adaptiveIcon: {
+      foregroundImage: "./assets/adaptive-icon.png",
+      backgroundColor: "#f5f5f7"
+    },
+    permissions: ["NOTIFICATIONS"]
+  },
+  plugins: [
+    "expo-router",
+    "expo-secure-store",
+    "expo-localization",
+    [
+      "expo-notifications",
+      {
+        icon: "./assets/notification-icon.png",
+        color: "#0071e3"
+      }
+    ],
+    [
+      "expo-splash-screen",
+      {
+        image: "./assets/splash.png",
+        backgroundColor: "#f5f5f7",
+        resizeMode: "contain"
+      }
+    ]
+  ],
+  experiments: {
+    typedRoutes: true
+  },
+  extra: {
+    API_URL: process.env.EXPO_PUBLIC_API_URL ?? "https://immigrant.guru/api/v1",
+    REVENUECAT_IOS_KEY: process.env.EXPO_PUBLIC_RC_IOS_KEY ?? "",
+    REVENUECAT_ANDROID_KEY: process.env.EXPO_PUBLIC_RC_ANDROID_KEY ?? "",
+    SENTRY_DSN: process.env.EXPO_PUBLIC_SENTRY_DSN ?? "",
+    eas: {
+      projectId: "" // filled after `eas init`
+    }
+  },
+  updates: {
+    url: "" // filled after `eas update:configure`
+  },
+  runtimeVersion: {
+    policy: "appVersion"
+  }
+});

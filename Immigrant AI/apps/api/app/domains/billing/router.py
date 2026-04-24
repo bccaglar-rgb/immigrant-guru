@@ -363,3 +363,93 @@ async def stripe_webhook(
             logger.warning("stripe.webhook_invalid_metadata user_id=%s plan=%s", user_id, plan)
 
     return {"status": "ok"}
+
+
+# ── RevenueCat webhook (mobile IAP) ────────────────────────────────────────────
+#
+# RevenueCat sends server-to-server notifications for all purchase lifecycle
+# events (INITIAL_PURCHASE, RENEWAL, CANCELLATION, EXPIRATION, BILLING_ISSUE,
+# PRODUCT_CHANGE).  Docs: https://www.revenuecat.com/docs/webhooks
+#
+# Security:
+#   - RevenueCat signs with an Authorization header we configure in the
+#     dashboard (set to REVENUECAT_WEBHOOK_SECRET).
+#   - We map the entitlement identifier ("starter" | "plus" | "premium")
+#     directly to our User.plan column.
+#   - app_user_id in the payload equals the backend User.id (we call
+#     Purchases.logIn(user.id) from the mobile app).
+
+_REVENUECAT_EVENT_UPGRADE = {
+    "INITIAL_PURCHASE",
+    "RENEWAL",
+    "PRODUCT_CHANGE",
+    "UNCANCELLATION",
+    "NON_RENEWING_PURCHASE",
+}
+_REVENUECAT_EVENT_DOWNGRADE = {
+    "EXPIRATION",
+    "CANCELLATION",
+    "BILLING_ISSUE",
+}
+
+
+@router.post("/revenuecat/webhook")
+async def revenuecat_webhook(
+    request: Request,
+    session: AsyncSession = Depends(get_db_session),
+):
+    """Handle RevenueCat server-side subscription events for the mobile app."""
+    settings = get_settings()
+    expected_secret = getattr(settings, "revenuecat_webhook_secret", None)
+
+    if expected_secret:
+        auth_header = request.headers.get("Authorization", "")
+        if auth_header != f"Bearer {expected_secret}":
+            logger.warning("revenuecat.webhook_bad_auth")
+            raise HTTPException(status_code=401, detail="invalid signature")
+
+    try:
+        body: dict[str, Any] = await request.json()
+    except Exception:
+        raise HTTPException(status_code=400, detail="invalid json")
+
+    event = body.get("event", {}) if isinstance(body.get("event"), dict) else {}
+    event_type = str(event.get("type", ""))
+    app_user_id = event.get("app_user_id") or event.get("original_app_user_id")
+    entitlement_ids = event.get("entitlement_ids") or []
+    entitlement = (
+        entitlement_ids[0] if isinstance(entitlement_ids, list) and entitlement_ids else None
+    )
+
+    if not app_user_id:
+        logger.warning("revenuecat.webhook_missing_user event=%s", event_type)
+        return {"status": "ignored"}
+
+    from uuid import UUID
+
+    try:
+        user_uuid = UUID(str(app_user_id))
+    except ValueError:
+        logger.warning("revenuecat.webhook_bad_user_id user=%s", app_user_id)
+        return {"status": "ignored"}
+
+    result = await session.execute(select(User).where(User.id == user_uuid))
+    user = result.scalar_one_or_none()
+    if not user:
+        logger.warning("revenuecat.webhook_user_not_found user=%s", app_user_id)
+        return {"status": "ignored"}
+
+    if event_type in _REVENUECAT_EVENT_UPGRADE:
+        plan = _normalize_plan(str(entitlement or "")) if entitlement else None
+        if plan in _PAID_PLANS:
+            user.plan = plan
+            await session.commit()
+            logger.info("revenuecat.plan_upgraded user=%s plan=%s event=%s", user.id, plan, event_type)
+    elif event_type in _REVENUECAT_EVENT_DOWNGRADE:
+        user.plan = "free"
+        await session.commit()
+        logger.info("revenuecat.plan_downgraded user=%s event=%s", user.id, event_type)
+    else:
+        logger.info("revenuecat.webhook_ignored_event type=%s user=%s", event_type, user.id)
+
+    return {"status": "ok"}
