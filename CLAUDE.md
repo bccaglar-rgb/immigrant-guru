@@ -18,6 +18,7 @@ Canlı: https://immigrant.guru
     ├── apps/
     │   ├── api/        # FastAPI (Python 3.12+)
     │   ├── web/        # Next.js App Router (React 19, TS)
+    │   ├── mobile/     # Expo SDK 52 (iOS + Android, TS)
     │   └── worker/     # Python async background worker
     ├── packages/
     │   ├── docs/       # Mimari + backlog dokümanları
@@ -37,6 +38,7 @@ Canlı: https://immigrant.guru
 | Alan | Teknoloji |
 |---|---|
 | Frontend | Next.js (latest), React 19, TypeScript 5.8, Tailwind 3.4, Zod, Vitest, Playwright |
+| Mobile | Expo SDK 52, React Native 0.76, Expo Router, NativeWind, TanStack Query, Zustand, RevenueCat |
 | Backend | FastAPI 0.115+, SQLAlchemy 2.0 (async), Alembic, Pydantic 2, asyncpg, PyJWT, pwdlib[argon2] |
 | Worker | Python 3.12+, SQLAlchemy async, Redis (kuyruk tüketici) |
 | Altyapı | Postgres 16, Redis 7, Docker Compose (lokal), PM2 (prod), Nginx (prod) |
@@ -111,6 +113,17 @@ OPENAI_MODEL=gpt-4o-mini
 - SEO: `robots.ts`, `sitemap.ts`
 
 **Paywall mantığı**: Free tier yok. Onboarding sonunda "Go to Dashboard" butonu yok — paywall zorunlu. Analysis sayfası canceled checkout sonrası mevcut tier ve altını gizler.
+
+## Mobile (`apps/mobile`) — Kritik Noktalar
+
+- Expo SDK 52 + Expo Router (file-based). Bundle id: `guru.immigrant.app`.
+- Kullanıcı auth state: `lib/auth.ts` (Zustand) + `expo-secure-store`.
+- API base: `Constants.expoConfig.extra.API_URL` (default `https://immigrant.guru/api/v1`).
+- Ödeme: **RevenueCat + Apple IAP + Google Play Billing** — Stripe app içinde kullanılmıyor, yasak. RevenueCat webhook → `POST /billing/revenuecat/webhook` → `user.plan` güncellenir.
+- Push: `expo-notifications`; token backend'e `POST /users/push-token` ile kaydedilir.
+- Deep links: `https://immigrant.guru/app/reset-password`, `/app/verify`. Apple `.well-known/apple-app-site-association` + Android `assetlinks.json` web tarafında serve edilir.
+- Build: EAS (`eas build --platform ios|android --profile production`). Submission: App Store Connect + Google Play Console.
+- Setup detayları: [apps/mobile/SETUP.md](Immigrant%20AI/apps/mobile/SETUP.md).
 
 ## Worker (`apps/worker`)
 

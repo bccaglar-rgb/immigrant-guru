@@ -91,6 +91,9 @@ class Settings(BaseSettings):
     stripe_premium_price_id: str = ""
     frontend_app_url: str = "https://immigrant.guru"
 
+    # RevenueCat (mobile IAP webhook)
+    revenuecat_webhook_secret: str = ""
+
     @field_validator("admin_emails")
     @classmethod
     def normalize_admin_emails(cls, value: list[str]) -> list[str]:
