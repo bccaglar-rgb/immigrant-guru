@@ -29,11 +29,12 @@ jobs:
           STRIPE_PLUS_PRICE_ID: ${{ secrets.STRIPE_LIVE_PLUS_PRICE_ID }}
           STRIPE_PREMIUM_PRICE_ID: ${{ secrets.STRIPE_LIVE_PREMIUM_PRICE_ID }}
           STRIPE_WEBHOOK_SECRET: ${{ secrets.STRIPE_LIVE_WEBHOOK_SECRET }}
+          CAGLAR_ANALYTICS_KEY: ${{ secrets.CAGLAR_ANALYTICS_KEY }}
         with:
           host: ${{ secrets.DROPLET_IP }}
           username: root
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          envs: STRIPE_SECRET_KEY,STRIPE_PUBLISHABLE_KEY,STRIPE_STARTER_PRICE_ID,STRIPE_PLUS_PRICE_ID,STRIPE_PREMIUM_PRICE_ID,STRIPE_WEBHOOK_SECRET
+          envs: STRIPE_SECRET_KEY,STRIPE_PUBLISHABLE_KEY,STRIPE_STARTER_PRICE_ID,STRIPE_PLUS_PRICE_ID,STRIPE_PREMIUM_PRICE_ID,STRIPE_WEBHOOK_SECRET,CAGLAR_ANALYTICS_KEY
           script_stop: true
           command_timeout: 20m
           script: |
@@ -104,3 +105,15 @@ jobs:
             curl -fsS http://127.0.0.1:3000/ > /dev/null && echo "web OK" || echo "web FAIL"
             curl -fsS http://127.0.0.1:8000/api/v1/health > /dev/null && echo "api OK" || echo "api FAIL"
             echo "Done."
+
+            echo "==> CaglarAnalytics deploy hook"
+            if [ -n "$CAGLAR_ANALYTICS_KEY" ]; then
+              COMMIT_SHA=$(git -C "$REPO" rev-parse --short HEAD 2>/dev/null || echo "unknown")
+              curl -fsS -X POST https://admin.caglarlabs.com/api/v1/ingest/deploy \
+                -H "X-API-Key: $CAGLAR_ANALYTICS_KEY" \
+                -H "Content-Type: application/json" \
+                -d "{\"environment\":\"production\",\"commit\":\"$COMMIT_SHA\",\"service\":\"immigrant-guru\"}" \
+                && echo "deploy hook OK" || echo "deploy hook FAIL (non-blocking)"
+            else
+              echo "CAGLAR_ANALYTICS_KEY not set — skipping deploy hook"
+            fi
