@@ -182,9 +182,10 @@ export default async function LocaleLayout({ children, params }: LayoutProps) {
       </head>
       <body className={`${bodyFont.variable} font-sans`}>
         <GoogleAnalytics />
+        {/* CaglarAnalytics: set API key before SDK loads */}
+        <script dangerouslySetInnerHTML={{__html: `window._CA_KEY="b248fc6a-e2a3-4081-86a7-94cd3aa468aa";`}} />
         <Script
           src="https://admin.caglarlabs.com/sdk/ca.js"
-          data-api-key="b248fc6a-e2a3-4081-86a7-94cd3aa468aa"
           strategy="afterInteractive"
         />
         <div className="aurora-bg" aria-hidden="true">
