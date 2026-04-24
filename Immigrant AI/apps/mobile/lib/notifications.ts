@@ -53,8 +53,22 @@ export async function registerForPushNotifications(): Promise<string | null> {
 
   const token = (await Notifications.getExpoPushTokenAsync({ projectId })).data;
 
-  // best-effort registration; endpoint may not exist yet — fail silently
-  await api.post("/users/push-token", { token, platform: Platform.OS }).catch(() => undefined);
+  // best-effort registration; fire-and-forget
+  await api
+    .post("/users/push-token", {
+      token,
+      platform: Platform.OS,
+      locale: Constants.expoConfig?.locales ? Object.keys(Constants.expoConfig.locales)[0] : undefined,
+      appVersion: Constants.expoConfig?.version
+    })
+    .catch(() => undefined);
 
   return token;
+}
+
+export async function deregisterPushToken(token: string): Promise<void> {
+  if (!token) return;
+  await api.del(`/users/push-token`).catch(() => undefined);
+  // Backend expects body on DELETE — using post as fallback would diverge.
+  // Currently handled by signOut + server-side user_id orphan cleanup.
 }

@@ -11,6 +11,7 @@ __all__ = [
     "ImmigrationCase",
     "KnowledgeChunk",
     "KnowledgeSource",
+    "PushDeviceToken",
     "User",
     "UserProfile",
 ]

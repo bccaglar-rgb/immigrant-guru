@@ -19,6 +19,7 @@ from app.domains.i18n.router import router as i18n_router
 from app.domains.knowledge.admin import router as admin_kb_router
 from app.domains.knowledge.router import router as kb_router
 from app.domains.profile.router import router as profile_router
+from app.domains.users.push_tokens import router as push_tokens_router
 
 api_router = APIRouter()
 api_router.include_router(admin_kb_router)
@@ -38,5 +39,6 @@ api_router.include_router(kb_router)
 api_router.include_router(password_reset_router)
 api_router.include_router(profile_router)
 api_router.include_router(profile_analysis_router)
+api_router.include_router(push_tokens_router)
 api_router.include_router(users_router)
 api_router.include_router(version_router)

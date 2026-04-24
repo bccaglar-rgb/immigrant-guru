@@ -1,5 +1,6 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { Stack } from "expo-router";
+import * as Linking from "expo-linking";
+import { router, Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
 import { useEffect } from "react";
@@ -40,6 +41,35 @@ export default function RootLayout() {
   useEffect(() => {
     if (user?.id) void configureRevenueCat(user.id);
   }, [user?.id]);
+
+  // Map incoming universal links (https://immigrant.guru/app/<route>) to
+  // Expo Router paths so the app picks up password-reset / verify emails.
+  useEffect(() => {
+    const handle = (url: string) => {
+      try {
+        const parsed = Linking.parse(url);
+        const path = parsed.path ?? "";
+        const params = parsed.queryParams ?? {};
+        // /app/reset-password?token=XYZ  →  (auth)/reset-password
+        if (path.includes("reset-password")) {
+          router.push({ pathname: "/(auth)/reset-password", params });
+          return;
+        }
+        if (path.includes("verify")) {
+          router.push({ pathname: "/(auth)/verify", params });
+          return;
+        }
+      } catch {
+        // ignore invalid URLs
+      }
+    };
+
+    Linking.getInitialURL().then((url) => {
+      if (url) handle(url);
+    });
+    const sub = Linking.addEventListener("url", (event) => handle(event.url));
+    return () => sub.remove();
+  }, []);
 
   if (status === "loading") return null;
 

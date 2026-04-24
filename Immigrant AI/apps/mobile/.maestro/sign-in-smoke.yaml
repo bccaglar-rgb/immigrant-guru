@@ -1,0 +1,14 @@
+appId: guru.immigrant.app
+---
+# Smoke test: launch app, sign-in screen appears, can type into fields.
+# Run locally after `eas build --profile development` with:
+#   maestro test .maestro/sign-in-smoke.yaml
+- launchApp
+- assertVisible: "Welcome back"
+- assertVisible: "Sign in"
+- tapOn: "you@example.com"
+- inputText: "test@immigrant.guru"
+- tapOn:
+    id: "password-field"
+    optional: true
+- assertVisible: "Need an account?"

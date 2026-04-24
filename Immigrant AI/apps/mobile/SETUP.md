@@ -69,15 +69,40 @@ npm start                # dev server (press i/a for iOS/Android)
 eas update --branch production   # OTA update without store resubmission
 ```
 
-## Known TODOs in this scaffold
+## Deep links (universal links)
 
-- `app/onboarding.tsx` — port 5-step wizard from apps/web
-- `app/(tabs)/best-countries.tsx` — wire dashboard data
-- `app/(tabs)/compare.tsx` — 3-way country compare UI
-- `app/analysis/[id].tsx` — AI strategy detail view
-- `app/visa/[slug].tsx` — visa info pages
-- Push notification token registration endpoint
-   (`POST /users/push-token`) on the API side
-- Deep links from emails (password reset, verification) — add to
-  `scheme` and register in Apple Developer / Play Console
-- Localized i18n — import `apps/web/messages/*.json` at build time
+The app opens links under `https://immigrant.guru/app/*`:
+
+- `/app/reset-password?token=…` → reset password screen
+- `/app/verify?email=…` → email verification
+
+Two well-known files must be served by the web app (already configured in
+`apps/web/next.config.ts` + `apps/web/public/.well-known/`):
+
+- `/.well-known/apple-app-site-association` — replace `TEAMID` with your
+  Apple Team ID.
+- `/.well-known/assetlinks.json` — replace the `sha256_cert_fingerprints`
+  entry with the fingerprint Google Play Console shows after your first
+  signed upload.
+
+## E2E tests (Maestro)
+
+```bash
+brew install maestro  # or curl-install, see maestro.mobile.dev
+maestro test .maestro/sign-in-smoke.yaml
+```
+
+## Backend dependencies
+
+Requires `push_device_tokens` table. Run migration on server:
+
+```bash
+cd apps/api
+alembic upgrade head
+```
+
+Endpoints used by the mobile app:
+
+- `POST /users/push-token`  — upsert device token on first auth'd launch
+- `DELETE /users/push-token` — remove on logout
+- `POST /billing/revenuecat/webhook` — Apple/Google IAP lifecycle events

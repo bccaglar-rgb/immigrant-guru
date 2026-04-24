@@ -33,6 +33,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     bundleIdentifier: "guru.immigrant.app",
     supportsTablet: true,
     buildNumber: "1",
+    associatedDomains: ["applinks:immigrant.guru"],
     infoPlist: {
       ITSAppUsesNonExemptEncryption: false,
       NSUserNotificationsUsageDescription:
@@ -46,7 +47,15 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
       foregroundImage: "./assets/adaptive-icon.png",
       backgroundColor: "#f5f5f7"
     },
-    permissions: ["NOTIFICATIONS"]
+    permissions: ["NOTIFICATIONS"],
+    intentFilters: [
+      {
+        action: "VIEW",
+        autoVerify: true,
+        data: [{ scheme: "https", host: "immigrant.guru", pathPrefix: "/app" }],
+        category: ["BROWSABLE", "DEFAULT"]
+      }
+    ]
   },
   plugins: [
     "expo-router",

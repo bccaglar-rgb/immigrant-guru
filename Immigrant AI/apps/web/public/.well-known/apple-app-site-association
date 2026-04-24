@@ -1,0 +1,16 @@
+{
+  "applinks": {
+    "apps": [],
+    "details": [
+      {
+        "appIDs": ["TEAMID.guru.immigrant.app"],
+        "components": [
+          { "/": "/app/*", "comment": "Match any URL under /app/." }
+        ]
+      }
+    ]
+  },
+  "webcredentials": {
+    "apps": ["TEAMID.guru.immigrant.app"]
+  }
+}

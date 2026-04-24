@@ -1,0 +1,11 @@
+appId: guru.immigrant.app
+---
+# Assumes user is already signed in and landed on onboarding.
+# Run after sign-in-smoke with a test account.
+- launchApp
+- assertVisible: "Build your immigration profile"
+- tapOn: "Get started"
+- assertVisible: "About you"
+- tapOn: "First name"
+- inputText: "Test"
+- tapOn: "Continue"
