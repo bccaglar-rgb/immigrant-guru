@@ -1,7 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { hasLocale } from "next-intl";
 import { Inter } from "next/font/google";
-import Script from "next/script";
 import type { ReactNode } from "react";
 
 import "@/app/globals.css";
@@ -182,13 +181,6 @@ export default async function LocaleLayout({ children, params }: LayoutProps) {
       </head>
       <body className={`${bodyFont.variable} font-sans`}>
         <GoogleAnalytics />
-        {process.env.NEXT_PUBLIC_CAGLAR_ANALYTICS_KEY ? (
-          <Script
-            src="https://admin.caglarlabs.com/sdk/ca.js"
-            data-api-key={process.env.NEXT_PUBLIC_CAGLAR_ANALYTICS_KEY}
-            strategy="afterInteractive"
-          />
-        ) : null}
         <div className="aurora-bg" aria-hidden="true">
           <div className="orb-3" />
         </div>

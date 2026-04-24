@@ -11,7 +11,6 @@ import { Link } from "@/i18n/navigation";
 import { useAuthSession } from "@/hooks/use-auth-session";
 import { loginWithPassword, registerUser, sendVerificationCode, verifyEmail } from "@/lib/auth-client";
 import { resolveSafeAuthRedirectPath } from "@/lib/auth-redirect";
-import { caLogin, caSignupCompleted } from "@/lib/caglar-analytics";
 import type { AuthMode, RequestResult, AuthSessionSeed } from "@/types/auth";
 
 type AuthFormProps = Readonly<{
@@ -127,7 +126,6 @@ export function AuthForm({ mode }: AuthFormProps) {
         if (!established.ok) {
           console.warn("verify-email: post-verify session hydrate failed", established.errorMessage);
         }
-        caSignupCompleted(undefined, { email: pendingEmail });
         window.location.href = nextPath;
       } catch (err) {
         setFormError(err instanceof Error ? err.message : t("Something went wrong. Please try again."));
@@ -200,7 +198,6 @@ export function AuthForm({ mode }: AuthFormProps) {
           setFormError(established.errorMessage);
           return;
         }
-        caLogin(undefined, { email: formState.email });
         router.replace(nextPath);
         router.refresh();
       } finally {

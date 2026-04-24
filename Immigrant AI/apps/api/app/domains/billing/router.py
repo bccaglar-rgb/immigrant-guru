@@ -349,20 +349,6 @@ async def stripe_webhook(
                 await session.commit()
                 logger.info("stripe.plan_upgraded user=%s plan=%s", user_id, plan)
 
-                # Track payment in CaglarAnalytics
-                try:
-                    from app.services.analytics import ca_payment
-                    amount_total = data.get("amount_total") or 0
-                    ca_payment(
-                        user_id=str(user_id),
-                        plan=str(plan),
-                        amount=round(amount_total / 100, 2),
-                        currency=str(data.get("currency", "usd")).upper(),
-                        status="success",
-                    )
-                except Exception:
-                    logger.debug("stripe.webhook_ca_payment_failed user=%s", user_id)
-
                 # Send upgrade email
                 try:
                     from app.services.shared.email_service import send_upgrade_email

@@ -60,8 +60,6 @@ async def register(
     except Exception:
         logger.exception("auth.register_verification_email_failed email=%s", user.email)
 
-    from app.services.analytics import ca_event
-    ca_event("signup_started", properties={"email": payload.email})
     return RegistrationInitiatedResponse()
 
 
@@ -74,10 +72,7 @@ async def login(
     payload: LoginRequest,
     session: AsyncSession = Depends(get_db_session),
 ) -> TokenResponse:
-    token_response = await auth_service.login(session, payload)
-    from app.services.analytics import ca_event
-    ca_event("login", properties={"email": payload.email})
-    return token_response
+    return await auth_service.login(session, payload)
 
 
 @router.post(
