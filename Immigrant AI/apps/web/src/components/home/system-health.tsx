@@ -1,3 +1,5 @@
+import { getTranslations } from "next-intl/server";
+
 import { getApiHealthStatus } from "@/lib/api";
 import { SectionContainer } from "@/components/ui/section-container";
 
@@ -8,9 +10,7 @@ function StatusBadge({ status }: Readonly<{ status: string }>) {
     <span
       className={cn(
         "inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold",
-        isOk
-          ? "bg-green/10 text-green"
-          : "bg-red/10 text-red"
+        isOk ? "bg-green/10 text-green" : "bg-red/10 text-red"
       )}
     >
       <span className={cn("h-1.5 w-1.5 rounded-full", isOk ? "bg-green" : "bg-red")} />
@@ -38,13 +38,15 @@ export function SystemHealthFallback() {
 }
 
 export async function SystemHealth() {
-  const health = await getApiHealthStatus();
+  const [health, t] = await Promise.all([getApiHealthStatus(), getTranslations()]);
 
   return (
     <SectionContainer
-      description="Live service check to verify your workspace is connected before relying on strategy, scoring, and document workflows."
-      eyebrow="Platform Status"
-      title="System health"
+      description={t(
+        "Live service check to verify your workspace is connected before relying on strategy, scoring, and document workflows"
+      )}
+      eyebrow={t("Platform Status")}
+      title={t("System health")}
     >
       <div className="glass-card rounded-3xl p-8">
         <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
@@ -52,23 +54,18 @@ export async function SystemHealth() {
             <h3 className="text-xl font-semibold tracking-tight text-ink">
               {health.serviceName}
             </h3>
-            <p className="mt-2 text-sm leading-relaxed text-muted">
-              {health.message}
-            </p>
+            <p className="mt-2 text-sm leading-relaxed text-muted">{health.message}</p>
           </div>
           <StatusBadge status={health.statusLabel} />
         </div>
 
         <div className="mt-6 grid gap-4 md:grid-cols-3">
           {[
-            { label: "Service", value: health.serviceName },
-            { label: "Last check", value: health.checkedAtLabel },
-            { label: "Note", value: health.detailLabel }
+            { label: t("Service"), value: health.serviceName },
+            { label: t("Last check"), value: health.checkedAtLabel },
+            { label: t("Note"), value: health.detailLabel }
           ].map((item) => (
-            <div
-              className="rounded-xl border border-line bg-canvas/50 p-4"
-              key={item.label}
-            >
+            <div className="rounded-xl border border-line bg-canvas/50 p-4" key={item.label}>
               <p className="text-xs font-semibold uppercase tracking-[0.08em] text-muted">
                 {item.label}
               </p>
