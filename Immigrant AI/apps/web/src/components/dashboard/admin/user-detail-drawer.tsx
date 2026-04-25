@@ -1,7 +1,7 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { useEffect, useState } from "react";
+import { useEffect, useEffectEvent, useState } from "react";
 
 import { cn } from "@/lib/utils";
 import type { AdminUserDirectoryEntry } from "@/types/admin";
@@ -22,10 +22,14 @@ export function UserDetailDrawer({
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (!user) return;
+  const onUserChange = useEffectEvent(() => {
     setConfirmDelete(false);
     setDeleteError(null);
+  });
+
+  useEffect(() => {
+    if (!user) return;
+    onUserChange();
     const handler = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
     };

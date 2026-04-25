@@ -17,15 +17,7 @@ def test_auth_contract_happy_path(flow_client) -> None:
         },
     )
     assert register_response.status_code == 201
-    assert set(register_response.json()) == {
-        "id",
-        "email",
-        "status",
-        "plan",
-        "created_at",
-        "updated_at",
-        "profile",
-    }
+    assert register_response.json() == {"requires_verification": True}
 
     login_response = client.post(
         "/api/v1/auth/login",
@@ -42,6 +34,7 @@ def test_auth_contract_happy_path(flow_client) -> None:
     assert set(me_response.json()) == {
         "id",
         "email",
+        "email_verified",
         "status",
         "plan",
         "created_at",

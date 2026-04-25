@@ -1,7 +1,7 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useEffectEvent, useState } from "react";
 
 import { Card } from "@/components/ui/card";
 import { getCaseAnalytics } from "@/lib/admin-client";
@@ -16,18 +16,18 @@ export function CasesTab({ accessToken }: { accessToken: string }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  const load = useCallback(async () => {
+  const onLoad = useEffectEvent(async () => {
     setLoading(true);
     setError("");
     const r = await getCaseAnalytics(accessToken);
     if (r.ok) setData(r.data);
     else setError(r.errorMessage);
     setLoading(false);
-  }, [accessToken]);
+  });
 
   useEffect(() => {
-    void load();
-  }, [load]);
+    void onLoad();
+  }, [accessToken]);
 
   if (loading) {
     return (

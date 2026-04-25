@@ -173,7 +173,7 @@ export function AIAnalysisPage({ compact = false }: { compact?: boolean }) {
     };
 
     void init();
-  }, [session?.accessToken]);
+  }, [session?.accessToken, upgraded]);
 
   const handleUpgrade = useCallback(async (plan: string) => {
     if (!session) return;

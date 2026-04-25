@@ -2,7 +2,7 @@
 
 export const dynamic = "force-dynamic";
 
-import { useEffect, useState } from "react";
+import { useEffect, useEffectEvent, useState } from "react";
 
 import { DashboardAdminPage } from "@/components/dashboard/dashboard-admin-page";
 
@@ -20,7 +20,7 @@ export default function AdminPortalPage() {
   const [email, setEmail] = useState("");
   const [checked, setChecked] = useState(false);
 
-  useEffect(() => {
+  const onMount = useEffectEvent(() => {
     const stored = sessionStorage.getItem("admin-portal-token");
     if (!stored) {
       window.location.href = "/admin-portal/login?reason=no_session";
@@ -35,6 +35,10 @@ export default function AdminPortalPage() {
     setToken(stored);
     setEmail(sessionStorage.getItem("admin-portal-email") ?? "");
     setChecked(true);
+  });
+
+  useEffect(() => {
+    onMount();
   }, []);
 
   if (!checked || !token) {

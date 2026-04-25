@@ -9,6 +9,7 @@ import pytest
 from fastapi import HTTPException, Request, status
 from fastapi.testclient import TestClient
 
+from app.core import rate_limit as rate_limit_module
 from app.domains.ai import router as ai_routes
 from app.domains.admin import ai_feedback as ai_feedback_routes
 from app.domains.auth import router as auth_routes
@@ -1134,6 +1135,14 @@ def flow_client(monkeypatch: pytest.MonkeyPatch):
     state = InMemoryState()
     dummy_session = DummyAsyncSession()
 
+    # Bypass the rate limiter — these contract tests share a real Redis
+    # in CI/local and would otherwise accumulate per-IP counters across
+    # tests, returning 429 from the second test onward.
+    async def _allow_all(*args, **kwargs) -> bool:
+        return True
+
+    monkeypatch.setattr(rate_limit_module, "_sliding_window_check", _allow_all)
+
     async def override_get_db_session():
         yield dummy_session
 
@@ -1219,7 +1228,7 @@ def test_full_user_journey_and_abuse(flow_client) -> None:
     }
     register_response = client.post("/api/v1/auth/register", json=register_payload)
     assert register_response.status_code == 201
-    assert register_response.json()["email"] == "qa+primary@example.com"
+    assert register_response.json() == {"requires_verification": True}
 
     duplicate_response = client.post("/api/v1/auth/register", json=register_payload)
     assert duplicate_response.status_code == 409

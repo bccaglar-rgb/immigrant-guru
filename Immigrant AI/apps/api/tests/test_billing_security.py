@@ -59,9 +59,10 @@ async def test_checkout_rejects_demo_upgrade_without_stripe_in_production(monkey
 
 @pytest.mark.asyncio
 async def test_stripe_webhook_ignores_duplicate_event(monkeypatch: pytest.MonkeyPatch) -> None:
+    secret = "whsec_test_secret"
     settings = SimpleNamespace(
         app_env="development",
-        stripe_webhook_secret="",
+        stripe_webhook_secret=secret,
         stripe_webhook_tolerance_seconds=300,
         stripe_webhook_event_ttl_seconds=604800,
         redis_url="redis://localhost:6379/0",
@@ -76,10 +77,17 @@ async def test_stripe_webhook_ignores_duplicate_event(monkeypatch: pytest.Monkey
         {"id": "evt_duplicate", "type": "checkout.session.completed", "data": {"object": {}}}
     ).encode("utf-8")
 
+    timestamp = int(time.time())
+    signed_payload = f"{timestamp}.".encode("utf-8") + payload
+    digest = hmac.new(secret.encode("utf-8"), signed_payload, hashlib.sha256).hexdigest()
+    signature_header = f"t={timestamp},v1={digest}"
+
     async def read_body() -> bytes:
         return payload
 
-    request = SimpleNamespace(headers={}, body=read_body)
+    request = SimpleNamespace(
+        headers={"Stripe-Signature": signature_header}, body=read_body
+    )
 
     response = await billing.stripe_webhook(request=request, session=DummySession())
     assert response == {"status": "duplicate_ignored"}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useEffectEvent, useMemo, useState } from "react";
 import type { FormEvent } from "react";
 import { useTranslations } from "next-intl";
 
@@ -215,10 +215,14 @@ function UsersTab({ users, accessToken, onUserUpdated, onUserDeleted }: { users:
     });
   }, [users, search, planFilter, statusFilter]);
 
-  useEffect(() => {
+  const onUsersChange = useEffectEvent(() => {
     if (!selected) return;
     const refreshed = users.find((u) => u.id === selected.id);
     if (refreshed && refreshed !== selected) setSelected(refreshed);
+  });
+
+  useEffect(() => {
+    onUsersChange();
   }, [users, selected]);
 
   const handlePlanChange = async (userId: string, plan: string) => {
@@ -371,16 +375,16 @@ function FeedbackTab({ accessToken }: { accessToken: string }) {
   const [status, setStatus] = useState<LoadStatus>("idle");
   const [error, setError] = useState("");
 
-  const load = useCallback(async () => {
+  const onLoad = useEffectEvent(async () => {
     setStatus("loading");
     setError("");
     const result = await getAiFeedback(accessToken, 20);
     if (!result.ok) { setError(result.errorMessage); setStatus("error"); return; }
     setData(result.data);
     setStatus("ready");
-  }, [accessToken]);
+  });
 
-  useEffect(() => { void load(); }, [load]);
+  useEffect(() => { void onLoad(); }, [accessToken]);
 
   if (status === "loading") return <Card className="animate-pulse h-40 p-6" />;
   if (status === "error") return <FeedbackBanner message={error} tone="error" />;
@@ -698,8 +702,9 @@ function DashboardAdminCore({ accessToken, userEmail, onSignOut, onSessionExpire
   const [version, setVersion] = useState<ServiceVersion | null>(null);
   const [db, setDb] = useState<DatabaseCheck | null>(null);
   const [users, setUsers] = useState<AdminUserDirectoryEntry[]>([]);
+  const [refreshKey, setRefreshKey] = useState(0);
 
-  const load = useCallback(async () => {
+  const onLoad = useEffectEvent(async () => {
     setLoading(true);
     setError("");
 
@@ -722,9 +727,9 @@ function DashboardAdminCore({ accessToken, userEmail, onSignOut, onSessionExpire
 
     if (!versionRes.ok && !dbRes.ok) setError(t("Could not load system status"));
     setLoading(false);
-  }, [accessToken]);
+  });
 
-  useEffect(() => { void load(); }, [load]);
+  useEffect(() => { void onLoad(); }, [accessToken, refreshKey]);
 
   const handleUserUpdated = useCallback((updated: AdminUserDirectoryEntry) => {
     setUsers((prev) => prev.map((u) => u.id === updated.id ? updated : u));
@@ -891,7 +896,7 @@ function DashboardAdminCore({ accessToken, userEmail, onSignOut, onSessionExpire
                 <p className="mt-0.5 max-w-xl text-sm text-muted">{meta.description}</p>
               </div>
               <button
-                onClick={() => void load()}
+                onClick={() => setRefreshKey((k) => k + 1)}
                 disabled={loading}
                 type="button"
                 className="inline-flex items-center gap-2 rounded-xl border border-line bg-white px-3.5 py-2 text-xs font-semibold text-ink shadow-soft transition hover:border-accent/40 hover:bg-canvas disabled:opacity-50"
