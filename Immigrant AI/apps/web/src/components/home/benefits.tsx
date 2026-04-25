@@ -1,36 +1,45 @@
 "use client";
 
-import { Animate, Stagger } from "@/components/ui/animate";
+import { useTranslations } from "next-intl";
+
+import { Stagger } from "@/components/ui/animate";
 import { SectionContainer } from "@/components/ui/section-container";
 
-const benefits = [
-  {
-    icon: "01",
-    title: "Case clarity before legal spend",
-    description:
-      "Organize your immigration direction before engaging external advisors or firms."
-  },
-  {
-    icon: "02",
-    title: "Structured profile intelligence",
-    description:
-      "Capture the core inputs that drive visa pathway comparisons and readiness scoring."
-  },
-  {
-    icon: "03",
-    title: "Action planning, not just information",
-    description:
-      "Translate eligibility signals into next steps, preparation priorities, and decision timelines."
-  }
-];
-
 export function Benefits() {
+  const t = useTranslations();
+
+  const benefits = [
+    {
+      icon: "01",
+      title: t("Case clarity before legal spend"),
+      description: t(
+        "Organize your immigration direction before engaging external advisors or firms"
+      )
+    },
+    {
+      icon: "02",
+      title: t("Structured profile intelligence"),
+      description: t(
+        "Capture the core inputs that drive visa pathway comparisons and readiness scoring"
+      )
+    },
+    {
+      icon: "03",
+      title: t("Action planning, not just information"),
+      description: t(
+        "Translate eligibility signals into next steps, preparation priorities, and decision timelines"
+      )
+    }
+  ];
+
   return (
     <SectionContainer
       className="scroll-mt-24 bg-white"
-      description="Reduce ambiguity across the earliest and most operationally expensive phase of your immigration journey."
-      eyebrow="Benefits"
-      title="A focused workspace for immigration decisions"
+      description={t(
+        "Reduce ambiguity across the earliest and most operationally expensive phase of your immigration journey"
+      )}
+      eyebrow={t("Benefits")}
+      title={t("A focused workspace for immigration decisions")}
     >
       <Stagger
         className="grid grid-cols-1 gap-6 md:grid-cols-3 items-stretch"
