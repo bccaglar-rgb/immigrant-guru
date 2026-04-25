@@ -1,3 +1,7 @@
+"use client";
+
+import { useTranslations } from "next-intl";
+
 import { DashboardStatusPill } from "@/components/dashboard/dashboard-status-pill";
 import { Card } from "@/components/ui/card";
 import type { DocumentCenterDocument } from "@/types/document-center";
@@ -31,20 +35,21 @@ function issueTone(
 export function DocumentIssuesList({
   documents
 }: DocumentIssuesListProps) {
+  const t = useTranslations();
   const issues = flattenIssues(documents);
 
   return (
     <Card className="rounded-[30px] border border-white/80 bg-[linear-gradient(180deg,rgba(255,255,255,0.96),rgba(248,250,252,0.88))] p-6 shadow-[0_22px_60px_rgba(15,23,42,0.07)]">
       <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
-        Detected issues
+        {t("Detected issues")}
       </p>
       <h3 className="mt-2 text-xl font-semibold tracking-tight text-slate-950">
-        Documents that still need attention
+        {t("Documents that still need attention")}
       </h3>
 
       {issues.length === 0 ? (
         <div className="mt-6 rounded-[24px] border border-dashed border-slate-200 bg-slate-50/70 px-5 py-8 text-sm leading-7 text-slate-600">
-          No material document issues are currently surfaced.
+          {t("No material document issues are currently surfaced")}
         </div>
       ) : (
         <div className="mt-6 space-y-4">

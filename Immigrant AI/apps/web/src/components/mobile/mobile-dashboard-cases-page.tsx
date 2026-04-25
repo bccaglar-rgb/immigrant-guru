@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 
 import { CaseForm } from "@/components/dashboard/case-form";
 import { CaseStatusBadge } from "@/components/dashboard/case-status-badge";
@@ -24,15 +25,16 @@ function formatDate(value: string): string {
   }).format(new Date(value));
 }
 
-function formatCaseText(value: string | null): string {
-  return value?.replaceAll("_", " ") || "Not set";
+function formatCaseText(value: string | null, fallback: string): string {
+  return value?.replaceAll("_", " ") || fallback;
 }
 
-function formatScore(value: string | null): string {
-  return value ? `${value}/100` : "Pending";
+function formatScore(value: string | null, pendingLabel: string): string {
+  return value ? `${value}/100` : pendingLabel;
 }
 
 export function MobileDashboardCasesPage() {
+  const t = useTranslations();
   const router = useRouter();
   const { clearSession, session, status } = useAuthSession();
   const [pageStatus, setPageStatus] = useState<"loading" | "ready" | "error">(
@@ -85,7 +87,7 @@ export function MobileDashboardCasesPage() {
     if (!session) {
       return {
         ok: false as const,
-        errorMessage: "You are no longer authenticated."
+        errorMessage: t("You are no longer authenticated")
       };
     }
 
@@ -104,7 +106,7 @@ export function MobileDashboardCasesPage() {
       };
     }
 
-    setFeedback("Strategy case created successfully.");
+    setFeedback(t("Strategy case created successfully"));
     setCases((current) => [result.data, ...current]);
     setIsCreateOpen(false);
     router.push(`/dashboard/cases/${result.data.id}`);
@@ -119,13 +121,13 @@ export function MobileDashboardCasesPage() {
     <div className="space-y-4">
       <Card className="rounded-[28px] border border-white/80 bg-[radial-gradient(circle_at_top_left,rgba(191,219,254,0.6),transparent_42%),linear-gradient(180deg,rgba(255,255,255,0.96),rgba(248,250,252,0.92))] p-5 shadow-soft">
         <p className="text-xs font-medium uppercase tracking-[0.08em] text-accent">
-          Case portfolio
+          {t("Case portfolio")}
         </p>
         <h2 className="mt-3 text-2xl font-semibold tracking-[-0.04em] text-ink">
-          Manage immigration plans from mobile
+          {t("Manage immigration plans from mobile")}
         </h2>
         <p className="mt-3 text-sm leading-7 text-muted">
-          Keep destination, pathway, score, and evidence status aligned without leaving the workspace.
+          {t("Keep destination, pathway, score, and evidence status aligned without leaving the workspace")}
         </p>
         <div className="mt-5 flex gap-3">
           <Button
@@ -137,7 +139,7 @@ export function MobileDashboardCasesPage() {
             type="button"
             variant="secondary"
           >
-            Refresh
+            {t("Refresh")}
           </Button>
           <Button
             fullWidth
@@ -147,7 +149,7 @@ export function MobileDashboardCasesPage() {
             }}
             type="button"
           >
-            {isCreateOpen ? "Close" : "New case"}
+            {isCreateOpen ? t("Close") : t("New case")}
           </Button>
         </div>
       </Card>
@@ -160,7 +162,7 @@ export function MobileDashboardCasesPage() {
 
       {isCreateOpen ? (
         <CaseForm
-          cancelLabel="Close"
+          cancelLabel={t("Close")}
           initialValues={emptyImmigrationCaseFormValues}
           isSubmitting={isCreating}
           mode="create"
@@ -181,7 +183,7 @@ export function MobileDashboardCasesPage() {
         <DashboardErrorState
           message={pageError}
           onRetry={() => void loadCases()}
-          title="The mobile case list could not be loaded."
+          title={t("The mobile case list could not be loaded")}
         />
       ) : null}
 
@@ -191,13 +193,13 @@ export function MobileDashboardCasesPage() {
           emptyState={
             <Card className="rounded-[28px] border border-dashed border-line bg-white/90 p-5">
               <p className="text-xs font-medium uppercase tracking-[0.08em] text-accent">
-                No cases yet
+                {t("No cases yet")}
               </p>
               <h3 className="mt-3 text-lg font-semibold tracking-tight text-ink">
-                Start a mobile case workspace
+                {t("Start a mobile case workspace")}
               </h3>
               <p className="mt-3 text-sm leading-7 text-muted">
-                Create a case for each migration plan you want to evaluate or execute.
+                {t("Create a case for each migration plan you want to evaluate or execute")}
               </p>
               <Button
                 className="mt-5"
@@ -205,7 +207,7 @@ export function MobileDashboardCasesPage() {
                 onClick={() => setIsCreateOpen(true)}
                 type="button"
               >
-                Create first case
+                {t("Create first case")}
               </Button>
             </Card>
           }
@@ -216,11 +218,11 @@ export function MobileDashboardCasesPage() {
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
                     <p className="text-xs font-medium uppercase tracking-[0.08em] text-accent">
-                      {item.target_country || "Destination pending"}
+                      {item.target_country || t("Destination pending")}
                     </p>
                     <h3 className="mt-2 text-lg font-semibold text-ink">{item.title}</h3>
                     <p className="mt-2 text-sm text-muted">
-                      {item.target_program || "Pathway not defined yet"}
+                      {item.target_program || t("Pathway not defined yet")}
                     </p>
                   </div>
                   <CaseStatusBadge status={item.status} />
@@ -229,35 +231,35 @@ export function MobileDashboardCasesPage() {
                 <div className="mt-4 grid grid-cols-3 gap-2">
                   <div className="rounded-2xl bg-canvas/80 px-3 py-3">
                     <p className="text-xs font-medium uppercase tracking-[0.08em] text-muted">
-                      Stage
+                      {t("Stage")}
                     </p>
                     <p className="mt-2 text-xs font-medium text-ink">
-                      {formatCaseText(item.current_stage)}
+                      {formatCaseText(item.current_stage, t("Not set"))}
                     </p>
                   </div>
                   <div className="rounded-2xl bg-canvas/80 px-3 py-3">
                     <p className="text-xs font-medium uppercase tracking-[0.08em] text-muted">
-                      Score
+                      {t("Score")}
                     </p>
                     <p className="mt-2 text-xs font-medium text-ink">
-                      {formatScore(item.latest_score)}
+                      {formatScore(item.latest_score, t("Pending"))}
                     </p>
                   </div>
                   <div className="rounded-2xl bg-canvas/80 px-3 py-3">
                     <p className="text-xs font-medium uppercase tracking-[0.08em] text-muted">
-                      Risk
+                      {t("Risk")}
                     </p>
                     <p className="mt-2 text-xs font-medium text-ink">
-                      {formatScore(item.risk_score)}
+                      {formatScore(item.risk_score, t("Pending"))}
                     </p>
                   </div>
                 </div>
 
                 <p className="mt-4 text-sm leading-7 text-muted">
-                  {item.notes || "No strategic notes recorded yet for this migration path."}
+                  {item.notes || t("No strategic notes recorded yet for this migration path")}
                 </p>
                 <p className="mt-4 text-xs uppercase tracking-[0.08em] text-muted">
-                  Updated {formatDate(item.updated_at)}
+                  {t("Updated {date}", { date: formatDate(item.updated_at) })}
                 </p>
               </Card>
             </Link>

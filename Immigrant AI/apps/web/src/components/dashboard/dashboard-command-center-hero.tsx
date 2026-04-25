@@ -1,5 +1,7 @@
 "use client";
 
+import { useTranslations } from "next-intl";
+
 import { Animate } from "@/components/ui/animate";
 import type { DashboardCommandCenterHero } from "@/types/dashboard";
 
@@ -12,6 +14,8 @@ type DashboardCommandCenterHeroProps = Readonly<{
 export function DashboardCommandCenterHero({
   hero
 }: DashboardCommandCenterHeroProps) {
+  const t = useTranslations();
+
   return (
     <Animate animation="fade-up" duration={500}>
       <section className="relative overflow-hidden rounded-[36px] border border-white/80 bg-[radial-gradient(circle_at_top_left,rgba(191,219,254,0.5),transparent_34%),linear-gradient(180deg,rgba(255,255,255,0.96),rgba(248,250,252,0.92))] px-7 py-8 shadow-[0_30px_80px_rgba(15,23,42,0.08)] md:px-8 md:py-9">
@@ -32,7 +36,7 @@ export function DashboardCommandCenterHero({
           <div className="rounded-[28px] border border-white/80 bg-white/80 p-5 shadow-[0_12px_40px_rgba(15,23,42,0.06)] backdrop-blur">
             <div className="flex items-center justify-between gap-3">
               <p className="text-xs font-medium uppercase tracking-[0.08em] text-accent">
-                Current objective
+                {t("Current objective")}
               </p>
               <DashboardStatusPill label={hero.statusLabel} tone="accent" />
             </div>
@@ -42,7 +46,7 @@ export function DashboardCommandCenterHero({
             <div className="mt-5 grid gap-3 sm:grid-cols-2">
               <div className="rounded-2xl bg-slate-50/90 px-4 py-3">
                 <p className="text-xs font-medium uppercase tracking-[0.08em] text-muted">
-                  Active cases
+                  {t("Active cases")}
                 </p>
                 <p className="mt-2 text-2xl font-semibold tracking-tight text-ink">
                   {hero.activeCaseCount}
@@ -50,7 +54,7 @@ export function DashboardCommandCenterHero({
               </div>
               <div className="rounded-2xl bg-slate-50/90 px-4 py-3">
                 <p className="text-xs font-medium uppercase tracking-[0.08em] text-muted">
-                  Last updated
+                  {t("Last updated")}
                 </p>
                 <p className="mt-2 text-sm font-semibold text-ink">
                   {hero.updatedAtLabel}

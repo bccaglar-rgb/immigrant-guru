@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 
 import { CaseDocumentList } from "@/components/dashboard/case-document-list";
 import { CaseDocumentUpload } from "@/components/dashboard/case-document-upload";
@@ -26,6 +27,7 @@ export function CaseDocumentCenter({
   caseId,
   onDocumentsChanged
 }: CaseDocumentCenterProps) {
+  const t = useTranslations();
   const { clearSession } = useAuthSession();
   const [documents, setDocuments] = useState<CaseDocument[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -106,7 +108,7 @@ export function CaseDocumentCenter({
         clearSession();
         return {
           ok: false as const,
-          errorMessage: "Your session expired. Sign in again to continue."
+          errorMessage: t("Your session expired — sign in again to continue")
         };
       }
 
@@ -124,12 +126,12 @@ export function CaseDocumentCenter({
     if (!refreshed) {
       return {
         ok: false as const,
-        errorMessage: "Document uploaded, but the refreshed document list could not be loaded."
+        errorMessage: t("Document uploaded, but the refreshed document list could not be loaded")
       };
     }
 
     setFeedback({
-      message: "Document uploaded and queued for case processing.",
+      message: t("Document uploaded and queued for case processing"),
       tone: "success"
     });
     onDocumentsChanged?.();

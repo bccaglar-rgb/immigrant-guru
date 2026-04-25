@@ -2,15 +2,9 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 
 import { cn } from "@/lib/utils";
-
-const navItems = [
-  { href: "/dashboard", label: "Overview", description: "Dashboard home" },
-  { href: "/dashboard/analysis", label: "My Analysis", description: "AI recommendations" },
-  { href: "/dashboard/profile", label: "Profile", description: "Immigration profile" },
-  { href: "/dashboard/cases", label: "My Cases", description: "Your immigration cases" },
-];
 
 type DashboardSidebarProps = Readonly<{
   pathname: string;
@@ -18,6 +12,14 @@ type DashboardSidebarProps = Readonly<{
 }>;
 
 export function DashboardSidebar({ pathname }: DashboardSidebarProps) {
+  const t = useTranslations();
+
+  const navItems = [
+    { href: "/dashboard", label: t("Overview"), description: t("Dashboard home") },
+    { href: "/dashboard/analysis", label: t("My Analysis"), description: t("AI recommendations") },
+    { href: "/dashboard/profile", label: t("Profile"), description: t("Immigration profile") },
+    { href: "/dashboard/cases", label: t("My Cases"), description: t("Your immigration cases") },
+  ];
 
   return (
     <aside className="border-b border-line px-4 py-4 lg:min-h-screen lg:w-[260px] lg:border-b-0 lg:border-r lg:px-5 lg:py-6">

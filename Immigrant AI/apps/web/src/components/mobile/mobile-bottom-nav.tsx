@@ -1,41 +1,44 @@
 "use client";
 
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 
 import { getPublicEnv } from "@/lib/config";
 import { cn } from "@/lib/utils";
-
-const navItems = [
-  {
-    href: "/dashboard",
-    label: "Overview",
-    shortLabel: "Home"
-  },
-  {
-    href: "/dashboard/profile",
-    label: "Profile",
-    shortLabel: "Profile"
-  },
-  {
-    href: "/dashboard/cases",
-    label: "Cases",
-    shortLabel: "Cases"
-  }
-];
-
-if (getPublicEnv().appEnv !== "production") {
-  navItems.push({
-    href: "/dashboard/admin",
-    label: "Internal",
-    shortLabel: "Ops"
-  });
-}
 
 type MobileBottomNavProps = Readonly<{
   pathname: string;
 }>;
 
 export function MobileBottomNav({ pathname }: MobileBottomNavProps) {
+  const t = useTranslations();
+
+  const navItems = [
+    {
+      href: "/dashboard",
+      label: t("Overview"),
+      shortLabel: t("Home")
+    },
+    {
+      href: "/dashboard/profile",
+      label: t("Profile"),
+      shortLabel: t("Profile")
+    },
+    {
+      href: "/dashboard/cases",
+      label: t("Cases"),
+      shortLabel: t("Cases")
+    }
+  ];
+
+  if (getPublicEnv().appEnv !== "production") {
+    navItems.push({
+      href: "/dashboard/admin",
+      label: t("Internal"),
+      shortLabel: t("Ops")
+    });
+  }
+
   const gridColumnsClass = navItems.length === 4 ? "grid-cols-4" : "grid-cols-3";
 
   return (

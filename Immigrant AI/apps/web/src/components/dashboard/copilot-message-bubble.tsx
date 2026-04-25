@@ -1,3 +1,7 @@
+"use client";
+
+import { useTranslations } from "next-intl";
+
 import type { CaseWorkspaceCopilotMessage } from "@/types/case-workspace";
 
 import { DashboardStatusPill } from "@/components/dashboard/dashboard-status-pill";
@@ -29,6 +33,7 @@ function sourceTone(
 export function CopilotMessageBubble({
   message
 }: CopilotMessageBubbleProps) {
+  const t = useTranslations();
   const isAssistant = message.role === "assistant";
 
   return (
@@ -48,7 +53,7 @@ export function CopilotMessageBubble({
       >
         <div className="flex items-center justify-between gap-4">
           <p className="text-xs font-medium uppercase tracking-[0.08em] text-accent">
-            {isAssistant ? "Immigration copilot" : "You"}
+            {isAssistant ? t("Immigration copilot") : t("You")}
           </p>
           <p className="text-xs text-muted">
             {formatTimestamp(message.timestamp)}
@@ -62,7 +67,7 @@ export function CopilotMessageBubble({
         {isAssistant ? (
           <div className="mt-4 rounded-[22px] border border-white/70 bg-white/70 px-4 py-3">
             <p className="text-xs font-medium uppercase tracking-[0.08em] text-accent">
-              Source grounding
+              {t("Source grounding")}
             </p>
             {message.sourceAttributions && message.sourceAttributions.length > 0 ? (
               <div className="mt-3 flex flex-wrap gap-2">
@@ -76,7 +81,7 @@ export function CopilotMessageBubble({
               </div>
             ) : (
               <p className="mt-2 text-sm leading-6 text-muted">
-                This answer is aligned to current case context. Linked source modules will appear here once grounding is attached.
+                {t("This answer is aligned to current case context — linked source modules will appear here once grounding is attached")}
               </p>
             )}
           </div>

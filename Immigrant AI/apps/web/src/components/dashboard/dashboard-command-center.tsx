@@ -1,5 +1,7 @@
 "use client";
 
+import { useTranslations } from "next-intl";
+
 import type {
   DashboardCase,
   DashboardCommandCenter
@@ -39,6 +41,8 @@ export function DashboardCommandCenter({
   cases,
   data
 }: DashboardCommandCenterProps) {
+  const t = useTranslations();
+
   return (
     <div className="space-y-6">
       <DashboardCommandCenterHero hero={data.hero} />
@@ -61,8 +65,8 @@ export function DashboardCommandCenter({
 
       <div className="grid gap-6 xl:grid-cols-[1fr_1fr]">
         <DashboardSignalListCard
-          eyebrow="Top risks"
-          emptyCopy="No elevated operational risks are being surfaced for the active case right now."
+          eyebrow={t("Top risks")}
+          emptyCopy={t("No elevated operational risks are being surfaced for the active case right now")}
           items={data.topRisks.items.map((item) => ({
             id: item.id,
             label: item.title,
@@ -71,20 +75,20 @@ export function DashboardCommandCenter({
             tone: getRiskTone(item.severity)
           }))}
           summary={data.topRisks.summary}
-          title="Current execution risks"
+          title={t("Current execution risks")}
         />
         <DashboardSignalListCard
-          eyebrow="Missing information"
-          emptyCopy="No material information gaps are currently blocking the leading case."
+          eyebrow={t("Missing information")}
+          emptyCopy={t("No material information gaps are currently blocking the leading case")}
           items={data.missingInformation.items.map((item) => ({
             id: item.id,
             label: item.message,
             meta: item.severity,
-            supportingText: `Source: ${item.source}`,
+            supportingText: `${t("Source")}: ${item.source}`,
             tone: getMissingInfoTone(item.severity)
           }))}
           summary={data.missingInformation.summary}
-          title="Highest-value gaps to close"
+          title={t("Highest-value gaps to close")}
         />
       </div>
 

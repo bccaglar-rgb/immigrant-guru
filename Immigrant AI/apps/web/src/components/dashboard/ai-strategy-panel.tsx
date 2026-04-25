@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 
 import { StrategyPlanCard } from "@/components/dashboard/strategy-plan-card";
 import { Button } from "@/components/ui/button";
@@ -35,9 +36,6 @@ const planSlots: Array<{
   { emphasis: "reserve", label: "Plan C" }
 ];
 
-const defaultQuestion =
-  "Compare the strongest immigration options for this case and identify the best route right now.";
-
 function formatConfidenceLabel(value: AIStrategyResponse["confidence_label"]): string {
   return value.replaceAll("_", " ").replace(/\b\w/g, (character) => character.toUpperCase());
 }
@@ -62,6 +60,8 @@ export function AIStrategyPanel({
   accessToken,
   caseRecord
 }: AIStrategyPanelProps) {
+  const t = useTranslations();
+  const defaultQuestion = t("Compare the strongest immigration options for this case and identify the best route right now");
   const { clearSession } = useAuthSession();
   const [question, setQuestion] = useState(defaultQuestion);
   const [contextMode, setContextMode] = useState<StrategyContextMode>("case-aware");
@@ -87,7 +87,7 @@ export function AIStrategyPanel({
         clearAIStrategyCache(caseRecord.id);
         setStrategy(null);
         setStaleMessage(
-          "Case details changed after the last strategy run. Generate a fresh strategy to reflect the latest inputs."
+          t("Case details changed after the last strategy run — generate a fresh strategy to reflect the latest inputs")
         );
         return;
       }
@@ -99,7 +99,7 @@ export function AIStrategyPanel({
     return () => {
       window.clearTimeout(syncTimer);
     };
-  }, [caseRecord.id, caseRecord.updated_at]);
+  }, [caseRecord.id, caseRecord.updated_at, t]);
 
   const handleGenerate = async () => {
     setIsGenerating(true);
@@ -140,24 +140,23 @@ export function AIStrategyPanel({
         <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
           <div className="max-w-3xl">
             <p className="text-sm font-semibold uppercase tracking-[0.08em] text-accent">
-              AI Strategy
+              {t("AI Strategy")}
             </p>
             <h3 className="mt-3 text-2xl font-semibold tracking-tight text-ink">
-              Decision panel for {caseRecord.target_country || "this migration case"}
+              {t("Decision panel for")} {caseRecord.target_country || t("this migration case")}
             </h3>
             <p className="mt-3 text-sm leading-7 text-muted">
-              Generate a structured comparison of up to three viable plans, with
-              tradeoffs, confidence, and immediate next actions.
+              {t("Generate a structured comparison of up to three viable plans, with tradeoffs, confidence, and immediate next actions")}
             </p>
           </div>
 
           <div className="rounded-xl border border-line bg-white/90 px-4 py-4 text-sm text-muted lg:max-w-[320px]">
             <p className="text-xs font-semibold uppercase tracking-[0.08em] text-accent">
-              Case focus
+              {t("Case focus")}
             </p>
             <p className="mt-2 font-semibold text-ink">{caseRecord.title}</p>
             <p className="mt-2 leading-7">
-              {caseRecord.target_program || "Pathway not specified yet"}
+              {caseRecord.target_program || t("Pathway not specified yet")}
               {caseRecord.target_country ? ` · ${caseRecord.target_country}` : ""}
             </p>
           </div>
@@ -166,8 +165,8 @@ export function AIStrategyPanel({
         <div className="mt-8 grid gap-4 xl:grid-cols-[minmax(0,1fr)_240px]">
           <Textarea
             disabled={isGenerating}
-            helperText="Ask for route comparison, fallback strategies, or strategic tradeoffs."
-            label="Strategy question"
+            helperText={t("Ask for route comparison, fallback strategies, or strategic tradeoffs")}
+            label={t("Strategy question")}
             onChange={(event) => {
               setQuestion(event.target.value);
               setError(null);
@@ -178,16 +177,16 @@ export function AIStrategyPanel({
           <div className="space-y-4">
             <Select
               disabled={isGenerating}
-              label="Context depth"
+              label={t("Context depth")}
               onChange={(event) => {
                 setContextMode(event.target.value as StrategyContextMode);
                 setError(null);
               }}
               value={contextMode}
             >
-              <option value="case-aware">Case-aware</option>
-              <option value="profile-aware">Profile-aware</option>
-              <option value="full">Full context</option>
+              <option value="case-aware">{t("Case-aware")}</option>
+              <option value="profile-aware">{t("Profile-aware")}</option>
+              <option value="full">{t("Full context")}</option>
             </Select>
             <Button
               disabled={isGenerating || question.trim().length < 10}
@@ -196,7 +195,7 @@ export function AIStrategyPanel({
               size="lg"
               type="button"
             >
-              {isGenerating ? "Generating strategy..." : "Generate strategy"}
+              {isGenerating ? t("Generating strategy") : t("Generate strategy")}
             </Button>
           </div>
         </div>
@@ -205,7 +204,7 @@ export function AIStrategyPanel({
       {error ? (
         <Card className="border-red/20 bg-red/5 p-6">
           <p className="text-sm font-semibold uppercase tracking-[0.08em] text-red">
-            Strategy unavailable
+            {t("Strategy unavailable")}
           </p>
           <p className="mt-3 text-sm leading-7 text-red">{error}</p>
           <Button
@@ -214,7 +213,7 @@ export function AIStrategyPanel({
             type="button"
             variant="secondary"
           >
-            Retry strategy
+            {t("Retry strategy")}
           </Button>
         </Card>
       ) : null}
@@ -222,7 +221,7 @@ export function AIStrategyPanel({
       {staleMessage ? (
         <Card className="border-red/20 bg-red/5 p-6">
           <p className="text-sm font-semibold uppercase tracking-[0.08em] text-red">
-            Strategy refresh recommended
+            {t("Strategy refresh recommended")}
           </p>
           <p className="mt-3 text-sm leading-7 text-red">{staleMessage}</p>
         </Card>
@@ -244,24 +243,21 @@ export function AIStrategyPanel({
           <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
             <div className="max-w-3xl">
               <p className="text-sm font-semibold uppercase tracking-[0.08em] text-accent">
-                Comparison surface
+                {t("Comparison surface")}
               </p>
               <h4 className="mt-3 text-xl font-semibold tracking-tight text-ink">
-                Plan A / B / C will render here
+                {t("Plan A / B / C will render here")}
               </h4>
               <p className="mt-3 text-sm leading-8 text-muted">
-                Generate strategy output to compare a primary route, fallback
-                alternatives, missing information, and coordinated next actions in a
-                structured decision panel.
+                {t("Generate strategy output to compare a primary route, fallback alternatives, missing information, and coordinated next actions in a structured decision panel")}
               </p>
             </div>
             <div className="rounded-xl border border-line bg-canvas/50 px-4 py-4 text-sm text-muted lg:max-w-[300px]">
               <p className="text-xs font-semibold uppercase tracking-[0.08em] text-accent">
-                Recommended first pass
+                {t("Recommended first pass")}
               </p>
               <p className="mt-2 leading-7">
-                Start with `case-aware` mode, then switch to `full` once the profile
-                is more complete.
+                {t("Start with case-aware mode, then switch to full once the profile is more complete")}
               </p>
             </div>
           </div>
@@ -285,10 +281,10 @@ export function AIStrategyPanel({
             <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
               <div className="max-w-4xl">
                 <p className="text-sm font-semibold uppercase tracking-[0.08em] text-accent">
-                  Strategy summary
+                  {t("Strategy summary")}
                 </p>
                 <h4 className="mt-3 text-xl font-semibold tracking-tight text-ink">
-                  Comparative route view
+                  {t("Comparative route view")}
                 </h4>
                 <p className="mt-4 text-sm leading-8 text-muted">
                   {strategy.summary}
@@ -302,25 +298,25 @@ export function AIStrategyPanel({
                   )}`}
                 >
                   <p className="text-xs font-semibold uppercase tracking-[0.08em]">
-                    Confidence
+                    {t("Confidence")}
                   </p>
                   <p className="mt-2 text-2xl font-semibold">
                     {formatConfidenceLabel(strategy.confidence_label)}
                   </p>
                   <p className="mt-2 text-xs uppercase tracking-[0.08em]">
-                    Score {Math.round(strategy.confidence_score)}/100
+                    {t("Score")} {Math.round(strategy.confidence_score)}/100
                   </p>
                 </div>
                 <div className="rounded-xl border border-line bg-canvas/50 px-4 py-4 text-sm text-muted">
                   <p className="text-xs font-semibold uppercase tracking-[0.08em] text-accent">
-                    Model context
+                    {t("Model context")}
                   </p>
                   <p className="mt-2 font-semibold text-ink">{strategy.model}</p>
                   <p className="mt-1">{strategy.provider}</p>
                   <p className="mt-3 text-xs uppercase tracking-[0.08em] text-accent">
                     {strategy.grounding_used
-                      ? `Grounded via ${strategy.grounding_backend || "knowledge base"}`
-                      : "Ungrounded pass"}
+                      ? `${t("Grounded via")} ${strategy.grounding_backend || t("knowledge base")}`
+                      : t("Ungrounded pass")}
                   </p>
                 </div>
               </div>
@@ -329,12 +325,12 @@ export function AIStrategyPanel({
             <div className="mt-6 grid gap-4 xl:grid-cols-[1.1fr_0.9fr]">
               <div className="rounded-xl border border-line bg-canvas/50 px-5 py-5">
                 <p className="text-xs font-semibold uppercase tracking-[0.08em] text-muted">
-                  Missing information
+                  {t("Missing information")}
                 </p>
                 <div className="mt-3 space-y-4">
                   <div>
                     <p className="text-xs font-semibold uppercase tracking-[0.08em] text-red">
-                      Critical
+                      {t("Critical")}
                     </p>
                     {strategy.missing_information_by_severity.critical.length > 0 ? (
                       <ul className="mt-2 space-y-2 text-sm leading-7 text-muted">
@@ -349,13 +345,13 @@ export function AIStrategyPanel({
                       </ul>
                     ) : (
                       <p className="mt-2 text-sm leading-7 text-muted">
-                        No critical blockers were detected in the current structured inputs.
+                        {t("No critical blockers were detected in the current structured inputs")}
                       </p>
                     )}
                   </div>
                   <div>
                     <p className="text-xs font-semibold uppercase tracking-[0.08em] text-accent">
-                      Helpful
+                      {t("Helpful")}
                     </p>
                     {strategy.missing_information_by_severity.helpful.length > 0 ? (
                       <ul className="mt-2 space-y-2 text-sm leading-7 text-muted">
@@ -370,7 +366,7 @@ export function AIStrategyPanel({
                       </ul>
                     ) : (
                       <p className="mt-2 text-sm leading-7 text-muted">
-                        No additional helpful gaps were flagged for this pass.
+                        {t("No additional helpful gaps were flagged for this pass")}
                       </p>
                     )}
                   </div>
@@ -379,7 +375,7 @@ export function AIStrategyPanel({
 
               <div className="rounded-xl border border-line bg-canvas/50 px-5 py-5">
                 <p className="text-xs font-semibold uppercase tracking-[0.08em] text-muted">
-                  Next steps
+                  {t("Next steps")}
                 </p>
                 {strategy.next_steps.length > 0 ? (
                   <ol className="mt-3 space-y-2 text-sm leading-7 text-muted">
@@ -394,7 +390,7 @@ export function AIStrategyPanel({
                   </ol>
                 ) : (
                   <p className="mt-3 text-sm leading-7 text-muted">
-                    No cross-plan next actions were returned yet.
+                    {t("No cross-plan next actions were returned yet")}
                   </p>
                 )}
               </div>
@@ -403,7 +399,7 @@ export function AIStrategyPanel({
             <div className="mt-4 grid gap-4 xl:grid-cols-[1fr_1fr]">
               <div className="rounded-xl border border-line bg-canvas/50 px-5 py-5">
                 <p className="text-xs font-semibold uppercase tracking-[0.08em] text-muted">
-                  Confidence drivers
+                  {t("Confidence drivers")}
                 </p>
                 {strategy.confidence_reasons.length > 0 ? (
                   <ul className="mt-3 space-y-2 text-sm leading-7 text-muted">
@@ -418,14 +414,14 @@ export function AIStrategyPanel({
                   </ul>
                 ) : (
                   <p className="mt-3 text-sm leading-7 text-muted">
-                    Confidence drivers were not available for this strategy pass.
+                    {t("Confidence drivers were not available for this strategy pass")}
                   </p>
                 )}
               </div>
 
               <div className="rounded-xl border border-line bg-canvas/50 px-5 py-5">
                 <p className="text-xs font-semibold uppercase tracking-[0.08em] text-muted">
-                  Source attribution
+                  {t("Source attribution")}
                 </p>
                 {strategy.sources_used.length > 0 ? (
                   <ul className="mt-3 space-y-2 text-sm leading-7 text-muted">
@@ -444,7 +440,7 @@ export function AIStrategyPanel({
                   </ul>
                 ) : (
                   <p className="mt-3 text-sm leading-7 text-muted">
-                    No source attributions were attached to this strategy run.
+                    {t("No source attributions were attached to this strategy run")}
                   </p>
                 )}
               </div>

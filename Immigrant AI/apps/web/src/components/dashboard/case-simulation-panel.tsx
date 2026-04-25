@@ -1,5 +1,7 @@
 "use client";
 
+import { useTranslations } from "next-intl";
+
 import { DashboardCommandCard } from "@/components/dashboard/dashboard-command-card";
 import { DashboardStatusPill } from "@/components/dashboard/dashboard-status-pill";
 import { Button } from "@/components/ui/button";
@@ -72,6 +74,7 @@ function MetricCard({
   suffix?: string;
   tone: "positive" | "warning" | "critical" | "neutral";
 }>) {
+  const t = useTranslations();
   const beforeWidth = Math.max(Math.min(before, 100), 6);
   const afterWidth = Math.max(Math.min(after, 100), 6);
 
@@ -85,7 +88,7 @@ function MetricCard({
           <div className="mt-3 flex items-end gap-5">
             <div>
               <p className="text-xs uppercase tracking-[0.08em] text-muted">
-                Before
+                {t("Before")}
               </p>
               <p className="mt-1 text-2xl font-semibold tracking-[-0.04em] text-ink">
                 {before.toFixed(1)}
@@ -94,7 +97,7 @@ function MetricCard({
             </div>
             <div>
               <p className="text-xs uppercase tracking-[0.08em] text-muted">
-                After
+                {t("After")}
               </p>
               <p className="mt-1 text-3xl font-semibold tracking-[-0.04em] text-ink">
                 {after.toFixed(1)}
@@ -109,7 +112,7 @@ function MetricCard({
       <div className="mt-5 space-y-3">
         <div>
           <div className="flex items-center justify-between text-xs uppercase tracking-[0.08em] text-muted">
-            <span>Current case</span>
+            <span>{t("Current case")}</span>
             <span>
               {before.toFixed(1)}
               {suffix}
@@ -121,7 +124,7 @@ function MetricCard({
         </div>
         <div>
           <div className="flex items-center justify-between text-xs uppercase tracking-[0.08em] text-muted">
-            <span>Simulated case</span>
+            <span>{t("Simulated case")}</span>
             <span>
               {after.toFixed(1)}
               {suffix}
@@ -149,6 +152,7 @@ function buildBaselineFromProfile(profile: UserProfile | null | undefined) {
 }
 
 export function CaseSimulationPanel({ caseId }: CaseSimulationPanelProps) {
+  const t = useTranslations();
   const { clearSession, session, status, user } = useAuthSession();
   const baseline = buildBaselineFromProfile(user?.profile);
 
@@ -164,13 +168,13 @@ export function CaseSimulationPanel({ caseId }: CaseSimulationPanelProps) {
   return (
     <DashboardCommandCard
       className="rounded-[32px]"
-      eyebrow="Scenario simulation"
-      title="What-if pathway planning"
+      eyebrow={t("Scenario simulation")}
+      title={t("What-if pathway planning")}
       value={
         result ? (
           <div className="space-y-2 text-right">
             <p className="text-xs font-semibold uppercase tracking-[0.08em] text-muted">
-              Confidence
+              {t("Confidence")}
             </p>
             <DashboardStatusPill
               label={result.simulated.confidence_level}
@@ -191,23 +195,23 @@ export function CaseSimulationPanel({ caseId }: CaseSimulationPanelProps) {
           <div className="flex items-start justify-between gap-4">
             <div>
               <p className="text-xs font-medium uppercase tracking-[0.08em] text-accent">
-                Simulation inputs
+                {t("Simulation inputs")}
               </p>
               <h4 className="mt-2 text-xl font-semibold tracking-tight text-ink">
-                Test stronger profile scenarios
+                {t("Test stronger profile scenarios")}
               </h4>
               <p className="mt-2 text-sm leading-6 text-muted">
-                Change the strongest planning variables and see how readiness, probability, and timeline shift for this case.
+                {t("Change the strongest planning variables and see how readiness, probability, and timeline shift for this case")}
               </p>
             </div>
             <Button onClick={reset} type="button" variant="secondary">
-              Reset
+              {t("Reset")}
             </Button>
           </div>
 
           <div className="grid gap-4 md:grid-cols-2">
             <Select
-              label="English level"
+              label={t("English level")}
               onChange={(event) =>
                 updateField("englishLevel", event.target.value as typeof inputs.englishLevel)
               }
@@ -221,7 +225,7 @@ export function CaseSimulationPanel({ caseId }: CaseSimulationPanelProps) {
             </Select>
 
             <Select
-              label="Education level"
+              label={t("Education level")}
               onChange={(event) =>
                 updateField("educationLevel", event.target.value as typeof inputs.educationLevel)
               }
@@ -240,15 +244,15 @@ export function CaseSimulationPanel({ caseId }: CaseSimulationPanelProps) {
               <div className="flex items-center justify-between gap-4">
                 <div>
                   <p className="text-sm font-semibold text-ink">
-                    Available capital
+                    {t("Available capital")}
                   </p>
                   <p className="mt-1 text-sm text-muted">
-                    Strengthen execution flexibility and route resilience.
+                    {t("Strengthen execution flexibility and route resilience")}
                   </p>
                 </div>
                 <Input
                   className="w-36"
-                  label="Capital"
+                  label={t("Capital")}
                   min={0}
                   onChange={(event) =>
                     updateField(
@@ -279,15 +283,15 @@ export function CaseSimulationPanel({ caseId }: CaseSimulationPanelProps) {
               <div className="flex items-center justify-between gap-4">
                 <div>
                   <p className="text-sm font-semibold text-ink">
-                    Years of experience
+                    {t("Years of experience")}
                   </p>
                   <p className="mt-1 text-sm text-muted">
-                    Test how deeper experience changes pathway strength.
+                    {t("Test how deeper experience changes pathway strength")}
                   </p>
                 </div>
                 <Input
                   className="w-28"
-                  label="Experience"
+                  label={t("Experience")}
                   max={20}
                   min={0}
                   onChange={(event) =>
@@ -338,14 +342,14 @@ export function CaseSimulationPanel({ caseId }: CaseSimulationPanelProps) {
                   after={result.simulated.probability_score}
                   before={result.current.probability_score}
                   change={result.delta.probability_score_change}
-                  label="Probability outlook"
+                  label={t("Probability outlook")}
                   tone={scoreTone(result.delta.probability_score_change)}
                 />
                 <MetricCard
                   after={result.simulated.timeline_months}
                   before={result.current.timeline_months}
                   change={result.delta.timeline_months_change}
-                  label="Estimated timeline"
+                  label={t("Estimated timeline")}
                   suffix=" mo"
                   tone={timelineTone(result.delta.timeline_months_change)}
                 />
@@ -355,19 +359,19 @@ export function CaseSimulationPanel({ caseId }: CaseSimulationPanelProps) {
                 <div className="flex items-center justify-between gap-4">
                   <div>
                     <p className="text-xs font-medium uppercase tracking-[0.08em] text-accent">
-                      Impact summary
+                      {t("Impact summary")}
                     </p>
                     <h4 className="mt-2 text-xl font-semibold tracking-tight text-ink">
-                      What changes in this scenario
+                      {t("What changes in this scenario")}
                     </h4>
                   </div>
                   <DashboardStatusPill
                     label={
                       result.delta.probability_score_change > 0
-                        ? "More competitive"
+                        ? t("More competitive")
                         : result.delta.probability_score_change < 0
-                          ? "Weaker setup"
-                          : "Minor shift"
+                          ? t("Weaker setup")
+                          : t("Minor shift")
                     }
                     tone={scoreTone(result.delta.probability_score_change)}
                   />
@@ -390,10 +394,10 @@ export function CaseSimulationPanel({ caseId }: CaseSimulationPanelProps) {
 
               <div className="rounded-[28px] border border-white/80 bg-white/88 p-5 shadow-[0_18px_40px_rgba(15,23,42,0.06)]">
                 <p className="text-xs font-medium uppercase tracking-[0.08em] text-accent">
-                  Recommended improvements
+                  {t("Recommended improvements")}
                 </p>
                 <h4 className="mt-2 text-xl font-semibold tracking-tight text-ink">
-                  Highest-leverage moves from this simulation
+                  {t("Highest-leverage moves from this simulation")}
                 </h4>
                 <div className="mt-5 space-y-3">
                   {result.recommended_improvements.map((item) => (

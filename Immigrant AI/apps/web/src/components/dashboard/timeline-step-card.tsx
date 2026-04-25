@@ -1,3 +1,7 @@
+"use client";
+
+import { useTranslations } from "next-intl";
+
 import { DashboardStatusPill } from "@/components/dashboard/dashboard-status-pill";
 import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
@@ -22,13 +26,6 @@ const statusCardTone: Record<ImmigrationTimelineStep["status"], string> = {
   pending: "border-slate-200/80 bg-slate-50/75"
 };
 
-const statusLabelMap: Record<ImmigrationTimelineStep["status"], string> = {
-  blocked: "Blocked",
-  completed: "Completed",
-  current: "Current",
-  pending: "Pending"
-};
-
 function riskToneToPillTone(
   tone: NonNullable<ImmigrationTimelineStep["riskBadges"]>[number]["tone"]
 ): "neutral" | "warning" | "critical" {
@@ -36,6 +33,15 @@ function riskToneToPillTone(
 }
 
 export function TimelineStepCard({ isLast, step }: TimelineStepCardProps) {
+  const t = useTranslations();
+
+  const statusLabelMap: Record<ImmigrationTimelineStep["status"], string> = {
+    blocked: t("Blocked"),
+    completed: t("Completed"),
+    current: t("Current"),
+    pending: t("Pending")
+  };
+
   return (
     <div className="grid grid-cols-[auto_1fr] gap-4">
       <div className="flex flex-col items-center">
@@ -71,7 +77,7 @@ export function TimelineStepCard({ isLast, step }: TimelineStepCardProps) {
               />
               {step.milestone ? (
                 <span className="inline-flex rounded-full bg-white/80 px-3 py-1 text-xs font-medium uppercase tracking-[0.08em] text-muted ring-1 ring-inset ring-slate-200">
-                  Milestone · {step.milestone}
+                  {t("Milestone")} · {step.milestone}
                 </span>
               ) : null}
             </div>
@@ -86,7 +92,7 @@ export function TimelineStepCard({ isLast, step }: TimelineStepCardProps) {
 
           <div className="rounded-[20px] bg-white/80 px-4 py-3 ring-1 ring-inset ring-slate-200/80">
             <p className="text-xs font-medium uppercase tracking-[0.08em] text-muted">
-              Estimated duration
+              {t("Estimated duration")}
             </p>
             <p className="mt-2 text-sm font-semibold text-ink">
               {step.estimatedDuration}

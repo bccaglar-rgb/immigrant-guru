@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useTranslations } from "next-intl";
 
 import { VISAS } from "@/data/visa-catalog";
 
@@ -19,6 +20,7 @@ function fmtDate(date: Date): string {
 }
 
 export function TimelineCalculator() {
+  const t = useTranslations();
   const [visaSlug, setVisaSlug] = useState(VISAS[0]?.slug ?? "");
   const [startDate, setStartDate] = useState(() => new Date().toISOString().slice(0, 10));
 
@@ -33,22 +35,22 @@ export function TimelineCalculator() {
     const landingMax = addMonths(processingMax, LANDING_BUFFER_MONTHS);
     return [
       {
-        name: "Preparation",
-        detail: `Gather evidence, evaluations, translations (${PREP_MONTHS_MIN}–${PREP_MONTHS_MAX} months)`,
+        name: t("Preparation"),
+        detail: `${t("Gather evidence, evaluations, translations")} (${PREP_MONTHS_MIN}–${PREP_MONTHS_MAX} ${t("months")})`,
         range: `${fmtDate(start)} – ${fmtDate(prepEnd)}`
       },
       {
-        name: "Filing & processing",
-        detail: `${visa.code}: ${visa.typicalTimelineMonths.min}–${visa.typicalTimelineMonths.max} months`,
+        name: t("Filing & processing"),
+        detail: `${visa.code}: ${visa.typicalTimelineMonths.min}–${visa.typicalTimelineMonths.max} ${t("months")}`,
         range: `${fmtDate(prepEnd)} – ${fmtDate(processingMax)}`
       },
       {
-        name: "Travel & landing",
-        detail: "Final medicals, tickets, housing setup",
+        name: t("Travel & landing"),
+        detail: t("Final medicals, tickets, housing setup"),
         range: `${fmtDate(landingMin)} – ${fmtDate(landingMax)}`
       }
     ];
-  }, [visa, start]);
+  }, [visa, start, t]);
 
   const totalMin = PREP_MONTHS_MIN + visa.typicalTimelineMonths.min + LANDING_BUFFER_MONTHS;
   const totalMax = PREP_MONTHS_MAX + visa.typicalTimelineMonths.max + LANDING_BUFFER_MONTHS;
@@ -57,7 +59,7 @@ export function TimelineCalculator() {
     <div className="mt-10 rounded-3xl border border-white/10 bg-white/5 p-6 sm:p-8">
       <div className="grid gap-5 sm:grid-cols-2">
         <label className="flex flex-col gap-2">
-          <span className="text-sm font-medium text-white">Pathway</span>
+          <span className="text-sm font-medium text-white">{t("Pathway")}</span>
           <select
             className="rounded-xl border border-white/15 bg-black/40 px-4 py-2 text-white"
             value={visaSlug}
@@ -71,7 +73,7 @@ export function TimelineCalculator() {
           </select>
         </label>
         <label className="flex flex-col gap-2">
-          <span className="text-sm font-medium text-white">Start date</span>
+          <span className="text-sm font-medium text-white">{t("Start date")}</span>
           <input
             type="date"
             className="rounded-xl border border-white/15 bg-black/40 px-4 py-2 text-white"
@@ -83,13 +85,13 @@ export function TimelineCalculator() {
 
       <div className="mt-8 rounded-2xl border border-white/10 bg-black/30 p-5">
         <div className="text-xs font-semibold uppercase tracking-wider text-white/60">
-          Estimated total
+          {t("Estimated total")}
         </div>
         <div className="mt-1 text-3xl font-semibold text-white">
-          {totalMin}–{totalMax} months
+          {totalMin}–{totalMax} {t("months")}
         </div>
         <div className="mt-1 text-sm text-white/70">
-          Target landing: {fmtDate(addMonths(new Date(startDate), totalMin))} –{" "}
+          {t("Target landing")}: {fmtDate(addMonths(new Date(startDate), totalMin))} –{" "}
           {fmtDate(addMonths(new Date(startDate), totalMax))}
         </div>
       </div>

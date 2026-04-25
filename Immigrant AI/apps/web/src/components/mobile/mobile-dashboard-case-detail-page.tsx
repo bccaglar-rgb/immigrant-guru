@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 
 import { AIStrategyPanel } from "@/components/dashboard/ai-strategy-panel";
 import { CaseSimulationPanel } from "@/components/dashboard/case-simulation-panel";
@@ -21,41 +22,33 @@ type MobileDashboardCaseDetailPageProps = Readonly<{
   caseId: string;
 }>;
 
-const workspaceTabs: Array<{ id: CaseWorkspaceTabId; label: string }> = [
-  { id: "overview", label: "Overview" },
-  { id: "strategy", label: "Strategy" },
-  { id: "timeline", label: "Timeline" },
-  { id: "simulation", label: "Simulation" },
-  { id: "documents", label: "Documents" },
-  { id: "risks", label: "Risks" },
-  { id: "copilot", label: "Copilot" },
-  { id: "comparison", label: "Compare" }
-];
-
-function getStickyAction(activeTab: CaseWorkspaceTabId) {
+function getStickyAction(
+  activeTab: CaseWorkspaceTabId,
+  t: ReturnType<typeof useTranslations>
+) {
   if (activeTab === "overview" || activeTab === "risks") {
     return {
-      label: "Review strategy",
+      label: t("Review strategy"),
       targetTab: "strategy" as CaseWorkspaceTabId
     };
   }
 
   if (activeTab === "strategy" || activeTab === "simulation") {
     return {
-      label: "Open documents",
+      label: t("Open documents"),
       targetTab: "documents" as CaseWorkspaceTabId
     };
   }
 
   if (activeTab === "documents") {
     return {
-      label: "Ask copilot",
+      label: t("Ask copilot"),
       targetTab: "copilot" as CaseWorkspaceTabId
     };
   }
 
   return {
-    label: "Back to overview",
+    label: t("Back to overview"),
     targetTab: "overview" as CaseWorkspaceTabId
   };
 }
@@ -63,10 +56,23 @@ function getStickyAction(activeTab: CaseWorkspaceTabId) {
 export function MobileDashboardCaseDetailPage({
   caseId
 }: MobileDashboardCaseDetailPageProps) {
+  const t = useTranslations();
   const [activeTab, setActiveTab] = useState<CaseWorkspaceTabId>("overview");
   const { accessToken, caseRecord, data, error, reload, status } =
     useCaseWorkspace(caseId);
-  const stickyAction = getStickyAction(activeTab);
+
+  const workspaceTabs: Array<{ id: CaseWorkspaceTabId; label: string }> = [
+    { id: "overview", label: t("Overview") },
+    { id: "strategy", label: t("Strategy") },
+    { id: "timeline", label: t("Timeline") },
+    { id: "simulation", label: t("Simulation") },
+    { id: "documents", label: t("Documents") },
+    { id: "risks", label: t("Risks") },
+    { id: "copilot", label: t("Copilot") },
+    { id: "comparison", label: t("Compare") }
+  ];
+
+  const stickyAction = getStickyAction(activeTab, t);
 
   if (status === "loading") {
     return (
@@ -81,9 +87,9 @@ export function MobileDashboardCaseDetailPage({
   if (status === "error" || !data) {
     return (
       <DashboardErrorState
-        message={error || "The case workspace could not be loaded."}
+        message={error || t("The case workspace could not be loaded")}
         onRetry={reload}
-        title="The mobile case workspace is unavailable."
+        title={t("The mobile case workspace is unavailable")}
       />
     );
   }
@@ -94,7 +100,7 @@ export function MobileDashboardCaseDetailPage({
         <div className="flex items-center justify-between gap-3">
           <div>
             <p className="text-xs font-medium uppercase tracking-[0.08em] text-accent">
-              Case workspace
+              {t("Case workspace")}
             </p>
             <h2 className="mt-2 text-2xl font-semibold tracking-[-0.04em] text-ink">
               {data.header.title}
@@ -109,7 +115,7 @@ export function MobileDashboardCaseDetailPage({
         <div className="mt-4 grid grid-cols-2 gap-3">
           <div className="rounded-2xl bg-white/90 px-4 py-4">
             <p className="text-xs font-medium uppercase tracking-[0.08em] text-muted">
-              Target country
+              {t("Target country")}
             </p>
             <p className="mt-2 text-sm font-semibold text-ink">
               {data.header.targetCountry}
@@ -117,7 +123,7 @@ export function MobileDashboardCaseDetailPage({
           </div>
           <div className="rounded-2xl bg-white/90 px-4 py-4">
             <p className="text-xs font-medium uppercase tracking-[0.08em] text-muted">
-              Pathway
+              {t("Pathway")}
             </p>
             <p className="mt-2 text-sm font-semibold text-ink">
               {data.header.targetPathway}
@@ -127,7 +133,7 @@ export function MobileDashboardCaseDetailPage({
 
         <div className="mt-4 rounded-2xl bg-white/90 px-4 py-4">
           <p className="text-xs font-medium uppercase tracking-[0.08em] text-muted">
-            Next focus
+            {t("Next focus")}
           </p>
           <p className="mt-2 text-sm font-semibold text-ink">{data.health.nextFocus}</p>
         </div>

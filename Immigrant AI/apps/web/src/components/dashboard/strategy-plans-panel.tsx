@@ -1,3 +1,7 @@
+"use client";
+
+import { useTranslations } from "next-intl";
+
 import { StrategyPlanCard } from "@/components/dashboard/strategy-plan-card";
 import { DashboardStatusPill } from "@/components/dashboard/dashboard-status-pill";
 import { Card } from "@/components/ui/card";
@@ -21,16 +25,18 @@ function confidenceTone(value: CaseWorkspaceStrategy["confidenceLabel"]) {
 }
 
 export function StrategyPlansPanel({ strategy }: StrategyPlansPanelProps) {
+  const t = useTranslations();
+
   return (
     <div className="space-y-6">
       <Card className="rounded-[30px] border border-white/80 bg-white/90 p-6 shadow-[0_20px_60px_rgba(15,23,42,0.06)] md:p-7">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div className="max-w-3xl">
             <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
-              Strategy
+              {t("Strategy")}
             </p>
             <h2 className="mt-2 text-2xl font-semibold tracking-tight text-slate-950">
-              Plan A / Plan B / Plan C
+              {t("Plan A / B / C")}
             </h2>
             <p className="mt-3 text-sm leading-7 text-slate-600">
               {strategy.summary}
@@ -38,7 +44,7 @@ export function StrategyPlansPanel({ strategy }: StrategyPlansPanelProps) {
           </div>
           <div className="rounded-[24px] border border-slate-200/80 bg-slate-50/90 px-4 py-4">
             <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">
-              Confidence
+              {t("Confidence")}
             </p>
             <div className="mt-3 flex items-center gap-3">
               <DashboardStatusPill
@@ -55,7 +61,7 @@ export function StrategyPlansPanel({ strategy }: StrategyPlansPanelProps) {
         <div className="mt-6 grid gap-4 lg:grid-cols-3">
           <div className="rounded-2xl bg-slate-50/90 px-4 py-4">
             <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">
-              Assumptions
+              {t("Assumptions")}
             </p>
             <ul className="mt-3 space-y-2 text-sm leading-6 text-slate-600">
               {strategy.assumptions.map((item) => (
@@ -65,7 +71,7 @@ export function StrategyPlansPanel({ strategy }: StrategyPlansPanelProps) {
           </div>
           <div className="rounded-2xl bg-amber-50/80 px-4 py-4">
             <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-amber-700">
-              Missing information
+              {t("Missing information")}
             </p>
             {strategy.missingInformation.length > 0 ? (
               <ul className="mt-3 space-y-2 text-sm leading-6 text-slate-700">
@@ -75,13 +81,13 @@ export function StrategyPlansPanel({ strategy }: StrategyPlansPanelProps) {
               </ul>
             ) : (
               <p className="mt-3 text-sm leading-6 text-slate-700">
-                No major strategy gaps are surfaced right now.
+                {t("No major strategy gaps are surfaced right now")}
               </p>
             )}
           </div>
           <div className="rounded-2xl bg-blue-50/80 px-4 py-4">
             <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-blue-700">
-              Next steps
+              {t("Next steps")}
             </p>
             <ol className="mt-3 space-y-2 text-sm leading-6 text-slate-700">
               {strategy.nextSteps.map((item) => (

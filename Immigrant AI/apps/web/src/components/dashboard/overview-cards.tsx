@@ -1,5 +1,7 @@
 "use client";
 
+import { useTranslations } from "next-intl";
+
 import { Stagger } from "@/components/ui/animate";
 import type { DashboardCase, DashboardOverviewCards } from "@/types/dashboard";
 
@@ -29,6 +31,10 @@ function MetricCard({ eyebrow, note, title, value }: MetricCardProps) {
 }
 
 export function OverviewCards({ cases, overview }: OverviewCardsProps) {
+  const t = useTranslations();
+
+  const objectiveLabel = cases.length === 1 ? t("migration objective") : t("migration objectives");
+
   return (
     <Stagger
       className="grid gap-4 md:grid-cols-2 xl:grid-cols-5"
@@ -39,39 +45,39 @@ export function OverviewCards({ cases, overview }: OverviewCardsProps) {
       {[
         <MetricCard
           key="score"
-          eyebrow="Immigration Score"
+          eyebrow={t("Immigration Score")}
           note={overview.immigrationScore.note}
           title={overview.immigrationScore.title}
           value={overview.immigrationScore.value}
         />,
         <MetricCard
           key="health"
-          eyebrow="Case Health"
+          eyebrow={t("Case Health")}
           note={overview.caseHealth.note}
           title={overview.caseHealth.title}
           value={overview.caseHealth.value}
         />,
         <MetricCard
           key="cases"
-          eyebrow="Active Cases"
+          eyebrow={t("Active Cases")}
           note={
             cases.length > 0
-              ? `${cases.length} migration objective${cases.length === 1 ? "" : "s"} currently tracked.`
-              : "No immigration cases have been created yet."
+              ? `${cases.length} ${objectiveLabel} ${t("currently tracked")}`
+              : t("No immigration cases have been created yet")
           }
-          title="Current case activity"
+          title={t("Current case activity")}
           value={String(cases.length)}
         />,
         <MetricCard
           key="next"
-          eyebrow="Next Step"
+          eyebrow={t("Next Step")}
           note={overview.recommendedNextStep.note}
           title={overview.recommendedNextStep.title}
           value={overview.recommendedNextStep.value}
         />,
         <MetricCard
           key="docs"
-          eyebrow="Documents"
+          eyebrow={t("Documents")}
           note={overview.documentStatus.note}
           title={overview.documentStatus.title}
           value={overview.documentStatus.value}

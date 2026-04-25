@@ -1,4 +1,7 @@
+"use client";
+
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 
 import { DashboardCommandCard } from "@/components/dashboard/dashboard-command-card";
 import { buttonVariants } from "@/components/ui/button";
@@ -12,8 +15,10 @@ type DashboardAiCopilotCtaCardProps = Readonly<{
 export function DashboardAiCopilotCtaCard({
   data
 }: DashboardAiCopilotCtaCardProps) {
+  const t = useTranslations();
+
   return (
-    <DashboardCommandCard eyebrow="AI copilot" title={data.headline}>
+    <DashboardCommandCard eyebrow={t("AI copilot")} title={data.headline}>
       <p className="text-sm leading-6 text-muted">{data.summary}</p>
       <div className="mt-5 flex flex-wrap gap-2">
         {data.suggestedPrompts.map((prompt) => (

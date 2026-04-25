@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { useTranslations } from "next-intl";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -51,6 +52,7 @@ export function CaseDocumentUpload({
   isUploading,
   onUpload
 }: CaseDocumentUploadProps) {
+  const t = useTranslations();
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [documentType, setDocumentType] = useState("");
@@ -64,19 +66,19 @@ export function CaseDocumentUpload({
     }
 
     if (file.size <= 0) {
-      setError("Choose a non-empty file before uploading.");
+      setError(t("Choose a non-empty file before uploading"));
       setSelectedFile(null);
       return;
     }
 
     if (file.size > MAX_UPLOAD_BYTES) {
-      setError("File exceeds the 25 MB upload limit.");
+      setError(t("File exceeds the 25 MB upload limit"));
       setSelectedFile(null);
       return;
     }
 
     if (!allowedExtensions.has(getExtension(file.name))) {
-      setError("This file type is not supported. Upload PDF, DOC, DOCX, JPG, PNG, or WEBP files.");
+      setError(t("This file type is not supported — upload PDF, DOC, DOCX, JPG, PNG, or WEBP files"));
       setSelectedFile(null);
       return;
     }
@@ -87,7 +89,7 @@ export function CaseDocumentUpload({
 
   const handleSubmit = async () => {
     if (!selectedFile) {
-      setError("Select a document before uploading.");
+      setError(t("Select a document before uploading"));
       return;
     }
 
@@ -153,15 +155,13 @@ export function CaseDocumentUpload({
         <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
           <div className="max-w-2xl">
             <p className="text-sm font-semibold uppercase tracking-[0.08em] text-accent">
-              Case files
+              {t("Case files")}
             </p>
             <h4 className="mt-3 text-xl font-semibold tracking-tight text-ink">
-              Upload evidence and preparation documents
+              {t("Upload evidence and preparation documents")}
             </h4>
             <p className="mt-3 text-sm leading-7 text-muted">
-              Attach passports, education records, resumes, refusal letters, and
-              other case materials that support pathway evaluation and later AI
-              analysis.
+              {t("Attach passports, education records, resumes, refusal letters, and other case materials that support pathway evaluation and later AI analysis")}
             </p>
           </div>
 
@@ -171,19 +171,19 @@ export function CaseDocumentUpload({
             type="button"
             variant="secondary"
           >
-            Browse files
+            {t("Browse files")}
           </Button>
         </div>
 
         <div className="mt-6 rounded-[24px] border border-white/70 bg-white/80 px-5 py-8 text-center shadow-card">
           <p className="text-sm font-semibold text-ink">
-            Drag and drop a document here
+            {t("Drag and drop a document here")}
           </p>
           <p className="mt-2 text-sm text-muted">
-            or use the file picker to attach one file at a time
+            {t("or use the file picker to attach one file at a time")}
           </p>
           <p className="mt-4 text-xs font-medium uppercase tracking-[0.08em] text-muted">
-            PDF, PNG, JPG, WEBP, DOC, DOCX up to 25 MB
+            {t("PDF, PNG, JPG, WEBP, DOC, DOCX up to 25 MB")}
           </p>
         </div>
       </div>
@@ -191,8 +191,8 @@ export function CaseDocumentUpload({
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_220px]">
         <Input
           disabled={isUploading}
-          helperText="Optional classification label such as Passport, Bank Statement, Resume, or Refusal Letter."
-          label="Document type"
+          helperText={t("Optional classification label such as Passport, Bank Statement, Resume, or Refusal Letter")}
+          label={t("Document type")}
           maxLength={120}
           onChange={(event) => {
             setDocumentType(event.target.value);
@@ -200,7 +200,7 @@ export function CaseDocumentUpload({
               setError(null);
             }
           }}
-          placeholder="e.g. Passport"
+          placeholder={t("e.g. Passport")}
           value={documentType}
         />
         <Button
@@ -211,18 +211,18 @@ export function CaseDocumentUpload({
           size="lg"
           type="button"
         >
-          {isUploading ? "Uploading document..." : "Upload document"}
+          {isUploading ? t("Uploading document") : t("Upload document")}
         </Button>
       </div>
 
       {selectedFile ? (
         <div className="rounded-xl border border-line bg-white/80 px-4 py-4 text-sm text-muted">
           <p className="text-xs font-semibold uppercase tracking-[0.08em] text-accent">
-            Selected file
+            {t("Selected file")}
           </p>
           <p className="mt-2 font-semibold text-ink">{selectedFile.name}</p>
           <p className="mt-1">
-            {selectedFile.type || "Unknown type"} · {formatFileSize(selectedFile.size)}
+            {selectedFile.type || t("Unknown type")} · {formatFileSize(selectedFile.size)}
           </p>
         </div>
       ) : null}

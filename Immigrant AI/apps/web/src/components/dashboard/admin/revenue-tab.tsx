@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useState } from "react";
 
 import { Card } from "@/components/ui/card";
@@ -12,6 +13,7 @@ import { EmptyState, MetricCard, PLAN_COLORS, PLAN_LABELS, SectionTitle } from "
 const fmtUSD = (n: number) => `$${n.toLocaleString("en-US")}`;
 
 export function RevenueTab({ accessToken }: { accessToken: string }) {
+  const t = useTranslations();
   const [revenue, setRevenue] = useState<RevenueAnalytics | null>(null);
   const [growth, setGrowth] = useState<GrowthAnalytics | null>(null);
   const [loading, setLoading] = useState(true);
@@ -45,7 +47,7 @@ export function RevenueTab({ accessToken }: { accessToken: string }) {
   }
 
   if (error || !revenue) {
-    return <p className="rounded-xl border border-red/20 bg-red/5 p-4 text-sm text-red">{error || "Could not load revenue."}</p>;
+    return <p className="rounded-xl border border-red/20 bg-red/5 p-4 text-sm text-red">{error || t("Could not load revenue")}</p>;
   }
 
   const paidTotal = revenue.paid_user_count + revenue.free_user_count;
@@ -60,32 +62,32 @@ export function RevenueTab({ accessToken }: { accessToken: string }) {
       {/* Top KPIs */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <MetricCard
-          label="Total revenue"
+          label={t("Total revenue")}
           value={fmtUSD(revenue.total_revenue_usd)}
-          sub="One-time lifetime payments"
+          sub={t("One-time lifetime payments")}
           tone="accent"
         />
         <MetricCard
-          label="Paid users"
+          label={t("Paid users")}
           value={revenue.paid_user_count}
-          sub={`${conversionRate}% conversion from free`}
+          sub={`${conversionRate}% ${t("conversion from free")}`}
           tone="good"
         />
         <MetricCard
-          label="ARPU"
+          label={t("ARPU")}
           value={fmtUSD(Math.round(revenue.arpu_usd))}
-          sub="Avg revenue per paying user"
+          sub={t("Avg revenue per paying user")}
         />
         <MetricCard
-          label="Free users"
+          label={t("Free users")}
           value={revenue.free_user_count}
-          sub="Converted or not yet"
+          sub={t("Converted or not yet")}
         />
       </div>
 
       {/* Revenue by plan with bars */}
       <Card className="p-6">
-        <SectionTitle>Revenue by plan</SectionTitle>
+        <SectionTitle>{t("Revenue by plan")}</SectionTitle>
         <div className="mt-4 space-y-3">
           {revenue.by_plan.map((p) => {
             const pct = maxBar > 0 ? (p.revenue_usd / maxBar) * 100 : 0;
@@ -106,7 +108,7 @@ export function RevenueTab({ accessToken }: { accessToken: string }) {
                       {PLAN_LABELS[p.plan] ?? p.plan}
                     </span>
                     <span className="text-xs text-muted">
-                      {p.user_count} user{p.user_count !== 1 ? "s" : ""} × ${p.price_usd}
+                      {p.user_count} {p.user_count === 1 ? t("user") : t("users")} × ${p.price_usd}
                     </span>
                   </div>
                   <div className="flex items-baseline gap-2">
@@ -130,12 +132,12 @@ export function RevenueTab({ accessToken }: { accessToken: string }) {
       {growth ? (
         <Card className="p-6">
           <div className="flex items-baseline justify-between">
-            <SectionTitle>Daily signups — last {growth.range_days} days</SectionTitle>
-            <span className="text-sm font-semibold text-accent">{growth.total_in_range} total</span>
+            <SectionTitle>{`${t("Daily signups — last")} ${growth.range_days} ${t("days")}`}</SectionTitle>
+            <span className="text-sm font-semibold text-accent">{growth.total_in_range} {t("total")}</span>
           </div>
           <div className="mt-5">
             {growth.total_in_range === 0 ? (
-              <EmptyState>No signups in this range yet.</EmptyState>
+              <EmptyState>{t("No signups in this range yet")}</EmptyState>
             ) : (
               <div className="flex h-36 items-end gap-1">
                 {growth.daily.map((d) => {
@@ -144,7 +146,7 @@ export function RevenueTab({ accessToken }: { accessToken: string }) {
                     <div
                       key={d.date}
                       className="group relative flex-1"
-                      title={`${d.date}: ${d.signups} signup${d.signups !== 1 ? "s" : ""}`}
+                      title={`${d.date}: ${d.signups} ${d.signups === 1 ? t("signup") : t("signups")}`}
                     >
                       <div
                         className={cn(

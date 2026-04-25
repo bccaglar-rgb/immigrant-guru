@@ -2,6 +2,7 @@
 
 import { useMemo } from "react";
 import type { ReactNode } from "react";
+import { useTranslations } from "next-intl";
 
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -36,47 +37,50 @@ function isFilled(value: string): boolean {
   return value.trim().length > 0;
 }
 
-function getProfileCompletion(values: ProfileFormValues) {
+function getProfileCompletion(
+  values: ProfileFormValues,
+  t: (key: string) => string
+) {
   const fields = [
-    { key: "nationality", label: "Nationality", ready: isFilled(values.nationality) },
+    { key: "nationality", label: t("Nationality"), ready: isFilled(values.nationality) },
     {
       key: "current_country",
-      label: "Current country",
+      label: t("Current country"),
       ready: isFilled(values.current_country)
     },
     {
       key: "target_country",
-      label: "Target country",
+      label: t("Target country"),
       ready: isFilled(values.target_country)
     },
     {
       key: "relocation_timeline",
-      label: "Relocation timeline",
+      label: t("Relocation timeline"),
       ready: values.relocation_timeline !== ""
     },
     {
       key: "profession",
-      label: "Profession",
+      label: t("Profession"),
       ready: isFilled(values.profession)
     },
     {
       key: "years_of_experience",
-      label: "Years of experience",
+      label: t("Years of experience"),
       ready: isFilled(values.years_of_experience)
     },
     {
       key: "education_level",
-      label: "Education level",
+      label: t("Education level"),
       ready: values.education_level !== ""
     },
     {
       key: "english_level",
-      label: "English level",
+      label: t("English level"),
       ready: values.english_level !== ""
     },
     {
       key: "available_capital",
-      label: "Available capital",
+      label: t("Available capital"),
       ready: isFilled(values.available_capital)
     }
   ];
@@ -147,6 +151,7 @@ function ProfileSection({
 }
 
 function DesktopDashboardProfilePage() {
+  const t = useTranslations();
   const {
     feedback,
     fieldErrors,
@@ -161,7 +166,7 @@ function DesktopDashboardProfilePage() {
     status
   } = useProfileForm();
 
-  const completion = useMemo(() => getProfileCompletion(formValues), [formValues]);
+  const completion = useMemo(() => getProfileCompletion(formValues, t), [formValues, t]);
   const lastUpdated = formatTimestamp(profile?.updated_at);
 
   return (
@@ -176,12 +181,12 @@ function DesktopDashboardProfilePage() {
             type="button"
             variant="secondary"
           >
-            Refresh profile
+            {t("Refresh profile")}
           </Button>
         }
-        description="Maintain the factors that drive immigration scoring, pathway recommendations, and downstream expert handoff."
-        eyebrow="Profile"
-        title="Immigration profile control panel"
+        description={t("Maintain the factors that drive immigration scoring, pathway recommendations, and downstream expert handoff")}
+        eyebrow={t("Profile")}
+        title={t("Immigration profile control panel")}
       />
 
       {feedback ? (
@@ -193,7 +198,7 @@ function DesktopDashboardProfilePage() {
         <DashboardErrorState
           message={loadError}
           onRetry={() => void refresh()}
-          title="The immigration profile could not be loaded."
+          title={t("The immigration profile could not be loaded")}
         />
       ) : null}
 
@@ -205,13 +210,13 @@ function DesktopDashboardProfilePage() {
         >
           <div className="space-y-6">
             <ProfileSection
-              description="Identity and household details help narrow pathway eligibility and relocation constraints."
-              title="Personal"
+              description={t("Identity and household details help narrow pathway eligibility and relocation constraints")}
+              title={t("Personal")}
             >
               <Input
                 autoComplete="given-name"
                 error={fieldErrors.first_name}
-                label="First name"
+                label={t("First name")}
                 onChange={(event) =>
                   handleFieldChange("first_name", event.target.value)
                 }
@@ -221,7 +226,7 @@ function DesktopDashboardProfilePage() {
               <Input
                 autoComplete="family-name"
                 error={fieldErrors.last_name}
-                label="Last name"
+                label={t("Last name")}
                 onChange={(event) =>
                   handleFieldChange("last_name", event.target.value)
                 }
@@ -230,7 +235,7 @@ function DesktopDashboardProfilePage() {
               />
               <Input
                 error={fieldErrors.nationality}
-                label="Nationality"
+                label={t("Nationality")}
                 onChange={(event) =>
                   handleFieldChange("nationality", event.target.value)
                 }
@@ -239,7 +244,7 @@ function DesktopDashboardProfilePage() {
               />
               <Input
                 error={fieldErrors.current_country}
-                label="Current country"
+                label={t("Current country")}
                 onChange={(event) =>
                   handleFieldChange("current_country", event.target.value)
                 }
@@ -248,11 +253,11 @@ function DesktopDashboardProfilePage() {
               />
               <Select
                 error={fieldErrors.marital_status}
-                label="Marital status"
+                label={t("Marital status")}
                 onChange={(event) =>
                   handleFieldChange("marital_status", event.target.value)
                 }
-                placeholder="Select marital status"
+                placeholder={t("Select marital status")}
                 value={formValues.marital_status}
               >
                 {maritalStatusOptions.map((option) => (
@@ -263,9 +268,9 @@ function DesktopDashboardProfilePage() {
               </Select>
               <Input
                 error={fieldErrors.children_count}
-                helperText="Use 0 if no dependent children are expected in the plan."
+                helperText={t("Use 0 if no dependent children are expected in the plan")}
                 inputMode="numeric"
-                label="Children count"
+                label={t("Children count")}
                 onChange={(event) =>
                   handleFieldChange("children_count", event.target.value)
                 }
@@ -274,8 +279,8 @@ function DesktopDashboardProfilePage() {
               />
               <Input
                 error={fieldErrors.preferred_language}
-                helperText="Preferred language for platform guidance and any later expert coordination."
-                label="Preferred language"
+                helperText={t("Preferred language for platform guidance and any later expert coordination")}
+                label={t("Preferred language")}
                 onChange={(event) =>
                   handleFieldChange("preferred_language", event.target.value)
                 }
@@ -285,12 +290,12 @@ function DesktopDashboardProfilePage() {
             </ProfileSection>
 
             <ProfileSection
-              description="Destination intent and timeline determine which strategy paths and action plans appear first."
-              title="Immigration goals"
+              description={t("Destination intent and timeline determine which strategy paths and action plans appear first")}
+              title={t("Immigration goals")}
             >
               <Input
                 error={fieldErrors.target_country}
-                label="Target country"
+                label={t("Target country")}
                 onChange={(event) =>
                   handleFieldChange("target_country", event.target.value)
                 }
@@ -299,11 +304,11 @@ function DesktopDashboardProfilePage() {
               />
               <Select
                 error={fieldErrors.relocation_timeline}
-                label="Relocation timeline"
+                label={t("Relocation timeline")}
                 onChange={(event) =>
                   handleFieldChange("relocation_timeline", event.target.value)
                 }
-                placeholder="Select timeline"
+                placeholder={t("Select timeline")}
                 value={formValues.relocation_timeline}
               >
                 {relocationTimelineOptions.map((option) => (
@@ -314,8 +319,8 @@ function DesktopDashboardProfilePage() {
               </Select>
               <Select
                 error={fieldErrors.prior_visa_refusal_flag}
-                helperText="Previous refusals can materially affect pathway recommendations."
-                label="Prior visa refusal"
+                helperText={t("Previous refusals can materially affect pathway recommendations")}
+                label={t("Prior visa refusal")}
                 onChange={(event) =>
                   handleFieldChange(
                     "prior_visa_refusal_flag",
@@ -332,8 +337,8 @@ function DesktopDashboardProfilePage() {
               </Select>
               <Select
                 error={fieldErrors.criminal_record_flag}
-                helperText="Compliance disclosures are required for accurate strategy screening."
-                label="Criminal record"
+                helperText={t("Compliance disclosures are required for accurate strategy screening")}
+                label={t("Criminal record")}
                 onChange={(event) =>
                   handleFieldChange("criminal_record_flag", event.target.value)
                 }
@@ -348,22 +353,22 @@ function DesktopDashboardProfilePage() {
             </ProfileSection>
 
             <ProfileSection
-              description="Professional qualifications shape program fit, score weighting, and evidence collection priorities."
-              title="Professional background"
+              description={t("Professional qualifications shape program fit, score weighting, and evidence collection priorities")}
+              title={t("Professional background")}
             >
               <Input
                 error={fieldErrors.profession}
-                label="Profession"
+                label={t("Profession")}
                 onChange={(event) =>
                   handleFieldChange("profession", event.target.value)
                 }
-                placeholder="Software engineer"
+                placeholder={t("Software engineer")}
                 value={formValues.profession}
               />
               <Input
                 error={fieldErrors.years_of_experience}
                 inputMode="numeric"
-                label="Years of experience"
+                label={t("Years of experience")}
                 onChange={(event) =>
                   handleFieldChange("years_of_experience", event.target.value)
                 }
@@ -372,11 +377,11 @@ function DesktopDashboardProfilePage() {
               />
               <Select
                 error={fieldErrors.education_level}
-                label="Education level"
+                label={t("Education level")}
                 onChange={(event) =>
                   handleFieldChange("education_level", event.target.value)
                 }
-                placeholder="Select education level"
+                placeholder={t("Select education level")}
                 value={formValues.education_level}
               >
                 {educationLevelOptions.map((option) => (
@@ -387,11 +392,11 @@ function DesktopDashboardProfilePage() {
               </Select>
               <Select
                 error={fieldErrors.english_level}
-                label="English level"
+                label={t("English level")}
                 onChange={(event) =>
                   handleFieldChange("english_level", event.target.value)
                 }
-                placeholder="Select English level"
+                placeholder={t("Select English level")}
                 value={formValues.english_level}
               >
                 {englishLevelOptions.map((option) => (
@@ -403,14 +408,14 @@ function DesktopDashboardProfilePage() {
             </ProfileSection>
 
             <ProfileSection
-              description="Financial readiness feeds program affordability checks and later document gathering requirements."
-              title="Financial readiness"
+              description={t("Financial readiness feeds program affordability checks and later document gathering requirements")}
+              title={t("Financial readiness")}
             >
               <Input
                 error={fieldErrors.available_capital}
-                helperText="Enter a gross liquid-capital estimate without currency symbols."
+                helperText={t("Enter a gross liquid-capital estimate without currency symbols")}
                 inputMode="decimal"
-                label="Available capital"
+                label={t("Available capital")}
                 onChange={(event) =>
                   handleFieldChange("available_capital", event.target.value)
                 }
@@ -423,14 +428,13 @@ function DesktopDashboardProfilePage() {
           <div className="space-y-6 xl:sticky xl:top-6 xl:self-start">
             <Card className="p-6">
               <p className="text-sm font-semibold uppercase tracking-[0.08em] text-accent">
-                Profile readiness
+                {t("Profile readiness")}
               </p>
               <h3 className="mt-3 text-2xl font-semibold tracking-tight text-ink">
                 {completion.percent}%
               </h3>
               <p className="mt-3 text-sm leading-7 text-muted">
-                {completion.completed} of {completion.total} key strategy inputs are
-                currently captured.
+                {completion.completed} {t("of")} {completion.total} {t("key strategy inputs are currently captured")}
               </p>
 
               <Button
@@ -441,25 +445,25 @@ function DesktopDashboardProfilePage() {
                 type="submit"
               >
                 {isSaving
-                  ? "Saving profile..."
+                  ? t("Saving profile")
                   : isDirty
-                    ? "Save profile"
-                    : "No changes to save"}
+                    ? t("Save profile")
+                    : t("No changes to save")}
               </Button>
 
               <div className="mt-6 rounded-xl border border-line bg-canvas/50 px-4 py-4">
                 <p className="text-xs font-semibold uppercase tracking-[0.08em] text-muted">
-                  Last synced
+                  {t("Last synced")}
                 </p>
                 <p className="mt-2 text-sm text-ink">
-                  {lastUpdated ?? "Profile not saved yet"}
+                  {lastUpdated ?? t("Profile not saved yet")}
                 </p>
               </div>
             </Card>
 
             <Card className="p-6">
               <p className="text-sm font-semibold uppercase tracking-[0.08em] text-accent">
-                Recommended next inputs
+                {t("Recommended next inputs")}
               </p>
               {completion.missing.length > 0 ? (
                 <ul className="mt-4 space-y-3 text-sm text-muted">
@@ -474,8 +478,7 @@ function DesktopDashboardProfilePage() {
                 </ul>
               ) : (
                 <p className="mt-4 text-sm leading-7 text-muted">
-                  Core strategy inputs are in place. The scoring engine can work with
-                  this profile foundation.
+                  {t("Core strategy inputs are in place — the scoring engine can work with this profile foundation")}
                 </p>
               )}
             </Card>

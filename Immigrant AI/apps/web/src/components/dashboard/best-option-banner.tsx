@@ -1,3 +1,7 @@
+"use client";
+
+import { useTranslations } from "next-intl";
+
 import { DashboardStatusPill } from "@/components/dashboard/dashboard-status-pill";
 import { Card } from "@/components/ui/card";
 import type { CountryComparisonOption } from "@/types/country-comparison";
@@ -11,17 +15,19 @@ export function BestOptionBanner({
   option,
   reasoning
 }: BestOptionBannerProps) {
+  const t = useTranslations();
+
   if (!option) {
     return (
       <Card className="rounded-[32px] border border-white/80 bg-[linear-gradient(180deg,rgba(255,255,255,0.96),rgba(248,250,252,0.88))] p-6 shadow-[0_22px_60px_rgba(15,23,42,0.07)] md:p-7">
         <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
-          Best option
+          {t("Best option")}
         </p>
         <h2 className="mt-2 text-2xl font-semibold tracking-tight text-slate-950">
-          No comparison lead yet
+          {t("No comparison lead yet")}
         </h2>
         <p className="mt-3 text-sm leading-7 text-slate-600">
-          Add at least one meaningful country-pathway scenario to surface a leading option.
+          {t("Add at least one meaningful country-pathway scenario to surface a leading option")}
         </p>
       </Card>
     );
@@ -32,7 +38,7 @@ export function BestOptionBanner({
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-blue-700">
-            Best option
+            {t("Best option")}
           </p>
           <h2 className="mt-2 text-2xl font-semibold tracking-tight text-slate-950">
             {option.country} · {option.pathway}
@@ -42,9 +48,9 @@ export function BestOptionBanner({
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <DashboardStatusPill label="Lead scenario" tone="accent" />
+          <DashboardStatusPill label={t("Lead scenario")} tone="accent" />
           <DashboardStatusPill
-            label={`${option.successProbability}/100 probability`}
+            label={`${option.successProbability}/100 ${t("probability")}`}
             tone="positive"
           />
         </div>

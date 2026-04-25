@@ -1,3 +1,7 @@
+"use client";
+
+import { useTranslations } from "next-intl";
+
 import { DashboardStatusPill } from "@/components/dashboard/dashboard-status-pill";
 import { Card } from "@/components/ui/card";
 import type { CountryComparisonOption } from "@/types/country-comparison";
@@ -33,14 +37,26 @@ function levelTone(
 export function CountryComparisonTable({
   options
 }: CountryComparisonTableProps) {
+  const t = useTranslations();
+
+  const headerLabels = [
+    t("Country"),
+    t("Pathway"),
+    t("Probability"),
+    t("Estimated time"),
+    t("Cost"),
+    t("Difficulty"),
+    t("Best option")
+  ];
+
   return (
     <Card className="overflow-hidden rounded-[32px] border border-white/80 bg-[linear-gradient(180deg,rgba(255,255,255,0.96),rgba(248,250,252,0.88))] shadow-[0_22px_60px_rgba(15,23,42,0.07)]">
       <div className="border-b border-line/80 px-6 py-5">
         <p className="text-xs font-medium uppercase tracking-[0.08em] text-accent">
-          Comparison table
+          {t("Comparison table")}
         </p>
         <h3 className="mt-2 text-xl font-semibold tracking-tight text-ink">
-          Cross-country strategic comparison
+          {t("Cross-country strategic comparison")}
         </h3>
       </div>
 
@@ -48,15 +64,7 @@ export function CountryComparisonTable({
         <table className="min-w-full border-collapse">
           <thead>
             <tr className="bg-canvas/70 text-left">
-              {[
-                "Country",
-                "Pathway",
-                "Probability",
-                "Estimated time",
-                "Cost",
-                "Difficulty",
-                "Best option"
-              ].map((label) => (
+              {headerLabels.map((label) => (
                 <th
                   className="px-6 py-4 text-xs font-medium uppercase tracking-[0.08em] text-muted"
                   key={label}
@@ -97,7 +105,7 @@ export function CountryComparisonTable({
                 </td>
                 <td className="px-6 py-4">
                   {option.recommended ? (
-                    <DashboardStatusPill label="Lead option" tone="positive" />
+                    <DashboardStatusPill label={t("Lead option")} tone="positive" />
                   ) : (
                     <span className="text-muted">-</span>
                   )}

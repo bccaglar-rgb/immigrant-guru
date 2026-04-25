@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useEffectEvent, useState } from "react";
+import { useTranslations } from "next-intl";
 
 import { Animate, Stagger } from "@/components/ui/animate";
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -15,100 +16,119 @@ import type { ProfileAnalysisResult } from "@/types/analysis";
 
 type Status = "loading" | "ready" | "error";
 
-const MATCH_COLORS = {
-  high: { score: "text-green", badge: "bg-green/10 text-green", border: "border-green/25", card: "from-green/[0.06] to-transparent", ring: "bg-green/[0.08] ring-1 ring-green/20", bar: "bg-green", label: "Strong match" },
-  medium: { score: "text-accent", badge: "bg-accent/10 text-accent", border: "border-accent/25", card: "from-accent/[0.05] to-transparent", ring: "bg-accent/[0.07] ring-1 ring-accent/20", bar: "bg-accent", label: "Possible match" },
-  low: { score: "text-muted", badge: "bg-ink/5 text-muted", border: "border-line/70", card: "from-ink/[0.02] to-transparent", ring: "bg-ink/[0.04] ring-1 ring-line", bar: "bg-muted/40", label: "Needs work" },
+type MatchLevel = "high" | "medium" | "low";
+type Severity = "high" | "medium" | "low";
+
+const MATCH_STYLES: Record<MatchLevel, {
+  score: string; badge: string; border: string; card: string; ring: string; bar: string;
+}> = {
+  high: { score: "text-green", badge: "bg-green/10 text-green", border: "border-green/25", card: "from-green/[0.06] to-transparent", ring: "bg-green/[0.08] ring-1 ring-green/20", bar: "bg-green" },
+  medium: { score: "text-accent", badge: "bg-accent/10 text-accent", border: "border-accent/25", card: "from-accent/[0.05] to-transparent", ring: "bg-accent/[0.07] ring-1 ring-accent/20", bar: "bg-accent" },
+  low: { score: "text-muted", badge: "bg-ink/5 text-muted", border: "border-line/70", card: "from-ink/[0.02] to-transparent", ring: "bg-ink/[0.04] ring-1 ring-line", bar: "bg-muted/40" },
 };
 
-const SEVERITY_COLORS = {
-  high: { bg: "bg-red/[0.07] border border-red/15", dot: "bg-red", icon: "⚠️", label: "High priority" },
-  medium: { bg: "bg-amber/[0.07] border border-amber/15", dot: "bg-amber", icon: "⚡", label: "Worth addressing" },
-  low: { bg: "bg-ink/[0.04] border border-line/60", dot: "bg-muted", icon: "ℹ️", label: "Minor factor" },
+const SEVERITY_STYLES: Record<Severity, { bg: string; dot: string; icon: string }> = {
+  high: { bg: "bg-red/[0.07] border border-red/15", dot: "bg-red", icon: "⚠️" },
+  medium: { bg: "bg-amber/[0.07] border border-amber/15", dot: "bg-amber", icon: "⚡" },
+  low: { bg: "bg-ink/[0.04] border border-line/60", dot: "bg-muted", icon: "ℹ️" },
 };
-
-// Brief descriptions of common visa types shown to all users
-const VISA_INFO: Record<string, string> = {
-  "H-1B": "Specialty occupation visa for skilled professionals sponsored by a US employer. Requires at least a bachelor's degree in a relevant field.",
-  "DV Lottery": "Diversity Visa program — an annual lottery that awards 50,000 green cards to applicants from underrepresented countries.",
-  "EB-1": "Employment-based green card for individuals with extraordinary ability, outstanding professors, or multinational executives.",
-  "EB-2 NIW": "Green card for professionals with advanced degrees or exceptional ability who can prove their work benefits the United States.",
-  "EB-3": "Employment-based green card for skilled workers, professionals, and other workers with a permanent US job offer.",
-  "O-1": "Visa for individuals with extraordinary ability or achievement in their field — science, arts, education, business, or athletics.",
-  "L-1": "Intracompany transfer visa for managers, executives, or specialized employees moving to a US branch of their company.",
-  "E-2": "Treaty investor visa allowing nationals of treaty countries to invest in and manage a US business.",
-  "F-1": "Academic student visa for full-time study at a US university, college, or accredited academic institution.",
-  "B-1/B-2": "Temporary visitor visa for business meetings (B-1) or tourism and medical treatment (B-2).",
-  "TN Visa": "NAFTA/USMCA professional visa for Canadian and Mexican citizens in specific professional categories.",
-  "Express Entry": "Canada's points-based immigration system for skilled workers. Score is based on age, education, work experience, and language skills.",
-  "Skilled Worker": "Points-based visa for skilled professionals. Eligibility assessed on qualifications, experience, and language ability.",
-  "Global Talent": "Fast-track visa for exceptional talent in tech, science, arts, and humanities sponsored by a recognized organization.",
-  "Startup Visa": "Visa for entrepreneurs launching innovative businesses with backing from accredited investors or business incubators.",
-  "Student Visa": "Visa for international students accepted to an accredited educational institution.",
-  "Work Permit": "Authorization to work legally in the destination country, typically tied to a job offer or specific occupation.",
-};
-
-const PLANS = [
-  {
-    key: "starter",
-    name: "Starter",
-    price: 19,
-    tagline: "A clear starting point",
-    description: "Best if you want to understand your options before committing.",
-    features: ["Full plan for 1 country", "Best visa recommendation", "Detailed eligibility breakdown", "Top path explanation", "Basic next steps"],
-    popular: false,
-    cta: "See My Best Path",
-  },
-  {
-    key: "plus",
-    name: "Plus",
-    price: 29,
-    tagline: "Your complete action plan",
-    description: "Best if you want a full roadmap and everything you need to start moving.",
-    features: ["Everything in Starter", "Step-by-step roadmap", "Cost estimate", "Timeline estimate", "Document checklist", "3 country comparisons"],
-    popular: true,
-    cta: "Unlock My Full Plan",
-  },
-  {
-    key: "premium",
-    name: "Premium",
-    price: 49,
-    tagline: "Your full strategic roadmap",
-    description: "Best if you want the deepest guidance and the most complete plan.",
-    features: ["Everything in Plus", "Full strategic recommendation", "Priority AI guidance", "Advanced action plan", "Full path comparison", "Premium dashboard"],
-    popular: false,
-    cta: "Build My Immigration Plan",
-  },
-];
-
-const ADVISOR_SECTIONS = [
-  {
-    icon: "📍",
-    title: "Where you stand — and why that's okay",
-    body: "Not every profile is ready on the first assessment. Your score reflects today's snapshot, not your ceiling. Most applicants who start in the mid-range reach qualifying status within 6–12 months by fixing two or three targeted gaps.",
-  },
-  {
-    icon: "🌍",
-    title: "Pathways still open to you",
-    body: "Skilled worker routes like US EB-2 NIW, Canada Express Entry, and Germany's Skilled Immigration Act reward strong professional profiles. Startup visas in Portugal, Netherlands, and UAE are accessible without a perfect history. Digital nomad visas in Spain, Greece, and Costa Rica have low barriers for remote workers. Family and spousal routes remain among the fastest options in the US, UK, and Australia.",
-  },
-  {
-    icon: "🔧",
-    title: "What you can fix right now",
-    body: "Language scores, credential recognition, work experience gaps, and reference letters are all addressable. A targeted 3–6 month preparation period can move a borderline profile into a strong qualifying range for multiple pathways simultaneously.",
-  },
-  {
-    icon: "🗺️",
-    title: "Your next step",
-    body: "Unlock your full roadmap to see a prioritized action plan, your top visa matches with likelihood scores, real cost estimates, and the exact documents to prepare first — personalized to your profile.",
-  },
-];
 
 const TIER_ORDER = ["free", "starter", "plus", "premium"];
 
 export function AIAnalysisPage({ compact = false }: { compact?: boolean }) {
+  const t = useTranslations();
   const searchParams = useSearchParams();
   const upgraded = searchParams.get("upgraded") === "true";
+
+  const matchLabels: Record<MatchLevel, string> = {
+    high: t("Strong match"),
+    medium: t("Possible match"),
+    low: t("Needs work"),
+  };
+
+  const severityLabels: Record<Severity, string> = {
+    high: t("High priority"),
+    medium: t("Worth addressing"),
+    low: t("Minor factor"),
+  };
+
+  // Brief descriptions of common visa types shown to all users
+  const visaInfo: Record<string, string> = {
+    "H-1B": t("Specialty occupation visa for skilled professionals sponsored by a US employer — requires at least a bachelor's degree in a relevant field"),
+    "DV Lottery": t("Diversity Visa program — an annual lottery that awards 50,000 green cards to applicants from underrepresented countries"),
+    "EB-1": t("Employment-based green card for individuals with extraordinary ability, outstanding professors, or multinational executives"),
+    "EB-2 NIW": t("Green card for professionals with advanced degrees or exceptional ability who can prove their work benefits the United States"),
+    "EB-3": t("Employment-based green card for skilled workers, professionals, and other workers with a permanent US job offer"),
+    "O-1": t("Visa for individuals with extraordinary ability or achievement in their field — science, arts, education, business, or athletics"),
+    "L-1": t("Intracompany transfer visa for managers, executives, or specialized employees moving to a US branch of their company"),
+    "E-2": t("Treaty investor visa allowing nationals of treaty countries to invest in and manage a US business"),
+    "F-1": t("Academic student visa for full-time study at a US university, college, or accredited academic institution"),
+    "B-1/B-2": t("Temporary visitor visa for business meetings (B-1) or tourism and medical treatment (B-2)"),
+    "TN Visa": t("NAFTA/USMCA professional visa for Canadian and Mexican citizens in specific professional categories"),
+    "Express Entry": t("Canada's points-based immigration system for skilled workers — score is based on age, education, work experience, and language skills"),
+    "Skilled Worker": t("Points-based visa for skilled professionals — eligibility assessed on qualifications, experience, and language ability"),
+    "Global Talent": t("Fast-track visa for exceptional talent in tech, science, arts, and humanities sponsored by a recognized organization"),
+    "Startup Visa": t("Visa for entrepreneurs launching innovative businesses with backing from accredited investors or business incubators"),
+    "Student Visa": t("Visa for international students accepted to an accredited educational institution"),
+    "Work Permit": t("Authorization to work legally in the destination country, typically tied to a job offer or specific occupation"),
+  };
+
+  const plans = [
+    {
+      key: "starter",
+      name: t("Starter"),
+      price: 19,
+      tagline: t("A clear starting point"),
+      description: t("Best if you want to understand your options before committing"),
+      features: [t("Full plan for 1 country"), t("Best visa recommendation"), t("Detailed eligibility breakdown"), t("Top path explanation"), t("Basic next steps")],
+      popular: false,
+      cta: t("See My Best Path"),
+    },
+    {
+      key: "plus",
+      name: t("Plus"),
+      price: 29,
+      tagline: t("Your complete action plan"),
+      description: t("Best if you want a full roadmap and everything you need to start moving"),
+      features: [t("Everything in Starter"), t("Step-by-step roadmap"), t("Cost estimate"), t("Timeline estimate"), t("Document checklist"), t("3 country comparisons")],
+      popular: true,
+      cta: t("Unlock My Full Plan"),
+    },
+    {
+      key: "premium",
+      name: t("Premium"),
+      price: 49,
+      tagline: t("Your full strategic roadmap"),
+      description: t("Best if you want the deepest guidance and the most complete plan"),
+      features: [t("Everything in Plus"), t("Full strategic recommendation"), t("Priority AI guidance"), t("Advanced action plan"), t("Full path comparison"), t("Premium dashboard")],
+      popular: false,
+      cta: t("Build My Immigration Plan"),
+    },
+  ];
+
+  const advisorSections = [
+    {
+      icon: "📍",
+      title: t("Where you stand — and why that's okay"),
+      body: t("Not every profile is ready on the first assessment — your score reflects today's snapshot, not your ceiling. Most applicants who start in the mid-range reach qualifying status within 6–12 months by fixing two or three targeted gaps"),
+    },
+    {
+      icon: "🌍",
+      title: t("Pathways still open to you"),
+      body: t("Skilled worker routes like US EB-2 NIW, Canada Express Entry, and Germany's Skilled Immigration Act reward strong professional profiles. Startup visas in Portugal, Netherlands, and UAE are accessible without a perfect history. Digital nomad visas in Spain, Greece, and Costa Rica have low barriers for remote workers. Family and spousal routes remain among the fastest options in the US, UK, and Australia"),
+    },
+    {
+      icon: "🔧",
+      title: t("What you can fix right now"),
+      body: t("Language scores, credential recognition, work experience gaps, and reference letters are all addressable — a targeted 3–6 month preparation period can move a borderline profile into a strong qualifying range for multiple pathways simultaneously"),
+    },
+    {
+      icon: "🗺️",
+      title: t("Your next step"),
+      body: t("Unlock your full roadmap to see a prioritized action plan, your top visa matches with likelihood scores, real cost estimates, and the exact documents to prepare first — personalized to your profile"),
+    },
+  ];
+
   const canceled = searchParams.get("canceled") === "true";
   // Plan user had selected before canceling checkout (passed in cancel_url)
   const canceledPlan = searchParams.get("plan") ?? "";
@@ -179,11 +199,11 @@ export function AIAnalysisPage({ compact = false }: { compact?: boolean }) {
   if (!session && authStatus !== "loading") {
     return (
       <div className="flex min-h-[60vh] flex-col items-center justify-center text-center px-6">
-        <h2 className="text-2xl font-semibold tracking-tight text-ink">Sign in to see your analysis</h2>
-        <p className="mt-3 text-base text-muted">Create a free account to get your personalized immigration analysis.</p>
+        <h2 className="text-2xl font-semibold tracking-tight text-ink">{t("Sign in to see your analysis")}</h2>
+        <p className="mt-3 text-base text-muted">{t("Create a free account to get your personalized immigration analysis")}</p>
         <div className="mt-6 flex gap-3">
-          <a href="/sign-up" className="inline-flex h-11 items-center rounded-full bg-accent px-6 text-sm font-semibold text-white hover:bg-accent-hover">Start your plan</a>
-          <a href="/sign-in" className="inline-flex h-11 items-center rounded-full px-6 text-sm font-semibold text-accent ring-1 ring-accent/30 hover:bg-accent/5">Log in</a>
+          <a href="/sign-up" className="inline-flex h-11 items-center rounded-full bg-accent px-6 text-sm font-semibold text-white hover:bg-accent-hover">{t("Start your plan")}</a>
+          <a href="/sign-in" className="inline-flex h-11 items-center rounded-full px-6 text-sm font-semibold text-accent ring-1 ring-accent/30 hover:bg-accent/5">{t("Log in")}</a>
         </div>
       </div>
     );
@@ -195,8 +215,8 @@ export function AIAnalysisPage({ compact = false }: { compact?: boolean }) {
       <div className="flex min-h-[70vh] flex-col items-center justify-center text-center">
         <div className="h-12 w-12 rounded-full border-4 border-accent/20 border-t-accent animate-spin" />
         <Animate animation="fade-up" delay={300} duration={600}>
-          <h2 className="mt-6 text-2xl font-semibold tracking-tight text-ink">Analyzing your profile...</h2>
-          <p className="mt-2 text-base text-muted">Checking 47 visa categories against your background.</p>
+          <h2 className="mt-6 text-2xl font-semibold tracking-tight text-ink">{t("Analyzing your profile")}</h2>
+          <p className="mt-2 text-base text-muted">{t("Checking 47 visa categories against your background")}</p>
         </Animate>
       </div>
     );
@@ -206,9 +226,9 @@ export function AIAnalysisPage({ compact = false }: { compact?: boolean }) {
   if (status === "error" || !result) {
     return (
       <div className="mx-auto max-w-xl py-16 text-center">
-        <h2 className="text-2xl font-semibold tracking-tight text-ink">Analysis could not load</h2>
-        <p className="mt-3 text-base text-muted">{error || "Something went wrong."}</p>
-        <Button className="mt-6" onClick={() => void loadAnalysis()} size="lg">Retry</Button>
+        <h2 className="text-2xl font-semibold tracking-tight text-ink">{t("Analysis could not load")}</h2>
+        <p className="mt-3 text-base text-muted">{error || t("Something went wrong")}</p>
+        <Button className="mt-6" onClick={() => void loadAnalysis()} size="lg">{t("Retry")}</Button>
       </div>
     );
   }
@@ -220,7 +240,7 @@ export function AIAnalysisPage({ compact = false }: { compact?: boolean }) {
   // If user canceled a checkout, treat the canceled plan as the minimum already "seen"
   const canceledTierIdx = TIER_ORDER.indexOf(canceledPlan);
   const effectiveTierIdx = Math.max(currentTierIdx, canceledTierIdx);
-  const upsellPlans = PLANS.filter((p) => TIER_ORDER.indexOf(p.key) > effectiveTierIdx);
+  const upsellPlans = plans.filter((p) => TIER_ORDER.indexOf(p.key) > effectiveTierIdx);
 
   return (
     <div className={cn("mx-auto max-w-3xl", compact ? "px-0 py-0" : "px-6 py-10 md:py-14")}>
@@ -230,14 +250,14 @@ export function AIAnalysisPage({ compact = false }: { compact?: boolean }) {
         <div className="text-center">
           <span className="inline-flex items-center gap-1.5 rounded-full border border-accent/20 bg-accent/[0.07] px-3.5 py-1 text-xs font-semibold text-accent">
             <span className="h-1.5 w-1.5 rounded-full bg-accent anim-breathe" />
-            {isPremium ? "Full immigration plan ready" : "Analysis complete"}
+            {isPremium ? t("Full immigration plan ready") : t("Analysis complete")}
           </span>
           <h1 className="mt-4 text-3xl font-semibold tracking-tight text-ink md:text-[2.6rem] md:leading-[1.15]">
-            {isPremium ? "Your full immigration plan" : "Here\u2019s what we found for you."}
+            {isPremium ? t("Your full immigration plan") : t("Here's what we found for you")}
           </h1>
           {!isPremium && visa_matches.length > 0 && (
             <p className="mt-2 text-base text-muted">
-              We evaluated {visa_matches.length} visa paths against your profile.
+              {t("We evaluated {count} visa paths against your profile", { count: visa_matches.length })}
             </p>
           )}
         </div>
@@ -248,12 +268,12 @@ export function AIAnalysisPage({ compact = false }: { compact?: boolean }) {
         <div className="mt-8 glass-card rounded-2xl p-6 md:p-8">
           <div className="flex items-start justify-between gap-4">
             <div>
-              <p className="text-xs font-medium uppercase tracking-[0.08em] text-accent">Your profile</p>
+              <p className="text-xs font-medium uppercase tracking-[0.08em] text-accent">{t("Your profile")}</p>
               <p className="mt-2 text-lg leading-relaxed text-ink">{profile_summary.text}</p>
             </div>
             {profile_summary.target_country && (
               <div className="shrink-0 rounded-xl border border-accent/15 bg-accent/[0.06] px-3 py-2 text-right">
-                <p className="text-[10px] font-medium uppercase tracking-wide text-accent/70">Target</p>
+                <p className="text-[10px] font-medium uppercase tracking-wide text-accent/70">{t("Target")}</p>
                 <p className="mt-0.5 text-sm font-semibold text-ink">{profile_summary.target_country}</p>
               </div>
             )}
@@ -269,8 +289,8 @@ export function AIAnalysisPage({ compact = false }: { compact?: boolean }) {
         const alternatives = sorted.slice(3, 8);
 
         const renderCard = (match: typeof sorted[number]) => {
-          const c = MATCH_COLORS[match.match_level];
-          const info = match.description ?? VISA_INFO[match.visa_type];
+          const c = MATCH_STYLES[match.match_level];
+          const info = match.description ?? visaInfo[match.visa_type];
           return (
             <div key={match.visa_type} className={cn(
               "group relative overflow-hidden rounded-2xl border-2 bg-gradient-to-br p-5 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg",
@@ -279,12 +299,12 @@ export function AIAnalysisPage({ compact = false }: { compact?: boolean }) {
               <div className="flex items-start gap-4">
                 <div className={cn("flex h-16 w-16 shrink-0 flex-col items-center justify-center rounded-2xl", c.ring)}>
                   <p className={cn("text-[1.6rem] font-black tabular-nums leading-none", c.score)}>{match.match_score}%</p>
-                  <p className="mt-0.5 text-[9px] font-bold uppercase tracking-widest text-muted/70">match</p>
+                  <p className="mt-0.5 text-[9px] font-bold uppercase tracking-widest text-muted/70">{t("match")}</p>
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
                     <h3 className="text-base font-bold text-ink">{match.visa_type}</h3>
-                    <span className={cn("rounded-full px-2.5 py-0.5 text-[11px] font-bold", c.badge)}>{c.label}</span>
+                    <span className={cn("rounded-full px-2.5 py-0.5 text-[11px] font-bold", c.badge)}>{matchLabels[match.match_level]}</span>
                   </div>
                   <p className="mt-0.5 text-xs font-medium text-muted">{match.country}</p>
                   {info && (
@@ -309,9 +329,9 @@ export function AIAnalysisPage({ compact = false }: { compact?: boolean }) {
                 <Animate animation="fade-up" delay={300} duration={600}>
                   <div className="mt-10 flex items-baseline justify-between gap-3">
                     <h2 className="text-xl font-semibold tracking-tight text-ink">
-                      {isPremium ? "Your best immigration paths" : "Your strongest paths"}
+                      {isPremium ? t("Your best immigration paths") : t("Your strongest paths")}
                     </h2>
-                    <span className="text-xs font-medium text-muted">Top {primary.length} of {sorted.length}</span>
+                    <span className="text-xs font-medium text-muted">{t("Top {primary} of {total}", { primary: primary.length, total: sorted.length })}</span>
                   </div>
                 </Animate>
                 <Stagger className="mt-4 space-y-3" animation="fade-up" staggerDelay={120} duration={500}>
@@ -324,9 +344,9 @@ export function AIAnalysisPage({ compact = false }: { compact?: boolean }) {
               <>
                 <Animate animation="fade-up" delay={400} duration={600}>
                   <div className="mt-10">
-                    <h2 className="text-xl font-semibold tracking-tight text-ink">Other paths worth considering</h2>
+                    <h2 className="text-xl font-semibold tracking-tight text-ink">{t("Other paths worth considering")}</h2>
                     <p className="mt-1.5 text-sm leading-relaxed text-muted">
-                      Lower match scores today, but still viable — often a small profile change (more experience, a job offer, a sponsor) can move you into a qualifying range.
+                      {t("Lower match scores today, but still viable — often a small profile change (more experience, a job offer, a sponsor) can move you into a qualifying range")}
                     </p>
                   </div>
                 </Animate>
@@ -350,12 +370,12 @@ export function AIAnalysisPage({ compact = false }: { compact?: boolean }) {
               aria-expanded={showAllVisas}
             >
               <div className="min-w-0">
-                <p className="text-xs font-semibold uppercase tracking-[0.1em] text-accent">Explore every path</p>
+                <p className="text-xs font-semibold uppercase tracking-[0.1em] text-accent">{t("Explore every path")}</p>
                 <p className="mt-1 text-sm font-semibold text-ink md:text-base">
-                  See all {allCountryVisas.length} visa options for {profile_summary.target_country}
+                  {t("See all {count} visa options for {country}", { count: allCountryVisas.length, country: profile_summary.target_country })}
                 </p>
                 <p className="mt-0.5 text-xs leading-snug text-muted">
-                  Including paths you don&apos;t qualify for yet — and what to fix.
+                  {t("Including paths you don't qualify for yet — and what to fix")}
                 </p>
               </div>
               <span
@@ -375,7 +395,7 @@ export function AIAnalysisPage({ compact = false }: { compact?: boolean }) {
               <div className="mt-3 space-y-2.5">
                 {allCountryVisas.map((opt) => {
                   const levelClr = opt.eligible
-                    ? (opt.match_level && MATCH_COLORS[opt.match_level]) || MATCH_COLORS.medium
+                    ? (opt.match_level && MATCH_STYLES[opt.match_level]) || MATCH_STYLES.medium
                     : null;
                   return (
                     <div
@@ -391,11 +411,11 @@ export function AIAnalysisPage({ compact = false }: { compact?: boolean }) {
                             <h4 className="text-sm font-bold text-ink">{opt.visa_type}</h4>
                             {opt.eligible && levelClr && opt.match_score !== null ? (
                               <span className={cn("rounded-full px-2 py-0.5 text-[10px] font-bold", levelClr.badge)}>
-                                {opt.match_score}% match
+                                {t("{score}% match", { score: opt.match_score })}
                               </span>
                             ) : (
                               <span className="rounded-full bg-ink/5 px-2 py-0.5 text-[10px] font-semibold text-muted">
-                                Not eligible yet
+                                {t("Not eligible yet")}
                               </span>
                             )}
                             <span className="text-[10px] font-medium uppercase tracking-wide text-muted/70">
@@ -429,12 +449,12 @@ export function AIAnalysisPage({ compact = false }: { compact?: boolean }) {
         <Animate animation="fade-up" delay={450} duration={600}>
           {isPremium ? (
             <div className="mt-8 rounded-2xl border border-accent/20 bg-gradient-to-br from-accent/[0.07] to-transparent p-6">
-              <p className="text-xs font-bold uppercase tracking-[0.1em] text-accent">Our recommendation</p>
+              <p className="text-xs font-bold uppercase tracking-[0.1em] text-accent">{t("Our recommendation")}</p>
               <p className="mt-3 text-base leading-relaxed text-ink">{recommendation.reason}</p>
             </div>
           ) : (
             <div className="relative mt-8 overflow-hidden rounded-2xl border border-accent/20 bg-gradient-to-br from-accent/[0.04] to-transparent p-6">
-              <p className="text-xs font-bold uppercase tracking-[0.1em] text-accent">Best path preview</p>
+              <p className="text-xs font-bold uppercase tracking-[0.1em] text-accent">{t("Best path preview")}</p>
               <p className="mt-3 text-base leading-relaxed text-ink">{recommendation.reason}</p>
               {/* Blurred teaser row */}
               <div className="mt-4 flex items-center gap-3 rounded-xl border border-accent/10 bg-white/60 p-3">
@@ -445,7 +465,7 @@ export function AIAnalysisPage({ compact = false }: { compact?: boolean }) {
                 </div>
                 <span className="text-muted/50">🔒</span>
               </div>
-              <p className="mt-3 text-xs text-muted/60 text-center">Upgrade to see your personalized step-by-step plan</p>
+              <p className="mt-3 text-xs text-muted/60 text-center">{t("Upgrade to see your personalized step-by-step plan")}</p>
             </div>
           )}
         </Animate>
@@ -457,15 +477,15 @@ export function AIAnalysisPage({ compact = false }: { compact?: boolean }) {
           <div className="mt-8">
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-semibold tracking-tight text-ink">
-                {isPremium ? "Areas to be aware of" : "What may need improvement"}
+                {isPremium ? t("Areas to be aware of") : t("What may need improvement")}
               </h2>
               <span className="rounded-full bg-ink/5 px-2.5 py-0.5 text-xs font-semibold text-muted">
-                {challenges.length} factor{challenges.length !== 1 ? "s" : ""}
+                {challenges.length === 1 ? t("{count} factor", { count: challenges.length }) : t("{count} factors", { count: challenges.length })}
               </span>
             </div>
             <div className="mt-3 space-y-2">
               {challenges.map((ch) => {
-                const c = SEVERITY_COLORS[ch.severity];
+                const c = SEVERITY_STYLES[ch.severity];
                 return (
                   <div key={ch.title} className={cn("rounded-xl p-4", c.bg)}>
                     <div className="flex items-start gap-3">
@@ -473,7 +493,7 @@ export function AIAnalysisPage({ compact = false }: { compact?: boolean }) {
                       <div className="flex-1">
                         <div className="flex items-center gap-2">
                           <p className="text-sm font-bold text-ink">{ch.title}</p>
-                          <span className="text-[10px] font-semibold uppercase tracking-wide text-muted/60">{c.label}</span>
+                          <span className="text-[10px] font-semibold uppercase tracking-wide text-muted/60">{severityLabels[ch.severity]}</span>
                         </div>
                         <p className="mt-1 text-sm leading-relaxed text-ink/60">{ch.description}</p>
                       </div>
@@ -490,9 +510,9 @@ export function AIAnalysisPage({ compact = false }: { compact?: boolean }) {
       {!isPremium && upsellPlans.length > 0 && (
         <Animate animation="fade-up" delay={650} duration={600}>
           <div className="mt-8 rounded-2xl border border-accent/15 bg-accent/[0.04] p-6 md:p-8">
-            <p className="text-xs font-semibold uppercase tracking-[0.1em] text-accent">Advisor note</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.1em] text-accent">{t("Advisor note")}</p>
             <div className="mt-5 space-y-5">
-              {ADVISOR_SECTIONS.map((s) => (
+              {advisorSections.map((s) => (
                 <div key={s.title} className="flex gap-4">
                   <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-accent/10 text-lg">{s.icon}</span>
                   <div>
@@ -510,7 +530,7 @@ export function AIAnalysisPage({ compact = false }: { compact?: boolean }) {
       {isPremium && result.premium_roadmap && (
         <Animate animation="fade-up" delay={650} duration={700}>
           <div className="mt-10">
-            <h2 className="text-xl font-semibold tracking-tight text-ink">Your step-by-step roadmap</h2>
+            <h2 className="text-xl font-semibold tracking-tight text-ink">{t("Your step-by-step roadmap")}</h2>
             <div className="mt-5">
               {result.premium_roadmap.map((step, idx) => (
                 <div key={step.step} className="relative flex gap-4">
@@ -535,16 +555,16 @@ export function AIAnalysisPage({ compact = false }: { compact?: boolean }) {
       {isPremium && result.premium_costs && (
         <Animate animation="fade-up" delay={750} duration={600}>
           <div className="mt-8">
-            <h2 className="text-xl font-semibold tracking-tight text-ink">Estimated costs</h2>
+            <h2 className="text-xl font-semibold tracking-tight text-ink">{t("Estimated costs")}</h2>
             <div className="mt-4 glass-card rounded-2xl p-6">
               <div className="grid grid-cols-2 gap-4">
-                <div><p className="text-xs text-muted">Filing fees</p><p className="mt-1 text-lg font-semibold text-ink">${result.premium_costs.filing}</p></div>
-                <div><p className="text-xs text-muted">Legal fees</p><p className="mt-1 text-lg font-semibold text-ink">${result.premium_costs.legal}</p></div>
-                <div><p className="text-xs text-muted">Medical</p><p className="mt-1 text-lg font-semibold text-ink">${result.premium_costs.medical}</p></div>
-                <div><p className="text-xs text-muted">Other</p><p className="mt-1 text-lg font-semibold text-ink">${result.premium_costs.other}</p></div>
+                <div><p className="text-xs text-muted">{t("Filing fees")}</p><p className="mt-1 text-lg font-semibold text-ink">${result.premium_costs.filing}</p></div>
+                <div><p className="text-xs text-muted">{t("Legal fees")}</p><p className="mt-1 text-lg font-semibold text-ink">${result.premium_costs.legal}</p></div>
+                <div><p className="text-xs text-muted">{t("Medical")}</p><p className="mt-1 text-lg font-semibold text-ink">${result.premium_costs.medical}</p></div>
+                <div><p className="text-xs text-muted">{t("Other")}</p><p className="mt-1 text-lg font-semibold text-ink">${result.premium_costs.other}</p></div>
               </div>
               <div className="mt-4 border-t border-line pt-4">
-                <p className="text-sm text-muted">Total estimated range</p>
+                <p className="text-sm text-muted">{t("Total estimated range")}</p>
                 <p className="mt-1 text-2xl font-semibold text-accent">
                   ${result.premium_costs.total_low?.toLocaleString()} — ${result.premium_costs.total_high?.toLocaleString()}
                 </p>
@@ -557,7 +577,7 @@ export function AIAnalysisPage({ compact = false }: { compact?: boolean }) {
       {isPremium && result.premium_documents && (
         <Animate animation="fade-up" delay={850} duration={600}>
           <div className="mt-8">
-            <h2 className="text-xl font-semibold tracking-tight text-ink">Document checklist</h2>
+            <h2 className="text-xl font-semibold tracking-tight text-ink">{t("Document checklist")}</h2>
             <div className="mt-4 space-y-2">
               {result.premium_documents.map((doc) => (
                 <div key={doc.document} className="flex items-start gap-3 rounded-xl border border-line bg-white/60 p-3.5">
@@ -567,7 +587,7 @@ export function AIAnalysisPage({ compact = false }: { compact?: boolean }) {
                   <div>
                     <p className="text-sm font-medium text-ink">
                       {doc.document}
-                      {doc.required && <span className="ml-2 rounded-full bg-accent/10 px-1.5 py-0.5 text-[10px] font-semibold text-accent">Required</span>}
+                      {doc.required && <span className="ml-2 rounded-full bg-accent/10 px-1.5 py-0.5 text-[10px] font-semibold text-accent">{t("Required")}</span>}
                     </p>
                     <p className="mt-0.5 text-xs text-muted">{doc.notes}</p>
                   </div>
@@ -587,9 +607,9 @@ export function AIAnalysisPage({ compact = false }: { compact?: boolean }) {
               <div className="mb-6 flex items-start gap-3 rounded-2xl border border-amber/25 bg-amber/[0.06] p-4 md:p-5">
                 <span className="mt-0.5 text-lg leading-none">ℹ️</span>
                 <div className="flex-1">
-                  <p className="text-sm font-semibold text-ink">No charge — your payment was canceled.</p>
+                  <p className="text-sm font-semibold text-ink">{t("No charge — your payment was canceled")}</p>
                   <p className="mt-1 text-sm text-muted">
-                    You can pick up where you left off whenever you are ready.
+                    {t("You can pick up where you left off whenever you are ready")}
                   </p>
                 </div>
               </div>
@@ -597,12 +617,12 @@ export function AIAnalysisPage({ compact = false }: { compact?: boolean }) {
 
             {/* Headline */}
             <div className="text-center">
-              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-accent">What you unlock</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-accent">{t("What you unlock")}</p>
               <h2 className="mt-2 text-2xl font-semibold tracking-tight text-ink md:text-3xl">
-                Your full immigration plan — no matter your match score
+                {t("Your full immigration plan — no matter your match score")}
               </h2>
               <p className="mx-auto mt-3 max-w-xl text-base leading-relaxed text-muted">
-                Even when options look limited today, you get a concrete roadmap, real costs, realistic timelines, and the exact documents to prepare.
+                {t("Even when options look limited today, you get a concrete roadmap, real costs, realistic timelines, and the exact documents to prepare")}
               </p>
             </div>
 
@@ -613,15 +633,15 @@ export function AIAnalysisPage({ compact = false }: { compact?: boolean }) {
                 <div className="flex items-start gap-3 md:w-48 md:shrink-0 md:flex-col md:gap-2">
                   <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-accent/10 text-xl">🗺️</span>
                   <div>
-                    <p className="text-sm font-semibold text-ink">Step-by-step roadmap</p>
-                    <p className="mt-0.5 text-xs text-muted">Every action in order, tailored to your profile.</p>
+                    <p className="text-sm font-semibold text-ink">{t("Step-by-step roadmap")}</p>
+                    <p className="mt-0.5 text-xs text-muted">{t("Every action in order, tailored to your profile")}</p>
                   </div>
                 </div>
                 <div className="mt-4 flex-1 space-y-2.5 md:mt-0">
                   {[
-                    { n: 1, title: "Collect evidence & references", sub: "Publications, awards, letters, salary records." },
-                    { n: 2, title: "Prepare petition package", sub: "Draft brief, exhibit index, supporting docs." },
-                    { n: 3, title: "File with USCIS & track", sub: "Premium processing available for faster decision." },
+                    { n: 1, title: t("Collect evidence & references"), sub: t("Publications, awards, letters, salary records") },
+                    { n: 2, title: t("Prepare petition package"), sub: t("Draft brief, exhibit index, supporting docs") },
+                    { n: 3, title: t("File with USCIS & track"), sub: t("Premium processing available for faster decision") },
                   ].map((step) => (
                     <div key={step.n} className="flex items-start gap-2.5">
                       <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-accent/10 text-[11px] font-bold text-accent">{step.n}</div>
@@ -632,7 +652,7 @@ export function AIAnalysisPage({ compact = false }: { compact?: boolean }) {
                     </div>
                   ))}
                   <p className="border-t border-line/60 pt-2.5 text-[10px] italic leading-snug text-muted/80">
-                    Sample — your actual roadmap is personalized to your visa and profile.
+                    {t("Sample — your actual roadmap is personalized to your visa and profile")}
                   </p>
                 </div>
               </div>
@@ -642,17 +662,17 @@ export function AIAnalysisPage({ compact = false }: { compact?: boolean }) {
                 <div className="flex items-start gap-3 md:w-48 md:shrink-0 md:flex-col md:gap-2">
                   <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-accent/10 text-xl">💵</span>
                   <div>
-                    <p className="text-sm font-semibold text-ink">Cost estimate</p>
-                    <p className="mt-0.5 text-xs text-muted">Filing, legal, medical, and other fees.</p>
+                    <p className="text-sm font-semibold text-ink">{t("Cost estimate")}</p>
+                    <p className="mt-0.5 text-xs text-muted">{t("Filing, legal, medical, and other fees")}</p>
                   </div>
                 </div>
                 <div className="mt-4 flex-1 md:mt-0">
                   <div className="grid grid-cols-4 gap-3">
                     {[
-                      { label: "Filing", val: "$715" },
-                      { label: "Legal", val: "$4,500" },
-                      { label: "Medical", val: "$350" },
-                      { label: "Other", val: "$420" },
+                      { label: t("Filing"), val: "$715" },
+                      { label: t("Legal"), val: "$4,500" },
+                      { label: t("Medical"), val: "$350" },
+                      { label: t("Other"), val: "$420" },
                     ].map(({ label, val }) => (
                       <div key={label} className="rounded-xl bg-ink/[0.03] p-3">
                         <p className="text-[10px] uppercase tracking-wide text-muted">{label}</p>
@@ -661,11 +681,11 @@ export function AIAnalysisPage({ compact = false }: { compact?: boolean }) {
                     ))}
                   </div>
                   <div className="mt-3 flex items-baseline justify-between border-t border-line pt-3">
-                    <p className="text-xs text-muted">Total estimated range</p>
+                    <p className="text-xs text-muted">{t("Total estimated range")}</p>
                     <p className="text-lg font-semibold text-accent">$5,900 – $8,200</p>
                   </div>
                   <p className="mt-1 text-[10px] italic leading-snug text-muted/80">
-                    Sample — your real estimate reflects your visa, attorney region, and dependents.
+                    {t("Sample — your real estimate reflects your visa, attorney region, and dependents")}
                   </p>
                 </div>
               </div>
@@ -675,15 +695,15 @@ export function AIAnalysisPage({ compact = false }: { compact?: boolean }) {
                 <div className="flex items-start gap-3 md:w-48 md:shrink-0 md:flex-col md:gap-2">
                   <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-accent/10 text-xl">⏱️</span>
                   <div>
-                    <p className="text-sm font-semibold text-ink">Timeline estimate</p>
-                    <p className="mt-0.5 text-xs text-muted">How long each stage takes, realistically.</p>
+                    <p className="text-sm font-semibold text-ink">{t("Timeline estimate")}</p>
+                    <p className="mt-0.5 text-xs text-muted">{t("How long each stage takes, realistically")}</p>
                   </div>
                 </div>
                 <div className="mt-4 flex-1 space-y-3 md:mt-0">
                   {[
-                    { stage: "Preparation", width: "30%", months: "2–3 months" },
-                    { stage: "Filing", width: "55%", months: "4–6 months" },
-                    { stage: "Decision", width: "85%", months: "6–9 months" },
+                    { stage: t("Preparation"), width: "30%", months: t("2–3 months") },
+                    { stage: t("Filing"), width: "55%", months: t("4–6 months") },
+                    { stage: t("Decision"), width: "85%", months: t("6–9 months") },
                   ].map(({ stage, width, months }) => (
                     <div key={stage}>
                       <div className="mb-1 flex justify-between">
@@ -696,7 +716,7 @@ export function AIAnalysisPage({ compact = false }: { compact?: boolean }) {
                     </div>
                   ))}
                   <p className="border-t border-line/60 pt-2.5 text-[10px] italic leading-snug text-muted/80">
-                    Sample — actual timing depends on processing queues and your specific path.
+                    {t("Sample — actual timing depends on processing queues and your specific path")}
                   </p>
                 </div>
               </div>
@@ -706,19 +726,19 @@ export function AIAnalysisPage({ compact = false }: { compact?: boolean }) {
                 <div className="flex items-start gap-3 md:w-48 md:shrink-0 md:flex-col md:gap-2">
                   <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-accent/10 text-xl">📄</span>
                   <div>
-                    <p className="text-sm font-semibold text-ink">Document checklist</p>
-                    <p className="mt-0.5 text-xs text-muted">Exactly what to prepare — and what can wait.</p>
+                    <p className="text-sm font-semibold text-ink">{t("Document checklist")}</p>
+                    <p className="mt-0.5 text-xs text-muted">{t("Exactly what to prepare — and what can wait")}</p>
                   </div>
                 </div>
                 <div className="mt-4 flex-1 md:mt-0">
                   <div className="grid grid-cols-1 gap-1.5 sm:grid-cols-2">
                     {[
-                      { doc: "Passport (6+ months validity)", required: true },
-                      { doc: "Degree & transcripts (translated)", required: true },
-                      { doc: "Employment letters & pay stubs", required: true },
-                      { doc: "Reference letters (3–5)", required: false },
-                      { doc: "Medical examination (I-693)", required: true },
-                      { doc: "Financial statements", required: false },
+                      { doc: t("Passport (6+ months validity)"), required: true },
+                      { doc: t("Degree & transcripts (translated)"), required: true },
+                      { doc: t("Employment letters & pay stubs"), required: true },
+                      { doc: t("Reference letters (3–5)"), required: false },
+                      { doc: t("Medical examination (I-693)"), required: true },
+                      { doc: t("Financial statements"), required: false },
                     ].map(({ doc, required }) => (
                       <div key={doc} className="flex items-center gap-2.5 rounded-lg bg-ink/[0.02] px-3 py-2">
                         <span className={cn("flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10px] font-bold", required ? "bg-accent/10 text-accent" : "bg-ink/5 text-muted")}>
@@ -729,7 +749,7 @@ export function AIAnalysisPage({ compact = false }: { compact?: boolean }) {
                     ))}
                   </div>
                   <p className="mt-3 border-t border-line/60 pt-2.5 text-[10px] italic leading-snug text-muted/80">
-                    Sample — full list is tailored to the visa you pursue.
+                    {t("Sample — full list is tailored to the visa you pursue")}
                   </p>
                 </div>
               </div>
@@ -739,17 +759,17 @@ export function AIAnalysisPage({ compact = false }: { compact?: boolean }) {
             <div className="mt-8 flex items-start gap-3 rounded-2xl border border-green/20 bg-green/[0.04] p-5 md:p-6">
               <span className="mt-0.5 text-lg leading-none">💡</span>
               <div className="flex-1">
-                <p className="text-sm font-semibold text-ink">A low match does not mean the door is closed.</p>
+                <p className="text-sm font-semibold text-ink">{t("A low match does not mean the door is closed")}</p>
                 <p className="mt-1.5 text-sm leading-relaxed text-ink/70">
-                  Your full plan still shows the costs, timeline, and documents for the paths available to you — plus the specific weaknesses to fix first, so you can raise your match score and try again.
+                  {t("Your full plan still shows the costs, timeline, and documents for the paths available to you — plus the specific weaknesses to fix first, so you can raise your match score and try again")}
                 </p>
               </div>
             </div>
 
             {/* Pricing lead-in */}
             <div className="mt-10 text-center">
-              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted">Pick your plan</p>
-              <p className="mt-2 text-lg font-semibold tracking-tight text-ink">One-time payment. Lifetime access.</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted">{t("Pick your plan")}</p>
+              <p className="mt-2 text-lg font-semibold tracking-tight text-ink">{t("One-time payment — lifetime access")}</p>
             </div>
 
             {/* Pricing cards */}
@@ -766,7 +786,7 @@ export function AIAnalysisPage({ compact = false }: { compact?: boolean }) {
                 >
                   {plan.popular && (
                     <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-accent px-3 py-0.5 text-xs font-semibold text-white">
-                      Best value
+                      {t("Best value")}
                     </span>
                   )}
                   <p className="text-sm font-semibold text-ink">{plan.name}</p>
@@ -774,7 +794,7 @@ export function AIAnalysisPage({ compact = false }: { compact?: boolean }) {
                   <p className="mt-3 text-3xl font-semibold tracking-tight text-ink">
                     ${plan.price}
                   </p>
-                  <p className="text-xs text-muted">one-time</p>
+                  <p className="text-xs text-muted">{t("one-time")}</p>
                   <p className="mt-3 text-sm leading-relaxed text-ink/70">{plan.description}</p>
 
                   <div className="mt-4 flex-1 space-y-2">
@@ -792,7 +812,7 @@ export function AIAnalysisPage({ compact = false }: { compact?: boolean }) {
                     onClick={() => void handleUpgrade(plan.key)}
                     disabled={upgrading !== null}
                   >
-                    {upgrading === plan.key ? "Processing..." : plan.cta}
+                    {upgrading === plan.key ? t("Processing") : plan.cta}
                   </Button>
                 </div>
               ))}
@@ -805,16 +825,16 @@ export function AIAnalysisPage({ compact = false }: { compact?: boolean }) {
       {isPremium && (
         <Animate animation="fade-up" delay={900} duration={700}>
           <div className="mt-12 rounded-3xl bg-gradient-dark p-8 text-center md:p-10">
-            <h2 className="text-2xl font-semibold tracking-tight text-white">Ready to start your case?</h2>
+            <h2 className="text-2xl font-semibold tracking-tight text-white">{t("Ready to start your case?")}</h2>
             <p className="mx-auto mt-3 max-w-md text-base text-white/50">
-              Create your immigration case from your recommended path and start moving forward.
+              {t("Create your immigration case from your recommended path and start moving forward")}
             </p>
             <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
               <Link className={cn(buttonVariants({ size: "lg", variant: "primary" }), "px-8 shadow-glow")} href="/dashboard/cases">
-                Create your case
+                {t("Create your case")}
               </Link>
               <Link className="inline-flex h-12 items-center rounded-full px-6 text-base font-semibold text-white/70 ring-1 ring-inset ring-white/20 hover:bg-white/5 hover:text-white" href="/dashboard">
-                Go to dashboard
+                {t("Go to dashboard")}
               </Link>
             </div>
           </div>

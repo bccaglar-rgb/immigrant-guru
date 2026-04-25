@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
+import { useTranslations } from "next-intl";
 
 import { VISAS, type Visa } from "@/data/visa-catalog";
 
@@ -47,6 +48,7 @@ function scoreVisa(visa: Visa, a: Answers): number {
 }
 
 export function EligibilityChecker() {
+  const t = useTranslations();
   const [answers, setAnswers] = useState<Answers>(DEFAULT_ANSWERS);
   const [submitted, setSubmitted] = useState(false);
 
@@ -60,7 +62,7 @@ export function EligibilityChecker() {
     <div className="mt-10 rounded-3xl border border-white/10 bg-white/5 p-6 sm:p-8">
       <div className="grid gap-5">
         <label className="flex flex-col gap-2">
-          <span className="text-sm font-medium text-white">Highest education</span>
+          <span className="text-sm font-medium text-white">{t("Highest education")}</span>
           <select
             className="rounded-xl border border-white/15 bg-black/40 px-4 py-2 text-white"
             value={answers.hasDegree ? "degree" : "none"}
@@ -68,13 +70,13 @@ export function EligibilityChecker() {
               setAnswers({ ...answers, hasDegree: e.target.value === "degree" })
             }
           >
-            <option value="none">No bachelor's degree</option>
-            <option value="degree">Bachelor's degree or higher</option>
+            <option value="none">{t("No bachelor's degree")}</option>
+            <option value="degree">{t("Bachelor's degree or higher")}</option>
           </select>
         </label>
 
         <label className="flex flex-col gap-2">
-          <span className="text-sm font-medium text-white">Years of professional experience</span>
+          <span className="text-sm font-medium text-white">{t("Years of professional experience")}</span>
           <input
             type="number"
             min={0}
@@ -88,7 +90,7 @@ export function EligibilityChecker() {
         </label>
 
         <label className="flex flex-col gap-2">
-          <span className="text-sm font-medium text-white">English proficiency</span>
+          <span className="text-sm font-medium text-white">{t("English proficiency")}</span>
           <select
             className="rounded-xl border border-white/15 bg-black/40 px-4 py-2 text-white"
             value={answers.englishLevel}
@@ -96,10 +98,10 @@ export function EligibilityChecker() {
               setAnswers({ ...answers, englishLevel: e.target.value as Answers["englishLevel"] })
             }
           >
-            <option value="none">None</option>
-            <option value="basic">Basic</option>
-            <option value="fluent">Fluent</option>
-            <option value="native">Native</option>
+            <option value="none">{t("None")}</option>
+            <option value="basic">{t("Basic")}</option>
+            <option value="fluent">{t("Fluent")}</option>
+            <option value="native">{t("Native")}</option>
           </select>
         </label>
 
@@ -109,7 +111,7 @@ export function EligibilityChecker() {
             checked={answers.hasJobOffer}
             onChange={(e) => setAnswers({ ...answers, hasJobOffer: e.target.checked })}
           />
-          <span className="text-sm text-white">I have (or am close to getting) a job offer abroad</span>
+          <span className="text-sm text-white">{t("I have (or am close to getting) a job offer abroad")}</span>
         </label>
 
         <label className="flex items-center gap-3">
@@ -121,12 +123,12 @@ export function EligibilityChecker() {
             }
           />
           <span className="text-sm text-white">
-            I have patents, publications, awards, or significant recognition
+            {t("I have patents, publications, awards, or significant recognition")}
           </span>
         </label>
 
         <label className="flex flex-col gap-2">
-          <span className="text-sm font-medium text-white">Monthly passive or remote income (USD)</span>
+          <span className="text-sm font-medium text-white">{t("Monthly passive or remote income (USD)")}</span>
           <input
             type="number"
             min={0}
@@ -143,13 +145,13 @@ export function EligibilityChecker() {
           className="mt-2 rounded-full bg-white px-5 py-3 text-sm font-semibold text-black hover:bg-white/90"
           onClick={() => setSubmitted(true)}
         >
-          Check eligibility
+          {t("Check eligibility")}
         </button>
       </div>
 
       {submitted ? (
         <div className="mt-8 space-y-3">
-          <h3 className="text-lg font-semibold text-white">Your top matches</h3>
+          <h3 className="text-lg font-semibold text-white">{t("Your top matches")}</h3>
           {results.map(({ visa, score }) => (
             <div
               key={visa.slug}
@@ -177,7 +179,7 @@ export function EligibilityChecker() {
               href="/sign-up"
               className="rounded-full bg-white px-5 py-2.5 text-sm font-semibold text-black hover:bg-white/90"
             >
-              Get the full AI analysis
+              {t("Get the full AI analysis")}
             </Link>
           </div>
         </div>
