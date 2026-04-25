@@ -15,6 +15,26 @@ import { buildAlternates } from "@/lib/seo";
 
 const SITE_URL = "https://immigrant.guru";
 
+function Row({
+  label,
+  valueA,
+  valueB
+}: {
+  label: string;
+  valueA: string;
+  valueB: string;
+}) {
+  return (
+    <tr className="border-t border-white/10">
+      <th scope="row" className="py-3 pr-4 text-left text-sm text-white/60">
+        {label}
+      </th>
+      <td className="py-3 pr-4 text-sm text-white">{valueA}</td>
+      <td className="py-3 text-sm text-white">{valueB}</td>
+    </tr>
+  );
+}
+
 type PageParams = Promise<{ comparison: string }>;
 
 export async function generateStaticParams() {
@@ -84,24 +104,6 @@ export default async function ComparePage({ params }: { params: PageParams }) {
         description: `Compare ${va?.name ?? ""} and ${vb?.name ?? ""}.`
       };
     });
-
-  const Row = ({
-    label,
-    valueA,
-    valueB
-  }: {
-    label: string;
-    valueA: string;
-    valueB: string;
-  }) => (
-    <tr className="border-t border-white/10">
-      <th scope="row" className="py-3 pr-4 text-left text-sm text-white/60">
-        {label}
-      </th>
-      <td className="py-3 pr-4 text-sm text-white">{valueA}</td>
-      <td className="py-3 text-sm text-white">{valueB}</td>
-    </tr>
-  );
 
   return (
     <AppShell>

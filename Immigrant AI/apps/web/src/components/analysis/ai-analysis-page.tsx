@@ -202,8 +202,8 @@ export function AIAnalysisPage({ compact = false }: { compact?: boolean }) {
         <h2 className="text-2xl font-semibold tracking-tight text-ink">{t("Sign in to see your analysis")}</h2>
         <p className="mt-3 text-base text-muted">{t("Create a free account to get your personalized immigration analysis")}</p>
         <div className="mt-6 flex gap-3">
-          <a href="/sign-up" className="inline-flex h-11 items-center rounded-full bg-accent px-6 text-sm font-semibold text-white hover:bg-accent-hover">{t("Start your plan")}</a>
-          <a href="/sign-in" className="inline-flex h-11 items-center rounded-full px-6 text-sm font-semibold text-accent ring-1 ring-accent/30 hover:bg-accent/5">{t("Log in")}</a>
+          <Link href="/sign-up" className="inline-flex h-11 items-center rounded-full bg-accent px-6 text-sm font-semibold text-white hover:bg-accent-hover">{t("Start your plan")}</Link>
+          <Link href="/sign-in" className="inline-flex h-11 items-center rounded-full px-6 text-sm font-semibold text-accent ring-1 ring-accent/30 hover:bg-accent/5">{t("Log in")}</Link>
         </div>
       </div>
     );
