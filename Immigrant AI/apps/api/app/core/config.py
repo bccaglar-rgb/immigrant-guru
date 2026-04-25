@@ -48,7 +48,7 @@ class Settings(BaseSettings):
     jwt_secret_key: SecretStr = SecretStr(DEFAULT_JWT_SECRET)
     jwt_algorithm: str = "HS256"
     jwt_issuer: str = "immigrant-ai-api"
-    access_token_expire_minutes: int = 30
+    access_token_expire_minutes: int = 10080
     ai_provider: str = "disabled"
     ai_base_url: str = ""
     ai_api_key: SecretStr | None = None
