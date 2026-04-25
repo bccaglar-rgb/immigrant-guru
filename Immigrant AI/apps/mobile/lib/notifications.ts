@@ -14,6 +14,7 @@ import * as Notifications from "expo-notifications";
 import { Platform } from "react-native";
 
 import { api } from "./api-client";
+import { deleteSecure, PUSH_TOKEN_KEY, setSecure } from "./secure-storage";
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -53,22 +54,24 @@ export async function registerForPushNotifications(): Promise<string | null> {
 
   const token = (await Notifications.getExpoPushTokenAsync({ projectId })).data;
 
-  // best-effort registration; fire-and-forget
-  await api
+  const result = await api
     .post("/users/push-token", {
       token,
       platform: Platform.OS,
       locale: Constants.expoConfig?.locales ? Object.keys(Constants.expoConfig.locales)[0] : undefined,
       appVersion: Constants.expoConfig?.version
     })
-    .catch(() => undefined);
+    .catch(() => ({ ok: false }) as const);
+
+  if (result.ok) {
+    await setSecure(PUSH_TOKEN_KEY, token);
+  }
 
   return token;
 }
 
 export async function deregisterPushToken(token: string): Promise<void> {
   if (!token) return;
-  await api.del(`/users/push-token`).catch(() => undefined);
-  // Backend expects body on DELETE — using post as fallback would diverge.
-  // Currently handled by signOut + server-side user_id orphan cleanup.
+  await api.del("/users/push-token", { token }).catch(() => undefined);
+  await deleteSecure(PUSH_TOKEN_KEY);
 }

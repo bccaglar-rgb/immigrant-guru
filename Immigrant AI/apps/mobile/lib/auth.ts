@@ -12,7 +12,15 @@
 import { create } from "zustand";
 
 import { api } from "./api-client";
-import { deleteSecure, getSecure, setSecure, TOKEN_KEY, USER_KEY } from "./secure-storage";
+import { deregisterPushToken, registerForPushNotifications } from "./notifications";
+import {
+  deleteSecure,
+  getSecure,
+  PUSH_TOKEN_KEY,
+  setSecure,
+  TOKEN_KEY,
+  USER_KEY
+} from "./secure-storage";
 
 export type AuthUser = {
   id: string;
@@ -76,6 +84,7 @@ export const useAuth = create<AuthState>((set, get) => ({
     if (fresh) {
       await setSecure(USER_KEY, JSON.stringify(fresh));
       set({ status: "authenticated", user: fresh });
+      void registerForPushNotifications().catch(() => undefined);
     } else if (!stored) {
       // token is invalid and no cached user → force logout
       await deleteSecure(TOKEN_KEY);
@@ -102,6 +111,7 @@ export const useAuth = create<AuthState>((set, get) => ({
     const user = await fetchMe();
     if (user) await setSecure(USER_KEY, JSON.stringify(user));
     set({ status: "authenticated", user });
+    void registerForPushNotifications().catch(() => undefined);
     return { ok: true };
   },
 
@@ -119,10 +129,15 @@ export const useAuth = create<AuthState>((set, get) => ({
     const user = await fetchMe();
     if (user) await setSecure(USER_KEY, JSON.stringify(user));
     set({ status: "authenticated", user });
+    void registerForPushNotifications().catch(() => undefined);
     return { ok: true };
   },
 
   async signOut() {
+    const pushToken = await getSecure(PUSH_TOKEN_KEY);
+    if (pushToken) {
+      await deregisterPushToken(pushToken).catch(() => undefined);
+    }
     await api.post("/auth/logout").catch(() => undefined);
     await deleteSecure(TOKEN_KEY);
     await deleteSecure(USER_KEY);
