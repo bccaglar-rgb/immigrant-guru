@@ -218,9 +218,9 @@ export function profileToForm(p: UserProfile | null): ProfileFormValues {
 // ── API ─────────────────────────────────────────────────────────────────────────
 
 export async function fetchMyProfile() {
-  return api.get<UserProfile>("/profile");
+  return api.get<UserProfile>("/profile/me");
 }
 
 export async function updateMyProfile(values: ProfileFormValues) {
-  return api.put<UserProfile>("/profile", formToUpdatePayload(values));
+  return api.put<UserProfile>("/profile/me", formToUpdatePayload(values));
 }

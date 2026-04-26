@@ -35,13 +35,36 @@ async function parseError(res: Response): Promise<ApiError> {
   } catch {
     // ignore
   }
-  const message =
-    (body && typeof body === "object" && "detail" in body && typeof body.detail === "string"
-      ? body.detail
-      : null) ??
-    res.statusText ??
-    "Request failed.";
-  return { ok: false, status: res.status, message, detail: body };
+
+  let message: string | null = null;
+
+  if (body && typeof body === "object") {
+    // Custom backend format: { error: { code, message } }
+    if ("error" in body) {
+      const err = (body as { error: unknown }).error;
+      if (typeof err === "object" && err !== null && "message" in err) {
+        message = String((err as { message: unknown }).message);
+      }
+    }
+
+    // FastAPI standard: { detail: "string" }
+    if (!message && "detail" in body) {
+      const d = (body as { detail: unknown }).detail;
+      if (typeof d === "string") {
+        message = d;
+      } else if (Array.isArray(d) && d.length > 0) {
+        // Pydantic validation errors: [{ loc, msg, type }]
+        const first = d[0];
+        message =
+          typeof first === "object" && first !== null && "msg" in first
+            ? String((first as { msg: unknown }).msg)
+            : JSON.stringify(d);
+      }
+    }
+  }
+
+  const fallback = res.statusText && res.statusText.length > 0 ? res.statusText : "Request failed.";
+  return { ok: false, status: res.status, message: message ?? fallback, detail: body };
 }
 
 async function request<T>(

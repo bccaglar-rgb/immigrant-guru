@@ -2,21 +2,9 @@
   "version": "0.0.1",
   "configurations": [
     {
-      "name": "vite-dev",
-      "runtimeExecutable": "/Users/burakcagdascaglar/local/node-v22.14.0-darwin-arm64/bin/npm",
-      "runtimeArgs": ["run", "dev"],
-      "port": 5173
-    },
-    {
-      "name": "web-dev",
-      "runtimeExecutable": "/Users/burakcagdascaglar/homebrew/Cellar/node/25.9.0_2/bin/node",
-      "runtimeArgs": [
-        "/Users/burakcagdascaglar/homebrew/Cellar/node/25.9.0_2/bin/npm",
-        "--prefix",
-        "/Users/burakcagdascaglar/Documents/Immıgrant Guru/Immigrant AI/apps/web",
-        "run",
-        "dev"
-      ],
+      "name": "web",
+      "runtimeExecutable": "/tmp/start-immigrant-web.sh",
+      "runtimeArgs": [],
       "port": 3000
     },
     {

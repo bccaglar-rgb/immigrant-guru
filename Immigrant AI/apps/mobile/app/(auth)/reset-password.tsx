@@ -30,10 +30,15 @@ export default function ResetPasswordScreen() {
 
     setLoading(true);
     setError(null);
-    const res = await api.post("/auth/reset-password", { token, password });
-    setLoading(false);
-    if (!res.ok) return setError(res.message);
-    router.replace("/(auth)/sign-in");
+    try {
+      const res = await api.post("/auth/reset-password", { token, password });
+      if (!res.ok) { setError(res.message); return; }
+      router.replace("/(auth)/sign-in");
+    } catch {
+      setError("Something went wrong. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (

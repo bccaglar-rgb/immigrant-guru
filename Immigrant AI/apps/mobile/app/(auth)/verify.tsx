@@ -26,10 +26,15 @@ export default function VerifyScreen() {
     if (code.length < 6) return setError("Enter the 6-digit code.");
     setLoading(true);
     setError(null);
-    const res = await verifyEmail(email ?? "", code);
-    setLoading(false);
-    if (!res.ok) return setError(res.error);
-    router.replace("/onboarding");
+    try {
+      const res = await verifyEmail(email ?? "", code);
+      if (!res.ok) { setError(res.error); return; }
+      router.replace("/onboarding");
+    } catch {
+      setError("Something went wrong. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const resend = async () => {

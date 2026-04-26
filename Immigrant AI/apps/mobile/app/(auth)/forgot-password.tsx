@@ -17,10 +17,15 @@ export default function ForgotPasswordScreen() {
     if (!email) return setError("Enter your email.");
     setLoading(true);
     setError(null);
-    const res = await api.post("/auth/forgot-password", { email: email.trim() });
-    setLoading(false);
-    if (!res.ok) return setError(res.message);
-    setMessage("If an account exists for this email, a reset link has been sent.");
+    try {
+      const res = await api.post("/auth/forgot-password", { email: email.trim() });
+      if (!res.ok) { setError(res.message); return; }
+      setMessage("If an account exists for this email, a reset link has been sent.");
+    } catch {
+      setError("Something went wrong. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
