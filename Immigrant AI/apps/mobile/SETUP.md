@@ -40,7 +40,10 @@ eas build --platform android --profile development
    want to manage the app with.
 2. Create app record in App Store Connect; bundle id `guru.immigrant.app`.
 3. Create in-app purchase products matching the RevenueCat offerings:
-   `starter_monthly`, `plus_monthly`, `premium_monthly`.
+   `starter_monthly`, `plus_monthly`, `immigrant_premium_monthly`. Note:
+   `premium_monthly` is taken by another app on the developer account,
+   so the premium tier uses the namespaced ID `immigrant_premium_monthly`
+   in App Store Connect and must match in RevenueCat product config.
 4. Fill `eas.json` → `submit.production.ios` (appleId, ascAppId, appleTeamId).
 5. `npm run build:ios` then `npm run submit:ios`.
 
