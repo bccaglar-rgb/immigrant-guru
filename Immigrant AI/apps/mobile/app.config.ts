@@ -174,7 +174,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     GOOGLE_OAUTH_ANDROID_CLIENT_ID: process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID ?? "",
     GOOGLE_OAUTH_WEB_CLIENT_ID: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID ?? "",
     eas: {
-      projectId: "" // filled after `eas init`
+      projectId: "65037bf3-007f-4eb8-9c9b-60b87b2bef91"
     }
   },
   updates: {
