@@ -1,5 +1,5 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { LinearGradient } from "expo-linear-gradient";
+import { LinearGradient } from "@/lib/linear-gradient";
 import { router } from "expo-router";
 import * as Haptics from "expo-haptics";
 import { useEffect, useRef } from "react";

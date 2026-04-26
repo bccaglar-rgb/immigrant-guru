@@ -16,7 +16,7 @@ import Animated, {
 } from "react-native-reanimated";
 import Svg, { Circle, Line, Path } from "react-native-svg";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { LinearGradient } from "expo-linear-gradient";
+import { LinearGradient } from "@/lib/linear-gradient";
 
 import { api } from "@/lib/api-client";
 
