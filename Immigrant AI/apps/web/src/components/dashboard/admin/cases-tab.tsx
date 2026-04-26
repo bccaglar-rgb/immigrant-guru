@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
+import { useEffect, useEffectEvent, useState } from "react";
 
 import { Card } from "@/components/ui/card";
 import { getCaseAnalytics } from "@/lib/admin-client";
@@ -10,22 +11,23 @@ import type { CaseAnalytics } from "@/types/admin";
 import { EmptyState, MetricCard, STATUS_COLORS, SectionTitle, fmtDate } from "./shared";
 
 export function CasesTab({ accessToken }: { accessToken: string }) {
+  const t = useTranslations();
   const [data, setData] = useState<CaseAnalytics | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  const load = useCallback(async () => {
+  const onLoad = useEffectEvent(async () => {
     setLoading(true);
     setError("");
     const r = await getCaseAnalytics(accessToken);
     if (r.ok) setData(r.data);
     else setError(r.errorMessage);
     setLoading(false);
-  }, [accessToken]);
+  });
 
   useEffect(() => {
-    void load();
-  }, [load]);
+    void onLoad();
+  }, [accessToken]);
 
   if (loading) {
     return (
@@ -38,7 +40,7 @@ export function CasesTab({ accessToken }: { accessToken: string }) {
   }
 
   if (error || !data) {
-    return <p className="rounded-xl border border-red/20 bg-red/5 p-4 text-sm text-red">{error || "Could not load cases."}</p>;
+    return <p className="rounded-xl border border-red/20 bg-red/5 p-4 text-sm text-red">{error || t("Could not load cases")}</p>;
   }
 
   const completionRate = data.total_cases > 0 ? Math.round((data.active_cases / data.total_cases) * 100) : 0;
@@ -46,14 +48,14 @@ export function CasesTab({ accessToken }: { accessToken: string }) {
   return (
     <div className="space-y-6">
       <div className="grid gap-4 sm:grid-cols-3">
-        <MetricCard label="Total cases" value={data.total_cases} />
-        <MetricCard label="Active" value={data.active_cases} sub={`${completionRate}% of total`} tone="good" />
-        <MetricCard label="Statuses" value={data.by_status.length} sub="Distinct states in use" />
+        <MetricCard label={t("Total cases")} value={data.total_cases} />
+        <MetricCard label={t("Active")} value={data.active_cases} sub={`${completionRate}% ${t("of total")}`} tone="good" />
+        <MetricCard label={t("Statuses")} value={data.by_status.length} sub={t("Distinct states in use")} />
       </div>
 
       {data.by_status.length > 0 ? (
         <Card className="p-6">
-          <SectionTitle>By status</SectionTitle>
+          <SectionTitle>{t("By status")}</SectionTitle>
           <div className="mt-4 flex flex-wrap gap-2">
             {data.by_status.map((s) => (
               <div
@@ -73,19 +75,19 @@ export function CasesTab({ accessToken }: { accessToken: string }) {
 
       <Card className="overflow-hidden p-0">
         <div className="border-b border-line px-6 py-4">
-          <SectionTitle count={data.recent.length}>Recent cases</SectionTitle>
+          <SectionTitle count={data.recent.length}>{t("Recent cases")}</SectionTitle>
         </div>
         {data.recent.length === 0 ? (
-          <EmptyState>No cases yet.</EmptyState>
+          <EmptyState>{t("No cases yet")}</EmptyState>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-line bg-canvas/50">
-                  <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-widest text-muted">Case</th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-widest text-muted">User</th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-widest text-muted">Status</th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-widest text-muted">Updated</th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-widest text-muted">{t("Case")}</th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-widest text-muted">{t("User")}</th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-widest text-muted">{t("Status")}</th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-widest text-muted">{t("Updated")}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-line">

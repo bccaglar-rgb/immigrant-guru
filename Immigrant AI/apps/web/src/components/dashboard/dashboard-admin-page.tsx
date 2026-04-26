@@ -1,7 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useEffectEvent, useMemo, useState } from "react";
 import type { FormEvent } from "react";
+import { useTranslations } from "next-intl";
 
 import { useAuthSession } from "@/hooks/use-auth-session";
 import {
@@ -88,14 +89,15 @@ function parseJsonObject(raw: string, label: string): { ok: true; data: Record<s
   if (!trimmed) return { ok: true, data: {} };
   try {
     const parsed = JSON.parse(trimmed) as unknown;
-    if (!parsed || Array.isArray(parsed) || typeof parsed !== "object") return { ok: false, errorMessage: `${label} must be a JSON object.` };
+    if (!parsed || Array.isArray(parsed) || typeof parsed !== "object") return { ok: false, errorMessage: `${label} must be a JSON object` };
     return { ok: true, data: parsed as Record<string, unknown> };
   } catch {
-    return { ok: false, errorMessage: `${label} must be valid JSON.` };
+    return { ok: false, errorMessage: `${label} must be valid JSON` };
   }
 }
 
 const PLAN_LABELS: Record<string, string> = { free: "Free", starter: "Starter", plus: "Plus", premium: "Premium" };
+// NOTE: plan keys map to API enum values, labels are brand names left untranslated
 const PLAN_COLORS: Record<string, string> = {
   free: "bg-canvas border-line text-muted",
   starter: "bg-blue-50 border-blue-200 text-blue-700",
@@ -132,21 +134,22 @@ function FeedbackBanner({ message, tone }: { message: string; tone: "error" | "i
 // ─── Overview Tab ─────────────────────────────────────────────────────────────
 
 function OverviewTab({ stats, db, version, users }: { stats: AdminStats | null; db: DatabaseCheck | null; version: ServiceVersion | null; users: AdminUserDirectoryEntry[] }) {
+  const t = useTranslations();
   const paidUsers = stats ? (stats.total_users - (stats.by_plan["free"] ?? 0)) : 0;
   const recentUsers = users.slice(0, 8);
 
   return (
     <div className="space-y-6">
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <MetricCard label="Total users" value={stats?.total_users ?? "—"} sub={`${stats?.registered_today ?? 0} today`} />
-        <MetricCard label="Paid users" value={paidUsers} sub={`${stats?.registered_this_week ?? 0} this week`} tone="good" />
-        <MetricCard label="Verified emails" value={stats?.verified_users ?? "—"} sub={`${stats?.unverified_users ?? 0} pending`} />
-        <MetricCard label="Database" value={db?.status ?? "—"} tone={db?.status === "ok" ? "good" : "warn"} sub={version ? `${version.name} ${version.version}` : undefined} />
+        <MetricCard label={t("Total users")} value={stats?.total_users ?? "—"} sub={`${stats?.registered_today ?? 0} ${t("today")}`} />
+        <MetricCard label={t("Paid users")} value={paidUsers} sub={`${stats?.registered_this_week ?? 0} ${t("this week")}`} tone="good" />
+        <MetricCard label={t("Verified emails")} value={stats?.verified_users ?? "—"} sub={`${stats?.unverified_users ?? 0} ${t("pending")}`} />
+        <MetricCard label={t("Database")} value={db?.status ?? "—"} tone={db?.status === "ok" ? "good" : "warn"} sub={version ? `${version.name} ${version.version}` : undefined} />
       </div>
 
       {stats ? (
         <Card className="p-6">
-          <p className="text-xs font-semibold uppercase tracking-widest text-muted mb-4">Users by plan</p>
+          <p className="text-xs font-semibold uppercase tracking-widest text-muted mb-4">{t("Users by plan")}</p>
           <div className="flex flex-wrap gap-3">
             {Object.entries(stats.by_plan).map(([plan, count]) => (
               <div key={plan} className={`rounded-xl border px-4 py-3 text-center min-w-[90px] ${PLAN_COLORS[plan] ?? "bg-canvas border-line text-ink"}`}>
@@ -159,7 +162,7 @@ function OverviewTab({ stats, db, version, users }: { stats: AdminStats | null; 
       ) : null}
 
       <Card className="p-6">
-        <p className="text-xs font-semibold uppercase tracking-widest text-muted mb-4">Recent signups</p>
+        <p className="text-xs font-semibold uppercase tracking-widest text-muted mb-4">{t("Recent signups")}</p>
         {recentUsers.length > 0 ? (
           <div className="divide-y divide-line">
             {recentUsers.map((u) => (
@@ -171,16 +174,16 @@ function OverviewTab({ stats, db, version, users }: { stats: AdminStats | null; 
                 <div className="flex items-center gap-2">
                   <Badge text={PLAN_LABELS[u.plan ?? "free"] ?? u.plan} className={PLAN_COLORS[u.plan ?? "free"] ?? ""} />
                   {u.email_verified ? (
-                    <Badge text="Verified" className="bg-green/10 border-green/20 text-green-700" />
+                    <Badge text={t("Verified")} className="bg-green/10 border-green/20 text-green-700" />
                   ) : (
-                    <Badge text="Unverified" className="bg-amber-50 border-amber-200 text-amber-700" />
+                    <Badge text={t("Unverified")} className="bg-amber-50 border-amber-200 text-amber-700" />
                   )}
                 </div>
               </div>
             ))}
           </div>
         ) : (
-          <p className="text-sm text-muted">No users yet.</p>
+          <p className="text-sm text-muted">{t("No users yet")}</p>
         )}
       </Card>
     </div>
@@ -190,6 +193,7 @@ function OverviewTab({ stats, db, version, users }: { stats: AdminStats | null; 
 // ─── Users Tab ────────────────────────────────────────────────────────────────
 
 function UsersTab({ users, accessToken, onUserUpdated, onUserDeleted }: { users: AdminUserDirectoryEntry[]; accessToken: string; onUserUpdated: (u: AdminUserDirectoryEntry) => void; onUserDeleted: (userId: string) => void }) {
+  const t = useTranslations();
   const [search, setSearch] = useState("");
   const [planFilter, setPlanFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
@@ -211,10 +215,14 @@ function UsersTab({ users, accessToken, onUserUpdated, onUserDeleted }: { users:
     });
   }, [users, search, planFilter, statusFilter]);
 
-  useEffect(() => {
+  const onUsersChange = useEffectEvent(() => {
     if (!selected) return;
     const refreshed = users.find((u) => u.id === selected.id);
     if (refreshed && refreshed !== selected) setSelected(refreshed);
+  });
+
+  useEffect(() => {
+    onUsersChange();
   }, [users, selected]);
 
   const handlePlanChange = async (userId: string, plan: string) => {
@@ -249,7 +257,7 @@ function UsersTab({ users, accessToken, onUserUpdated, onUserDeleted }: { users:
         <input
           className="flex-1 rounded-xl border border-line bg-canvas px-4 py-2.5 text-sm text-ink placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-accent/30"
           onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search by email or name..."
+          placeholder={t("Search by email or name")}
           value={search}
         />
         <select
@@ -257,7 +265,7 @@ function UsersTab({ users, accessToken, onUserUpdated, onUserDeleted }: { users:
           onChange={(e) => setPlanFilter(e.target.value)}
           value={planFilter}
         >
-          <option value="">All plans</option>
+          <option value="">{t("All plans")}</option>
           {["free", "starter", "plus", "premium"].map((p) => (
             <option key={p} value={p}>{PLAN_LABELS[p]}</option>
           ))}
@@ -267,9 +275,9 @@ function UsersTab({ users, accessToken, onUserUpdated, onUserDeleted }: { users:
           onChange={(e) => setStatusFilter(e.target.value)}
           value={statusFilter}
         >
-          <option value="">All statuses</option>
-          <option value="active">Active</option>
-          <option value="suspended">Suspended</option>
+          <option value="">{t("All statuses")}</option>
+          <option value="active">{t("Active")}</option>
+          <option value="suspended">{t("Suspended")}</option>
         </select>
       </div>
 
@@ -280,13 +288,13 @@ function UsersTab({ users, accessToken, onUserUpdated, onUserDeleted }: { users:
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-line bg-canvas/50">
-                <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-widest text-muted">User</th>
-                <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-widest text-muted">Plan</th>
-                <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-widest text-muted">Status</th>
-                <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-widest text-muted">Verified</th>
-                <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-widest text-muted">Cases</th>
-                <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-widest text-muted">Joined</th>
-                <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-widest text-muted">Actions</th>
+                <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-widest text-muted">{t("User")}</th>
+                <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-widest text-muted">{t("Plan")}</th>
+                <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-widest text-muted">{t("Status")}</th>
+                <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-widest text-muted">{t("Verified")}</th>
+                <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-widest text-muted">{t("Cases")}</th>
+                <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-widest text-muted">{t("Joined")}</th>
+                <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-widest text-muted">{t("Actions")}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-line">
@@ -324,7 +332,7 @@ function UsersTab({ users, accessToken, onUserUpdated, onUserDeleted }: { users:
                   </td>
                   <td className="px-5 py-4">
                     <Badge
-                      text={u.email_verified ? "Yes" : "No"}
+                      text={u.email_verified ? t("Yes") : t("No")}
                       className={u.email_verified ? "bg-green/10 border-green/20 text-green-700" : "bg-amber-50 border-amber-200 text-amber-700"}
                     />
                   </td>
@@ -337,14 +345,14 @@ function UsersTab({ users, accessToken, onUserUpdated, onUserDeleted }: { users:
                       onClick={() => void handleStatusToggle(u)}
                       type="button"
                     >
-                      {updating === u.id ? "..." : u.status === "active" ? "Suspend" : "Activate"}
+                      {updating === u.id ? "..." : u.status === "active" ? t("Suspend") : t("Activate")}
                     </button>
                   </td>
                 </tr>
               ))}
               {filtered.length === 0 ? (
                 <tr>
-                  <td className="px-5 py-8 text-center text-sm text-muted" colSpan={7}>No users match your filters.</td>
+                  <td className="px-5 py-8 text-center text-sm text-muted" colSpan={7}>{t("No users match your filters")}</td>
                 </tr>
               ) : null}
             </tbody>
@@ -352,7 +360,7 @@ function UsersTab({ users, accessToken, onUserUpdated, onUserDeleted }: { users:
         </div>
       </Card>
 
-      <p className="text-xs text-muted">{filtered.length} of {users.length} users</p>
+      <p className="text-xs text-muted">{filtered.length} {t("of")} {users.length} {t("users")}</p>
 
       <UserDetailDrawer user={selected} onClose={() => setSelected(null)} onDelete={handleDelete} />
     </div>
@@ -362,20 +370,21 @@ function UsersTab({ users, accessToken, onUserUpdated, onUserDeleted }: { users:
 // ─── Feedback Tab ─────────────────────────────────────────────────────────────
 
 function FeedbackTab({ accessToken }: { accessToken: string }) {
+  const t = useTranslations();
   const [data, setData] = useState<AiFeedbackSummary | null>(null);
   const [status, setStatus] = useState<LoadStatus>("idle");
   const [error, setError] = useState("");
 
-  const load = useCallback(async () => {
+  const onLoad = useEffectEvent(async () => {
     setStatus("loading");
     setError("");
     const result = await getAiFeedback(accessToken, 20);
     if (!result.ok) { setError(result.errorMessage); setStatus("error"); return; }
     setData(result.data);
     setStatus("ready");
-  }, [accessToken]);
+  });
 
-  useEffect(() => { void load(); }, [load]);
+  useEffect(() => { void onLoad(); }, [accessToken]);
 
   if (status === "loading") return <Card className="animate-pulse h-40 p-6" />;
   if (status === "error") return <FeedbackBanner message={error} tone="error" />;
@@ -386,14 +395,14 @@ function FeedbackTab({ accessToken }: { accessToken: string }) {
   return (
     <div className="space-y-6">
       <div className="grid gap-4 sm:grid-cols-3">
-        <MetricCard label="Total feedback" value={data.total_feedback} />
-        <MetricCard label="Positive" value={`${data.positive_feedback} (${positiveRate}%)`} tone="good" />
-        <MetricCard label="Negative" value={data.negative_feedback} tone={data.negative_feedback > 0 ? "warn" : "default"} />
+        <MetricCard label={t("Total feedback")} value={data.total_feedback} />
+        <MetricCard label={t("Positive")} value={`${data.positive_feedback} (${positiveRate}%)`} tone="good" />
+        <MetricCard label={t("Negative")} value={data.negative_feedback} tone={data.negative_feedback > 0 ? "warn" : "default"} />
       </div>
 
       {Object.keys(data.by_feature).length > 0 ? (
         <Card className="p-6">
-          <p className="text-xs font-semibold uppercase tracking-widest text-muted mb-4">By feature</p>
+          <p className="text-xs font-semibold uppercase tracking-widest text-muted mb-4">{t("By feature")}</p>
           <div className="flex flex-wrap gap-3">
             {Object.entries(data.by_feature).map(([feature, count]) => (
               <div key={feature} className="rounded-xl border border-line bg-canvas px-4 py-3 text-center">
@@ -406,7 +415,7 @@ function FeedbackTab({ accessToken }: { accessToken: string }) {
       ) : null}
 
       <Card className="p-6">
-        <p className="text-xs font-semibold uppercase tracking-widest text-muted mb-4">Recent feedback</p>
+        <p className="text-xs font-semibold uppercase tracking-widest text-muted mb-4">{t("Recent feedback")}</p>
         {data.recent_feedback.length > 0 ? (
           <div className="divide-y divide-line">
             {data.recent_feedback.map((fb) => (
@@ -426,7 +435,7 @@ function FeedbackTab({ accessToken }: { accessToken: string }) {
             ))}
           </div>
         ) : (
-          <p className="text-sm text-muted">No feedback yet.</p>
+          <p className="text-sm text-muted">{t("No feedback yet")}</p>
         )}
       </Card>
     </div>
@@ -436,6 +445,7 @@ function FeedbackTab({ accessToken }: { accessToken: string }) {
 // ─── Knowledge Tab ────────────────────────────────────────────────────────────
 
 function KnowledgeTab({ accessToken, canAdmin }: { accessToken: string; canAdmin: boolean }) {
+  const t = useTranslations();
   const [searchForm, setSearchForm] = useState<SearchFormState>({ authorityLevel: "", country: "", limit: "5", query: "", sourceType: "", visaType: "" });
   const [searchStatus, setSearchStatus] = useState<LoadStatus>("idle");
   const [searchError, setSearchError] = useState("");
@@ -456,9 +466,9 @@ function KnowledgeTab({ accessToken, canAdmin }: { accessToken: string; canAdmin
   const handleSearchSubmit = async (e: FormEvent) => {
     e.preventDefault();
     const query = searchForm.query.trim();
-    if (query.length < 2) { setSearchError("Query must be at least 2 characters."); setSearchStatus("error"); return; }
+    if (query.length < 2) { setSearchError(t("Query must be at least 2 characters")); setSearchStatus("error"); return; }
     const limit = parseInt(searchForm.limit, 10);
-    if (!Number.isInteger(limit) || limit < 1 || limit > 25) { setSearchError("Limit must be between 1 and 25."); setSearchStatus("error"); return; }
+    if (!Number.isInteger(limit) || limit < 1 || limit > 25) { setSearchError(t("Limit must be between 1 and 25")); setSearchStatus("error"); return; }
     setSearchStatus("loading"); setSearchError("");
     const result = await searchKnowledgeBase(accessToken, { authority_levels: searchForm.authorityLevel ? [searchForm.authorityLevel] : undefined, country: searchForm.country.trim() || null, limit, query, source_types: searchForm.sourceType ? [searchForm.sourceType] : undefined, visa_type: searchForm.visaType.trim() || null });
     if (!result.ok) { setSearchError(result.errorMessage); setSearchStatus("error"); return; }
@@ -469,54 +479,54 @@ function KnowledgeTab({ accessToken, canAdmin }: { accessToken: string; canAdmin
     e.preventDefault();
     if (!canAdmin) return;
     const sourceName = sourceForm.sourceName.trim();
-    if (!sourceName) { setSourceError("Source name is required."); return; }
-    const metaParsed = parseJsonObject(sourceForm.metadata, "Metadata");
+    if (!sourceName) { setSourceError(t("Source name is required")); return; }
+    const metaParsed = parseJsonObject(sourceForm.metadata, t("Metadata"));
     if (!metaParsed.ok) { setSourceError(metaParsed.errorMessage); return; }
     setIsCreatingSource(true); setSourceError(""); setSourceFeedback("");
     const result = await createKnowledgeSource(accessToken, { authority_level: sourceForm.authorityLevel, chunks: [], country: sourceForm.country.trim() || null, language: sourceForm.language.trim() || null, metadata: metaParsed.data, source_name: sourceName, source_type: sourceForm.sourceType, visa_type: sourceForm.visaType.trim() || null });
     setIsCreatingSource(false);
     if (!result.ok) { setSourceError(result.errorMessage); return; }
-    setCreatedSource(result.data); setSourceFeedback("Source created."); setSourceForm({ authorityLevel: "primary", country: "", language: "en", metadata: "{}", sourceName: "", sourceType: "government_website", visaType: "" });
+    setCreatedSource(result.data); setSourceFeedback(t("Source created")); setSourceForm({ authorityLevel: "primary", country: "", language: "en", metadata: "{}", sourceName: "", sourceType: "government_website", visaType: "" });
     setChunkForm((c) => ({ ...c, sourceId: result.data.id }));
   };
 
   const handleChunkSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (!canAdmin) return;
-    if (!chunkForm.sourceId.trim()) { setChunkError("Source ID is required."); return; }
-    if (!chunkForm.chunkText.trim()) { setChunkError("Chunk text is required."); return; }
+    if (!chunkForm.sourceId.trim()) { setChunkError(t("Source ID is required")); return; }
+    if (!chunkForm.chunkText.trim()) { setChunkError(t("Chunk text is required")); return; }
     const idx = parseInt(chunkForm.chunkIndex, 10);
-    if (!Number.isInteger(idx) || idx < 0) { setChunkError("Chunk index must be a non-negative integer."); return; }
-    const metaParsed = parseJsonObject(chunkForm.metadata, "Metadata");
+    if (!Number.isInteger(idx) || idx < 0) { setChunkError(t("Chunk index must be a non-negative integer")); return; }
+    const metaParsed = parseJsonObject(chunkForm.metadata, t("Metadata"));
     if (!metaParsed.ok) { setChunkError(metaParsed.errorMessage); return; }
     setIsCreatingChunk(true); setChunkError(""); setChunkFeedback("");
     const result = await createKnowledgeChunk(accessToken, { chunk_index: idx, chunk_text: chunkForm.chunkText.trim(), language: chunkForm.language.trim() || null, metadata: metaParsed.data, source_id: chunkForm.sourceId.trim() });
     setIsCreatingChunk(false);
     if (!result.ok) { setChunkError(result.errorMessage); return; }
-    setCreatedChunk(result.data); setChunkFeedback("Chunk saved."); setChunkForm((c) => ({ chunkIndex: "0", chunkText: "", language: "en", metadata: "{}", sourceId: c.sourceId }));
+    setCreatedChunk(result.data); setChunkFeedback(t("Chunk saved")); setChunkForm((c) => ({ chunkIndex: "0", chunkText: "", language: "en", metadata: "{}", sourceId: c.sourceId }));
   };
 
   return (
     <div className="space-y-6">
       <Card className="p-6">
-        <p className="text-xs font-semibold uppercase tracking-widest text-muted mb-4">Knowledge base search</p>
+        <p className="text-xs font-semibold uppercase tracking-widest text-muted mb-4">{t("Knowledge base search")}</p>
         <form className="grid gap-4 md:grid-cols-2" onSubmit={(e) => void handleSearchSubmit(e)}>
-          <Input label="Query" onChange={(e) => setSearchForm((c) => ({ ...c, query: e.target.value }))} placeholder="specialty occupation..." value={searchForm.query} />
-          <Input label="Country" onChange={(e) => setSearchForm((c) => ({ ...c, country: e.target.value }))} placeholder="United States" value={searchForm.country} />
-          <Input label="Visa type" onChange={(e) => setSearchForm((c) => ({ ...c, visaType: e.target.value }))} placeholder="H-1B" value={searchForm.visaType} />
-          <Input label="Limit" onChange={(e) => setSearchForm((c) => ({ ...c, limit: e.target.value }))} placeholder="5" value={searchForm.limit} />
-          <Select label="Source type" onChange={(e) => setSearchForm((c) => ({ ...c, sourceType: e.target.value as KnowledgeSourceType | "" }))} placeholder="Any source type" value={searchForm.sourceType}>
+          <Input label={t("Query")} onChange={(e) => setSearchForm((c) => ({ ...c, query: e.target.value }))} placeholder={t("specialty occupation")} value={searchForm.query} />
+          <Input label={t("Country")} onChange={(e) => setSearchForm((c) => ({ ...c, country: e.target.value }))} placeholder="United States" value={searchForm.country} />
+          <Input label={t("Visa type")} onChange={(e) => setSearchForm((c) => ({ ...c, visaType: e.target.value }))} placeholder="H-1B" value={searchForm.visaType} />
+          <Input label={t("Limit")} onChange={(e) => setSearchForm((c) => ({ ...c, limit: e.target.value }))} placeholder="5" value={searchForm.limit} />
+          <Select label={t("Source type")} onChange={(e) => setSearchForm((c) => ({ ...c, sourceType: e.target.value as KnowledgeSourceType | "" }))} placeholder={t("Any source type")} value={searchForm.sourceType}>
             {knowledgeSourceTypeOptions.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
           </Select>
-          <Select label="Authority" onChange={(e) => setSearchForm((c) => ({ ...c, authorityLevel: e.target.value as KnowledgeAuthorityLevel | "" }))} placeholder="Any authority" value={searchForm.authorityLevel}>
+          <Select label={t("Authority")} onChange={(e) => setSearchForm((c) => ({ ...c, authorityLevel: e.target.value as KnowledgeAuthorityLevel | "" }))} placeholder={t("Any authority")} value={searchForm.authorityLevel}>
             {knowledgeAuthorityLevelOptions.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
           </Select>
-          <div className="md:col-span-2"><Button disabled={searchStatus === "loading"} type="submit">{searchStatus === "loading" ? "Searching..." : "Search"}</Button></div>
+          <div className="md:col-span-2"><Button disabled={searchStatus === "loading"} type="submit">{searchStatus === "loading" ? t("Searching") : t("Search")}</Button></div>
         </form>
         {searchError ? <div className="mt-4"><FeedbackBanner message={searchError} tone="error" /></div> : null}
         {searchStatus === "ready" && searchResults ? (
           <div className="mt-6 space-y-3">
-            <p className="text-xs text-muted font-semibold uppercase tracking-widest">{searchResults.total_results} results</p>
+            <p className="text-xs text-muted font-semibold uppercase tracking-widest">{searchResults.total_results} {t("results")}</p>
             {searchResults.results.map((r) => (
               <Card className="p-4" key={r.chunk.id}>
                 <div className="flex justify-between gap-3">
@@ -524,7 +534,7 @@ function KnowledgeTab({ accessToken, canAdmin }: { accessToken: string; canAdmin
                     <p className="text-xs font-semibold text-accent uppercase tracking-widest">{r.source.source_name}</p>
                     <p className="mt-1.5 text-sm text-ink leading-relaxed">{r.chunk.chunk_text}</p>
                   </div>
-                  <span className="shrink-0 text-xs text-muted border border-line rounded-lg px-3 py-2">Score {r.score.toFixed(2)}</span>
+                  <span className="shrink-0 text-xs text-muted border border-line rounded-lg px-3 py-2">{t("Score")} {r.score.toFixed(2)}</span>
                 </div>
               </Card>
             ))}
@@ -534,43 +544,43 @@ function KnowledgeTab({ accessToken, canAdmin }: { accessToken: string; canAdmin
 
       <div className="grid gap-6 lg:grid-cols-2">
         <Card className="p-6">
-          <p className="text-xs font-semibold uppercase tracking-widest text-muted mb-4">Add knowledge source</p>
+          <p className="text-xs font-semibold uppercase tracking-widest text-muted mb-4">{t("Add knowledge source")}</p>
           <form className="space-y-4" onSubmit={(e) => void handleSourceSubmit(e)}>
-            <Input label="Source name" onChange={(e) => setSourceForm((c) => ({ ...c, sourceName: e.target.value }))} placeholder="USCIS H-1B Policy" value={sourceForm.sourceName} />
+            <Input label={t("Source name")} onChange={(e) => setSourceForm((c) => ({ ...c, sourceName: e.target.value }))} placeholder="USCIS H-1B Policy" value={sourceForm.sourceName} />
             <div className="grid gap-3 md:grid-cols-2">
-              <Select label="Type" onChange={(e) => setSourceForm((c) => ({ ...c, sourceType: e.target.value as KnowledgeSourceType }))} value={sourceForm.sourceType}>
+              <Select label={t("Type")} onChange={(e) => setSourceForm((c) => ({ ...c, sourceType: e.target.value as KnowledgeSourceType }))} value={sourceForm.sourceType}>
                 {knowledgeSourceTypeOptions.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
               </Select>
-              <Select label="Authority" onChange={(e) => setSourceForm((c) => ({ ...c, authorityLevel: e.target.value as KnowledgeAuthorityLevel }))} value={sourceForm.authorityLevel}>
+              <Select label={t("Authority")} onChange={(e) => setSourceForm((c) => ({ ...c, authorityLevel: e.target.value as KnowledgeAuthorityLevel }))} value={sourceForm.authorityLevel}>
                 {knowledgeAuthorityLevelOptions.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
               </Select>
             </div>
             <div className="grid gap-3 md:grid-cols-2">
-              <Input label="Country" onChange={(e) => setSourceForm((c) => ({ ...c, country: e.target.value }))} placeholder="United States" value={sourceForm.country} />
-              <Input label="Visa type" onChange={(e) => setSourceForm((c) => ({ ...c, visaType: e.target.value }))} placeholder="H-1B" value={sourceForm.visaType} />
+              <Input label={t("Country")} onChange={(e) => setSourceForm((c) => ({ ...c, country: e.target.value }))} placeholder="United States" value={sourceForm.country} />
+              <Input label={t("Visa type")} onChange={(e) => setSourceForm((c) => ({ ...c, visaType: e.target.value }))} placeholder="H-1B" value={sourceForm.visaType} />
             </div>
-            <Textarea helperText='e.g. {"source_url":"https://uscis.gov"}' label="Metadata (JSON)" onChange={(e) => setSourceForm((c) => ({ ...c, metadata: e.target.value }))} value={sourceForm.metadata} />
+            <Textarea helperText='e.g. {"source_url":"https://uscis.gov"}' label={t("Metadata (JSON)")} onChange={(e) => setSourceForm((c) => ({ ...c, metadata: e.target.value }))} value={sourceForm.metadata} />
             {sourceError ? <FeedbackBanner message={sourceError} tone="error" /> : null}
             {sourceFeedback ? <FeedbackBanner message={sourceFeedback} tone="success" /> : null}
-            {createdSource ? <FeedbackBanner message={`Created: ${createdSource.source_name} (${createdSource.id})`} tone="info" /> : null}
-            <Button disabled={!canAdmin || isCreatingSource} type="submit">{isCreatingSource ? "Creating..." : "Create source"}</Button>
+            {createdSource ? <FeedbackBanner message={`${t("Created")}: ${createdSource.source_name} (${createdSource.id})`} tone="info" /> : null}
+            <Button disabled={!canAdmin || isCreatingSource} type="submit">{isCreatingSource ? t("Creating") : t("Create source")}</Button>
           </form>
         </Card>
 
         <Card className="p-6">
-          <p className="text-xs font-semibold uppercase tracking-widest text-muted mb-4">Add knowledge chunk</p>
+          <p className="text-xs font-semibold uppercase tracking-widest text-muted mb-4">{t("Add knowledge chunk")}</p>
           <form className="space-y-4" onSubmit={(e) => void handleChunkSubmit(e)}>
-            <Input label="Source ID" onChange={(e) => setChunkForm((c) => ({ ...c, sourceId: e.target.value }))} placeholder="UUID of the source" value={chunkForm.sourceId} />
+            <Input label={t("Source ID")} onChange={(e) => setChunkForm((c) => ({ ...c, sourceId: e.target.value }))} placeholder={t("UUID of the source")} value={chunkForm.sourceId} />
             <div className="grid gap-3 md:grid-cols-2">
-              <Input label="Chunk index" onChange={(e) => setChunkForm((c) => ({ ...c, chunkIndex: e.target.value }))} placeholder="0" value={chunkForm.chunkIndex} />
-              <Input label="Language" onChange={(e) => setChunkForm((c) => ({ ...c, language: e.target.value }))} placeholder="en" value={chunkForm.language} />
+              <Input label={t("Chunk index")} onChange={(e) => setChunkForm((c) => ({ ...c, chunkIndex: e.target.value }))} placeholder="0" value={chunkForm.chunkIndex} />
+              <Input label={t("Language")} onChange={(e) => setChunkForm((c) => ({ ...c, language: e.target.value }))} placeholder="en" value={chunkForm.language} />
             </div>
-            <Textarea label="Chunk text" onChange={(e) => setChunkForm((c) => ({ ...c, chunkText: e.target.value }))} placeholder="Paste normalized chunk text..." value={chunkForm.chunkText} />
-            <Textarea helperText='e.g. {"section":"Overview"}' label="Metadata (JSON)" onChange={(e) => setChunkForm((c) => ({ ...c, metadata: e.target.value }))} value={chunkForm.metadata} />
+            <Textarea label={t("Chunk text")} onChange={(e) => setChunkForm((c) => ({ ...c, chunkText: e.target.value }))} placeholder={t("Paste normalized chunk text")} value={chunkForm.chunkText} />
+            <Textarea helperText='e.g. {"section":"Overview"}' label={t("Metadata (JSON)")} onChange={(e) => setChunkForm((c) => ({ ...c, metadata: e.target.value }))} value={chunkForm.metadata} />
             {chunkError ? <FeedbackBanner message={chunkError} tone="error" /> : null}
             {chunkFeedback ? <FeedbackBanner message={chunkFeedback} tone="success" /> : null}
-            {createdChunk ? <FeedbackBanner message={`Saved chunk ${createdChunk.chunk_index} for source ${createdChunk.source_id}`} tone="info" /> : null}
-            <Button disabled={!canAdmin || isCreatingChunk} type="submit">{isCreatingChunk ? "Saving..." : "Save chunk"}</Button>
+            {createdChunk ? <FeedbackBanner message={`${t("Saved chunk")} ${createdChunk.chunk_index} ${t("for source")} ${createdChunk.source_id}`} tone="info" /> : null}
+            <Button disabled={!canAdmin || isCreatingChunk} type="submit">{isCreatingChunk ? t("Saving") : t("Save chunk")}</Button>
           </form>
         </Card>
       </div>
@@ -610,15 +620,18 @@ function DashboardAdminPageInner() {
   return <DashboardAdminCore accessToken={session.accessToken} />;
 }
 
-const SECTION_META: Record<Tab, { title: string; description: string }> = {
-  overview: { title: "Overview", description: "Platform health, usage stats, and recent signups." },
-  revenue: { title: "Revenue & growth", description: "Paid conversions, ARPU, and daily signup trends." },
-  users: { title: "Users", description: "Manage user accounts, plans, and access status." },
-  cases: { title: "Cases", description: "Immigration case volume, statuses, and recent activity." },
-  knowledge: { title: "Knowledge base", description: "Search and curate sources and chunks." },
-  feedback: { title: "AI feedback", description: "Review positive and negative feedback on AI responses." },
-  system: { title: "System health", description: "Document processing queue, totals, and operational state." },
-};
+function useSectionMeta(): Record<Tab, { title: string; description: string }> {
+  const t = useTranslations();
+  return {
+    overview: { title: t("Overview"), description: t("Platform health, usage stats, and recent signups") },
+    revenue: { title: t("Revenue & growth"), description: t("Paid conversions, ARPU, and daily signup trends") },
+    users: { title: t("Users"), description: t("Manage user accounts, plans, and access status") },
+    cases: { title: t("Cases"), description: t("Immigration case volume, statuses, and recent activity") },
+    knowledge: { title: t("Knowledge base"), description: t("Search and curate sources and chunks") },
+    feedback: { title: t("AI feedback"), description: t("Review positive and negative feedback on AI responses") },
+    system: { title: t("System health"), description: t("Document processing queue, totals, and operational state") },
+  };
+}
 
 function IconHome({ className }: { className?: string }) {
   return (
@@ -678,6 +691,8 @@ function IconRefresh({ className }: { className?: string }) {
 }
 
 function DashboardAdminCore({ accessToken, userEmail, onSignOut, onSessionExpired }: AdminCoreProps) {
+  const t = useTranslations();
+  const SECTION_META = useSectionMeta();
   const [tab, setTab] = useState<Tab>("overview");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -687,8 +702,9 @@ function DashboardAdminCore({ accessToken, userEmail, onSignOut, onSessionExpire
   const [version, setVersion] = useState<ServiceVersion | null>(null);
   const [db, setDb] = useState<DatabaseCheck | null>(null);
   const [users, setUsers] = useState<AdminUserDirectoryEntry[]>([]);
+  const [refreshKey, setRefreshKey] = useState(0);
 
-  const load = useCallback(async () => {
+  const onLoad = useEffectEvent(async () => {
     setLoading(true);
     setError("");
 
@@ -709,11 +725,11 @@ function DashboardAdminCore({ accessToken, userEmail, onSignOut, onSessionExpire
       return;
     }
 
-    if (!versionRes.ok && !dbRes.ok) setError("Could not load system status.");
+    if (!versionRes.ok && !dbRes.ok) setError(t("Could not load system status"));
     setLoading(false);
-  }, [accessToken]);
+  });
 
-  useEffect(() => { void load(); }, [load]);
+  useEffect(() => { void onLoad(); }, [accessToken, refreshKey]);
 
   const handleUserUpdated = useCallback((updated: AdminUserDirectoryEntry) => {
     setUsers((prev) => prev.map((u) => u.id === updated.id ? updated : u));
@@ -728,25 +744,25 @@ function DashboardAdminCore({ accessToken, userEmail, onSignOut, onSessionExpire
     items: { value: Tab; label: string; icon: typeof IconHome; count?: number }[];
   }[] = [
     {
-      heading: "Analytics",
+      heading: t("Analytics"),
       items: [
-        { value: "overview", label: "Overview", icon: IconHome },
-        { value: "revenue", label: "Revenue", icon: IconDollar },
-        { value: "cases", label: "Cases", icon: IconBriefcase },
+        { value: "overview", label: t("Overview"), icon: IconHome },
+        { value: "revenue", label: t("Revenue"), icon: IconDollar },
+        { value: "cases", label: t("Cases"), icon: IconBriefcase },
       ],
     },
     {
-      heading: "Platform",
+      heading: t("Platform"),
       items: [
-        { value: "users", label: "Users", icon: IconUsers, count: users.length },
-        { value: "knowledge", label: "Knowledge", icon: IconBook },
+        { value: "users", label: t("Users"), icon: IconUsers, count: users.length },
+        { value: "knowledge", label: t("Knowledge"), icon: IconBook },
       ],
     },
     {
-      heading: "Operations",
+      heading: t("Operations"),
       items: [
-        { value: "feedback", label: "Feedback", icon: IconChat },
-        { value: "system", label: "System", icon: IconServer },
+        { value: "feedback", label: t("Feedback"), icon: IconChat },
+        { value: "system", label: t("System"), icon: IconServer },
       ],
     },
   ];
@@ -775,7 +791,7 @@ function DashboardAdminCore({ accessToken, userEmail, onSignOut, onSessionExpire
             <p className="text-[13px] font-black leading-tight tracking-tight text-white">
               Immigrant<span className="text-accent">Guru</span>
             </p>
-            <p className="text-[9px] font-bold uppercase tracking-[0.22em] text-white/40">Admin Console</p>
+            <p className="text-[9px] font-bold uppercase tracking-[0.22em] text-white/40">{t("Admin Console")}</p>
           </div>
         </div>
 
@@ -831,7 +847,7 @@ function DashboardAdminCore({ accessToken, userEmail, onSignOut, onSessionExpire
               healthOk ? "bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)]" : "bg-amber-400"
             )} />
             <p className="text-[10px] font-semibold uppercase tracking-[0.15em] text-white/60">
-              {healthOk ? "All systems green" : "Checking status…"}
+              {healthOk ? t("All systems green") : t("Checking status")}
             </p>
           </div>
 
@@ -842,7 +858,7 @@ function DashboardAdminCore({ accessToken, userEmail, onSignOut, onSessionExpire
                   {initials}
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-[10px] font-semibold uppercase tracking-widest text-white/40">Signed in</p>
+                  <p className="truncate text-[10px] font-semibold uppercase tracking-widest text-white/40">{t("Signed in")}</p>
                   <p className="truncate text-[12px] font-semibold text-white">{userEmail}</p>
                 </div>
               </div>
@@ -857,7 +873,7 @@ function DashboardAdminCore({ accessToken, userEmail, onSignOut, onSessionExpire
                     <polyline points="16 17 21 12 16 7" />
                     <line x1="21" y1="12" x2="9" y2="12" />
                   </svg>
-                  Sign out
+                  {t("Sign out")}
                 </button>
               ) : null}
             </>
@@ -872,7 +888,7 @@ function DashboardAdminCore({ accessToken, userEmail, onSignOut, onSessionExpire
             <div className="mx-auto flex max-w-[1320px] items-center justify-between gap-4 px-8 py-4">
               <div>
                 <div className="flex items-center gap-2 text-[11px] font-semibold text-muted">
-                  <span className="uppercase tracking-[0.18em] text-muted/70">Admin</span>
+                  <span className="uppercase tracking-[0.18em] text-muted/70">{t("Admin")}</span>
                   <span className="text-muted/40">/</span>
                   <span className="uppercase tracking-[0.18em] text-accent">{meta.title}</span>
                 </div>
@@ -880,14 +896,14 @@ function DashboardAdminCore({ accessToken, userEmail, onSignOut, onSessionExpire
                 <p className="mt-0.5 max-w-xl text-sm text-muted">{meta.description}</p>
               </div>
               <button
-                onClick={() => void load()}
+                onClick={() => setRefreshKey((k) => k + 1)}
                 disabled={loading}
                 type="button"
                 className="inline-flex items-center gap-2 rounded-xl border border-line bg-white px-3.5 py-2 text-xs font-semibold text-ink shadow-soft transition hover:border-accent/40 hover:bg-canvas disabled:opacity-50"
-                title="Refresh data"
+                title={t("Refresh data")}
               >
                 <IconRefresh className={cn(loading && "animate-spin")} />
-                <span className="hidden sm:inline">{loading ? "Refreshing…" : "Refresh"}</span>
+                <span className="hidden sm:inline">{loading ? t("Refreshing") : t("Refresh")}</span>
               </button>
             </div>
           </div>

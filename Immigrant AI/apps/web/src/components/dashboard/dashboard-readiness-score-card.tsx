@@ -1,3 +1,7 @@
+"use client";
+
+import { useTranslations } from "next-intl";
+
 import type { DashboardReadinessScoreCard } from "@/types/dashboard";
 
 import { DashboardCommandCard } from "@/components/dashboard/dashboard-command-card";
@@ -14,9 +18,11 @@ function formatScore(value: number | null) {
 export function DashboardReadinessScoreCard({
   data
 }: DashboardReadinessScoreCardProps) {
+  const t = useTranslations();
+
   return (
     <DashboardCommandCard
-      eyebrow="Readiness score"
+      eyebrow={t("Readiness score")}
       title={data.label}
       value={
         <div>
@@ -39,7 +45,7 @@ export function DashboardReadinessScoreCard({
               <div className="flex items-center justify-between gap-3">
                 <p className="text-sm font-medium text-slate-700">{item.label}</p>
                 <DashboardStatusPill
-                  label={item.value === null ? "Pending" : `${Math.round(item.value)}`}
+                  label={item.value === null ? t("Pending") : `${Math.round(item.value)}`}
                   tone={item.value !== null && item.value >= 70 ? "positive" : "neutral"}
                 />
               </div>

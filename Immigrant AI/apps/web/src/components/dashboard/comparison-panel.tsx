@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useTranslations } from "next-intl";
 
 import { BestOptionBanner } from "@/components/dashboard/best-option-banner";
 import { CountryComparisonTable } from "@/components/dashboard/country-comparison-table";
@@ -39,7 +40,8 @@ function mapOption(
 }
 
 function mapComparison(
-  comparison: CountryComparisonResponse
+  comparison: CountryComparisonResponse,
+  summary: string
 ): CountryComparisonData {
   const options = comparison.comparison.map((item) =>
     mapOption(item, comparison.best_option)
@@ -50,8 +52,7 @@ function mapComparison(
       options.find((option) => option.recommended)?.id ?? null,
     options,
     reasoning: comparison.reasoning,
-    summary:
-      "Compare your current case against alternative country-pathway routes using the same profile and readiness baseline."
+    summary
   };
 }
 
@@ -88,6 +89,7 @@ export function ComparisonPanel({
   accessToken,
   caseRecord
 }: ComparisonPanelProps) {
+  const t = useTranslations();
   const { clearSession } = useAuthSession();
   const [comparison, setComparison] = useState<CountryComparisonResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -103,7 +105,7 @@ export function ComparisonPanel({
     async function loadComparison() {
       if (comparisonOptions.length < 2) {
         setComparison(null);
-        setError("Add a target country and pathway to generate a meaningful comparison.");
+        setError(t("Add a target country and pathway to generate a meaningful comparison"));
         setIsLoading(false);
         return;
       }
@@ -140,9 +142,10 @@ export function ComparisonPanel({
     return () => {
       cancelled = true;
     };
-  }, [accessToken, clearSession, comparisonOptions]);
+  }, [accessToken, clearSession, comparisonOptions, t]);
 
-  const data = comparison ? mapComparison(comparison) : null;
+  const summaryText = t("Compare your current case against alternative country-pathway routes using the same profile and readiness baseline");
+  const data = comparison ? mapComparison(comparison, summaryText) : null;
   const bestOption =
     data?.options.find((option) => option.id === data.bestOptionId) ?? null;
 
@@ -152,26 +155,26 @@ export function ComparisonPanel({
         option={bestOption}
         reasoning={
           data?.reasoning ||
-          "No comparison lead is available until multiple viable scenarios can be evaluated."
+          t("No comparison lead is available until multiple viable scenarios can be evaluated")
         }
       />
 
       <Card className="rounded-[32px] border border-white/80 bg-[linear-gradient(180deg,rgba(255,255,255,0.96),rgba(248,250,252,0.88))] p-6 shadow-[0_22px_60px_rgba(15,23,42,0.07)] md:p-7">
         <p className="text-xs font-medium uppercase tracking-[0.08em] text-accent">
-          Comparison
+          {t("Comparison")}
         </p>
         <h2 className="mt-2 text-2xl font-semibold tracking-tight text-ink">
-          Country and pathway comparison
+          {t("Country and pathway comparison")}
         </h2>
         <p className="mt-3 text-sm leading-7 text-muted">
           {data?.summary ||
-            "Evaluate multiple country-pathway scenarios using the current profile, readiness state, and case assumptions."}
+            t("Evaluate multiple country-pathway scenarios using the current profile, readiness state, and case assumptions")}
         </p>
       </Card>
 
       {isLoading ? (
         <Card className="rounded-[32px] border border-white/80 bg-[linear-gradient(180deg,rgba(255,255,255,0.96),rgba(248,250,252,0.88))] p-8 text-sm leading-7 text-muted shadow-[0_22px_60px_rgba(15,23,42,0.07)]">
-          Building the comparison view from your current case and profile...
+          {t("Building the comparison view from your current case and profile")}
         </Card>
       ) : error ? (
         <Card className="rounded-[32px] border border-red/20 bg-red/5 p-8 text-sm leading-7 text-red shadow-[0_22px_60px_rgba(15,23,42,0.07)]">
@@ -179,7 +182,7 @@ export function ComparisonPanel({
         </Card>
       ) : !data || data.options.length === 0 ? (
         <Card className="rounded-[32px] border border-white/80 bg-[linear-gradient(180deg,rgba(255,255,255,0.96),rgba(248,250,252,0.88))] p-8 text-sm leading-7 text-muted shadow-[0_22px_60px_rgba(15,23,42,0.07)]">
-          No comparison scenarios have been added to this case yet.
+          {t("No comparison scenarios have been added to this case yet")}
         </Card>
       ) : (
         <>

@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
 
-import { AuthForm } from "@/components/auth/auth-form";
 import { AuthShell } from "@/components/auth/auth-shell";
+import { EmailSignInForm } from "@/components/auth/email-sign-in-form";
 import { buildAlternates } from "@/lib/seo";
 
 export const metadata: Metadata = {
@@ -24,7 +24,7 @@ export default async function SignInPage() {
       eyebrow={t("Welcome back")}
       title={t("Sign in to continue your case strategy")}
     >
-      <AuthForm mode="sign-in" />
+      <EmailSignInForm />
     </AuthShell>
   );
 }

@@ -1,6 +1,14 @@
 "use client";
 
-import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
+import {
+  useEffect,
+  useId,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+  useSyncExternalStore
+} from "react";
 import { createPortal } from "react-dom";
 
 import { cn } from "@/lib/utils";
@@ -14,16 +22,18 @@ type CountrySelectProps = {
   error?: string;
 };
 
+const subscribeNoop = () => () => {};
+const getMounted = () => true;
+const getServerMounted = () => false;
+
 export function CountrySelect({ label, value, onChange, placeholder = "Search countries…", error }: CountrySelectProps) {
   const inputId = useId();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
-  const [mounted, setMounted] = useState(false);
+  const mounted = useSyncExternalStore(subscribeNoop, getMounted, getServerMounted);
   const [rect, setRect] = useState<{ top: number; left: number; width: number } | null>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
   const popupRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => { setMounted(true); }, []);
 
   const selected = useMemo(
     () => WORLD_COUNTRIES.find((c) => c.name.toLowerCase() === value.toLowerCase()),

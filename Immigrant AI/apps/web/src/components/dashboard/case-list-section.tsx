@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 
 import { Animate } from "@/components/ui/animate";
 import type { DashboardCase } from "@/types/dashboard";
@@ -16,29 +17,30 @@ function formatUpdatedAt(value: string): string {
 }
 
 export function CaseListSection({ cases }: CaseListSectionProps) {
+  const t = useTranslations();
+
   return (
     <Animate animation="fade-up" delay={100} duration={700}>
       <div className="glass-card rounded-2xl p-6">
         <div className="flex items-center justify-between gap-4">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.08em] text-accent">
-              Case List
+              {t("Case List")}
             </p>
             <h3 className="mt-2 text-xl font-semibold tracking-tight text-ink">
-              Active migration goals
+              {t("Active migration goals")}
             </h3>
           </div>
           <Link className="text-sm font-semibold text-accent hover:text-accent-hover transition-colors" href="/dashboard/cases">
-            View all
+            {t("View all")}
           </Link>
         </div>
 
         {cases.length === 0 ? (
           <div className="mt-6 rounded-xl border border-dashed border-line bg-canvas/50 px-5 py-6">
-            <p className="text-sm font-medium text-ink">No cases yet</p>
+            <p className="text-sm font-medium text-ink">{t("No cases yet")}</p>
             <p className="mt-1 text-sm leading-relaxed text-muted">
-              Create your first case to connect pathway evaluation, scoring,
-              documents, and AI strategy in one workspace.
+              {t("Create your first case to connect pathway evaluation, scoring, documents, and AI strategy in one workspace")}
             </p>
           </div>
         ) : (
@@ -53,7 +55,7 @@ export function CaseListSection({ cases }: CaseListSectionProps) {
                   <div>
                     <p className="text-sm font-semibold text-ink">{item.title}</p>
                     <p className="mt-1 text-xs text-muted">
-                      {item.target_country || "Target country pending"}{" "}
+                      {item.target_country || t("Target country pending")}{" "}
                       {item.target_program ? `\u00b7 ${item.target_program}` : ""}
                     </p>
                   </div>
@@ -63,9 +65,9 @@ export function CaseListSection({ cases }: CaseListSectionProps) {
                 </div>
                 <div className="mt-3 flex flex-wrap gap-4 text-xs text-muted">
                   <span>
-                    Stage: {item.current_stage?.replaceAll("_", " ") || "Not set"}
+                    {t("Stage")}: {item.current_stage?.replaceAll("_", " ") || t("Not set")}
                   </span>
-                  <span>Updated: {formatUpdatedAt(item.updated_at)}</span>
+                  <span>{t("Updated")}: {formatUpdatedAt(item.updated_at)}</span>
                 </div>
               </div>
             ))}

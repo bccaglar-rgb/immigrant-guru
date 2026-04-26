@@ -1,3 +1,7 @@
+"use client";
+
+import { useTranslations } from "next-intl";
+
 import { DashboardStatusPill } from "@/components/dashboard/dashboard-status-pill";
 import { cn } from "@/lib/utils";
 
@@ -12,18 +16,19 @@ export function CopilotSuggestedPrompts({
   prompts,
   selectedPrompt
 }: CopilotSuggestedPromptsProps) {
+  const t = useTranslations();
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between gap-4">
         <div>
           <p className="text-xs font-medium uppercase tracking-[0.08em] text-accent">
-            Suggested prompts
+            {t("Suggested prompts")}
           </p>
           <p className="mt-2 text-sm leading-6 text-muted">
-            Start with one of these focused questions to keep the case conversation practical.
+            {t("Start with one of these focused questions to keep the case conversation practical")}
           </p>
         </div>
-        <DashboardStatusPill label="Case-aware" tone="accent" />
+        <DashboardStatusPill label={t("Case-aware")} tone="accent" />
       </div>
 
       <div className="flex flex-wrap gap-2.5">

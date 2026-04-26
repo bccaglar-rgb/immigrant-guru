@@ -1,15 +1,19 @@
 "use client";
 
+import { useTranslations } from "next-intl";
+
 import { Animate } from "@/components/ui/animate";
 
-const stats = [
-  { value: "47", label: "US visa categories", sublabel: "analyzed by AI" },
-  { value: "352", label: "Knowledge chunks", sublabel: "curated data points" },
-  { value: "4", label: "Score components", sublabel: "transparent scoring" },
-  { value: "24/7", label: "AI availability", sublabel: "instant strategies" }
-];
-
 export function StatsBar() {
+  const t = useTranslations();
+
+  const stats = [
+    { value: "47", label: t("US visa categories"), sublabel: t("analyzed by AI") },
+    { value: "352", label: t("Knowledge chunks"), sublabel: t("curated data points") },
+    { value: "4", label: t("Score components"), sublabel: t("transparent scoring") },
+    { value: "24/7", label: t("AI availability"), sublabel: t("instant strategies") }
+  ];
+
   return (
     <section className="relative overflow-hidden bg-gradient-dark py-16">
       <div className="absolute inset-0 bg-gradient-mesh opacity-10 pointer-events-none" />

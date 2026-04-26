@@ -44,3 +44,4 @@ export async function deleteSecure(key: string): Promise<void> {
 
 export const TOKEN_KEY = "ig.auth.access_token";
 export const USER_KEY = "ig.auth.user";
+export const PUSH_TOKEN_KEY = "ig.push.token";

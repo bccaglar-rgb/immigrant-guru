@@ -1,3 +1,7 @@
+"use client";
+
+import { useTranslations } from "next-intl";
+
 import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import type { StrategyPlan, StrategyPlanLabel } from "@/types/ai";
@@ -29,6 +33,7 @@ export function StrategyPlanCard({
   plan,
   slotLabel
 }: StrategyPlanCardProps) {
+  const t = useTranslations();
   const accentClasses = getAccentClasses(emphasis);
 
   if (!plan) {
@@ -39,13 +44,12 @@ export function StrategyPlanCard({
             {slotLabel}
           </p>
           <span className="rounded-full border border-line bg-white px-3 py-1 text-xs font-semibold uppercase tracking-[0.08em] text-muted">
-            Insufficient signal
+            {t("Insufficient signal")}
           </span>
         </div>
-        <h4 className="mt-4 text-xl font-semibold tracking-tight text-ink">Not enough evidence yet</h4>
+        <h4 className="mt-4 text-xl font-semibold tracking-tight text-ink">{t("Not enough evidence yet")}</h4>
         <p className="mt-3 text-sm leading-7 text-muted">
-          The current profile and case context do not support a distinct additional
-          plan in this slot yet.
+          {t("The current profile and case context do not support a distinct additional plan in this slot yet")}
         </p>
       </Card>
     );
@@ -58,7 +62,7 @@ export function StrategyPlanCard({
           {plan.label}
         </p>
         <span className="rounded-full border border-line bg-white px-3 py-1 text-xs font-semibold uppercase tracking-[0.08em] text-muted">
-          Suitability {Math.round(plan.suitability_score)}/100
+          {t("Suitability")} {Math.round(plan.suitability_score)}/100
         </span>
       </div>
 
@@ -68,7 +72,7 @@ export function StrategyPlanCard({
       <div className="mt-5 grid gap-3 sm:grid-cols-3">
         <div className="rounded-xl border border-line bg-white px-4 py-4">
           <p className="text-xs font-semibold uppercase tracking-[0.08em] text-muted">
-            Complexity
+            {t("Complexity")}
           </p>
           <p className="mt-2 text-sm font-semibold capitalize text-ink">
             {formatValue(plan.estimated_complexity)}
@@ -76,7 +80,7 @@ export function StrategyPlanCard({
         </div>
         <div className="rounded-xl border border-line bg-white px-4 py-4">
           <p className="text-xs font-semibold uppercase tracking-[0.08em] text-muted">
-            Timeline
+            {t("Timeline")}
           </p>
           <p className="mt-2 text-sm font-semibold capitalize text-ink">
             {formatValue(plan.estimated_timeline_category)}
@@ -84,7 +88,7 @@ export function StrategyPlanCard({
         </div>
         <div className="rounded-xl border border-line bg-white px-4 py-4">
           <p className="text-xs font-semibold uppercase tracking-[0.08em] text-muted">
-            Cost
+            {t("Cost")}
           </p>
           <p className="mt-2 text-sm font-semibold capitalize text-ink">
             {formatValue(plan.estimated_cost_category)}
@@ -94,7 +98,7 @@ export function StrategyPlanCard({
 
       <div className="mt-5">
         <p className="text-xs font-semibold uppercase tracking-[0.08em] text-muted">
-          Major risks
+          {t("Major risks")}
         </p>
         {plan.major_risks.length > 0 ? (
           <ul className="mt-3 space-y-2 text-sm leading-7 text-muted">
@@ -109,14 +113,14 @@ export function StrategyPlanCard({
           </ul>
         ) : (
           <p className="mt-3 text-sm leading-7 text-muted">
-            No material plan-specific risks were highlighted yet.
+            {t("No material plan-specific risks were highlighted yet")}
           </p>
         )}
       </div>
 
       <div className="mt-5 rounded-xl border border-accent/10 bg-accent/5 px-4 py-4">
         <p className="text-xs font-semibold uppercase tracking-[0.08em] text-accent">
-          Next action
+          {t("Next action")}
         </p>
         <p className="mt-2 text-sm leading-7 text-ink">{plan.next_action}</p>
       </div>

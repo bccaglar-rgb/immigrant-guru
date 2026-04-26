@@ -125,6 +125,80 @@ export async function verifyEmail(
   return mapTokenResponse(response.data);
 }
 
+export async function requestEmailCode(
+  email: string
+): Promise<RequestResult<{ sent: true }>> {
+  const response = await apiRequest({
+    body: { email },
+    method: "POST",
+    path: "/auth/email/code/request",
+    retries: 0,
+    timeoutMs: 10000
+  });
+  if (!response.ok) {
+    return { ok: false, errorMessage: response.errorMessage, status: response.status };
+  }
+  return { ok: true, data: { sent: true }, status: response.status };
+}
+
+export async function verifyEmailCode(
+  email: string,
+  code: string
+): Promise<RequestResult<AuthSessionSeed>> {
+  const response = await apiRequest({
+    body: { email, code },
+    method: "POST",
+    path: "/auth/email/code/verify",
+    retries: 0,
+    timeoutMs: 10000
+  });
+  if (!response.ok) {
+    return { ok: false, errorMessage: response.errorMessage, status: response.status };
+  }
+  const result = mapTokenResponse(response.data);
+  return result.ok ? { ...result, status: response.status } : result;
+}
+
+export async function signInWithGoogle(
+  idToken: string
+): Promise<RequestResult<AuthSessionSeed>> {
+  const response = await apiRequest({
+    body: { id_token: idToken },
+    method: "POST",
+    path: "/auth/google",
+    retries: 0,
+    timeoutMs: 10000
+  });
+  if (!response.ok) {
+    return { ok: false, errorMessage: response.errorMessage, status: response.status };
+  }
+  const result = mapTokenResponse(response.data);
+  return result.ok ? { ...result, status: response.status } : result;
+}
+
+export async function signInWithApple(
+  idToken: string,
+  firstName?: string | null,
+  lastName?: string | null
+): Promise<RequestResult<AuthSessionSeed>> {
+  const response = await apiRequest({
+    body: {
+      id_token: idToken,
+      first_name: firstName ?? null,
+      last_name: lastName ?? null
+    },
+    method: "POST",
+    path: "/auth/apple",
+    retries: 0,
+    timeoutMs: 10000
+  });
+  if (!response.ok) {
+    return { ok: false, errorMessage: response.errorMessage, status: response.status };
+  }
+  const result = mapTokenResponse(response.data);
+  return result.ok ? { ...result, status: response.status } : result;
+}
+
 export async function getAuthenticatedUser(
   accessToken: string
 ): Promise<RequestResult<AuthenticatedUser>> {

@@ -82,7 +82,7 @@ export default function PricingPage() {
       return;
     }
     if (res.data.checkout_url) {
-      window.location.href = res.data.checkout_url;
+      window.location.assign(res.data.checkout_url);
       return;
     }
     router.push(next);

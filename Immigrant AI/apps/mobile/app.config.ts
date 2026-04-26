@@ -61,6 +61,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     "expo-router",
     "expo-secure-store",
     "expo-localization",
+    "expo-apple-authentication",
     [
       "expo-notifications",
       {
@@ -85,6 +86,11 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     REVENUECAT_IOS_KEY: process.env.EXPO_PUBLIC_RC_IOS_KEY ?? "",
     REVENUECAT_ANDROID_KEY: process.env.EXPO_PUBLIC_RC_ANDROID_KEY ?? "",
     SENTRY_DSN: process.env.EXPO_PUBLIC_SENTRY_DSN ?? "",
+    // Google Sign-In OAuth client IDs from Google Cloud Console.
+    // Without these, the Google button surfaces a "not configured" error.
+    GOOGLE_OAUTH_IOS_CLIENT_ID: process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID ?? "",
+    GOOGLE_OAUTH_ANDROID_CLIENT_ID: process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID ?? "",
+    GOOGLE_OAUTH_WEB_CLIENT_ID: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID ?? "",
     eas: {
       projectId: "" // filled after `eas init`
     }

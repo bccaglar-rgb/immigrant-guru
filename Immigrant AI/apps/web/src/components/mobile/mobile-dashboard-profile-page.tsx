@@ -2,6 +2,7 @@
 
 import { useMemo } from "react";
 import type { ReactNode } from "react";
+import { useTranslations } from "next-intl";
 
 import { DashboardErrorState } from "@/components/dashboard/dashboard-error-state";
 import { MobileFormLayout } from "@/components/mobile/mobile-form-layout";
@@ -63,6 +64,7 @@ function MobileProfileSection({
 }
 
 export function MobileDashboardProfilePage() {
+  const t = useTranslations();
   const {
     feedback,
     fieldErrors,
@@ -93,7 +95,7 @@ export function MobileDashboardProfilePage() {
       <DashboardErrorState
         message={loadError}
         onRetry={() => void refresh()}
-        title="The mobile profile editor could not be loaded."
+        title={t("The mobile profile editor could not be loaded")}
       />
     );
   }
@@ -112,31 +114,31 @@ export function MobileDashboardProfilePage() {
               type="button"
               variant="secondary"
             >
-              Refresh
+              {t("Refresh")}
             </Button>
             <Button
               disabled={isSaving || !isDirty}
               fullWidth
               type="submit"
             >
-              {isSaving ? "Saving..." : isDirty ? "Save profile" : "Saved"}
+              {isSaving ? t("Saving") : isDirty ? t("Save profile") : t("Saved")}
             </Button>
           </div>
         }
         header={
           <Card className="rounded-[28px] border border-white/80 bg-[radial-gradient(circle_at_top_left,rgba(191,219,254,0.6),transparent_42%),linear-gradient(180deg,rgba(255,255,255,0.96),rgba(248,250,252,0.92))] p-5 shadow-soft">
             <p className="text-xs font-medium uppercase tracking-[0.08em] text-accent">
-              Immigration profile
+              {t("Immigration profile")}
             </p>
             <h2 className="mt-3 text-2xl font-semibold tracking-[-0.04em] text-ink">
-              Keep your mobile case profile current
+              {t("Keep your mobile case profile current")}
             </h2>
             <p className="mt-3 text-sm leading-7 text-muted">
-              The information here powers pathway scoring, probability estimates, and case recommendations.
+              {t("The information here powers pathway scoring, probability estimates, and case recommendations")}
             </p>
             <div className="mt-5 rounded-2xl bg-white/90 px-4 py-4">
               <p className="text-xs font-medium uppercase tracking-[0.08em] text-muted">
-                Completion
+                {t("Completion")}
               </p>
               <p className="mt-2 text-2xl font-semibold text-ink">{completion}%</p>
             </div>
@@ -156,40 +158,40 @@ export function MobileDashboardProfilePage() {
         ) : null}
 
         <MobileProfileSection
-          description="Identity, family context, and communication preference."
-          title="Personal"
+          description={t("Identity, family context, and communication preference")}
+          title={t("Personal")}
         >
           <Input
             autoComplete="given-name"
             error={fieldErrors.first_name}
-            label="First name"
+            label={t("First name")}
             onChange={(event) => handleFieldChange("first_name", event.target.value)}
             value={formValues.first_name}
           />
           <Input
             autoComplete="family-name"
             error={fieldErrors.last_name}
-            label="Last name"
+            label={t("Last name")}
             onChange={(event) => handleFieldChange("last_name", event.target.value)}
             value={formValues.last_name}
           />
           <Input
             error={fieldErrors.nationality}
-            label="Nationality"
+            label={t("Nationality")}
             onChange={(event) => handleFieldChange("nationality", event.target.value)}
             value={formValues.nationality}
           />
           <Input
             error={fieldErrors.current_country}
-            label="Current country"
+            label={t("Current country")}
             onChange={(event) => handleFieldChange("current_country", event.target.value)}
             value={formValues.current_country}
           />
           <Select
             error={fieldErrors.marital_status}
-            label="Marital status"
+            label={t("Marital status")}
             onChange={(event) => handleFieldChange("marital_status", event.target.value)}
-            placeholder="Select marital status"
+            placeholder={t("Select marital status")}
             value={formValues.marital_status}
           >
             {maritalStatusOptions.map((option) => (
@@ -201,13 +203,13 @@ export function MobileDashboardProfilePage() {
           <Input
             error={fieldErrors.children_count}
             inputMode="numeric"
-            label="Children count"
+            label={t("Children count")}
             onChange={(event) => handleFieldChange("children_count", event.target.value)}
             value={formValues.children_count}
           />
           <Input
             error={fieldErrors.preferred_language}
-            label="Preferred language"
+            label={t("Preferred language")}
             onChange={(event) =>
               handleFieldChange("preferred_language", event.target.value)
             }
@@ -216,22 +218,22 @@ export function MobileDashboardProfilePage() {
         </MobileProfileSection>
 
         <MobileProfileSection
-          description="Destination, timing, and risk context for strategy generation."
-          title="Immigration goals"
+          description={t("Destination, timing, and risk context for strategy generation")}
+          title={t("Immigration goals")}
         >
           <Input
             error={fieldErrors.target_country}
-            label="Target country"
+            label={t("Target country")}
             onChange={(event) => handleFieldChange("target_country", event.target.value)}
             value={formValues.target_country}
           />
           <Select
             error={fieldErrors.relocation_timeline}
-            label="Relocation timeline"
+            label={t("Relocation timeline")}
             onChange={(event) =>
               handleFieldChange("relocation_timeline", event.target.value)
             }
-            placeholder="Select timeline"
+            placeholder={t("Select timeline")}
             value={formValues.relocation_timeline}
           >
             {relocationTimelineOptions.map((option) => (
@@ -242,7 +244,7 @@ export function MobileDashboardProfilePage() {
           </Select>
           <Select
             error={fieldErrors.prior_visa_refusal_flag}
-            label="Prior visa refusal"
+            label={t("Prior visa refusal")}
             onChange={(event) =>
               handleFieldChange("prior_visa_refusal_flag", event.target.value)
             }
@@ -256,7 +258,7 @@ export function MobileDashboardProfilePage() {
           </Select>
           <Select
             error={fieldErrors.criminal_record_flag}
-            label="Criminal record"
+            label={t("Criminal record")}
             onChange={(event) =>
               handleFieldChange("criminal_record_flag", event.target.value)
             }
@@ -271,14 +273,14 @@ export function MobileDashboardProfilePage() {
         </MobileProfileSection>
 
         <MobileProfileSection
-          description="Education, language, and work history strength."
-          title="Professional background"
+          description={t("Education, language, and work history strength")}
+          title={t("Professional background")}
         >
           <Select
             error={fieldErrors.education_level}
-            label="Education level"
+            label={t("Education level")}
             onChange={(event) => handleFieldChange("education_level", event.target.value)}
-            placeholder="Select education level"
+            placeholder={t("Select education level")}
             value={formValues.education_level}
           >
             {educationLevelOptions.map((option) => (
@@ -289,9 +291,9 @@ export function MobileDashboardProfilePage() {
           </Select>
           <Select
             error={fieldErrors.english_level}
-            label="English level"
+            label={t("English level")}
             onChange={(event) => handleFieldChange("english_level", event.target.value)}
-            placeholder="Select English level"
+            placeholder={t("Select English level")}
             value={formValues.english_level}
           >
             {englishLevelOptions.map((option) => (
@@ -302,14 +304,14 @@ export function MobileDashboardProfilePage() {
           </Select>
           <Input
             error={fieldErrors.profession}
-            label="Profession"
+            label={t("Profession")}
             onChange={(event) => handleFieldChange("profession", event.target.value)}
             value={formValues.profession}
           />
           <Input
             error={fieldErrors.years_of_experience}
             inputMode="numeric"
-            label="Years of experience"
+            label={t("Years of experience")}
             onChange={(event) =>
               handleFieldChange("years_of_experience", event.target.value)
             }
@@ -318,7 +320,7 @@ export function MobileDashboardProfilePage() {
           <Input
             error={fieldErrors.available_capital}
             inputMode="decimal"
-            label="Available capital"
+            label={t("Available capital")}
             onChange={(event) =>
               handleFieldChange("available_capital", event.target.value)
             }

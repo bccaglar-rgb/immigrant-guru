@@ -1,3 +1,7 @@
+"use client";
+
+import { useTranslations } from "next-intl";
+
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
@@ -51,30 +55,32 @@ export function CaseDocumentList({
   isLoading,
   onRetry
 }: CaseDocumentListProps) {
+  const t = useTranslations();
+
   return (
     <Card className="p-6 md:p-7">
       <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
         <div>
           <p className="text-sm font-semibold uppercase tracking-[0.08em] text-accent">
-            Document registry
+            {t("Document registry")}
           </p>
           <h4 className="mt-3 text-xl font-semibold tracking-tight text-ink">
-            Case preparation file trail
+            {t("Case preparation file trail")}
           </h4>
         </div>
         <p className="text-sm text-muted">
-          {documents.length} {documents.length === 1 ? "document" : "documents"}
+          {documents.length} {documents.length === 1 ? t("document") : t("documents")}
         </p>
       </div>
 
       {errorMessage ? (
         <div className="mt-6 rounded-xl border border-red/20 bg-red/5 px-4 py-4">
           <p className="text-sm font-semibold uppercase tracking-[0.08em] text-red">
-            Document list unavailable
+            {t("Document list unavailable")}
           </p>
           <p className="mt-3 text-sm leading-7 text-red">{errorMessage}</p>
           <Button className="mt-4" onClick={onRetry} type="button" variant="secondary">
-            Retry
+            {t("Retry")}
           </Button>
         </div>
       ) : null}
@@ -90,15 +96,13 @@ export function CaseDocumentList({
       {!isLoading && !errorMessage && documents.length === 0 ? (
         <div className="mt-6 rounded-2xl border border-dashed border-line bg-canvas/50 px-5 py-10">
           <p className="text-sm font-semibold uppercase tracking-[0.08em] text-accent">
-            No documents yet
+            {t("No documents yet")}
           </p>
           <h5 className="mt-3 text-xl font-semibold tracking-tight text-ink">
-            Build the evidence base for this case
+            {t("Build the evidence base for this case")}
           </h5>
           <p className="mt-3 text-sm leading-7 text-muted">
-            Upload identity, financial, academic, or employment records so the
-            case workspace reflects what is already prepared and what is still
-            missing.
+            {t("Upload identity, financial, academic, or employment records so the case workspace reflects what is already prepared and what is still missing")}
           </p>
         </div>
       ) : null}
@@ -113,7 +117,7 @@ export function CaseDocumentList({
               <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                 <div className="min-w-0">
                   <p className="text-xs font-semibold uppercase tracking-[0.08em] text-accent">
-                    {document.document_type || "Unclassified case file"}
+                    {document.document_type || t("Unclassified case file")}
                   </p>
                   <h5 className="mt-3 truncate text-lg font-semibold text-ink">
                     {document.original_filename}
@@ -136,24 +140,24 @@ export function CaseDocumentList({
               <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
                 <div className="rounded-xl border border-line bg-white px-4 py-4">
                   <p className="text-xs font-semibold uppercase tracking-[0.08em] text-muted">
-                    Uploaded
+                    {t("Uploaded")}
                   </p>
                   <p className="mt-2 text-sm text-ink">{formatDate(document.created_at)}</p>
                 </div>
                 <div className="rounded-xl border border-line bg-white px-4 py-4">
                   <p className="text-xs font-semibold uppercase tracking-[0.08em] text-muted">
-                    Processed
+                    {t("Processed")}
                   </p>
                   <p className="mt-2 truncate text-sm text-ink">
-                    {document.processed_at ? formatDate(document.processed_at) : "Not yet"}
+                    {document.processed_at ? formatDate(document.processed_at) : t("Not yet")}
                   </p>
                 </div>
                 <div className="rounded-xl border border-line bg-white px-4 py-4">
                   <p className="text-xs font-semibold uppercase tracking-[0.08em] text-muted">
-                    Processing
+                    {t("Processing")}
                   </p>
                   <p className="mt-2 truncate text-sm text-ink">
-                    Attempt {document.processing_attempts}
+                    {t("Attempt")} {document.processing_attempts}
                   </p>
                 </div>
               </div>

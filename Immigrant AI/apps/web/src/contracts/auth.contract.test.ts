@@ -28,6 +28,7 @@ describe("auth contract", () => {
       id: "0d22dcc8-a730-4ff6-bf0f-af83579f9e0a",
       email: "ada@example.com",
       status: "active",
+      plan: "free",
       created_at: "2026-04-05T00:00:00Z",
       updated_at: "2026-04-05T00:00:00Z",
       profile: null

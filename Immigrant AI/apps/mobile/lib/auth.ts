@@ -2,17 +2,28 @@
  * Auth client — mirrors apps/web/src/lib/auth-client.ts but for mobile.
  *
  * Endpoints (see apps/api/app/domains/auth/router.py):
- *   POST /auth/register  → RegistrationInitiatedResponse (no token — email verify first)
- *   POST /auth/login     → TokenResponse { accessToken, expiresIn }
- *   POST /auth/verify    → TokenResponse (after 6-digit code)
- *   POST /auth/resend    → 204
- *   POST /auth/logout    → 204
- *   GET  /auth/me        → AuthenticatedUserResponse
+ *   POST /auth/register             → RegistrationInitiatedResponse
+ *   POST /auth/login                → TokenResponse (legacy email + password)
+ *   POST /auth/verify-email         → TokenResponse (registration verify)
+ *   POST /auth/email/code/request   → { sent: true }
+ *   POST /auth/email/code/verify    → TokenResponse (passwordless login/signup)
+ *   POST /auth/google               → TokenResponse (Google ID token)
+ *   POST /auth/apple                → TokenResponse (Apple identityToken)
+ *   POST /auth/logout               → 204
+ *   GET  /auth/me                   → AuthenticatedUserResponse
  */
 import { create } from "zustand";
 
 import { api } from "./api-client";
-import { deleteSecure, getSecure, setSecure, TOKEN_KEY, USER_KEY } from "./secure-storage";
+import { deregisterPushToken, registerForPushNotifications } from "./notifications";
+import {
+  deleteSecure,
+  getSecure,
+  PUSH_TOKEN_KEY,
+  setSecure,
+  TOKEN_KEY,
+  USER_KEY
+} from "./secure-storage";
 
 export type AuthUser = {
   id: string;
@@ -21,21 +32,45 @@ export type AuthUser = {
   status: string;
 };
 
-type TokenResponse = { accessToken: string; expiresIn: number };
+// Backend returns snake_case; we parse both for safety.
+type TokenResponseRaw = {
+  access_token?: string;
+  expires_in?: number;
+  accessToken?: string;
+  expiresIn?: number;
+};
+
+function parseToken(raw: TokenResponseRaw): { token: string; expiresIn: number } | null {
+  const token = raw.access_token ?? raw.accessToken ?? "";
+  const expiresIn = raw.expires_in ?? raw.expiresIn ?? 0;
+  if (!token) return null;
+  return { token, expiresIn };
+}
 
 export type AuthStatus = "loading" | "authenticated" | "guest";
+
+type AuthResult = { ok: true } | { ok: false; error: string };
+type SignInResult = AuthResult | { ok: false; error: string; needsVerify?: boolean };
 
 type AuthState = {
   status: AuthStatus;
   user: AuthUser | null;
   hydrate: () => Promise<void>;
   signUp: (email: string, password: string, firstName?: string, lastName?: string) =>
-    Promise<{ ok: true } | { ok: false; error: string }>;
-  verifyEmail: (email: string, code: string) =>
-    Promise<{ ok: true } | { ok: false; error: string }>;
-  resendCode: (email: string) => Promise<{ ok: true } | { ok: false; error: string }>;
-  signIn: (email: string, password: string) =>
-    Promise<{ ok: true } | { ok: false; error: string; needsVerify?: boolean }>;
+    Promise<AuthResult>;
+  verifyEmail: (email: string, code: string) => Promise<AuthResult>;
+  resendCode: (email: string) => Promise<AuthResult>;
+  signIn: (email: string, password: string) => Promise<SignInResult>;
+  // Passwordless email-code flow
+  requestEmailCode: (email: string) => Promise<AuthResult>;
+  verifyEmailCode: (email: string, code: string) => Promise<AuthResult>;
+  // OAuth
+  signInWithGoogle: (idToken: string) => Promise<AuthResult>;
+  signInWithApple: (
+    idToken: string,
+    firstName?: string | null,
+    lastName?: string | null,
+  ) => Promise<AuthResult>;
   signOut: () => Promise<void>;
   refreshUser: () => Promise<void>;
 };
@@ -76,6 +111,7 @@ export const useAuth = create<AuthState>((set, get) => ({
     if (fresh) {
       await setSecure(USER_KEY, JSON.stringify(fresh));
       set({ status: "authenticated", user: fresh });
+      void registerForPushNotifications().catch(() => undefined);
     } else if (!stored) {
       // token is invalid and no cached user → force logout
       await deleteSecure(TOKEN_KEY);
@@ -96,33 +132,94 @@ export const useAuth = create<AuthState>((set, get) => ({
   },
 
   async verifyEmail(email, code) {
-    const res = await api.post<TokenResponse>("/auth/verify", { email, code });
+    const res = await api.post<TokenResponseRaw>("/auth/verify-email", { email, code });
     if (!res.ok) return { ok: false, error: res.message };
-    await persistSession(res.data.accessToken, null);
+    const parsed = parseToken(res.data);
+    if (!parsed) return { ok: false, error: "Invalid server response." };
+    await persistSession(parsed.token, null);
     const user = await fetchMe();
     if (user) await setSecure(USER_KEY, JSON.stringify(user));
     set({ status: "authenticated", user });
+    void registerForPushNotifications().catch(() => undefined);
     return { ok: true };
   },
 
   async resendCode(email) {
-    const res = await api.post("/auth/resend", { email });
+    const res = await api.post("/auth/send-verification", { email });
     return res.ok ? { ok: true } : { ok: false, error: res.message };
   },
 
   async signIn(email, password) {
-    const res = await api.post<TokenResponse>("/auth/login", { email, password });
+    const res = await api.post<TokenResponseRaw>("/auth/login", { email, password });
     if (!res.ok) {
       return { ok: false, error: res.message, needsVerify: res.status === 403 };
     }
-    await persistSession(res.data.accessToken, null);
+    const parsed = parseToken(res.data);
+    if (!parsed) return { ok: false, error: "Invalid server response." };
+    await persistSession(parsed.token, null);
     const user = await fetchMe();
     if (user) await setSecure(USER_KEY, JSON.stringify(user));
     set({ status: "authenticated", user });
+    void registerForPushNotifications().catch(() => undefined);
+    return { ok: true };
+  },
+
+  async requestEmailCode(email) {
+    const res = await api.post("/auth/email/code/request", { email: email.trim().toLowerCase() });
+    return res.ok ? { ok: true } : { ok: false, error: res.message };
+  },
+
+  async verifyEmailCode(email, code) {
+    const res = await api.post<TokenResponseRaw>("/auth/email/code/verify", {
+      email: email.trim().toLowerCase(),
+      code: code.trim(),
+    });
+    if (!res.ok) return { ok: false, error: res.message };
+    const parsed = parseToken(res.data);
+    if (!parsed) return { ok: false, error: "Invalid server response." };
+    await persistSession(parsed.token, null);
+    const user = await fetchMe();
+    if (user) await setSecure(USER_KEY, JSON.stringify(user));
+    set({ status: "authenticated", user });
+    void registerForPushNotifications().catch(() => undefined);
+    return { ok: true };
+  },
+
+  async signInWithGoogle(idToken) {
+    const res = await api.post<TokenResponseRaw>("/auth/google", { id_token: idToken });
+    if (!res.ok) return { ok: false, error: res.message };
+    const parsed = parseToken(res.data);
+    if (!parsed) return { ok: false, error: "Invalid server response." };
+    await persistSession(parsed.token, null);
+    const user = await fetchMe();
+    if (user) await setSecure(USER_KEY, JSON.stringify(user));
+    set({ status: "authenticated", user });
+    void registerForPushNotifications().catch(() => undefined);
+    return { ok: true };
+  },
+
+  async signInWithApple(idToken, firstName, lastName) {
+    const res = await api.post<TokenResponseRaw>("/auth/apple", {
+      id_token: idToken,
+      first_name: firstName ?? null,
+      last_name: lastName ?? null,
+    });
+    if (!res.ok) return { ok: false, error: res.message };
+    const parsed = parseToken(res.data);
+    if (!parsed) return { ok: false, error: "Invalid server response." };
+    await persistSession(parsed.token, null);
+    const user = await fetchMe();
+    if (user) await setSecure(USER_KEY, JSON.stringify(user));
+    set({ status: "authenticated", user });
+    void registerForPushNotifications().catch(() => undefined);
     return { ok: true };
   },
 
   async signOut() {
+    const pushToken = await getSecure(PUSH_TOKEN_KEY);
+    if (pushToken) {
+      await deregisterPushToken(pushToken).catch(() => undefined);
+    }
     await api.post("/auth/logout").catch(() => undefined);
     await deleteSecure(TOKEN_KEY);
     await deleteSecure(USER_KEY);

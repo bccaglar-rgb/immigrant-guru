@@ -163,7 +163,7 @@
   "Creating account": {
     "": {
       "": {
-        "": "Creating account..."
+        "": "Creando cuenta..."
       }
     }
   },
@@ -404,8 +404,6 @@
       }
     }
   },
-  "Signing in...": "Iniciando sesión...",
-  "Creating account...": "Creando cuenta...",
   "Back to home": "Volver al inicio",
   "Simple pricing": "Precios simples",
   "Six powerful tools working together to give you clarity, confidence, and a concrete plan": {

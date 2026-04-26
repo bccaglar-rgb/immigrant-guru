@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 
 import { AIStrategyPanel } from "@/components/dashboard/ai-strategy-panel";
 import { CaseWorkspaceHeader } from "@/components/dashboard/case-workspace-header";
@@ -23,16 +24,19 @@ type DashboardCaseDetailPageProps = Readonly<{
   caseId: string;
 }>;
 
-const workspaceTabs: Array<{ id: CaseWorkspaceTabId; label: string }> = [
-  { id: "overview", label: "Overview" },
-  { id: "strategy", label: "Strategy" },
-  { id: "timeline", label: "Timeline" },
-  { id: "simulation", label: "Simulation" },
-  { id: "documents", label: "Documents" },
-  { id: "risks", label: "Risks" },
-  { id: "copilot", label: "Copilot" },
-  { id: "comparison", label: "Comparison" }
-];
+function useWorkspaceTabs(): Array<{ id: CaseWorkspaceTabId; label: string }> {
+  const t = useTranslations();
+  return [
+    { id: "overview", label: t("Overview") },
+    { id: "strategy", label: t("Strategy") },
+    { id: "timeline", label: t("Timeline") },
+    { id: "simulation", label: t("Simulation") },
+    { id: "documents", label: t("Documents") },
+    { id: "risks", label: t("Risks") },
+    { id: "copilot", label: t("Copilot") },
+    { id: "comparison", label: t("Comparison") }
+  ];
+}
 
 function WorkspaceLoadingState() {
   return (
@@ -48,16 +52,17 @@ function WorkspaceLoadingState() {
 }
 
 function OverviewPanel() {
+  const t = useTranslations();
   return (
     <Card className="rounded-[30px] border border-white/80 bg-white/90 p-8 shadow-[0_20px_60px_rgba(15,23,42,0.06)]">
       <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
-        Overview
+        {t("Overview")}
       </p>
       <h2 className="mt-2 text-2xl font-semibold tracking-tight text-slate-950">
-        Command view
+        {t("Command view")}
       </h2>
       <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-600">
-        This workspace is organized around decision support, not generic record keeping. Use the tabs to move from strategic clarity to evidence preparation and execution.
+        {t("This workspace is organized around decision support, not generic record keeping — use the tabs to move from strategic clarity to evidence preparation and execution")}
       </p>
     </Card>
   );
@@ -80,6 +85,8 @@ function EmptyWorkspaceSection({
 function DesktopDashboardCaseDetailPage({
   caseId
 }: DashboardCaseDetailPageProps) {
+  const t = useTranslations();
+  const workspaceTabs = useWorkspaceTabs();
   const [activeTab, setActiveTab] = useState<CaseWorkspaceTabId>("overview");
   const { accessToken, caseRecord, data, error, reload, status } =
     useCaseWorkspace(caseId);
@@ -91,9 +98,9 @@ function DesktopDashboardCaseDetailPage({
   if (status === "error" || !data) {
     return (
       <DashboardErrorState
-        message={error || "The case workspace could not be loaded."}
+        message={error || t("The case workspace could not be loaded")}
         onRetry={reload}
-        title="This case workspace is unavailable."
+        title={t("This case workspace is unavailable")}
       />
     );
   }
@@ -141,8 +148,8 @@ function DesktopDashboardCaseDetailPage({
           <AIStrategyPanel accessToken={accessToken} caseRecord={caseRecord} />
         ) : (
           <EmptyWorkspaceSection
-            description="Sign in again to generate and compare strategic pathways for this case."
-            title="Strategy"
+            description={t("Sign in again to generate and compare strategic pathways for this case")}
+            title={t("Strategy")}
           />
         )
       ) : null}
@@ -164,8 +171,8 @@ function DesktopDashboardCaseDetailPage({
           />
         ) : (
           <EmptyWorkspaceSection
-            description="Sign in again to manage documents for this case."
-            title="Documents"
+            description={t("Sign in again to manage documents for this case")}
+            title={t("Documents")}
           />
         )
       ) : null}
@@ -175,8 +182,8 @@ function DesktopDashboardCaseDetailPage({
           <RiskBreakdownPanel risks={data.risks} />
         ) : (
           <EmptyWorkspaceSection
-            description="No active risks are currently surfaced for this case."
-            title="Risks"
+            description={t("No active risks are currently surfaced for this case")}
+            title={t("Risks")}
           />
         )
       ) : null}
@@ -191,8 +198,8 @@ function DesktopDashboardCaseDetailPage({
           />
         ) : (
           <EmptyWorkspaceSection
-            description="Sign in again to use the case copilot."
-            title="Copilot"
+            description={t("Sign in again to use the case copilot")}
+            title={t("Copilot")}
           />
         )
       ) : null}
@@ -202,8 +209,8 @@ function DesktopDashboardCaseDetailPage({
           <ComparisonPanel accessToken={accessToken} caseRecord={caseRecord} />
         ) : (
           <EmptyWorkspaceSection
-            description="Sign in again to compare this case against alternative country-pathway routes."
-            title="Comparison"
+            description={t("Sign in again to compare this case against alternative country-pathway routes")}
+            title={t("Comparison")}
           />
         )
       ) : null}

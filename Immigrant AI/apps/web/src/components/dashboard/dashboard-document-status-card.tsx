@@ -1,3 +1,7 @@
+"use client";
+
+import { useTranslations } from "next-intl";
+
 import type { DashboardDocumentStatusCard } from "@/types/dashboard";
 
 import { DashboardCommandCard } from "@/components/dashboard/dashboard-command-card";
@@ -9,12 +13,13 @@ type DashboardDocumentStatusCardProps = Readonly<{
 export function DashboardDocumentStatusCard({
   data
 }: DashboardDocumentStatusCardProps) {
+  const t = useTranslations();
   const width = data.readinessScore === null ? 8 : Math.max(data.readinessScore, 8);
 
   return (
     <DashboardCommandCard
-      eyebrow="Document status"
-      title="Evidence coverage"
+      eyebrow={t("Document status")}
+      title={t("Evidence coverage")}
       value={
         <div>
           <p className="text-4xl font-semibold tracking-[-0.04em] text-slate-950">
@@ -35,12 +40,12 @@ export function DashboardDocumentStatusCard({
       </div>
       <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
         {[
-          ["Required items", data.requiredItems],
-          ["Completed", data.completedItems],
-          ["Missing required", data.missingRequiredItems],
-          ["Processing", data.processingItems],
-          ["Failed", data.failedItems],
-          ["Total tracked", data.totalItems]
+          [t("Required items"), data.requiredItems],
+          [t("Completed"), data.completedItems],
+          [t("Missing required"), data.missingRequiredItems],
+          [t("Processing"), data.processingItems],
+          [t("Failed"), data.failedItems],
+          [t("Total tracked"), data.totalItems]
         ].map(([label, value]) => (
           <div className="rounded-2xl bg-slate-50/90 px-4 py-4" key={label}>
             <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">

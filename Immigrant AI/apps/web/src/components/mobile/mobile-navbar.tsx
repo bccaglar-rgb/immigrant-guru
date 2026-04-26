@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 
 import { LanguageSwitcher } from "@/components/layout/language-switcher";
 import { buttonVariants } from "@/components/ui/button";
@@ -14,8 +15,8 @@ type MobileNavbarProps = Readonly<{
   user: AuthenticatedUser;
 }>;
 
-function getDisplayName(user: AuthenticatedUser): string {
-  return user.profile?.first_name || user.email.split("@")[0] || "Member";
+function getDisplayName(user: AuthenticatedUser, fallback: string): string {
+  return user.profile?.first_name || user.email.split("@")[0] || fallback;
 }
 
 export function MobileNavbar({
@@ -23,6 +24,8 @@ export function MobileNavbar({
   title,
   user
 }: MobileNavbarProps) {
+  const t = useTranslations();
+
   return (
     <header className="sticky top-0 z-30 border-b border-line/70 bg-white/90 backdrop-blur-xl">
       <div
@@ -33,7 +36,7 @@ export function MobileNavbar({
           <div className="mt-0.5 flex shrink-0 items-center gap-2">
             <Image
               src="/logo.png"
-              alt="Immigrant Guru"
+              alt={t("Immigrant Guru")}
               width={320}
               height={112}
               className="h-auto w-[40px] object-contain mix-blend-multiply"
@@ -49,7 +52,7 @@ export function MobileNavbar({
               {title}
             </h1>
             <p className="mt-1 truncate text-xs text-muted">
-              {getDisplayName(user)} · {user.email}
+              {getDisplayName(user, t("Member"))} · {user.email}
             </p>
           </div>
         </div>
@@ -66,7 +69,7 @@ export function MobileNavbar({
             )}
             href="/"
           >
-            Home
+            {t("Home")}
           </Link>
           <button
             className={cn(
@@ -79,7 +82,7 @@ export function MobileNavbar({
             onClick={clearSession}
             type="button"
           >
-            Log out
+            {t("Log out")}
           </button>
         </div>
       </div>

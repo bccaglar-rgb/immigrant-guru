@@ -1,5 +1,7 @@
 "use client";
 
+import { useTranslations } from "next-intl";
+
 import { DashboardCommandCard } from "@/components/dashboard/dashboard-command-card";
 import { DashboardStatusPill } from "@/components/dashboard/dashboard-status-pill";
 import { Button } from "@/components/ui/button";
@@ -76,6 +78,7 @@ function MetricComparisonCard({
   suffix?: string;
   tone?: "positive" | "warning" | "critical" | "neutral";
 }>) {
+  const t = useTranslations();
   const beforeWidth = Math.max(Math.min(before, 100), 6);
   const afterWidth = Math.max(Math.min(after, 100), 6);
 
@@ -89,7 +92,7 @@ function MetricComparisonCard({
           <div className="mt-3 flex items-end gap-4">
             <div>
               <p className="text-xs uppercase tracking-[0.08em] text-muted">
-                Before
+                {t("Before")}
               </p>
               <p className="mt-1 text-2xl font-semibold tracking-[-0.04em] text-ink">
                 {before.toFixed(1)}
@@ -98,7 +101,7 @@ function MetricComparisonCard({
             </div>
             <div>
               <p className="text-xs uppercase tracking-[0.08em] text-muted">
-                After
+                {t("After")}
               </p>
               <p className="mt-1 text-3xl font-semibold tracking-[-0.04em] text-ink">
                 {after.toFixed(1)}
@@ -113,7 +116,7 @@ function MetricComparisonCard({
       <div className="mt-5 space-y-3">
         <div>
           <div className="flex items-center justify-between text-xs uppercase tracking-[0.08em] text-muted">
-            <span>Current profile</span>
+            <span>{t("Current profile")}</span>
             <span>{before.toFixed(1)}{suffix}</span>
           </div>
           <div className="mt-2 h-2.5 rounded-full bg-slate-100">
@@ -125,7 +128,7 @@ function MetricComparisonCard({
         </div>
         <div>
           <div className="flex items-center justify-between text-xs uppercase tracking-[0.08em] text-muted">
-            <span>Simulated profile</span>
+            <span>{t("Simulated profile")}</span>
             <span>{after.toFixed(1)}{suffix}</span>
           </div>
           <div className="mt-2 h-2.5 rounded-full bg-slate-100">
@@ -173,22 +176,24 @@ function ScenarioRecommendationCard({
 
 export function ScenarioSimulationPanel({
   baseline,
-  title = "What-if strategy simulator"
+  title
 }: ScenarioSimulationPanelProps) {
+  const t = useTranslations();
   const { current, reset, result, updateField } = useScenarioSimulation(baseline);
+  const resolvedTitle = title ?? t("What-if strategy simulator");
 
   return (
     <DashboardCommandCard
       className="rounded-[32px]"
-      eyebrow="Scenario simulation"
-      title={title}
+      eyebrow={t("Scenario simulation")}
+      title={resolvedTitle}
       value={
         <div className="space-y-2 text-right">
           <p className="text-xs font-medium uppercase tracking-[0.08em] text-accent">
-            Live planning
+            {t("Live planning")}
           </p>
           <p className="text-sm font-medium text-ink/80">
-            Test profile improvements before acting
+            {t("Test profile improvements before acting")}
           </p>
         </div>
       }
@@ -198,23 +203,23 @@ export function ScenarioSimulationPanel({
           <div className="flex items-start justify-between gap-4">
             <div>
               <p className="text-xs font-medium uppercase tracking-[0.08em] text-accent">
-                Scenario inputs
+                {t("Scenario inputs")}
               </p>
               <h4 className="mt-2 text-xl font-semibold tracking-tight text-ink">
-                Adjust the strongest decision variables
+                {t("Adjust the strongest decision variables")}
               </h4>
               <p className="mt-2 text-sm leading-6 text-muted">
-                Compare a stronger profile scenario against the current baseline before committing time or money.
+                {t("Compare a stronger profile scenario against the current baseline before committing time or money")}
               </p>
             </div>
             <Button onClick={reset} type="button" variant="secondary">
-              Reset
+              {t("Reset")}
             </Button>
           </div>
 
           <div className="grid gap-4 md:grid-cols-2">
             <Select
-              label="English level"
+              label={t("English level")}
               onChange={(event) =>
                 updateField("englishLevel", event.target.value as ScenarioSimulationInputs["englishLevel"])
               }
@@ -228,7 +233,7 @@ export function ScenarioSimulationPanel({
             </Select>
 
             <Select
-              label="Education level"
+              label={t("Education level")}
               onChange={(event) =>
                 updateField("educationLevel", event.target.value as ScenarioSimulationInputs["educationLevel"])
               }
@@ -247,15 +252,15 @@ export function ScenarioSimulationPanel({
               <div className="flex items-center justify-between gap-4">
                 <div>
                   <p className="text-sm font-semibold text-ink">
-                    Available capital
+                    {t("Available capital")}
                   </p>
                   <p className="mt-1 text-sm text-muted">
-                    Improve execution flexibility and pathway resilience.
+                    {t("Improve execution flexibility and pathway resilience")}
                   </p>
                 </div>
                 <Input
                   className="w-36"
-                  label="Capital"
+                  label={t("Capital")}
                   min={0}
                   onChange={(event) =>
                     updateField(
@@ -290,15 +295,15 @@ export function ScenarioSimulationPanel({
               <div className="flex items-center justify-between gap-4">
                 <div>
                   <p className="text-sm font-semibold text-ink">
-                    Years of experience
+                    {t("Years of experience")}
                   </p>
                   <p className="mt-1 text-sm text-muted">
-                    Stress-test how deeper experience changes positioning.
+                    {t("Stress-test how deeper experience changes positioning")}
                   </p>
                 </div>
                 <Input
                   className="w-28"
-                  label="Experience"
+                  label={t("Experience")}
                   max={20}
                   min={0}
                   onChange={(event) =>
@@ -325,8 +330,8 @@ export function ScenarioSimulationPanel({
                 value={current.yearsOfExperience}
               />
               <div className="mt-2 flex items-center justify-between text-xs uppercase tracking-[0.08em] text-muted">
-                <span>0 years</span>
-                <span>20 years</span>
+                <span>{t("0 years")}</span>
+                <span>{t("20 years")}</span>
               </div>
             </div>
           </div>
@@ -338,13 +343,13 @@ export function ScenarioSimulationPanel({
               after={result.probability.after}
               before={result.probability.before}
               change={result.probability.change}
-              label="Probability outlook"
+              label={t("Probability outlook")}
             />
             <MetricComparisonCard
               after={result.timeline.after}
               before={result.timeline.before}
               change={result.timeline.change}
-              label="Estimated timeline"
+              label={t("Estimated timeline")}
               suffix=" mo"
               tone={getTimelineTone(result.timeline.change)}
             />
@@ -354,19 +359,19 @@ export function ScenarioSimulationPanel({
             <div className="flex items-center justify-between gap-4">
               <div>
                 <p className="text-xs font-medium uppercase tracking-[0.08em] text-accent">
-                  Impact summary
+                  {t("Impact summary")}
                 </p>
                 <h4 className="mt-2 text-xl font-semibold tracking-tight text-ink">
-                  What changes in this scenario
+                  {t("What changes in this scenario")}
                 </h4>
               </div>
               <DashboardStatusPill
                 label={
                   result.probability.change > 0
-                    ? "More competitive"
+                    ? t("More competitive")
                     : result.probability.change < 0
-                      ? "Weaker setup"
-                      : "Minor shift"
+                      ? t("Weaker setup")
+                      : t("Minor shift")
                 }
                 tone={getDeltaTone(result.probability.change)}
               />
@@ -389,10 +394,10 @@ export function ScenarioSimulationPanel({
 
           <div className="rounded-[28px] border border-white/80 bg-white/88 p-5 shadow-[0_18px_40px_rgba(15,23,42,0.06)]">
             <p className="text-xs font-medium uppercase tracking-[0.08em] text-accent">
-              Recommended improvements
+              {t("Recommended improvements")}
             </p>
             <h4 className="mt-2 text-xl font-semibold tracking-tight text-ink">
-              Highest-leverage moves from this simulation
+              {t("Highest-leverage moves from this simulation")}
             </h4>
             <div className="mt-5 space-y-3">
               {result.recommendedImprovements.map((recommendation) => (

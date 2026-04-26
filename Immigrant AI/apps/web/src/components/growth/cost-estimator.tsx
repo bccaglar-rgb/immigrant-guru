@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useTranslations } from "next-intl";
 
 import { VISAS } from "@/data/visa-catalog";
 
@@ -10,6 +11,7 @@ const INITIAL_HOUSING_USD = 3800;
 const AIRFARE_PER_PERSON_USD = 900;
 
 export function CostEstimator() {
+  const t = useTranslations();
   const [visaSlug, setVisaSlug] = useState(VISAS[0]?.slug ?? "");
   const [dependents, setDependents] = useState(0);
   const [wantLegal, setWantLegal] = useState(true);
@@ -46,7 +48,7 @@ export function CostEstimator() {
     <div className="mt-10 rounded-3xl border border-white/10 bg-white/5 p-6 sm:p-8">
       <div className="grid gap-5 sm:grid-cols-2">
         <label className="flex flex-col gap-2">
-          <span className="text-sm font-medium text-white">Pathway</span>
+          <span className="text-sm font-medium text-white">{t("Pathway")}</span>
           <select
             className="rounded-xl border border-white/15 bg-black/40 px-4 py-2 text-white"
             value={visaSlug}
@@ -61,7 +63,7 @@ export function CostEstimator() {
         </label>
 
         <label className="flex flex-col gap-2">
-          <span className="text-sm font-medium text-white">Dependents (spouse + kids)</span>
+          <span className="text-sm font-medium text-white">{t("Dependents (spouse + kids)")}</span>
           <input
             type="number"
             min={0}
@@ -78,26 +80,26 @@ export function CostEstimator() {
             checked={wantLegal}
             onChange={(e) => setWantLegal(e.target.checked)}
           />
-          <span className="text-sm text-white">Include estimated legal/agency fees</span>
+          <span className="text-sm text-white">{t("Include estimated legal/agency fees")}</span>
         </label>
       </div>
 
       <div className="mt-8 rounded-2xl border border-white/10 bg-black/30 p-5">
         <div className="text-xs font-semibold uppercase tracking-wider text-white/60">
-          Total estimated cost
+          {t("Total estimated cost")}
         </div>
         <div className="mt-1 text-3xl font-semibold text-white">
           {fmt(breakdown.total[0])} – {fmt(breakdown.total[1])}
         </div>
 
         <dl className="mt-5 grid gap-2 text-sm">
-          <Row label="Government fees" value={`${fmt(breakdown.gov[0])} – ${fmt(breakdown.gov[1])}`} />
-          {wantLegal ? <Row label="Legal / agency" value={fmt(breakdown.legal)} /> : null}
-          <Row label="Airfare" value={fmt(breakdown.airfare)} />
-          <Row label="Initial housing" value={fmt(breakdown.housing)} />
-          <Row label="Settlement funds" value={fmt(breakdown.settlement)} />
+          <Row label={t("Government fees")} value={`${fmt(breakdown.gov[0])} – ${fmt(breakdown.gov[1])}`} />
+          {wantLegal ? <Row label={t("Legal / agency")} value={fmt(breakdown.legal)} /> : null}
+          <Row label={t("Airfare")} value={fmt(breakdown.airfare)} />
+          <Row label={t("Initial housing")} value={fmt(breakdown.housing)} />
+          <Row label={t("Settlement funds")} value={fmt(breakdown.settlement)} />
           <Row
-            label="10% contingency"
+            label={t("10% contingency")}
             value={`${fmt(breakdown.contingency[0])} – ${fmt(breakdown.contingency[1])}`}
           />
         </dl>

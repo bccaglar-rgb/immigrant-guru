@@ -1,6 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
+import { useTranslations } from "next-intl";
 
 import { MobileBottomNav } from "@/components/mobile/mobile-bottom-nav";
 import { MobileNavbar } from "@/components/mobile/mobile-navbar";
@@ -14,13 +15,16 @@ type MobileDashboardShellProps = Readonly<{
   user: AuthenticatedUser;
 }>;
 
-function getPageTitle(pathname: string): string {
-  if (pathname === "/dashboard") return "Command Center";
-  if (pathname === "/dashboard/profile") return "Profile";
-  if (pathname === "/dashboard/cases") return "Cases";
-  if (pathname === "/dashboard/admin") return "Internal";
-  if (pathname.startsWith("/dashboard/cases/")) return "Case Workspace";
-  return "Dashboard";
+function getPageTitle(
+  pathname: string,
+  t: ReturnType<typeof useTranslations>
+): string {
+  if (pathname === "/dashboard") return t("Command Center");
+  if (pathname === "/dashboard/profile") return t("Profile");
+  if (pathname === "/dashboard/cases") return t("Cases");
+  if (pathname === "/dashboard/admin") return t("Internal");
+  if (pathname.startsWith("/dashboard/cases/")) return t("Case Workspace");
+  return t("Dashboard");
 }
 
 export function MobileDashboardShell({
@@ -30,16 +34,19 @@ export function MobileDashboardShell({
   session,
   user
 }: MobileDashboardShellProps) {
+  const t = useTranslations();
+  const minutesRemaining = Math.max(Math.floor(session.expiresIn / 60), 1);
+
   return (
     <div className="min-h-[100dvh] bg-canvas">
-      <MobileNavbar clearSession={clearSession} title={getPageTitle(pathname)} user={user} />
+      <MobileNavbar clearSession={clearSession} title={getPageTitle(pathname, t)} user={user} />
       <main
         className="mx-auto w-full max-w-md px-4 pb-28 pt-4"
         style={{ paddingBottom: `calc(5.75rem + env(safe-area-inset-bottom))` }}
       >
         {children}
         <p className="mt-6 px-1 text-xs uppercase tracking-[0.08em] text-muted">
-          Session active · {Math.max(Math.floor(session.expiresIn / 60), 1)}m remaining
+          {t("Session active")} · {t("{minutes}m remaining", { minutes: minutesRemaining })}
         </p>
       </main>
       <MobileBottomNav pathname={pathname} />

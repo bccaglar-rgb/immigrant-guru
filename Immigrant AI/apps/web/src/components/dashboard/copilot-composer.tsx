@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import type { KeyboardEvent } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -18,6 +19,8 @@ export function CopilotComposer({
   onChange,
   onSend
 }: CopilotComposerProps) {
+  const t = useTranslations();
+
   function handleKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
     if ((event.metaKey || event.ctrlKey) && event.key === "Enter") {
       event.preventDefault();
@@ -29,11 +32,11 @@ export function CopilotComposer({
     <div className="space-y-4">
       <Textarea
         className="min-h-[168px] rounded-[24px] border-line bg-canvas/70"
-        helperText="Use a direct, case-specific question. Press Cmd/Ctrl + Enter to send."
-        label="Ask the copilot"
+        helperText={t("Use a direct, case-specific question — press Cmd/Ctrl + Enter to send")}
+        label={t("Ask the copilot")}
         onChange={(event) => onChange(event.target.value)}
         onKeyDown={handleKeyDown}
-        placeholder="Ask what to do next, which document matters most, or why one route is stronger than another..."
+        placeholder={t("Ask what to do next, which document matters most, or why one route is stronger than another")}
         value={draft}
       />
       <Button
@@ -43,7 +46,7 @@ export function CopilotComposer({
         size="lg"
         type="button"
       >
-        {isSending ? "Copilot is responding..." : "Send to copilot"}
+        {isSending ? t("Copilot is responding") : t("Send to copilot")}
       </Button>
     </div>
   );

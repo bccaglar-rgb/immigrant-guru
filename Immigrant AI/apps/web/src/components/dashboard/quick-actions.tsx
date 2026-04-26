@@ -1,38 +1,41 @@
 "use client";
 
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 
 import { Animate } from "@/components/ui/animate";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
-const actions = [
-  {
-    href: "/dashboard/profile",
-    label: "Review profile",
-    description: "Check nationality, destination, language, and relocation inputs."
-  },
-  {
-    href: "/dashboard/cases",
-    label: "Review cases",
-    description: "Inspect active migration goals, pathway choices, and readiness blockers."
-  },
-  {
-    href: "/dashboard",
-    label: "Refresh overview",
-    description: "Return to the summary view after updating profile or case data."
-  }
-];
-
 export function QuickActions() {
+  const t = useTranslations();
+
+  const actions = [
+    {
+      href: "/dashboard/profile",
+      label: t("Review profile"),
+      description: t("Check nationality, destination, language, and relocation inputs")
+    },
+    {
+      href: "/dashboard/cases",
+      label: t("Review cases"),
+      description: t("Inspect active migration goals, pathway choices, and readiness blockers")
+    },
+    {
+      href: "/dashboard",
+      label: t("Refresh overview"),
+      description: t("Return to the summary view after updating profile or case data")
+    }
+  ];
+
   return (
     <Animate animation="fade-up" delay={200} duration={700}>
       <div className="glass-card rounded-2xl p-6">
         <p className="text-xs font-semibold uppercase tracking-[0.08em] text-accent">
-          Quick Actions
+          {t("Quick Actions")}
         </p>
         <h3 className="mt-2 text-xl font-semibold tracking-tight text-ink">
-          Move forward
+          {t("Move forward")}
         </h3>
         <div className="mt-4 space-y-2.5">
           {actions.map((action) => (
@@ -52,7 +55,7 @@ export function QuickActions() {
                   )}
                   href={action.href}
                 >
-                  Open
+                  {t("Open")}
                 </Link>
               </div>
             </div>

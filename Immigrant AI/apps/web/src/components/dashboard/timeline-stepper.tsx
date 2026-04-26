@@ -1,3 +1,7 @@
+"use client";
+
+import { useTranslations } from "next-intl";
+
 import type { CaseWorkspaceTimeline } from "@/types/case-workspace";
 import type { ImmigrationTimelineData } from "@/types/timeline";
 
@@ -20,9 +24,11 @@ function mapStatus(
 }
 
 export function TimelineStepper({ timeline }: TimelineStepperProps) {
+  const t = useTranslations();
+
   const timelineData: ImmigrationTimelineData = {
-    eyebrow: "Timeline",
-    title: "Case progress timeline",
+    eyebrow: t("Timeline"),
+    title: t("Case progress timeline"),
     summary: timeline.summary,
     totalDuration: timeline.totalDurationLabel,
     currentPhase: timeline.currentPhase,
@@ -32,13 +38,13 @@ export function TimelineStepper({ timeline }: TimelineStepperProps) {
       estimatedDuration: step.durationLabel,
       description: step.description,
       status: mapStatus(step.status),
-      milestone: step.status === "completed" ? "Completed milestone" : undefined,
+      milestone: step.status === "completed" ? t("Completed milestone") : undefined,
       riskBadges:
         step.status === "blocked"
           ? [
               {
                 id: `${step.id}-blocked`,
-                label: "Blocked",
+                label: t("Blocked"),
                 tone: "critical"
               }
             ]
