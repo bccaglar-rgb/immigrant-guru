@@ -19,10 +19,9 @@ depends_on = None
 
 def upgrade() -> None:
     # Drop the password_hash NOT-NULL + non-blank check so OAuth / passwordless
-    # users can be created without a password. The constraint was created via
-    # the project's naming convention (ck_<table>_<name>), so we must drop it
-    # by its real DB name, not the unprefixed declarative name.
-    op.drop_constraint("ck_users_password_hash_not_blank", "users", type_="check")
+    # users can be created without a password. Pass the unprefixed name —
+    # alembic applies the project's `ck_<table>_<name>` naming convention.
+    op.drop_constraint("password_hash_not_blank", "users", type_="check")
     op.alter_column("users", "password_hash", existing_type=sa.String(255), nullable=True)
 
     # Per-provider subject IDs (sub claim from Google / Apple). Indexed unique
@@ -50,7 +49,7 @@ def downgrade() -> None:
     op.drop_column("users", "google_sub")
     op.alter_column("users", "password_hash", existing_type=sa.String(255), nullable=False)
     op.create_check_constraint(
-        "ck_users_password_hash_not_blank",
+        "password_hash_not_blank",
         "users",
         "length(trim(password_hash)) > 0",
     )

@@ -9,6 +9,7 @@ from __future__ import annotations
 
 from alembic import op
 import sqlalchemy as sa
+from sqlalchemy.dialects.postgresql import ENUM as PGEnum
 from sqlalchemy.dialects.postgresql import UUID as PGUUID
 
 revision = "e5f6a7b8c9d0"
@@ -18,11 +19,11 @@ depends_on = None
 
 
 def upgrade() -> None:
-    # create_type=False keeps the column reference from re-issuing CREATE
-    # TYPE inside create_table; we issue it explicitly with checkfirst=True
-    # so a partially-applied prior run leaves the enum reusable.
-    push_platform = sa.Enum("ios", "android", "web", name="push_platform", create_type=False)
-    sa.Enum("ios", "android", "web", name="push_platform").create(op.get_bind(), checkfirst=True)
+    # Single ENUM instance with create_type=False keeps create_table from
+    # auto-issuing CREATE TYPE; we issue it once explicitly with
+    # checkfirst=True so re-runs after a partial prior failure are safe.
+    push_platform = PGEnum("ios", "android", "web", name="push_platform", create_type=False)
+    push_platform.create(op.get_bind(), checkfirst=True)
 
     op.create_table(
         "push_device_tokens",
