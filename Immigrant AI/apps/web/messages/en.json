@@ -942,5 +942,76 @@
   "Start with case-aware mode, then switch to full once the profile is more complete": "Start with case-aware mode, then switch to full once the profile is more complete",
   "Basic": "Basic",
   "Ground follow-up questions in missing evidence or timeline pressure": "Ground follow-up questions in missing evidence or timeline pressure",
-  "Your full strategic roadmap": "Your full strategic roadmap"
+  "Your full strategic roadmap": "Your full strategic roadmap",
+  "Continue with email": "Continue with email",
+  "Continue with email, Google, or Apple": {
+    "": "Continue with email, Google, or Apple."
+  },
+  "Continue with Google": "Continue with Google",
+  "Continue with Apple": "Continue with Apple",
+  "Use password instead": "Use password instead",
+  "or": "or",
+  "Sending code": {
+    "": {
+      "": {
+        "": "Sending code..."
+      }
+    }
+  },
+  "Check your email": "Check your email",
+  "We sent a 6-digit code to": "We sent a 6-digit code to",
+  "Enter it below to sign in": {
+    "": "Enter it below to sign in."
+  },
+  "Enter it below to verify your account": {
+    "": "Enter it below to verify your account."
+  },
+  "We just sent you a 6-digit sign-in code": {
+    "": "We just sent you a 6-digit sign-in code."
+  },
+  "Verification code": "Verification code",
+  "Verify email": "Verify email",
+  "Verifying": {
+    "": {
+      "": {
+        "": "Verifying..."
+      }
+    }
+  },
+  "Resend code": "Resend code",
+  "Resend code in {n}s": "Resend code in {n}s",
+  "Wrong email?": "Wrong email?",
+  "Go back": "Go back",
+  "Almost there": "Almost there",
+  "Sign in with your password": "Sign in with your password",
+  "Enter the 6-digit code from your email": {
+    "": "Enter the 6-digit code from your email."
+  },
+  "Google sign-in is not configured": {
+    "": "Google sign-in is not configured."
+  },
+  "Apple sign-in is not configured": {
+    "": "Apple sign-in is not configured."
+  },
+  "Google sign-in is still loading": {
+    " Please try again": {
+      "": "Google sign-in is still loading. Please try again."
+    }
+  },
+  "Apple sign-in is still loading": {
+    " Please try again": {
+      "": "Apple sign-in is still loading. Please try again."
+    }
+  },
+  "Google sign-in failed": {
+    " Please try again": {
+      "": "Google sign-in failed. Please try again."
+    }
+  },
+  "Apple sign-in failed": {
+    "": "Apple sign-in failed."
+  },
+  "Could not open Google sign-in": {
+    "": "Could not open Google sign-in."
+  }
 }
