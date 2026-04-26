@@ -29,8 +29,8 @@
   "submit": {
     "production": {
       "ios": {
-        "appleId": "",
-        "ascAppId": "",
+        "appleId": "info@caglarlabs.com",
+        "ascAppId": "6763850282",
         "appleTeamId": "XV5L4GC6PY"
       },
       "android": {
