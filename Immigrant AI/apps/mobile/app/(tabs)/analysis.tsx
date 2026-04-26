@@ -1,4 +1,5 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
 import * as Haptics from "expo-haptics";
 import { useEffect } from "react";
@@ -16,7 +17,6 @@ import Animated, {
 } from "react-native-reanimated";
 import Svg, { Path, Rect } from "react-native-svg";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { LinearGradient } from "expo-linear-gradient";
 
 import { api } from "@/lib/api-client";
 
