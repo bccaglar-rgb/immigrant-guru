@@ -6,5 +6,5 @@ import { useAuth } from "@/lib/auth";
 export default function Index() {
   const status = useAuth((s) => s.status);
   if (status === "authenticated") return <Redirect href="/(tabs)" />;
-  return <Redirect href="/(auth)/sign-in" />;
+  return <Redirect href="/(public)/landing" />;
 }
