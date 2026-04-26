@@ -18,8 +18,11 @@ depends_on = None
 
 
 def upgrade() -> None:
-    push_platform = sa.Enum("ios", "android", "web", name="push_platform")
-    push_platform.create(op.get_bind(), checkfirst=True)
+    # create_type=False keeps the column reference from re-issuing CREATE
+    # TYPE inside create_table; we issue it explicitly with checkfirst=True
+    # so a partially-applied prior run leaves the enum reusable.
+    push_platform = sa.Enum("ios", "android", "web", name="push_platform", create_type=False)
+    sa.Enum("ios", "android", "web", name="push_platform").create(op.get_bind(), checkfirst=True)
 
     op.create_table(
         "push_device_tokens",
