@@ -13,6 +13,7 @@
     "contract:test": "vitest run src/contracts"
   },
   "dependencies": {
+    "@swc/helpers": "^0.5.21",
     "next": "16.2.2",
     "next-intl": "^4.9.1",
     "react": "19.2.4",
