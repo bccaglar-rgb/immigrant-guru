@@ -98,56 +98,62 @@ export default function EmailCodeScreen() {
             </Text>
           </View>
 
-          {/* OTP input area */}
-          <View className="items-center gap-4">
-            {/* Visual boxes */}
-            <Pressable
-              onPress={() => inputRef.current?.focus()}
-              className="flex-row gap-2"
-            >
-              {digits.map((d, i) => {
-                const filled = i < code.length;
-                const active = i === code.length && !loading;
-                return (
-                  <View
-                    key={i}
-                    className={`w-12 h-14 rounded-2xl items-center justify-center border-2 ${
-                      active
-                        ? "border-accent bg-white"
-                        : filled
-                          ? "border-accent/40 bg-accent/5"
-                          : "border-line bg-white"
-                    }`}
-                  >
-                    <Text className="text-2xl font-bold text-ink">
-                      {filled ? d : ""}
-                    </Text>
-                  </View>
-                );
-              })}
-            </Pressable>
+          {/* OTP input area — transparent input overlays the boxes so taps
+              anywhere focus it AND hardware keyboards (emulator) reliably
+              receive input. A 1x1 hidden input loses focus too easily. */}
+          <View className="items-center">
+            <View style={{ position: "relative" }}>
+              <View className="flex-row gap-2">
+                {digits.map((d, i) => {
+                  const filled = i < code.length;
+                  const active = i === code.length && !loading;
+                  return (
+                    <View
+                      key={i}
+                      className={`w-12 h-14 rounded-2xl items-center justify-center border-2 ${
+                        active
+                          ? "border-accent bg-white"
+                          : filled
+                            ? "border-accent/40 bg-accent/5"
+                            : "border-line bg-white"
+                      }`}
+                    >
+                      <Text className="text-2xl font-bold text-ink">
+                        {filled ? d : ""}
+                      </Text>
+                    </View>
+                  );
+                })}
+              </View>
 
-            {/* Hidden real input */}
-            <TextInput
-              ref={inputRef}
-              value={code}
-              onChangeText={(t) => {
-                setCode(t.replace(/\D/g, "").slice(0, CODE_LENGTH));
-                if (error) setError(null);
-              }}
-              keyboardType="number-pad"
-              inputMode="numeric"
-              maxLength={CODE_LENGTH}
-              textContentType="oneTimeCode"
-              autoComplete="sms-otp"
-              caretHidden
-              style={{
-                position: "absolute",
-                opacity: 0,
-                width: 1,
-                height: 1,
-              }}
-            />
+              <TextInput
+                ref={inputRef}
+                value={code}
+                onChangeText={(t) => {
+                  setCode(t.replace(/\D/g, "").slice(0, CODE_LENGTH));
+                  if (error) setError(null);
+                }}
+                keyboardType="number-pad"
+                inputMode="numeric"
+                maxLength={CODE_LENGTH}
+                textContentType="oneTimeCode"
+                autoComplete="sms-otp"
+                autoFocus
+                caretHidden
+                selectionColor="transparent"
+                style={{
+                  position: "absolute",
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  color: "transparent",
+                  fontSize: 24,
+                  textAlign: "center",
+                  backgroundColor: "transparent",
+                }}
+              />
+            </View>
           </View>
 
           {/* Error */}
