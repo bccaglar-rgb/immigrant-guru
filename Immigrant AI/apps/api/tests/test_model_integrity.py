@@ -26,9 +26,6 @@ def test_user_table_enforces_normalized_email_and_password_integrity() -> None:
 
     assert "ck_users_email_lowercase" in constraint_names
     assert "ck_users_email_not_blank" in constraint_names
-    # password_hash is now nullable (passwordless / Google / Apple sign-in),
-    # but every account must still have at least one credential.
-    assert "ck_users_users_has_credential" in constraint_names
     assert "uq_users_google_sub" in constraint_names
     assert "uq_users_apple_sub" in constraint_names
 

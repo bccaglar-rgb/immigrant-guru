@@ -23,10 +23,6 @@ class User(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     __table_args__ = (
         CheckConstraint("email = lower(email)", name="email_lowercase"),
         CheckConstraint("length(trim(email)) > 0", name="email_not_blank"),
-        CheckConstraint(
-            "password_hash IS NOT NULL OR google_sub IS NOT NULL OR apple_sub IS NOT NULL",
-            name="users_has_credential",
-        ),
     )
 
     email: Mapped[str] = mapped_column(String(320), unique=True, index=True, nullable=False)

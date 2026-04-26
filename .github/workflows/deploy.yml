@@ -86,7 +86,7 @@ jobs:
             pip install -q -e .
 
             echo "==> Run DB migrations"
-            alembic upgrade head || echo "alembic upgrade FAILED (non-blocking — review manually)"
+            alembic upgrade head
             deactivate
 
             echo "==> Worker deps"
