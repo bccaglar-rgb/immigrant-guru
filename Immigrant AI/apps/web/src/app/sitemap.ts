@@ -45,7 +45,9 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { path: "/compare", priority: 0.8, changeFrequency: "weekly" },
     { path: "/move-to", priority: 0.8, changeFrequency: "weekly" },
     { path: "/best-countries", priority: 0.8, changeFrequency: "weekly" },
-    { path: "/tools", priority: 0.8, changeFrequency: "weekly" }
+    { path: "/tools", priority: 0.8, changeFrequency: "weekly" },
+    { path: "/privacy", priority: 0.3, changeFrequency: "yearly" },
+    { path: "/terms", priority: 0.3, changeFrequency: "yearly" }
   ];
 
   const staticRoutes: MetadataRoute.Sitemap = staticPaths.map((p) =>

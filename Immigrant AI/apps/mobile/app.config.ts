@@ -38,6 +38,88 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
       ITSAppUsesNonExemptEncryption: false,
       NSUserNotificationsUsageDescription:
         "We use notifications to alert you when your immigration analysis is ready and to remind you of upcoming plan renewals."
+    },
+    // Apple's Required Reason APIs declaration (mandatory since 2024).
+    // Each accessed-API entry below corresponds to runtime usage by Expo /
+    // RN core libraries we ship — no advertising, no tracking, no third-party
+    // SDKs that fingerprint the device.
+    privacyManifests: {
+      NSPrivacyTracking: false,
+      NSPrivacyTrackingDomains: [],
+      NSPrivacyCollectedDataTypes: [
+        {
+          NSPrivacyCollectedDataType: "NSPrivacyCollectedDataTypeEmailAddress",
+          NSPrivacyCollectedDataTypeLinked: true,
+          NSPrivacyCollectedDataTypeTracking: false,
+          NSPrivacyCollectedDataTypePurposes: [
+            "NSPrivacyCollectedDataTypePurposeAppFunctionality",
+            "NSPrivacyCollectedDataTypePurposeAccountManagement"
+          ]
+        },
+        {
+          NSPrivacyCollectedDataType: "NSPrivacyCollectedDataTypeName",
+          NSPrivacyCollectedDataTypeLinked: true,
+          NSPrivacyCollectedDataTypeTracking: false,
+          NSPrivacyCollectedDataTypePurposes: [
+            "NSPrivacyCollectedDataTypePurposeAppFunctionality"
+          ]
+        },
+        {
+          NSPrivacyCollectedDataType: "NSPrivacyCollectedDataTypeUserID",
+          NSPrivacyCollectedDataTypeLinked: true,
+          NSPrivacyCollectedDataTypeTracking: false,
+          NSPrivacyCollectedDataTypePurposes: [
+            "NSPrivacyCollectedDataTypePurposeAppFunctionality",
+            "NSPrivacyCollectedDataTypePurposeAccountManagement"
+          ]
+        },
+        {
+          NSPrivacyCollectedDataType: "NSPrivacyCollectedDataTypeOtherUserContent",
+          NSPrivacyCollectedDataTypeLinked: true,
+          NSPrivacyCollectedDataTypeTracking: false,
+          NSPrivacyCollectedDataTypePurposes: [
+            "NSPrivacyCollectedDataTypePurposeAppFunctionality"
+          ]
+        },
+        {
+          NSPrivacyCollectedDataType: "NSPrivacyCollectedDataTypePurchaseHistory",
+          NSPrivacyCollectedDataTypeLinked: true,
+          NSPrivacyCollectedDataTypeTracking: false,
+          NSPrivacyCollectedDataTypePurposes: [
+            "NSPrivacyCollectedDataTypePurposeAppFunctionality"
+          ]
+        },
+        {
+          NSPrivacyCollectedDataType: "NSPrivacyCollectedDataTypeDeviceID",
+          NSPrivacyCollectedDataTypeLinked: true,
+          NSPrivacyCollectedDataTypeTracking: false,
+          NSPrivacyCollectedDataTypePurposes: [
+            "NSPrivacyCollectedDataTypePurposeAppFunctionality"
+          ]
+        }
+      ],
+      NSPrivacyAccessedAPITypes: [
+        {
+          // expo-secure-store, async-storage — defaults DB
+          NSPrivacyAccessedAPIType: "NSPrivacyAccessedAPICategoryUserDefaults",
+          NSPrivacyAccessedAPITypeReasons: ["CA92.1"]
+        },
+        {
+          // RN file timestamps for cached assets / debug logs
+          NSPrivacyAccessedAPIType: "NSPrivacyAccessedAPICategoryFileTimestamp",
+          NSPrivacyAccessedAPITypeReasons: ["C617.1"]
+        },
+        {
+          // Disk space check by RN before writing cache
+          NSPrivacyAccessedAPIType: "NSPrivacyAccessedAPICategoryDiskSpace",
+          NSPrivacyAccessedAPITypeReasons: ["E174.1"]
+        },
+        {
+          // System uptime — used by RN for performance metrics
+          NSPrivacyAccessedAPIType: "NSPrivacyAccessedAPICategorySystemBootTime",
+          NSPrivacyAccessedAPITypeReasons: ["35F9.1"]
+        }
+      ]
     }
   },
   android: {
