@@ -3,7 +3,7 @@
     "apps": [],
     "details": [
       {
-        "appIDs": ["TEAMID.guru.immigrant.app"],
+        "appIDs": ["XV5L4GC6PY.guru.immigrant.app"],
         "components": [
           { "/": "/app/*", "comment": "Match any URL under /app/." }
         ]
@@ -11,6 +11,6 @@
     ]
   },
   "webcredentials": {
-    "apps": ["TEAMID.guru.immigrant.app"]
+    "apps": ["XV5L4GC6PY.guru.immigrant.app"]
   }
 }
