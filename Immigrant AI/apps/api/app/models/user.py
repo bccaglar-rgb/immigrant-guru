@@ -23,11 +23,18 @@ class User(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     __table_args__ = (
         CheckConstraint("email = lower(email)", name="email_lowercase"),
         CheckConstraint("length(trim(email)) > 0", name="email_not_blank"),
-        CheckConstraint("length(trim(password_hash)) > 0", name="password_hash_not_blank"),
+        CheckConstraint(
+            "password_hash IS NOT NULL OR google_sub IS NOT NULL OR apple_sub IS NOT NULL",
+            name="users_has_credential",
+        ),
     )
 
     email: Mapped[str] = mapped_column(String(320), unique=True, index=True, nullable=False)
-    password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
+    # Nullable for passwordless (email-code) / Google / Apple users.
+    password_hash: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    # Stable provider subject ID — matches Google / Apple ID-token `sub` claim.
+    google_sub: Mapped[Optional[str]] = mapped_column(String(255), nullable=True, unique=True)
+    apple_sub: Mapped[Optional[str]] = mapped_column(String(255), nullable=True, unique=True)
     status: Mapped[UserStatus] = mapped_column(
         Enum(UserStatus, name="user_status"),
         default=UserStatus.ACTIVE,

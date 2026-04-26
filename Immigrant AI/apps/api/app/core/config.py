@@ -49,6 +49,12 @@ class Settings(BaseSettings):
     jwt_algorithm: str = "HS256"
     jwt_issuer: str = "immigrant-ai-api"
     access_token_expire_minutes: int = 10080
+    # Sign-in with Google: list of OAuth client IDs (web, iOS, Android). The
+    # backend accepts ID tokens issued for any of these audiences.
+    google_oauth_client_ids: list[str] = Field(default_factory=list)
+    # Sign in with Apple: the Service ID (web) and/or Bundle ID (mobile)
+    # that identityTokens are issued for.
+    apple_oauth_client_ids: list[str] = Field(default_factory=list)
     ai_provider: str = "disabled"
     ai_base_url: str = ""
     ai_api_key: SecretStr | None = None
