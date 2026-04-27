@@ -599,35 +599,83 @@ function CountryPicker({
 const PROFESSION_QUICK = [
   "Software Engineer",
   "Data Scientist",
+  "Product Manager",
   "Designer",
+  "UX Researcher",
+  "DevOps Engineer",
+  "Mobile Developer",
+  "AI/ML Engineer",
   "Doctor",
   "Nurse",
+  "Dentist",
+  "Pharmacist",
+  "Therapist",
   "Teacher",
+  "Professor",
   "Researcher",
+  "PhD Student",
   "Founder",
+  "Entrepreneur",
+  "Investor",
   "Marketer",
+  "Sales Manager",
+  "Content Creator",
+  "Journalist",
   "Lawyer",
   "Accountant",
   "Consultant",
+  "Project Manager",
+  "Civil Engineer",
+  "Mechanical Engineer",
+  "Electrical Engineer",
+  "Architect",
+  "Chef",
+  "Artist",
+  "Musician",
+  "Photographer",
+  "Filmmaker",
+  "Translator",
+  "Writer",
+  "HR Manager",
+  "Banker",
+  "Trader",
+  "Real Estate Agent",
+  "Pilot",
+  "Flight Attendant",
+  "Mechanic",
+  "Electrician",
+  "Plumber",
+  "Construction Worker",
+  "Driver",
+  "Athlete",
+  "Coach",
+  "Student",
+  "Other",
 ];
 
 function ProfessionStep({ initial, onNext }: { initial: string; onNext: (v: string) => void }) {
   const [text, setText] = useState(initial || "");
 
+  const submitText = () => {
+    const trimmed = text.trim();
+    if (trimmed.length < 1) return;
+    onNext(trimmed);
+  };
+
   return (
     <ScrollView contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: 40, flexGrow: 1 }} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
-      <Question title="What do you do?" helper="A short title is enough — we use it to match work-visa programs." />
+      <Question title="What do you do?" helper="Tap a suggestion or type your own. We use this to match work-visa programs." />
       <TextInput
         value={text}
         onChangeText={setText}
         placeholder="Software Engineer"
         placeholderTextColor="#c7c7cc"
-        returnKeyType="next"
-        onSubmitEditing={() => text.trim() && onNext(text.trim())}
+        returnKeyType="go"
+        onSubmitEditing={submitText}
         autoCapitalize="words"
         autoCorrect={false}
         style={{
-          marginTop: 32,
+          marginTop: 28,
           fontSize: 28,
           fontWeight: "700",
           color: "#000",
@@ -637,19 +685,24 @@ function ProfessionStep({ initial, onNext }: { initial: string; onNext: (v: stri
           borderBottomColor: "#0a84ff",
         }}
       />
-      <View style={{ marginTop: 24, flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+      <Text style={{ marginTop: 18, fontSize: 11, color: "#86868b", letterSpacing: 1.4, textTransform: "uppercase" }}>
+        Suggestions — tap to pick
+      </Text>
+      <View style={{ marginTop: 12, flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
         {PROFESSION_QUICK.map((p) => (
           <Pressable
             key={p}
             onPress={() => {
               Haptics.selectionAsync().catch(() => undefined);
               setText(p);
+              // Auto-advance — same tap-and-flow rhythm as the choice cards.
+              setTimeout(() => onNext(p), 220);
             }}
             style={({ pressed }) => ({
               paddingHorizontal: 14,
-              paddingVertical: 8,
+              paddingVertical: 9,
               borderRadius: 999,
-              backgroundColor: text === p ? "#000" : "#f2f2f7",
+              backgroundColor: text === p ? "#0a84ff" : "#f2f2f7",
               opacity: pressed ? 0.7 : 1,
             })}
           >
@@ -657,7 +710,6 @@ function ProfessionStep({ initial, onNext }: { initial: string; onNext: (v: stri
           </Pressable>
         ))}
       </View>
-      <ContinueButton disabled={text.trim().length < 1} onPress={() => onNext(text.trim())} />
     </ScrollView>
   );
 }
