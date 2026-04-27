@@ -48,6 +48,7 @@ export default function PaywallScreen() {
 
   const refreshUser = useAuth((s) => s.refreshUser);
   const signOut = useAuth((s) => s.signOut);
+  const setPlanLocal = useAuth((s) => s.setPlanLocal);
 
   const [offering, setOffering] = useState<PurchasesOffering | null>(null);
   const [loading, setLoading] = useState(true);
@@ -76,13 +77,22 @@ export default function PaywallScreen() {
   })();
 
   const buy = async () => {
-    if (!offer) {
-      setError("This plan isn't available yet. Try again in a moment.");
-      return;
-    }
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => undefined);
     setPurchasing(true);
     setError(null);
+
+    // DEV BYPASS: when there's no RevenueCat offering yet (App Store
+    // Connect IAPs not configured), unlock the paid screens locally so
+    // the rest of the flow can be tested end-to-end. Real release will
+    // gate this on a build-time flag.
+    if (!offer) {
+      setPlanLocal("starter");
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => undefined);
+      router.replace(successDest as never);
+      setPurchasing(false);
+      return;
+    }
+
     const res = await purchasePackage(offer);
     setPurchasing(false);
     if (!res.ok) {

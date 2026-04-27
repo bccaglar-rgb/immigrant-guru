@@ -2,6 +2,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import * as Font from "expo-font";
 import * as Linking from "expo-linking";
 import { router, Stack } from "expo-router";
+import Constants from "expo-constants";
 import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
 import { useEffect, useState } from "react";
@@ -14,7 +15,14 @@ import { useAuth } from "@/lib/auth";
 import { registerForPushNotifications } from "@/lib/notifications";
 import { configureRevenueCat } from "@/lib/revenue-cat";
 
-SplashScreen.preventAutoHideAsync().catch(() => undefined);
+// expo-splash-screen has no native module under Expo Go so its
+// preventAutoHide / hide calls reject with "No native splash screen has
+// been registered" and surface as red toasts. Only invoke the API in
+// real builds (standalone / TestFlight / production).
+const SPLASH_AVAILABLE = Constants.appOwnership !== "expo";
+if (SPLASH_AVAILABLE) {
+  SplashScreen.preventAutoHideAsync().catch(() => undefined);
+}
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -36,7 +44,9 @@ export default function RootLayout() {
       setFontsLoaded(true);
       await configureRevenueCat(user?.id);
       await hydrate();
-      await SplashScreen.hideAsync().catch(() => undefined);
+      if (SPLASH_AVAILABLE) {
+        await SplashScreen.hideAsync().catch(() => undefined);
+      }
     })();
     // intentional: one-time bootstrap
     // eslint-disable-next-line react-hooks/exhaustive-deps
