@@ -76,6 +76,9 @@ type AuthState = {
   ) => Promise<AuthResult>;
   signOut: () => Promise<void>;
   refreshUser: () => Promise<void>;
+  // DEV-only: flips the local plan so the paywall bypass + paid screens
+  // unlock without a RevenueCat purchase. Backend is unchanged.
+  setPlanLocal: (plan: string) => void;
 };
 
 async function persistSession(token: string, user: AuthUser | null): Promise<void> {
@@ -243,5 +246,16 @@ export const useAuth = create<AuthState>((set, get) => ({
       await setSecure(USER_KEY, JSON.stringify(user));
       set({ user });
     }
+  },
+
+  // DEV ONLY: flips the local plan so paid screens unlock without going
+  // through RevenueCat. Backend is unchanged; refreshing the app will
+  // restore the real plan from /auth/me.
+  setPlanLocal(plan: string) {
+    const u = get().user;
+    if (!u) return;
+    const next: AuthUser = { ...u, plan };
+    void setSecure(USER_KEY, JSON.stringify(next));
+    set({ user: next });
   }
 }));
