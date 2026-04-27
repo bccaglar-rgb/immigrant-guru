@@ -30,7 +30,6 @@ import Svg, { Circle, ClipPath, Defs, G, Line, LinearGradient as SvgGradient, Pa
 import type { ReactNode } from "react";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { api } from "@/lib/api-client";
 import { useAuth } from "@/lib/auth";
 import { fetchMyProfile } from "@/lib/profile";
 
@@ -57,10 +56,6 @@ function IcArrow({ s = 13, c = "#60a5fa" }: { s?: number; c?: string }) {
 function IcSparkles({ s = 28, c = "#fff" }: { s?: number; c?: string }) {
   return <Svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round"><Path d="M12 2l2.09 6.26L20 10l-5.91 1.74L12 18l-2.09-6.26L4 10l5.91-1.74L12 2z" /><Path d="M5 3l.9 2.7L8 6.5l-2.1.8L5 10l-.9-2.7L2 6.5l2.1-.8L5 3z" /><Path d="M19 14l.9 2.7 2.1.8-2.1.8L19 21l-.9-2.7-2.1-.8 2.1-.8L19 14z" /></Svg>;
 }
-function IcWarning({ s = 20, c = "#ff9f0a" }: { s?: number; c?: string }) {
-  return <Svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><Path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" /><Line x1="12" y1="9" x2="12" y2="13" /><Line x1="12" y1="17" x2="12.01" y2="17" /></Svg>;
-}
-
 const { width: SCREEN_W } = Dimensions.get("window");
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 const RING_SIZE = 160;
@@ -550,14 +545,14 @@ export default function DashboardScreen() {
   const insets = useSafeAreaInsets();
   const { text: greeting, emoji } = getGreeting();
 
-  const dashboard = useQuery<DashboardPayload>({
-    queryKey: ["dashboard"],
-    queryFn: async () => {
-      const res = await api.get<DashboardPayload>("/dashboard");
-      if (!res.ok) throw new Error(res.message);
-      return res.data;
-    },
-  });
+  // Backend has no /dashboard endpoint yet — keep the shape so the rest of
+  // the screen renders correctly with empty defaults instead of throwing.
+  const dashboard = {
+    data: undefined as DashboardPayload | undefined,
+    isLoading: false,
+    isFetching: false,
+    isError: false,
+  };
 
   const profile = useQuery({
     queryKey: ["my-profile"],
@@ -570,7 +565,6 @@ export default function DashboardScreen() {
 
   const onRefresh = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => undefined);
-    queryClient.invalidateQueries({ queryKey: ["dashboard"] });
     queryClient.invalidateQueries({ queryKey: ["my-profile"] });
   };
 
@@ -828,36 +822,6 @@ export default function DashboardScreen() {
         )}
 
 
-        {/* Error state */}
-        {dashboard.isError && (
-          <Animated.View
-            entering={FadeIn}
-            style={{
-              marginHorizontal: 20,
-              marginTop: 20,
-              backgroundColor: "#fff",
-              borderRadius: 20,
-              padding: 18,
-              flexDirection: "row",
-              alignItems: "center",
-              gap: 12,
-            }}
-          >
-            <IcWarning />
-            <Text style={{ flex: 1, fontSize: 14, color: "#6b7280" }}>
-              Could not load dashboard.{" "}
-              <Text
-                style={{ color: "#0071e3", fontWeight: "600" }}
-                onPress={() => {
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => undefined);
-                  queryClient.invalidateQueries({ queryKey: ["dashboard"] });
-                }}
-              >
-                Retry
-              </Text>
-            </Text>
-          </Animated.View>
-        )}
       </ScrollView>
     </View>
   );
