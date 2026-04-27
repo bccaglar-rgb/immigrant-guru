@@ -34,7 +34,7 @@ export default function SignInPasswordScreen() {
       setError(result.error);
       return;
     }
-    router.replace("/(tabs)");
+    router.replace("/onboarding");
   };
 
   return (

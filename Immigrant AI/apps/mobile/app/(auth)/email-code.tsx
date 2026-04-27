@@ -59,7 +59,7 @@ export default function EmailCodeScreen() {
       inputRef.current?.focus();
       return;
     }
-    router.replace("/(tabs)");
+    router.replace("/onboarding");
   };
 
   const resend = async () => {
