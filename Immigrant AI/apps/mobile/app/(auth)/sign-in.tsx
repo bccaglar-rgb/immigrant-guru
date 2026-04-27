@@ -169,8 +169,14 @@ export default function SignInScreen() {
                 Get started
               </Text>
               <Text className="text-base text-muted mt-1 leading-relaxed">
-                Continue with Apple, Google, or email.{"\n"}
-                New accounts are created automatically.
+                {appleReady && google.isReady
+                  ? "Continue with Apple, Google, or email."
+                  : appleReady
+                    ? "Continue with Apple or email."
+                    : google.isReady
+                      ? "Continue with Google or email."
+                      : "Continue with email."}
+                {"\n"}New accounts are created automatically.
               </Text>
             </View>
 
@@ -187,26 +193,32 @@ export default function SignInScreen() {
                 />
               ) : null}
 
-              {/* Google */}
-              <Pressable
-                onPress={onGoogle}
-                disabled={isBusy}
-                style={({ pressed }) => ({
-                  opacity: pressed || isBusy ? 0.6 : 1,
-                })}
-                className="flex-row items-center justify-center h-12 rounded-2xl bg-white border border-line gap-3"
-              >
-                {loading === "google" ? (
-                  <ActivityIndicator size="small" color="#374151" />
-                ) : (
-                  <>
-                    <GoogleIcon />
-                    <Text className="text-base font-semibold text-ink">
-                      Continue with Google
-                    </Text>
-                  </>
-                )}
-              </Pressable>
+              {/* Google — only render when client IDs are configured. The
+                  expo-auth-session hook needs at least one Google OAuth
+                  client ID to function; without it, every button press
+                  errors with "google_sign_in_not_configured", so we hide
+                  the option entirely instead of showing a broken button. */}
+              {google.isReady ? (
+                <Pressable
+                  onPress={onGoogle}
+                  disabled={isBusy}
+                  style={({ pressed }) => ({
+                    opacity: pressed || isBusy ? 0.6 : 1,
+                  })}
+                  className="flex-row items-center justify-center h-12 rounded-2xl bg-white border border-line gap-3"
+                >
+                  {loading === "google" ? (
+                    <ActivityIndicator size="small" color="#374151" />
+                  ) : (
+                    <>
+                      <GoogleIcon />
+                      <Text className="text-base font-semibold text-ink">
+                        Continue with Google
+                      </Text>
+                    </>
+                  )}
+                </Pressable>
+              ) : null}
             </View>
 
             {/* Divider */}

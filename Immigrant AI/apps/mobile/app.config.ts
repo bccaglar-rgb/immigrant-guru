@@ -171,11 +171,19 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     REVENUECAT_IOS_KEY: process.env.EXPO_PUBLIC_RC_IOS_KEY ?? "",
     REVENUECAT_ANDROID_KEY: process.env.EXPO_PUBLIC_RC_ANDROID_KEY ?? "",
     SENTRY_DSN: process.env.EXPO_PUBLIC_SENTRY_DSN ?? "",
-    // Google Sign-In OAuth client IDs from Google Cloud Console.
-    // Without these, the Google button surfaces a "not configured" error.
-    GOOGLE_OAUTH_IOS_CLIENT_ID: process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID ?? "",
-    GOOGLE_OAUTH_ANDROID_CLIENT_ID: process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID ?? "",
-    GOOGLE_OAUTH_WEB_CLIENT_ID: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID ?? "",
+    // Google Sign-In OAuth client IDs from Google Cloud Console
+    // (project: immigrant-guru on info@caglarlabs.com). Hardcoded as
+    // defaults because OAuth client IDs are public identifiers — only
+    // the web client *secret* is confidential and we don't ship it.
+    GOOGLE_OAUTH_IOS_CLIENT_ID:
+      process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID ??
+      "606162264729-v432u04e3adl1jtl1fiig3gnsg1am286.apps.googleusercontent.com",
+    GOOGLE_OAUTH_ANDROID_CLIENT_ID:
+      process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID ??
+      "606162264729-l46atad9kqudrmlciqdip3vl06qjmut4.apps.googleusercontent.com",
+    GOOGLE_OAUTH_WEB_CLIENT_ID:
+      process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID ??
+      "606162264729-vhft0on0q6uoohg3ll9d4ovedhvirc61.apps.googleusercontent.com",
     eas: {
       projectId: "65037bf3-007f-4eb8-9c9b-60b87b2bef91"
     }
