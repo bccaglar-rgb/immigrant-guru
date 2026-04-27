@@ -469,7 +469,13 @@ function CountryStep({
       <CountryPicker
         visible={pickerOpen}
         selected={picked}
-        onSelect={(c) => setPicked(c.name)}
+        onSelect={(c) => {
+          // Auto-advance after the user picks a country in the modal — same
+          // tap-and-flow rhythm as the choice cards. The brief delay lets
+          // the user see the highlighted card before the next step slides in.
+          setPicked(c.name);
+          setTimeout(() => onNext(c.name, c.code), 260);
+        }}
         onClose={() => setPickerOpen(false)}
       />
     </ScrollView>
