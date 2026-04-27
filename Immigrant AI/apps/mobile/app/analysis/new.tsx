@@ -124,57 +124,79 @@ export default function NewAnalysisScreen() {
     <View style={{ flex: 1, backgroundColor: "#000" }}>
       <Backdrop />
 
-      <SafeAreaView edges={["top", "bottom"]} style={{ flex: 1 }}>
-        {/* Top bar — close */}
-        <View style={{ flexDirection: "row", justifyContent: "flex-start", paddingHorizontal: 20, paddingTop: 4 }}>
+      <SafeAreaView edges={["top"]} style={{ flex: 1 }}>
+        {/* Top bar — close + step indicator */}
+        <View
+          style={{
+            flexDirection: "row",
+            justifyContent: "space-between",
+            alignItems: "center",
+            paddingHorizontal: 20,
+            paddingTop: 4,
+            paddingBottom: 12,
+          }}
+        >
           <Pressable onPress={() => router.back()} hitSlop={12} style={{ padding: 4 }}>
             <CloseIcon />
           </Pressable>
+          <StepIndicator current={1} total={3} />
+          <View style={{ width: 30 }} />
         </View>
 
+        {/* Marketing scroll body — CTA is pinned outside this. */}
         <ScrollView
-          contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: insets.bottom + 24, flexGrow: 1 }}
+          contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: 24 }}
           showsVerticalScrollIndicator={false}
         >
-          {/* Hero */}
-          <View style={{ alignItems: "center", marginTop: 28 }}>
+          {/* Hero — value prop first */}
+          <View style={{ alignItems: "center", marginTop: 12 }}>
             <BrainSeal />
             <Animated.Text
               entering={FadeInUp.duration(700).delay(120).springify().damping(18)}
               style={{
-                marginTop: 28,
+                marginTop: 24,
                 color: "#fff",
-                fontSize: 42,
+                fontSize: 36,
                 fontWeight: "700",
-                letterSpacing: -1.5,
-                lineHeight: 46,
+                letterSpacing: -1.4,
+                lineHeight: 40,
                 textAlign: "center",
               }}
             >
-              Ready when{"\n"}you are.
+              Find your best{"\n"}visa path.
             </Animated.Text>
             <Animated.Text
-              entering={FadeInUp.duration(700).delay(260).springify().damping(18)}
+              entering={FadeInUp.duration(700).delay(240).springify().damping(18)}
               style={{
                 marginTop: 14,
-                color: "rgba(255,255,255,0.62)",
-                fontSize: 17,
-                lineHeight: 25,
+                color: "rgba(255,255,255,0.7)",
+                fontSize: 16,
+                lineHeight: 23,
                 textAlign: "center",
                 maxWidth: 320,
               }}
             >
-              We'll match your profile against forty-seven visa pathways and rank Plan A, B, and C.
+              We analyze 47 visa programs and rank your top 3 options by success probability.
             </Animated.Text>
           </View>
 
-          {/* Country card */}
+          {/* Country picker — supportive, not loud */}
           <Animated.View
-            entering={FadeInUp.duration(700).delay(420).springify().damping(20)}
-            style={{ marginTop: 36 }}
+            entering={FadeInUp.duration(700).delay(360).springify().damping(20)}
+            style={{ marginTop: 32 }}
           >
-            <Text style={{ color: "#7ab8ff", fontSize: 12, fontWeight: "700", letterSpacing: 2, textTransform: "uppercase", marginBottom: 12 }}>
-              Focus
+            <Text
+              style={{
+                color: "#7ab8ff",
+                fontSize: 11,
+                fontWeight: "700",
+                letterSpacing: 2,
+                textTransform: "uppercase",
+                marginBottom: 10,
+                textAlign: "center",
+              }}
+            >
+              Where
             </Text>
             <Pressable
               onPress={() => {
@@ -182,93 +204,148 @@ export default function NewAnalysisScreen() {
                 setPickerOpen(true);
               }}
               style={({ pressed }) => ({
-                padding: 22,
-                borderRadius: 24,
+                paddingVertical: 14,
+                paddingHorizontal: 18,
+                borderRadius: 18,
                 backgroundColor: "rgba(255,255,255,0.06)",
                 borderWidth: 1,
                 borderColor: "rgba(255,255,255,0.12)",
                 flexDirection: "row",
                 alignItems: "center",
-                gap: 18,
+                gap: 14,
                 transform: [{ scale: pressed ? 0.98 : 1 }],
               })}
             >
-              <Text style={{ fontSize: 40 }}>{selectedCountry.flag}</Text>
-              <View style={{ flex: 1 }}>
-                <Text style={{ color: "rgba(255,255,255,0.55)", fontSize: 11, letterSpacing: 1.2, textTransform: "uppercase", marginBottom: 4 }}>
-                  Target country
-                </Text>
-                <Text style={{ color: "#fff", fontSize: 22, fontWeight: "700", letterSpacing: -0.5 }}>
-                  {selectedCountry.name}
-                </Text>
-              </View>
-              <Svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.55)" strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round">
-                <Path d="M9 6l6 6-6 6" />
+              <Text style={{ fontSize: 30 }}>{selectedCountry.flag}</Text>
+              <Text
+                style={{
+                  flex: 1,
+                  color: "#fff",
+                  fontSize: 16,
+                  fontWeight: "600",
+                  letterSpacing: -0.2,
+                }}
+                numberOfLines={1}
+              >
+                {selectedCountry.name}
+              </Text>
+              <Svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.55)" strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round">
+                <Path d="M6 9l6 6 6-6" />
               </Svg>
             </Pressable>
-
-            {selectedCountry.code !== "BEST" ? (
-              <Pressable
-                onPress={() => {
-                  Haptics.selectionAsync().catch(() => undefined);
-                  setSelectedCountry(COUNTRIES[0]);
-                }}
-                hitSlop={8}
-                style={{ alignSelf: "flex-start", marginTop: 12 }}
-              >
-                <Text style={{ color: "#7ab8ff", fontSize: 13, fontWeight: "600" }}>
-                  × Reset to best match
-                </Text>
-              </Pressable>
-            ) : null}
           </Animated.View>
 
+          {/* How it works — three short lines */}
+          <Animated.View
+            entering={FadeInUp.duration(700).delay(480).springify().damping(20)}
+            style={{ marginTop: 28 }}
+          >
+            <Text
+              style={{
+                color: "rgba(255,255,255,0.5)",
+                fontSize: 11,
+                fontWeight: "700",
+                letterSpacing: 2,
+                textTransform: "uppercase",
+                marginBottom: 14,
+                textAlign: "center",
+              }}
+            >
+              How it works
+            </Text>
+            <View style={{ gap: 12 }}>
+              {[
+                { n: "1", title: "Read your profile", body: "Education, work, language, goals." },
+                { n: "2", title: "Match 47 visa programs", body: "Eligibility scored against your fit." },
+                { n: "3", title: "Rank your top 3", body: "Plan A, B, C with timelines and costs." },
+              ].map((s, i) => (
+                <Animated.View
+                  key={s.n}
+                  entering={FadeIn.duration(500).delay(560 + i * 90)}
+                  style={{ flexDirection: "row", alignItems: "flex-start", gap: 14 }}
+                >
+                  <View
+                    style={{
+                      width: 28,
+                      height: 28,
+                      borderRadius: 14,
+                      backgroundColor: "rgba(122,184,255,0.18)",
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
+                    <Text style={{ color: "#7ab8ff", fontSize: 13, fontWeight: "700" }}>{s.n}</Text>
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={{ color: "#fff", fontSize: 15, fontWeight: "600", letterSpacing: -0.2 }}>
+                      {s.title}
+                    </Text>
+                    <Text style={{ color: "rgba(255,255,255,0.55)", fontSize: 13, lineHeight: 19, marginTop: 2 }}>
+                      {s.body}
+                    </Text>
+                  </View>
+                </Animated.View>
+              ))}
+            </View>
+          </Animated.View>
+        </ScrollView>
+
+        {/* Pinned CTA — always visible, primary action */}
+        <View
+          style={{
+            paddingHorizontal: 24,
+            paddingTop: 14,
+            paddingBottom: insets.bottom + 8,
+            backgroundColor: "rgba(0,0,0,0.6)",
+            borderTopWidth: 1,
+            borderTopColor: "rgba(255,255,255,0.06)",
+          }}
+        >
           {error ? (
             <View
               style={{
-                marginTop: 16,
-                padding: 14,
-                borderRadius: 14,
+                marginBottom: 12,
+                padding: 12,
+                borderRadius: 12,
                 backgroundColor: "rgba(255,69,58,0.12)",
                 borderWidth: 1,
                 borderColor: "rgba(255,69,58,0.25)",
               }}
             >
-              <Text style={{ color: "#ff453a", fontSize: 14 }}>{error}</Text>
+              <Text style={{ color: "#ff453a", fontSize: 13 }}>{error}</Text>
             </View>
           ) : null}
 
-          <View style={{ flex: 1, minHeight: 24 }} />
-
-          {/* Generate CTA */}
-          <Animated.View
-            entering={FadeInUp.duration(700).delay(560).springify().damping(20)}
-            style={{ marginTop: 24 }}
+          <Pressable
+            onPress={submit}
+            style={({ pressed }) => ({
+              paddingVertical: 18,
+              borderRadius: 999,
+              backgroundColor: "#0a84ff",
+              alignItems: "center",
+              shadowColor: "#0a84ff",
+              shadowOffset: { width: 0, height: 12 },
+              shadowOpacity: 0.5,
+              shadowRadius: 24,
+              elevation: 8,
+              transform: [{ scale: pressed ? 0.97 : 1 }],
+            })}
           >
-            <Pressable
-              onPress={submit}
-              style={({ pressed }) => ({
-                paddingVertical: 18,
-                borderRadius: 999,
-                backgroundColor: "#0a84ff",
-                alignItems: "center",
-                shadowColor: "#0a84ff",
-                shadowOffset: { width: 0, height: 12 },
-                shadowOpacity: 0.45,
-                shadowRadius: 24,
-                elevation: 8,
-                transform: [{ scale: pressed ? 0.97 : 1 }],
-              })}
-            >
-              <Text style={{ color: "#fff", fontSize: 17, fontWeight: "700", letterSpacing: -0.2 }}>
-                Generate analysis
-              </Text>
-            </Pressable>
-            <Text style={{ marginTop: 12, color: "rgba(255,255,255,0.45)", fontSize: 11, textAlign: "center" }}>
-              Takes 10–20 seconds. Don't close the app.
+            <Text style={{ color: "#fff", fontSize: 17, fontWeight: "700", letterSpacing: -0.2 }}>
+              Start analysis
             </Text>
-          </Animated.View>
-        </ScrollView>
+          </Pressable>
+          <Text
+            style={{
+              marginTop: 10,
+              color: "rgba(255,255,255,0.45)",
+              fontSize: 11,
+              textAlign: "center",
+            }}
+          >
+            Takes 15 seconds · No commitment
+          </Text>
+        </View>
       </SafeAreaView>
 
       <CountryPicker
@@ -277,6 +354,29 @@ export default function NewAnalysisScreen() {
         onSelect={(c) => setSelectedCountry(c)}
         onClose={() => setPickerOpen(false)}
       />
+    </View>
+  );
+}
+
+function StepIndicator({ current, total }: { current: number; total: number }) {
+  return (
+    <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+      <Text style={{ color: "rgba(255,255,255,0.55)", fontSize: 11, fontWeight: "600", letterSpacing: 1.2, textTransform: "uppercase" }}>
+        Step {current} of {total}
+      </Text>
+      <View style={{ flexDirection: "row", gap: 4 }}>
+        {Array.from({ length: total }).map((_, i) => (
+          <View
+            key={i}
+            style={{
+              width: 6,
+              height: 6,
+              borderRadius: 3,
+              backgroundColor: i + 1 <= current ? "#7ab8ff" : "rgba(255,255,255,0.18)",
+            }}
+          />
+        ))}
+      </View>
     </View>
   );
 }
