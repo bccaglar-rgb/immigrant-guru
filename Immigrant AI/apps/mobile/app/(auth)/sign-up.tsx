@@ -237,7 +237,7 @@ export default function SignUpScreen() {
       const isDuplicate = /already exists|already registered|account.*email/i.test(res.error ?? "");
       if (isDuplicate) {
         const signInResult = await signIn(trimmedEmail, password);
-        if (signInResult.ok) { router.replace("/(tabs)"); return; }
+        if (signInResult.ok) { router.replace("/onboarding"); return; }
         if (signInResult.needsVerify) {
           router.push({ pathname: "/(auth)/verify", params: { email: trimmedEmail } });
           return;

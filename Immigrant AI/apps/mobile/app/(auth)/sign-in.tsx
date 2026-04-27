@@ -73,7 +73,7 @@ export default function SignInScreen() {
         const result = await signInWithGoogle(google.idToken!);
         setLoading(null);
         if (!result.ok) return setError(result.error);
-        router.replace("/(tabs)");
+        router.replace("/onboarding");
       })();
     }
     if (google.response?.type === "error") {
@@ -133,7 +133,7 @@ export default function SignInScreen() {
       );
       setLoading(null);
       if (!result.ok) return setError(result.error);
-      router.replace("/(tabs)");
+      router.replace("/onboarding");
     } catch {
       setLoading(null);
       setError("Apple sign-in failed. Please try again.");

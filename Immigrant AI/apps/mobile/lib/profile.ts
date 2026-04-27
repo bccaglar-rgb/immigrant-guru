@@ -215,6 +215,54 @@ export function profileToForm(p: UserProfile | null): ProfileFormValues {
   };
 }
 
+// ── Completion ─────────────────────────────────────────────────────────────────
+
+// Required fields gate access to analysis/dashboard. Onboarding hard-stops
+// the user until all of these are filled.
+const REQUIRED_PROFILE_FIELDS = [
+  "first_name",
+  "nationality",
+  "current_country",
+  "target_country",
+  "education_level",
+  "english_level",
+  "profession",
+  "relocation_timeline"
+] as const satisfies ReadonlyArray<keyof UserProfile>;
+
+// Optional but counted toward the displayed completion %.
+const OPTIONAL_PROFILE_FIELDS = [
+  "last_name",
+  "marital_status",
+  "children_count",
+  "years_of_experience",
+  "available_capital",
+  "criminal_record_flag",
+  "prior_visa_refusal_flag",
+  "preferred_language"
+] as const satisfies ReadonlyArray<keyof UserProfile>;
+
+function isFilled(v: unknown): boolean {
+  if (v === null || v === undefined) return false;
+  if (typeof v === "string") return v.trim().length > 0;
+  return true;
+}
+
+export function isProfileComplete(profile: UserProfile | null | undefined): boolean {
+  if (!profile) return false;
+  return REQUIRED_PROFILE_FIELDS.every((f) => isFilled(profile[f]));
+}
+
+/** 0-100. Required fields weight 2x optional fields. */
+export function profileCompletionPct(profile: UserProfile | null | undefined): number {
+  if (!profile) return 0;
+  const requiredFilled = REQUIRED_PROFILE_FIELDS.filter((f) => isFilled(profile[f])).length;
+  const optionalFilled = OPTIONAL_PROFILE_FIELDS.filter((f) => isFilled(profile[f])).length;
+  const score = requiredFilled * 2 + optionalFilled;
+  const max = REQUIRED_PROFILE_FIELDS.length * 2 + OPTIONAL_PROFILE_FIELDS.length;
+  return Math.round((score / max) * 100);
+}
+
 // ── API ─────────────────────────────────────────────────────────────────────────
 
 export async function fetchMyProfile() {

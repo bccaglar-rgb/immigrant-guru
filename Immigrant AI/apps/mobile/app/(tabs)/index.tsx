@@ -31,7 +31,7 @@ import type { ReactNode } from "react";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useAuth } from "@/lib/auth";
-import { fetchMyProfile } from "@/lib/profile";
+import { fetchMyProfile, isProfileComplete, profileCompletionPct } from "@/lib/profile";
 
 // ── Inline SVG icons (no font loading needed) ─────────────────────────────────
 const IC = { stroke: "#fff", fill: "none", strokeWidth: 2, strokeLinecap: "round" as const, strokeLinejoin: "round" as const };
@@ -134,8 +134,15 @@ const BANNER_CONFIG = {
   },
 } as const;
 
-function ActionBanner({ variant, onPress }: { variant: BannerVariant; onPress: () => void }) {
+function ActionBanner({ variant, onPress, badgeOverride, subtitleOverride }: {
+  variant: BannerVariant;
+  onPress: () => void;
+  badgeOverride?: string;
+  subtitleOverride?: string;
+}) {
   const cfg = BANNER_CONFIG[variant];
+  const stepLabel = badgeOverride ?? cfg.step;
+  const subtitleLabel = subtitleOverride ?? cfg.subtitle;
   const scale = useSharedValue(1);
   const iconY = useSharedValue(0);
   const glowOpacity = useSharedValue(0.18);
@@ -193,11 +200,11 @@ function ActionBanner({ variant, onPress }: { variant: BannerVariant; onPress: (
           <View style={{ flex: 1 }}>
             <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 3 }}>
               <View style={{ backgroundColor: "rgba(255,255,255,0.25)", borderRadius: 6, paddingHorizontal: 7, paddingVertical: 2 }}>
-                <Text style={{ fontSize: 10, fontWeight: "700", color: "#fff", letterSpacing: 0.3 }}>{cfg.step}</Text>
+                <Text style={{ fontSize: 10, fontWeight: "700", color: "#fff", letterSpacing: 0.3 }}>{stepLabel}</Text>
               </View>
             </View>
             <Text style={{ fontSize: 15, fontWeight: "700", color: "#fff", letterSpacing: -0.2 }}>{cfg.title}</Text>
-            <Text style={{ fontSize: 12, color: "rgba(255,255,255,0.75)", marginTop: 2, lineHeight: 17 }}>{cfg.subtitle}</Text>
+            <Text style={{ fontSize: 12, color: "rgba(255,255,255,0.75)", marginTop: 2, lineHeight: 17 }}>{subtitleLabel}</Text>
           </View>
 
           {/* CTA */}
@@ -496,8 +503,8 @@ export default function DashboardScreen() {
   const scoreLabel = dashboard.data?.score?.label ?? "Complete your profile to unlock your score.";
   const recs = dashboard.data?.recommendations ?? [];
 
-  const isProfileIncomplete =
-    !profile.data?.nationality || !profile.data?.profession || !profile.data?.target_country;
+  const isProfileIncomplete = !isProfileComplete(profile.data);
+  const profilePct = profileCompletionPct(profile.data);
 
   return (
     <View style={{ flex: 1, backgroundColor: "#f5f5f7" }}>
@@ -571,7 +578,18 @@ export default function DashboardScreen() {
         {/* Smart action banner — Step 1: complete profile, Step 2: run analysis */}
         {!dashboard.isLoading && !profile.isLoading && (() => {
           if (isProfileIncomplete)
-            return <ActionBanner variant="complete-profile" onPress={() => router.push("/onboarding")} />;
+            return (
+              <ActionBanner
+                variant="complete-profile"
+                onPress={() => router.push("/onboarding")}
+                badgeOverride={`${profilePct}% complete`}
+                subtitleOverride={
+                  profilePct === 0
+                    ? "Tell us about you to unlock your AI analysis."
+                    : `${profilePct}% done — finish to unlock your analysis.`
+                }
+              />
+            );
           if (recs.length === 0 && !dashboard.data?.recentAnalysis)
             return <ActionBanner variant="first-analysis" onPress={() => router.push("/analysis/new" as never)} />;
           return null;

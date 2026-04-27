@@ -26,6 +26,7 @@ import {
   emptyProfileFormValues,
   englishLevelOptions,
   fetchMyProfile,
+  isProfileComplete,
   maritalStatusOptions,
   profileToForm,
   relocationTimelineOptions,
@@ -425,7 +426,14 @@ export default function OnboardingScreen() {
   useEffect(() => {
     (async () => {
       const res = await fetchMyProfile();
-      if (res.ok) setValues(profileToForm(res.data));
+      if (res.ok) {
+        // Returning users with a complete profile skip the form entirely.
+        if (isProfileComplete(res.data)) {
+          router.replace("/(tabs)");
+          return;
+        }
+        setValues(profileToForm(res.data));
+      }
     })();
   }, []);
 
