@@ -24,6 +24,7 @@ import Animated, {
   withRepeat,
   withSequence,
   withTiming,
+  type SharedValue,
 } from "react-native-reanimated";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Svg, { Circle, Defs, RadialGradient, Stop } from "react-native-svg";
@@ -69,7 +70,7 @@ export default function LandingScreen() {
 
 // ── Hero ─────────────────────────────────────────────────────────────────────
 
-function Hero({ scrollY }: { scrollY: Animated.SharedValue<number> }) {
+function Hero({ scrollY }: { scrollY: SharedValue<number> }) {
   const insets = useSafeInsets();
 
   // Headline cascade + parallax on scroll
