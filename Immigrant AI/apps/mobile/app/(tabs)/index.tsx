@@ -35,18 +35,6 @@ import { fetchMyProfile } from "@/lib/profile";
 
 // ── Inline SVG icons (no font loading needed) ─────────────────────────────────
 const IC = { stroke: "#fff", fill: "none", strokeWidth: 2, strokeLinecap: "round" as const, strokeLinejoin: "round" as const };
-function IcBarChart({ s = 22, c = "#fff" }: { s?: number; c?: string }) {
-  return <Svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><Rect x="2" y="10" width="4" height="12" /><Rect x="9" y="4" width="4" height="18" /><Rect x="16" y="7" width="4" height="15" /></Svg>;
-}
-function IcGlobe({ s = 22, c = "#fff" }: { s?: number; c?: string }) {
-  return <Svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><Circle cx="12" cy="12" r="10" /><Line x1="2" y1="12" x2="22" y2="12" /><Path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" /></Svg>;
-}
-function IcCompare({ s = 22, c = "#fff" }: { s?: number; c?: string }) {
-  return <Svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><Circle cx="18" cy="18" r="3" /><Circle cx="6" cy="6" r="3" /><Path d="M6 21V9a9 9 0 0 0 9 9" /></Svg>;
-}
-function IcPerson({ s = 22, c = "#fff" }: { s?: number; c?: string }) {
-  return <Svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><Path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><Circle cx="12" cy="7" r="4" /></Svg>;
-}
 function IcDocument({ s = 16, c = "#60a5fa" }: { s?: number; c?: string }) {
   return <Svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><Path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><Polyline points="14 2 14 8 20 8" /><Line x1="16" y1="13" x2="8" y2="13" /><Line x1="16" y1="17" x2="8" y2="17" /></Svg>;
 }
@@ -457,72 +445,6 @@ function CountryCard({
   );
 }
 
-// ── Quick action tile ─────────────────────────────────────────────────────────
-function ActionTile({
-  icon,
-  label,
-  colors: gradColors,
-  onPress,
-  delay,
-}: {
-  icon: ReactNode;
-  label: string;
-  colors: [string, string];
-  onPress: () => void;
-  delay: number;
-}) {
-  const scale = useSharedValue(1);
-  const tileWidth = (SCREEN_W - 40 - 12) / 2;
-
-  const animStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }],
-  }));
-
-  return (
-    <Animated.View entering={FadeInDown.delay(delay).springify().damping(18)} style={animStyle}>
-      <Pressable
-        onPressIn={() => {
-          scale.value = withSpring(0.96, { damping: 15, stiffness: 400 });
-          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => undefined);
-        }}
-        onPressOut={() => {
-          scale.value = withSpring(1, { damping: 15, stiffness: 400 });
-        }}
-        onPress={onPress}
-      >
-        <LinearGradient
-          colors={gradColors}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={{
-            width: tileWidth,
-            borderRadius: 20,
-            padding: 18,
-            minHeight: 100,
-            justifyContent: "space-between",
-          }}
-        >
-          <View
-            style={{
-              width: 40,
-              height: 40,
-              borderRadius: 12,
-              backgroundColor: "rgba(255,255,255,0.25)",
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-          >
-            {icon}
-          </View>
-          <Text style={{ fontSize: 14, fontWeight: "700", color: "#fff", marginTop: 12 }}>
-            {label}
-          </Text>
-        </LinearGradient>
-      </Pressable>
-    </Animated.View>
-  );
-}
-
 // ── Helpers ───────────────────────────────────────────────────────────────────
 function countryFlagEmoji(country: string): string {
   const flags: Record<string, string> = {
@@ -732,46 +654,6 @@ export default function DashboardScreen() {
             </ScrollView>
           </View>
         )}
-
-        {/* Quick actions */}
-        <View style={{ paddingHorizontal: 20, marginTop: 24 }}>
-          <Animated.Text
-            entering={FadeInDown.delay(400).springify().damping(18)}
-            style={{ fontSize: 17, fontWeight: "700", color: "#111827", marginBottom: 14 }}
-          >
-            Quick actions
-          </Animated.Text>
-          <View style={{ flexDirection: "row", gap: 12, flexWrap: "wrap" }}>
-            <ActionTile
-              icon={<IcBarChart />}
-              label="New Analysis"
-              colors={["#0071e3", "#5e5ce6"]}
-              onPress={() => router.push("/analysis/new" as never)}
-              delay={480}
-            />
-            <ActionTile
-              icon={<IcGlobe />}
-              label="Explore Countries"
-              colors={["#30d158", "#0071e3"]}
-              onPress={() => router.push("/(tabs)/best-countries" as never)}
-              delay={540}
-            />
-            <ActionTile
-              icon={<IcCompare />}
-              label="Compare"
-              colors={["#5e5ce6", "#bf5af2"]}
-              onPress={() => router.push("/(tabs)/compare" as never)}
-              delay={600}
-            />
-            <ActionTile
-              icon={<IcPerson />}
-              label="My Profile"
-              colors={["#ff9f0a", "#ff6b35"]}
-              onPress={() => router.push("/onboarding")}
-              delay={660}
-            />
-          </View>
-        </View>
 
         {/* Recent analysis */}
         {dashboard.data?.recentAnalysis && (
