@@ -151,7 +151,7 @@ export default function OnboardingScreen() {
       const res = await fetchMyProfile();
       if (res.ok) {
         if (isProfileComplete(res.data)) {
-          router.replace("/(tabs)");
+          router.replace("/");
           return;
         }
         setValues(profileToForm(res.data));
@@ -183,7 +183,10 @@ export default function OnboardingScreen() {
 
   const finish = useCallback(() => {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => undefined);
-    router.replace("/(tabs)");
+    // Bounce through the root index — it redirects authenticated users
+    // straight to /(tabs) and avoids the Expo Router 6 quirk where
+    // router.replace("/(tabs)") sometimes no-ops on first invocation.
+    router.replace("/");
   }, []);
 
   const set = <K extends keyof ProfileFormValues>(k: K, v: ProfileFormValues[K]) => {
