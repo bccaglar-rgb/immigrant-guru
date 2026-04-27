@@ -4,6 +4,7 @@ import logging
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.responses import JSONResponse
 from redis.asyncio import from_url as redis_from_url
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import get_settings
@@ -99,6 +100,26 @@ _LOGIN_CODE_PREFIX = "auth:login_code:"
 _LOGIN_CODE_ATTEMPTS_PREFIX = "auth:login_code:attempts:"
 _LOGIN_CODE_TTL_SECONDS = 600  # 10 minutes
 _LOGIN_CODE_MAX_ATTEMPTS = 5
+
+
+@router.post(
+    "/check-email",
+    status_code=status.HTTP_200_OK,
+    summary="Check whether an email belongs to an existing account",
+)
+async def check_email(
+    payload: EmailCodeRequest,
+    session: AsyncSession = Depends(get_db_session),
+) -> dict:
+    """Lookup-only: returns {exists: bool} so the client can decide between
+    the password sign-in flow and the create-account flow.
+
+    Email enumeration is a known tradeoff with this UX. Throttled by the
+    /api/v1/auth/* per-IP rate-limit rule (5/min) to make scanning slow."""
+    email = payload.email.strip().lower()
+    result = await session.execute(select(User).where(User.email == email))
+    user = result.scalar_one_or_none()
+    return {"exists": user is not None}
 
 
 @router.post(

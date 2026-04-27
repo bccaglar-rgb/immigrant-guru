@@ -1,5 +1,5 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { Link, router } from "expo-router";
+import { Link, router, useLocalSearchParams } from "expo-router";
 import * as Haptics from "expo-haptics";
 import { useEffect, useState } from "react";
 import {
@@ -186,9 +186,11 @@ function LanguagePicker({
 export default function SignUpScreen() {
   const signUp = useAuth((s) => s.signUp);
   const signIn = useAuth((s) => s.signIn);
+  const params = useLocalSearchParams<{ email?: string }>();
+  const presetEmail = (params.email ?? "").trim().toLowerCase();
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
-  const [email, setEmail] = useState("");
+  const [email, setEmail] = useState(presetEmail);
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -268,42 +270,53 @@ export default function SignUpScreen() {
         >
           <View className="gap-2 mb-6">
             <Text className="text-sm font-semibold uppercase tracking-widest text-accent">
-              Immigrant Guru
+              New here
             </Text>
-            <Text className="text-4xl font-semibold text-ink">Create your account</Text>
-            <Text className="text-base text-muted">
-              Start with the essentials and complete your immigration profile later.
-            </Text>
+            <Text className="text-4xl font-semibold text-ink">Create a password</Text>
+            {presetEmail ? (
+              <Text className="text-base text-muted">
+                Setting up <Text className="font-semibold text-ink">{presetEmail}</Text>. We'll
+                email you a 6-digit code to verify it.
+              </Text>
+            ) : (
+              <Text className="text-base text-muted">
+                Start with the essentials and complete your immigration profile later.
+              </Text>
+            )}
           </View>
 
           <View className="gap-4">
-            <View className="flex-row gap-3">
-              <View className="flex-1">
+            {presetEmail ? null : (
+              <>
+                <View className="flex-row gap-3">
+                  <View className="flex-1">
+                    <Input
+                      label="First name"
+                      value={firstName}
+                      onChangeText={setFirstName}
+                      autoComplete="given-name"
+                    />
+                  </View>
+                  <View className="flex-1">
+                    <Input
+                      label="Last name"
+                      value={lastName}
+                      onChangeText={setLastName}
+                      autoComplete="family-name"
+                    />
+                  </View>
+                </View>
                 <Input
-                  label="First name"
-                  value={firstName}
-                  onChangeText={setFirstName}
-                  autoComplete="given-name"
+                  label="Email"
+                  value={email}
+                  onChangeText={(t) => { setEmail(t); setError(null); }}
+                  autoCapitalize="none"
+                  autoComplete="email"
+                  keyboardType="email-address"
+                  placeholder="you@example.com"
                 />
-              </View>
-              <View className="flex-1">
-                <Input
-                  label="Last name"
-                  value={lastName}
-                  onChangeText={setLastName}
-                  autoComplete="family-name"
-                />
-              </View>
-            </View>
-            <Input
-              label="Email"
-              value={email}
-              onChangeText={(t) => { setEmail(t); setError(null); }}
-              autoCapitalize="none"
-              autoComplete="email"
-              keyboardType="email-address"
-              placeholder="you@example.com"
-            />
+              </>
+            )}
             <Input
               label="Password"
               value={password}

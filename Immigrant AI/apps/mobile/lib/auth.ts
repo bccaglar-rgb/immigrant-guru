@@ -64,6 +64,9 @@ type AuthState = {
   // Passwordless email-code flow
   requestEmailCode: (email: string) => Promise<AuthResult>;
   verifyEmailCode: (email: string, code: string) => Promise<AuthResult>;
+  // Email lookup so the UI can branch into password-sign-in vs. create-account
+  checkEmail: (email: string) =>
+    Promise<{ ok: true; exists: boolean } | { ok: false; error: string }>;
   // OAuth
   signInWithGoogle: (idToken: string) => Promise<AuthResult>;
   signInWithApple: (
@@ -167,6 +170,14 @@ export const useAuth = create<AuthState>((set, get) => ({
   async requestEmailCode(email) {
     const res = await api.post("/auth/email/code/request", { email: email.trim().toLowerCase() });
     return res.ok ? { ok: true } : { ok: false, error: res.message };
+  },
+
+  async checkEmail(email) {
+    const res = await api.post<{ exists: boolean }>("/auth/check-email", {
+      email: email.trim().toLowerCase(),
+    });
+    if (!res.ok) return { ok: false, error: res.message };
+    return { ok: true, exists: res.data.exists };
   },
 
   async verifyEmailCode(email, code) {
