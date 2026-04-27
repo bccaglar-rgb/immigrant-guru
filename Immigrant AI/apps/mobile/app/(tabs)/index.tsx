@@ -577,27 +577,8 @@ export default function DashboardScreen() {
           />
         }
       >
-        {/* Smart action banner — Step 1: complete profile, Step 2: run analysis */}
-        {!dashboard.isLoading && !profile.isLoading && (() => {
-          if (isProfileIncomplete)
-            return (
-              <ActionBanner
-                variant="complete-profile"
-                onPress={() => router.push("/onboarding")}
-                badgeOverride={`${profilePct}% complete`}
-                subtitleOverride={
-                  profilePct === 0
-                    ? "Tell us about you to unlock your AI analysis."
-                    : `${profilePct}% done — finish to unlock your analysis.`
-                }
-              />
-            );
-          if (recs.length === 0 && !dashboard.data?.recentAnalysis)
-            return <ActionBanner variant="first-analysis" onPress={() => router.push("/analysis/new" as never)} />;
-          return null;
-        })()}
-
-        {/* Compact score card */}
+        {/* Compact score card — sits at the top of the scroll so the user
+            sees their progress before any CTA. */}
         <Animated.View
           entering={FadeInDown.delay(100).springify().damping(18)}
           style={{
@@ -649,6 +630,27 @@ export default function DashboardScreen() {
             </View>
           )}
         </Animated.View>
+
+        {/* Smart action banner — sits below the score card so the user
+            sees the metric first, then the next thing to do. */}
+        {!dashboard.isLoading && !profile.isLoading && (() => {
+          if (isProfileIncomplete)
+            return (
+              <ActionBanner
+                variant="complete-profile"
+                onPress={() => router.push("/onboarding")}
+                badgeOverride={`${profilePct}% complete`}
+                subtitleOverride={
+                  profilePct === 0
+                    ? "Tell us about you to unlock your AI analysis."
+                    : `${profilePct}% done — finish to unlock your analysis.`
+                }
+              />
+            );
+          if (recs.length === 0 && !dashboard.data?.recentAnalysis)
+            return <ActionBanner variant="first-analysis" onPress={() => router.push("/analysis/new" as never)} />;
+          return null;
+        })()}
 
         {/* Top country picks */}
         {recs.length > 0 && (
