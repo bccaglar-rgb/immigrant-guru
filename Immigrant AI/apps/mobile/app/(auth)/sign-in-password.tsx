@@ -1,4 +1,4 @@
-import { Link, router } from "expo-router";
+import { Link, router, useLocalSearchParams } from "expo-router";
 import { useState } from "react";
 import { KeyboardAvoidingView, Platform, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -7,12 +7,14 @@ import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { useAuth } from "@/lib/auth";
 
-/** Legacy email + password sign-in. Reachable from the main sign-in screen
- * via "Use password instead". Kept for users with existing password-based
- * accounts who haven't migrated to passwordless / OAuth. */
+/** Email + password sign-in. Sign-in.tsx routes here after /auth/check-email
+ * confirms the address belongs to an existing account, so we pre-fill the
+ * email field and lead with a "Welcome back" headline. */
 export default function SignInPasswordScreen() {
   const signIn = useAuth((s) => s.signIn);
-  const [email, setEmail] = useState("");
+  const params = useLocalSearchParams<{ email?: string }>();
+  const presetEmail = (params.email ?? "").trim().toLowerCase();
+  const [email, setEmail] = useState(presetEmail);
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -49,29 +51,37 @@ export default function SignInPasswordScreen() {
         >
           <View className="gap-2 mb-8">
             <Text className="text-sm font-semibold uppercase tracking-widest text-accent">
-              Immigrant Guru
+              Welcome back
             </Text>
-            <Text className="text-4xl font-semibold text-ink">Sign in with password</Text>
-            <Text className="text-base text-muted">
-              For accounts created before passwordless sign-in.
-            </Text>
+            <Text className="text-4xl font-semibold text-ink">Enter your password</Text>
+            {presetEmail ? (
+              <Text className="text-base text-muted">
+                Signing in as <Text className="font-semibold text-ink">{presetEmail}</Text>.
+              </Text>
+            ) : (
+              <Text className="text-base text-muted">
+                For accounts created with a password.
+              </Text>
+            )}
           </View>
 
           <View className="gap-4">
-            <Input
-              label="Email"
-              autoCapitalize="none"
-              autoComplete="email"
-              autoCorrect={false}
-              inputMode="email"
-              keyboardType="email-address"
-              placeholder="you@example.com"
-              value={email}
-              onChangeText={(t) => {
-                setEmail(t);
-                setError(null);
-              }}
-            />
+            {presetEmail ? null : (
+              <Input
+                label="Email"
+                autoCapitalize="none"
+                autoComplete="email"
+                autoCorrect={false}
+                inputMode="email"
+                keyboardType="email-address"
+                placeholder="you@example.com"
+                value={email}
+                onChangeText={(t) => {
+                  setEmail(t);
+                  setError(null);
+                }}
+              />
+            )}
             <Input
               label="Password"
               autoComplete="current-password"

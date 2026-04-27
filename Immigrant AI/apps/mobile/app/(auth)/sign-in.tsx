@@ -46,7 +46,7 @@ function GoogleIcon() {
 }
 
 export default function SignInScreen() {
-  const requestEmailCode = useAuth((s) => s.requestEmailCode);
+  const checkEmail = useAuth((s) => s.checkEmail);
   const signInWithGoogle = useAuth((s) => s.signInWithGoogle);
   const signInWithAppleStore = useAuth((s) => s.signInWithApple);
 
@@ -93,13 +93,19 @@ export default function SignInScreen() {
     }
     setLoading("email");
     setError(null);
-    const result = await requestEmailCode(trimmed);
+    const result = await checkEmail(trimmed);
     setLoading(null);
     if (!result.ok) {
       setError(result.error);
       return;
     }
-    router.push({ pathname: "/(auth)/email-code", params: { email: trimmed } });
+    if (result.exists) {
+      // Welcome back — ask for password.
+      router.push({ pathname: "/(auth)/sign-in-password", params: { email: trimmed } });
+    } else {
+      // New account — create + confirm password, then verify by email.
+      router.push({ pathname: "/(auth)/sign-up", params: { email: trimmed } });
+    }
   };
 
   const onGoogle = async () => {
