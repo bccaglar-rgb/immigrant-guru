@@ -103,7 +103,6 @@ export default function RootLayout() {
             <Stack.Screen name="onboarding" />
             <Stack.Screen name="paywall" options={{ presentation: "modal" }} />
             <Stack.Screen name="visa/[slug]" />
-            <Stack.Screen name="compare" />
             <Stack.Screen name="analysis/new" />
             <Stack.Screen name="analysis/[id]" />
           </Stack>
