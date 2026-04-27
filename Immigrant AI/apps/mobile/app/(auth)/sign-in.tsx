@@ -160,14 +160,59 @@ export default function SignInScreen() {
                 Immigrant Guru
               </Text>
               <Text className="text-[32px] font-bold text-ink leading-tight">
-                Welcome back
+                Get started
               </Text>
               <Text className="text-base text-muted mt-1 leading-relaxed">
-                Sign in to continue your immigration journey.
+                Continue with Apple, Google, or email.{"\n"}
+                New accounts are created automatically.
               </Text>
             </View>
 
-            {/* Email section */}
+            {/* Social buttons — primary path */}
+            <View className="gap-3">
+              {/* Apple — native iOS only */}
+              {appleReady ? (
+                <AppleAuthentication.AppleAuthenticationButton
+                  buttonType={AppleAuthentication.AppleAuthenticationButtonType.SIGN_IN}
+                  buttonStyle={AppleAuthentication.AppleAuthenticationButtonStyle.BLACK}
+                  cornerRadius={16}
+                  style={{ height: 48 }}
+                  onPress={onApple}
+                />
+              ) : null}
+
+              {/* Google */}
+              <Pressable
+                onPress={onGoogle}
+                disabled={isBusy}
+                style={({ pressed }) => ({
+                  opacity: pressed || isBusy ? 0.6 : 1,
+                })}
+                className="flex-row items-center justify-center h-12 rounded-2xl bg-white border border-line gap-3"
+              >
+                {loading === "google" ? (
+                  <ActivityIndicator size="small" color="#374151" />
+                ) : (
+                  <>
+                    <GoogleIcon />
+                    <Text className="text-base font-semibold text-ink">
+                      Continue with Google
+                    </Text>
+                  </>
+                )}
+              </Pressable>
+            </View>
+
+            {/* Divider */}
+            <View className="my-6 flex-row items-center gap-3">
+              <View className="flex-1 h-px bg-line" />
+              <Text className="text-xs font-medium uppercase tracking-widest text-muted">
+                or
+              </Text>
+              <View className="flex-1 h-px bg-line" />
+            </View>
+
+            {/* Email — secondary path */}
             <View className="gap-3">
               <View className="gap-1.5">
                 <Text className="text-sm font-semibold text-ink">Email</Text>
@@ -212,55 +257,8 @@ export default function SignInScreen() {
               </Button>
             </View>
 
-            {/* Divider */}
-            <View className="my-6 flex-row items-center gap-3">
-              <View className="flex-1 h-px bg-line" />
-              <Text className="text-xs font-medium uppercase tracking-widest text-muted">
-                or
-              </Text>
-              <View className="flex-1 h-px bg-line" />
-            </View>
-
-            {/* Social buttons */}
-            <View className="gap-3">
-              {/* Google */}
-              <Pressable
-                onPress={onGoogle}
-                disabled={isBusy}
-                style={({ pressed }) => ({
-                  opacity: pressed || isBusy ? 0.6 : 1,
-                })}
-                className="flex-row items-center justify-center h-12 rounded-2xl bg-white border border-line gap-3"
-              >
-                {loading === "google" ? (
-                  <ActivityIndicator size="small" color="#374151" />
-                ) : (
-                  <>
-                    <GoogleIcon />
-                    <Text className="text-base font-semibold text-ink">
-                      Continue with Google
-                    </Text>
-                  </>
-                )}
-              </Pressable>
-
-              {/* Apple — native iOS only */}
-              {appleReady ? (
-                <AppleAuthentication.AppleAuthenticationButton
-                  buttonType={AppleAuthentication.AppleAuthenticationButtonType.SIGN_IN}
-                  buttonStyle={AppleAuthentication.AppleAuthenticationButtonStyle.BLACK}
-                  cornerRadius={16}
-                  style={{ height: 48 }}
-                  onPress={onApple}
-                />
-              ) : null}
-            </View>
-
-            {/* Footer links */}
-            <View className="mt-8 items-center gap-3">
-              <Text className="text-xs text-muted text-center leading-relaxed">
-                New? Just enter your email above —{"\n"}we'll create your account automatically.
-              </Text>
+            {/* Footer link */}
+            <View className="mt-8 items-center">
               <Link
                 href="/(auth)/sign-in-password"
                 className="text-sm text-muted underline underline-offset-2"
