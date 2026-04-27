@@ -31,7 +31,7 @@ import type { ReactNode } from "react";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useAuth } from "@/lib/auth";
-import { fetchMyProfile, isProfileComplete, profileCompletionPct } from "@/lib/profile";
+import { fetchMyProfile, isProfileComplete, profileCompletionPct, readinessScore } from "@/lib/profile";
 
 // ── Inline SVG icons (no font loading needed) ─────────────────────────────────
 const IC = { stroke: "#fff", fill: "none", strokeWidth: 2, strokeLinecap: "round" as const, strokeLinejoin: "round" as const };
@@ -499,12 +499,14 @@ export default function DashboardScreen() {
 
   const firstName = profile.data?.first_name || user?.email?.split("@")[0] || "there";
   const isPaid = user?.plan && user.plan !== "free";
-  const score = dashboard.data?.score?.value ?? null;
-  const scoreLabel = dashboard.data?.score?.label ?? "Complete your profile to unlock your score.";
   const recs = dashboard.data?.recommendations ?? [];
 
   const isProfileIncomplete = !isProfileComplete(profile.data);
   const profilePct = profileCompletionPct(profile.data);
+  const score = profile.data ? readinessScore(profile.data) : null;
+  const scoreLabel = isProfileIncomplete
+    ? "Finish your profile to push this higher."
+    : "Run an analysis to convert this into a plan.";
 
   return (
     <View style={{ flex: 1, backgroundColor: "#f5f5f7" }}>
@@ -615,11 +617,22 @@ export default function DashboardScreen() {
             elevation: 3,
           }}
         >
-          <SmallScoreRing score={score} loading={dashboard.isLoading} />
+          <SmallScoreRing score={score} loading={profile.isLoading} />
           <View style={{ flex: 1 }}>
-            <Text style={{ fontSize: 11, fontWeight: "600", color: "#9ca3af", letterSpacing: 0.8, textTransform: "uppercase" }}>
-              Readiness Score
-            </Text>
+            <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
+              <Text style={{ fontSize: 11, fontWeight: "600", color: "#9ca3af", letterSpacing: 0.8, textTransform: "uppercase" }}>
+                Readiness Score
+              </Text>
+              <Pressable
+                onPress={() => {
+                  Haptics.selectionAsync().catch(() => undefined);
+                  router.push("/onboarding?edit=1" as never);
+                }}
+                hitSlop={10}
+              >
+                <Text style={{ fontSize: 12, fontWeight: "600", color: "#0071e3" }}>Edit</Text>
+              </Pressable>
+            </View>
             <Text style={{ fontSize: 20, fontWeight: "700", color: "#111827", marginTop: 2, letterSpacing: -0.3 }}>
               {score !== null ? `${score}` : "—"}
               <Text style={{ fontSize: 12, fontWeight: "400", color: "#9ca3af" }}> / 100</Text>
@@ -628,7 +641,7 @@ export default function DashboardScreen() {
               {scoreLabel}
             </Text>
           </View>
-          {score !== null && (
+          {score !== null && score > 0 && (
             <View style={{ backgroundColor: score >= 70 ? "#ecfdf5" : score >= 40 ? "#eff6ff" : "#fff7ed", borderRadius: 12, paddingHorizontal: 10, paddingVertical: 6 }}>
               <Text style={{ fontSize: 11, fontWeight: "700", color: score >= 70 ? "#059669" : score >= 40 ? "#0071e3" : "#f59e0b" }}>
                 {score >= 70 ? "Strong" : score >= 40 ? "Good" : "Low"}

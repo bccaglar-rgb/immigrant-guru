@@ -1,4 +1,4 @@
-import { router } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import * as Haptics from "expo-haptics";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
@@ -140,17 +140,23 @@ const STEP_ORDER: StepKey[] = [
 
 export default function OnboardingScreen() {
   const insets = useSafeAreaInsets();
+  // Edit mode (e.g. ?edit=1 from the dashboard score card) skips the
+  // "already-complete → bounce home" shortcut so a returning user can
+  // change their answers.
+  const params = useLocalSearchParams<{ edit?: string }>();
+  const editMode = params.edit === "1";
   const [stepIdx, setStepIdx] = useState(0);
   const [direction, setDirection] = useState<"forward" | "back">("forward");
   const [values, setValues] = useState<ProfileFormValues>(() => ({ ...emptyProfileFormValues }));
   const [loading, setLoading] = useState(false);
 
-  // Hydrate from server. Skip onboarding entirely if already complete.
+  // Hydrate from server. Skip onboarding entirely if already complete,
+  // unless the user explicitly came here to edit.
   useEffect(() => {
     (async () => {
       const res = await fetchMyProfile();
       if (res.ok) {
-        if (isProfileComplete(res.data)) {
+        if (!editMode && isProfileComplete(res.data)) {
           router.replace("/");
           return;
         }
@@ -159,7 +165,7 @@ export default function OnboardingScreen() {
       setLoading(false);
     })();
     setLoading(true);
-  }, []);
+  }, [editMode]);
 
   const step = STEP_ORDER[stepIdx];
 
