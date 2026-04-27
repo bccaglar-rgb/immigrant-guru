@@ -77,8 +77,12 @@ export default function NewAnalysisScreen() {
   const user = useAuth((s) => s.user);
   const isPaid = Boolean(user?.plan && user.plan !== "free");
 
-  const [selectedCountry, setSelectedCountry] = useState<Country>(COUNTRIES[0]);
+  // No pre-selection on mount: the user always taps "Choose a country"
+  // first, picks one in the bottom sheet, and that single tap kicks off
+  // the analysis. Picking "Best match" submits with target_country=null.
+  const [selectedCountry, setSelectedCountry] = useState<Country | null>(null);
   const [pickerOpen, setPickerOpen] = useState(false);
+  const hasSelectedCountry = selectedCountry !== null && selectedCountry.code !== "BEST";
   const [loading, setLoading] = useState(false);
   const [loadingStep, setLoadingStep] = useState(0);
   const [error, setError] = useState<string | null>(null);
@@ -104,11 +108,11 @@ export default function NewAnalysisScreen() {
 
   if (!user || !isPaid) return null;
 
-  const submit = async () => {
+  const startAnalysis = async (country: Country) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => undefined);
     setLoading(true);
     setError(null);
-    const targetCountry = selectedCountry.code === "BEST" ? undefined : selectedCountry.name;
+    const targetCountry = country.code === "BEST" ? undefined : country.name;
     const res = await api.post<{ id: string }>("/ai/strategy", {
       target_country: targetCountry,
     });
@@ -180,23 +184,22 @@ export default function NewAnalysisScreen() {
             </Animated.Text>
           </View>
 
-          {/* Country picker — supportive, not loud */}
+          {/* Destination picker — centered, premium pill. Empty state asks
+              the user a clear question instead of leading with a generic
+              "Best match" placeholder. */}
           <Animated.View
             entering={FadeInUp.duration(700).delay(360).springify().damping(20)}
-            style={{ marginTop: 32 }}
+            style={{ marginTop: 36, alignItems: "center" }}
           >
             <Text
               style={{
-                color: "#7ab8ff",
-                fontSize: 11,
-                fontWeight: "700",
-                letterSpacing: 2,
-                textTransform: "uppercase",
-                marginBottom: 10,
+                color: "rgba(255,255,255,0.55)",
+                fontSize: 13,
+                marginBottom: 14,
                 textAlign: "center",
               }}
             >
-              Where
+              Where do you want to go?
             </Text>
             <Pressable
               onPress={() => {
@@ -204,22 +207,30 @@ export default function NewAnalysisScreen() {
                 setPickerOpen(true);
               }}
               style={({ pressed }) => ({
+                alignSelf: "center",
                 paddingVertical: 14,
-                paddingHorizontal: 18,
-                borderRadius: 18,
-                backgroundColor: "rgba(255,255,255,0.06)",
+                paddingLeft: hasSelectedCountry ? 18 : 22,
+                paddingRight: 18,
+                borderRadius: 999,
+                backgroundColor: hasSelectedCountry ? "rgba(255,255,255,0.08)" : "#0a84ff",
                 borderWidth: 1,
-                borderColor: "rgba(255,255,255,0.12)",
+                borderColor: hasSelectedCountry ? "rgba(255,255,255,0.16)" : "transparent",
                 flexDirection: "row",
                 alignItems: "center",
-                gap: 14,
-                transform: [{ scale: pressed ? 0.98 : 1 }],
+                gap: 12,
+                shadowColor: "#0a84ff",
+                shadowOffset: { width: 0, height: hasSelectedCountry ? 4 : 10 },
+                shadowOpacity: hasSelectedCountry ? 0.15 : 0.42,
+                shadowRadius: hasSelectedCountry ? 12 : 20,
+                elevation: hasSelectedCountry ? 3 : 6,
+                transform: [{ scale: pressed ? 0.97 : 1 }],
               })}
             >
-              <Text style={{ fontSize: 30 }}>{selectedCountry.flag}</Text>
+              {hasSelectedCountry ? (
+                <Text style={{ fontSize: 22 }}>{selectedCountry.flag}</Text>
+              ) : null}
               <Text
                 style={{
-                  flex: 1,
                   color: "#fff",
                   fontSize: 16,
                   fontWeight: "600",
@@ -227,131 +238,64 @@ export default function NewAnalysisScreen() {
                 }}
                 numberOfLines={1}
               >
-                {selectedCountry.name}
+                {hasSelectedCountry ? selectedCountry.name : "Choose a country"}
               </Text>
-              <Svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.55)" strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round">
+              <Svg
+                width={16}
+                height={16}
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke={hasSelectedCountry ? "rgba(255,255,255,0.55)" : "#fff"}
+                strokeWidth={2.4}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
                 <Path d="M6 9l6 6 6-6" />
               </Svg>
             </Pressable>
           </Animated.View>
 
-          {/* How it works — three short lines */}
-          <Animated.View
-            entering={FadeInUp.duration(700).delay(480).springify().damping(20)}
-            style={{ marginTop: 28 }}
-          >
-            <Text
-              style={{
-                color: "rgba(255,255,255,0.5)",
-                fontSize: 11,
-                fontWeight: "700",
-                letterSpacing: 2,
-                textTransform: "uppercase",
-                marginBottom: 14,
-                textAlign: "center",
-              }}
-            >
-              How it works
-            </Text>
-            <View style={{ gap: 12 }}>
-              {[
-                { n: "1", title: "Read your profile", body: "Education, work, language, goals." },
-                { n: "2", title: "Match 47 visa programs", body: "Eligibility scored against your fit." },
-                { n: "3", title: "Rank your top 3", body: "Plan A, B, C with timelines and costs." },
-              ].map((s, i) => (
-                <Animated.View
-                  key={s.n}
-                  entering={FadeIn.duration(500).delay(560 + i * 90)}
-                  style={{ flexDirection: "row", alignItems: "flex-start", gap: 14 }}
-                >
-                  <View
-                    style={{
-                      width: 28,
-                      height: 28,
-                      borderRadius: 14,
-                      backgroundColor: "rgba(122,184,255,0.18)",
-                      alignItems: "center",
-                      justifyContent: "center",
-                    }}
-                  >
-                    <Text style={{ color: "#7ab8ff", fontSize: 13, fontWeight: "700" }}>{s.n}</Text>
-                  </View>
-                  <View style={{ flex: 1 }}>
-                    <Text style={{ color: "#fff", fontSize: 15, fontWeight: "600", letterSpacing: -0.2 }}>
-                      {s.title}
-                    </Text>
-                    <Text style={{ color: "rgba(255,255,255,0.55)", fontSize: 13, lineHeight: 19, marginTop: 2 }}>
-                      {s.body}
-                    </Text>
-                  </View>
-                </Animated.View>
-              ))}
-            </View>
-          </Animated.View>
-        </ScrollView>
-
-        {/* Pinned CTA — always visible, primary action */}
-        <View
-          style={{
-            paddingHorizontal: 24,
-            paddingTop: 14,
-            paddingBottom: insets.bottom + 8,
-            backgroundColor: "rgba(0,0,0,0.6)",
-            borderTopWidth: 1,
-            borderTopColor: "rgba(255,255,255,0.06)",
-          }}
-        >
+          {/* Inline error appears under the picker if /ai/strategy fails. */}
           {error ? (
             <View
               style={{
-                marginBottom: 12,
+                marginTop: 18,
                 padding: 12,
                 borderRadius: 12,
                 backgroundColor: "rgba(255,69,58,0.12)",
                 borderWidth: 1,
                 borderColor: "rgba(255,69,58,0.25)",
+                marginHorizontal: 8,
               }}
             >
-              <Text style={{ color: "#ff453a", fontSize: 13 }}>{error}</Text>
+              <Text style={{ color: "#ff453a", fontSize: 13, textAlign: "center" }}>{error}</Text>
             </View>
           ) : null}
 
-          <Pressable
-            onPress={submit}
-            style={({ pressed }) => ({
-              paddingVertical: 18,
-              borderRadius: 999,
-              backgroundColor: "#0a84ff",
-              alignItems: "center",
-              shadowColor: "#0a84ff",
-              shadowOffset: { width: 0, height: 12 },
-              shadowOpacity: 0.5,
-              shadowRadius: 24,
-              elevation: 8,
-              transform: [{ scale: pressed ? 0.97 : 1 }],
-            })}
-          >
-            <Text style={{ color: "#fff", fontSize: 17, fontWeight: "700", letterSpacing: -0.2 }}>
-              Start analysis
+          {/* Bottom microcopy — sets expectation but no second button. */}
+          <View style={{ marginTop: 36, alignItems: "center" }}>
+            <Text style={{ color: "rgba(255,255,255,0.4)", fontSize: 12, textAlign: "center" }}>
+              Pick a country to start.{"\n"}
+              Takes 15 seconds · No commitment.
             </Text>
-          </Pressable>
-          <Text
-            style={{
-              marginTop: 10,
-              color: "rgba(255,255,255,0.45)",
-              fontSize: 11,
-              textAlign: "center",
-            }}
-          >
-            Takes 15 seconds · No commitment
-          </Text>
-        </View>
+          </View>
+
+          <View style={{ height: insets.bottom + 12 }} />
+        </ScrollView>
       </SafeAreaView>
 
       <CountryPicker
         visible={pickerOpen}
         selected={selectedCountry}
-        onSelect={(c) => setSelectedCountry(c)}
+        onSelect={(c) => {
+          // The picker IS the start button — closing it kicks off the
+          // analysis with whatever country the user just tapped.
+          setSelectedCountry(c);
+          setPickerOpen(false);
+          // Tiny delay so the user sees the sheet collapse before the
+          // loading screen takes over.
+          setTimeout(() => startAnalysis(c), 220);
+        }}
         onClose={() => setPickerOpen(false)}
       />
     </View>
@@ -443,7 +387,7 @@ function CountryPicker({
   onClose,
 }: {
   visible: boolean;
-  selected: Country;
+  selected: Country | null;
   onSelect: (c: Country) => void;
   onClose: () => void;
 }) {
@@ -456,30 +400,61 @@ function CountryPicker({
     return COUNTRIES.filter((c) => c.name.toLowerCase().includes(q));
   }, [query]);
 
+  // Reset search every time the sheet opens
+  useEffect(() => {
+    if (!visible) setQuery("");
+  }, [visible]);
+
   return (
-    <Modal visible={visible} transparent animationType="slide" statusBarTranslucent onRequestClose={onClose}>
+    <Modal
+      visible={visible}
+      transparent
+      animationType="slide"
+      statusBarTranslucent
+      onRequestClose={onClose}
+    >
       <TouchableWithoutFeedback onPress={onClose}>
-        <View style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.55)", justifyContent: "flex-end" }}>
+        <View style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.6)", justifyContent: "flex-end" }}>
           <TouchableWithoutFeedback>
             <View
               style={{
                 backgroundColor: "#fff",
-                borderTopLeftRadius: 28,
-                borderTopRightRadius: 28,
-                paddingBottom: insets.bottom + 8,
-                maxHeight: "80%",
+                borderTopLeftRadius: 32,
+                borderTopRightRadius: 32,
+                paddingBottom: insets.bottom + 12,
+                maxHeight: "85%",
+                shadowColor: "#000",
+                shadowOffset: { width: 0, height: -8 },
+                shadowOpacity: 0.25,
+                shadowRadius: 30,
+                elevation: 16,
               }}
             >
-              <View style={{ alignItems: "center", paddingTop: 14, paddingBottom: 2 }}>
-                <View style={{ width: 36, height: 4, borderRadius: 2, backgroundColor: "#e5e7eb" }} />
+              {/* Drag handle */}
+              <View style={{ alignItems: "center", paddingTop: 12, paddingBottom: 6 }}>
+                <View style={{ width: 40, height: 5, borderRadius: 3, backgroundColor: "#e5e7eb" }} />
               </View>
+
+              {/* Title */}
+              <View style={{ paddingHorizontal: 24, paddingTop: 8, paddingBottom: 8 }}>
+                <Text style={{ fontSize: 22, fontWeight: "700", color: "#000", letterSpacing: -0.6 }}>
+                  Where do you want to go?
+                </Text>
+                <Text style={{ marginTop: 4, fontSize: 13, color: "#86868b" }}>
+                  Tap a country to start your analysis.
+                </Text>
+              </View>
+
+              {/* Search */}
               <View
                 style={{
                   flexDirection: "row",
                   alignItems: "center",
-                  margin: 16,
+                  marginHorizontal: 20,
+                  marginTop: 8,
+                  marginBottom: 12,
                   paddingHorizontal: 14,
-                  paddingVertical: 10,
+                  paddingVertical: 12,
                   backgroundColor: "#f2f2f7",
                   borderRadius: 14,
                   gap: 10,
@@ -498,41 +473,53 @@ function CountryPicker({
                   style={{ flex: 1, fontSize: 15, color: "#000", padding: 0 }}
                 />
               </View>
-              <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+
+              <ScrollView
+                showsVerticalScrollIndicator={false}
+                keyboardShouldPersistTaps="handled"
+                contentContainerStyle={{ paddingBottom: 8 }}
+              >
                 {filtered.map((c, i) => {
-                  const isSelected = selected.code === c.code;
+                  const isSelected = selected?.code === c.code;
+                  const isBest = c.code === "BEST";
                   return (
                     <Pressable
                       key={c.code}
                       onPress={() => {
                         Haptics.selectionAsync().catch(() => undefined);
                         onSelect(c);
-                        setTimeout(() => onClose(), 80);
                       }}
                       android_ripple={{ color: "#f2f2f7" }}
-                      style={{
+                      style={({ pressed }) => ({
                         flexDirection: "row",
                         alignItems: "center",
-                        paddingHorizontal: 20,
-                        paddingVertical: 14,
-                        backgroundColor: isSelected ? "#eff6ff" : "#fff",
+                        paddingHorizontal: 22,
+                        paddingVertical: 16,
+                        backgroundColor: pressed ? "#eff6ff" : isSelected ? "#eff6ff" : "#fff",
                         borderBottomWidth: i < filtered.length - 1 ? 1 : 0,
                         borderBottomColor: "#f3f4f6",
-                      }}
+                      })}
                     >
-                      <Text style={{ fontSize: 24, marginRight: 14 }}>{c.flag}</Text>
-                      <Text
-                        style={{
-                          flex: 1,
-                          fontSize: 15,
-                          fontWeight: isSelected ? "700" : "400",
-                          color: isSelected ? "#0a84ff" : "#000",
-                        }}
-                      >
-                        {c.name}
-                      </Text>
+                      <Text style={{ fontSize: 28, marginRight: 16 }}>{c.flag}</Text>
+                      <View style={{ flex: 1 }}>
+                        <Text
+                          style={{
+                            fontSize: 16,
+                            fontWeight: "600",
+                            color: isSelected ? "#0a84ff" : "#000",
+                            letterSpacing: -0.2,
+                          }}
+                        >
+                          {isBest ? "Best match" : c.name}
+                        </Text>
+                        {isBest ? (
+                          <Text style={{ fontSize: 12, color: "#86868b", marginTop: 2 }}>
+                            Let AI pick the country with the highest fit.
+                          </Text>
+                        ) : null}
+                      </View>
                       {isSelected ? (
-                        <Svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="#0a84ff" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
+                        <Svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke="#0a84ff" strokeWidth={2.6} strokeLinecap="round" strokeLinejoin="round">
                           <Path d="M5 13l4 4L19 7" />
                         </Svg>
                       ) : null}
