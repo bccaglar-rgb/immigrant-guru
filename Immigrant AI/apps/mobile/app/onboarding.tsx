@@ -332,41 +332,78 @@ function LanguageStep({ initial, onNext }: { initial: string; onNext: (lang: str
   const [picked, setPicked] = useState<string | null>(initial || null);
 
   return (
-    <ScrollView contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: 40, flexGrow: 1 }} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
-      <Question
-        title="What's your language?"
-        helper="We'll show your plan in the language you pick."
-      />
-      <View style={{ marginTop: 28, flexDirection: "row", flexWrap: "wrap", gap: 10 }}>
-        {LANGUAGES.map((l) => {
+    <ScrollView
+      contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 48, flexGrow: 1 }}
+      keyboardShouldPersistTaps="handled"
+      showsVerticalScrollIndicator={false}
+    >
+      <Question title="Choose your language" helper="We'll show your plan in this language." />
+      <View
+        style={{
+          marginTop: 36,
+          flexDirection: "row",
+          flexWrap: "wrap",
+          rowGap: 14,
+          columnGap: 14,
+          justifyContent: "center",
+        }}
+      >
+        {LANGUAGES.map((l, i) => {
           const isPicked = picked === l.code;
           return (
-            <Pressable
+            <Animated.View
               key={l.code}
-              onPress={() => {
-                Haptics.selectionAsync().catch(() => undefined);
-                setPicked(l.code);
-                setTimeout(() => onNext(l.code), 220);
-              }}
-              style={({ pressed }) => ({
-                flexBasis: "47%",
-                flexGrow: 1,
-                padding: 18,
-                borderRadius: 22,
-                backgroundColor: isPicked ? "#0a84ff" : "#f2f2f7",
-                borderWidth: 1.5,
-                borderColor: isPicked ? "#0a84ff" : "transparent",
-                transform: [{ scale: pressed ? 0.97 : 1 }],
-              })}
+              entering={FadeInUp.duration(380).delay(40 * i).springify().damping(20)}
+              style={{ flexBasis: "47%", flexGrow: 0 }}
             >
-              <Text style={{ fontSize: 32, marginBottom: 6 }}>{l.flag}</Text>
-              <Text style={{ fontSize: 17, fontWeight: "700", color: isPicked ? "#fff" : "#000", letterSpacing: -0.3 }}>
-                {l.native}
-              </Text>
-              <Text style={{ fontSize: 12, color: isPicked ? "rgba(255,255,255,0.75)" : "#86868b", marginTop: 2 }}>
-                {l.en}
-              </Text>
-            </Pressable>
+              <Pressable
+                onPress={() => {
+                  Haptics.selectionAsync().catch(() => undefined);
+                  setPicked(l.code);
+                  setTimeout(() => onNext(l.code), 220);
+                }}
+                style={({ pressed }) => ({
+                  paddingVertical: 22,
+                  paddingHorizontal: 18,
+                  borderRadius: 24,
+                  backgroundColor: isPicked ? "#0a84ff" : "#fff",
+                  borderWidth: 1,
+                  borderColor: isPicked ? "#0a84ff" : "#ececec",
+                  alignItems: "center",
+                  shadowColor: isPicked ? "#0a84ff" : "#000",
+                  shadowOffset: { width: 0, height: isPicked ? 8 : 2 },
+                  shadowOpacity: isPicked ? 0.25 : 0.04,
+                  shadowRadius: isPicked ? 14 : 6,
+                  elevation: isPicked ? 6 : 1,
+                  transform: [{ scale: pressed ? 0.97 : 1 }],
+                })}
+              >
+                <Text style={{ fontSize: 40, marginBottom: 10 }}>{l.flag}</Text>
+                <Text
+                  style={{
+                    fontSize: 17,
+                    fontWeight: "700",
+                    color: isPicked ? "#fff" : "#000",
+                    letterSpacing: -0.3,
+                    textAlign: "center",
+                  }}
+                  numberOfLines={1}
+                >
+                  {l.native}
+                </Text>
+                <Text
+                  style={{
+                    fontSize: 12,
+                    color: isPicked ? "rgba(255,255,255,0.75)" : "#86868b",
+                    marginTop: 4,
+                    textAlign: "center",
+                  }}
+                  numberOfLines={1}
+                >
+                  {l.en}
+                </Text>
+              </Pressable>
+            </Animated.View>
           );
         })}
       </View>
@@ -392,29 +429,40 @@ function NameStep({ initial, onNext }: { initial: string; onNext: (v: string) =>
   };
 
   return (
-    <ScrollView contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: 40, flexGrow: 1 }} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+    <ScrollView
+      contentContainerStyle={{ paddingHorizontal: 28, paddingBottom: 40, flexGrow: 1 }}
+      keyboardShouldPersistTaps="handled"
+      showsVerticalScrollIndicator={false}
+    >
       <Question title="What should we call you?" helper="Your first name is enough." />
-      <TextInput
-        ref={inputRef}
-        value={name}
-        onChangeText={setName}
-        placeholder="Burak"
-        placeholderTextColor="#c7c7cc"
-        returnKeyType="next"
-        onSubmitEditing={submit}
-        autoCapitalize="words"
-        autoCorrect={false}
-        style={{
-          marginTop: 32,
-          fontSize: 36,
-          fontWeight: "700",
-          color: "#000",
-          letterSpacing: -1,
-          paddingVertical: 16,
-          borderBottomWidth: 2,
-          borderBottomColor: "#0a84ff",
-        }}
-      />
+      <View style={{ marginTop: 44, alignItems: "center" }}>
+        <TextInput
+          ref={inputRef}
+          value={name}
+          onChangeText={setName}
+          placeholder="Your name"
+          placeholderTextColor="#c7c7cc"
+          returnKeyType="next"
+          onSubmitEditing={submit}
+          autoCapitalize="words"
+          autoCorrect={false}
+          // Center-aligned, bigger touch area, no underline that can crop
+          // descenders. Reduced fontSize keeps long names visible without
+          // tail-cropping.
+          style={{
+            width: "100%",
+            fontSize: 30,
+            fontWeight: "700",
+            color: "#000",
+            letterSpacing: -0.4,
+            textAlign: "center",
+            paddingVertical: 18,
+            paddingHorizontal: 16,
+            backgroundColor: "#f2f2f7",
+            borderRadius: 22,
+          }}
+        />
+      </View>
       <ContinueButton disabled={name.trim().length < 1} onPress={submit} />
     </ScrollView>
   );
@@ -441,34 +489,62 @@ function CountryStep({
   );
 
   return (
-    <ScrollView contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: 40, flexGrow: 1 }} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+    <ScrollView
+      contentContainerStyle={{ paddingHorizontal: 28, paddingBottom: 40, flexGrow: 1 }}
+      keyboardShouldPersistTaps="handled"
+      showsVerticalScrollIndicator={false}
+    >
       <Question title={question} helper={helper} />
-      <Pressable
-        onPress={() => {
-          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => undefined);
-          setPickerOpen(true);
-        }}
-        style={({ pressed }) => ({
-          marginTop: 32,
-          padding: 24,
-          borderRadius: 24,
-          backgroundColor: pickedCountry ? "#0a84ff" : "#f2f2f7",
-          flexDirection: "row",
-          alignItems: "center",
-          gap: 18,
-          transform: [{ scale: pressed ? 0.98 : 1 }],
-        })}
-      >
-        <Text style={{ fontSize: 44 }}>{pickedCountry ? pickedCountry.flag : "🌍"}</Text>
-        <View style={{ flex: 1 }}>
-          <Text style={{ fontSize: 11, color: pickedCountry ? "rgba(255,255,255,0.75)" : "#86868b", letterSpacing: 1.2, textTransform: "uppercase", marginBottom: 4 }}>
+      <View style={{ marginTop: 44, alignItems: "center" }}>
+        <Pressable
+          onPress={() => {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => undefined);
+            setPickerOpen(true);
+          }}
+          style={({ pressed }) => ({
+            width: "100%",
+            paddingVertical: 28,
+            paddingHorizontal: 24,
+            borderRadius: 28,
+            backgroundColor: pickedCountry ? "#0a84ff" : "#fff",
+            borderWidth: 1,
+            borderColor: pickedCountry ? "#0a84ff" : "#ececec",
+            alignItems: "center",
+            shadowColor: pickedCountry ? "#0a84ff" : "#000",
+            shadowOffset: { width: 0, height: pickedCountry ? 12 : 3 },
+            shadowOpacity: pickedCountry ? 0.28 : 0.05,
+            shadowRadius: pickedCountry ? 20 : 8,
+            elevation: pickedCountry ? 6 : 1,
+            transform: [{ scale: pressed ? 0.98 : 1 }],
+          })}
+        >
+          <Text style={{ fontSize: 64, marginBottom: 12 }}>
+            {pickedCountry ? pickedCountry.flag : "🌍"}
+          </Text>
+          <Text
+            style={{
+              fontSize: 11,
+              color: pickedCountry ? "rgba(255,255,255,0.75)" : "#86868b",
+              letterSpacing: 1.6,
+              textTransform: "uppercase",
+              marginBottom: 6,
+            }}
+          >
             {pickedCountry ? "Selected" : "Tap to choose"}
           </Text>
-          <Text style={{ fontSize: 24, fontWeight: "700", color: pickedCountry ? "#fff" : "#000", letterSpacing: -0.6 }}>
+          <Text
+            style={{
+              fontSize: 22,
+              fontWeight: "700",
+              color: pickedCountry ? "#fff" : "#000",
+              letterSpacing: -0.5,
+              textAlign: "center",
+            }}
+          >
             {pickedCountry ? pickedCountry.name : "Choose a country"}
           </Text>
-        </View>
-      </Pressable>
+        </Pressable>
+      </View>
 
       <ContinueButton
         disabled={!pickedCountry}
@@ -672,52 +748,89 @@ function ProfessionStep({ initial, onNext }: { initial: string; onNext: (v: stri
   };
 
   return (
-    <ScrollView contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: 40, flexGrow: 1 }} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
-      <Question title="What do you do?" helper="Tap a suggestion or type your own. We use this to match work-visa programs." />
-      <TextInput
-        value={text}
-        onChangeText={setText}
-        placeholder="Software Engineer"
-        placeholderTextColor="#c7c7cc"
-        returnKeyType="go"
-        onSubmitEditing={submitText}
-        autoCapitalize="words"
-        autoCorrect={false}
+    <ScrollView
+      contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: 48, flexGrow: 1 }}
+      keyboardShouldPersistTaps="handled"
+      showsVerticalScrollIndicator={false}
+    >
+      <Question title="What do you do?" helper="Tap a suggestion or type your own." />
+      <View style={{ marginTop: 36 }}>
+        <TextInput
+          value={text}
+          onChangeText={setText}
+          placeholder="Type your role..."
+          placeholderTextColor="#c7c7cc"
+          returnKeyType="go"
+          onSubmitEditing={submitText}
+          autoCapitalize="words"
+          autoCorrect={false}
+          style={{
+            fontSize: 22,
+            fontWeight: "700",
+            color: "#000",
+            letterSpacing: -0.4,
+            textAlign: "center",
+            paddingVertical: 18,
+            paddingHorizontal: 18,
+            backgroundColor: "#f2f2f7",
+            borderRadius: 22,
+          }}
+        />
+      </View>
+      <Text
         style={{
-          marginTop: 28,
-          fontSize: 28,
-          fontWeight: "700",
-          color: "#000",
-          letterSpacing: -0.6,
-          paddingVertical: 14,
-          borderBottomWidth: 2,
-          borderBottomColor: "#0a84ff",
+          marginTop: 24,
+          fontSize: 11,
+          color: "#86868b",
+          letterSpacing: 1.6,
+          textTransform: "uppercase",
+          textAlign: "center",
         }}
-      />
-      <Text style={{ marginTop: 18, fontSize: 11, color: "#86868b", letterSpacing: 1.4, textTransform: "uppercase" }}>
-        Suggestions — tap to pick
+      >
+        Or tap a suggestion
       </Text>
-      <View style={{ marginTop: 12, flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
-        {PROFESSION_QUICK.map((p) => (
-          <Pressable
-            key={p}
-            onPress={() => {
-              Haptics.selectionAsync().catch(() => undefined);
-              setText(p);
-              // Auto-advance — same tap-and-flow rhythm as the choice cards.
-              setTimeout(() => onNext(p), 220);
-            }}
-            style={({ pressed }) => ({
-              paddingHorizontal: 14,
-              paddingVertical: 9,
-              borderRadius: 999,
-              backgroundColor: text === p ? "#0a84ff" : "#f2f2f7",
-              opacity: pressed ? 0.7 : 1,
-            })}
-          >
-            <Text style={{ fontSize: 13, fontWeight: "600", color: text === p ? "#fff" : "#000" }}>{p}</Text>
-          </Pressable>
-        ))}
+      <View
+        style={{
+          marginTop: 14,
+          flexDirection: "row",
+          flexWrap: "wrap",
+          rowGap: 10,
+          columnGap: 10,
+          justifyContent: "center",
+        }}
+      >
+        {PROFESSION_QUICK.map((p, i) => {
+          const isPicked = text === p;
+          return (
+            <Animated.View key={p} entering={FadeInUp.duration(280).delay(20 * i).springify().damping(20)}>
+              <Pressable
+                onPress={() => {
+                  Haptics.selectionAsync().catch(() => undefined);
+                  setText(p);
+                  setTimeout(() => onNext(p), 220);
+                }}
+                style={({ pressed }) => ({
+                  paddingHorizontal: 16,
+                  paddingVertical: 11,
+                  borderRadius: 999,
+                  backgroundColor: isPicked ? "#0a84ff" : "#fff",
+                  borderWidth: 1,
+                  borderColor: isPicked ? "#0a84ff" : "#ececec",
+                  shadowColor: isPicked ? "#0a84ff" : "#000",
+                  shadowOffset: { width: 0, height: isPicked ? 4 : 1 },
+                  shadowOpacity: isPicked ? 0.18 : 0.04,
+                  shadowRadius: isPicked ? 8 : 4,
+                  elevation: isPicked ? 3 : 1,
+                  transform: [{ scale: pressed ? 0.96 : 1 }],
+                })}
+              >
+                <Text style={{ fontSize: 14, fontWeight: "600", color: isPicked ? "#fff" : "#1f2937" }}>
+                  {p}
+                </Text>
+              </Pressable>
+            </Animated.View>
+          );
+        })}
       </View>
     </ScrollView>
   );
@@ -766,13 +879,20 @@ function ChoiceStep<T extends string>({
   const [picked, setPicked] = useState<T | null>(initial);
 
   return (
-    <ScrollView contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: 40, flexGrow: 1 }} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+    <ScrollView
+      contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: 48, flexGrow: 1 }}
+      keyboardShouldPersistTaps="handled"
+      showsVerticalScrollIndicator={false}
+    >
       <Question title={question} helper={helper} />
-      <View style={{ marginTop: 28, gap: 12 }}>
+      <View style={{ marginTop: 36, gap: 12 }}>
         {options.map((o, i) => {
           const isPicked = picked === o.value;
           return (
-            <Animated.View key={o.value} entering={FadeInUp.delay(80 * i).springify().damping(20)}>
+            <Animated.View
+              key={o.value}
+              entering={FadeInUp.duration(380).delay(60 * i).springify().damping(20)}
+            >
               <Pressable
                 onPress={() => {
                   Haptics.selectionAsync().catch(() => undefined);
@@ -780,34 +900,50 @@ function ChoiceStep<T extends string>({
                   setTimeout(() => onNext(o.value), 220);
                 }}
                 style={({ pressed }) => ({
-                  paddingVertical: 18,
+                  paddingVertical: 20,
                   paddingHorizontal: 22,
                   borderRadius: 22,
-                  backgroundColor: isPicked ? "#0a84ff" : "#f2f2f7",
-                  borderWidth: 1.5,
-                  borderColor: isPicked ? "#0a84ff" : "transparent",
+                  backgroundColor: isPicked ? "#0a84ff" : "#fff",
+                  borderWidth: 1,
+                  borderColor: isPicked ? "#0a84ff" : "#ececec",
                   flexDirection: "row",
                   alignItems: "center",
                   gap: 16,
+                  shadowColor: isPicked ? "#0a84ff" : "#000",
+                  shadowOffset: { width: 0, height: isPicked ? 8 : 2 },
+                  shadowOpacity: isPicked ? 0.22 : 0.04,
+                  shadowRadius: isPicked ? 14 : 6,
+                  elevation: isPicked ? 5 : 1,
                   transform: [{ scale: pressed ? 0.98 : 1 }],
                 })}
               >
-                <Text style={{ fontSize: 30 }}>{o.emoji}</Text>
+                <Text style={{ fontSize: 28 }}>{o.emoji}</Text>
                 <Text
                   style={{
                     flex: 1,
-                    fontSize: 19,
+                    fontSize: 18,
                     fontWeight: "700",
                     color: isPicked ? "#fff" : "#000",
-                    letterSpacing: -0.4,
+                    letterSpacing: -0.3,
                   }}
                 >
                   {o.label}
                 </Text>
                 {isPicked && (
-                  <Svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round">
-                    <Path d="M5 13l4 4L19 7" />
-                  </Svg>
+                  <View
+                    style={{
+                      width: 26,
+                      height: 26,
+                      borderRadius: 13,
+                      backgroundColor: "rgba(255,255,255,0.22)",
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
+                    <Svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth={3.4} strokeLinecap="round" strokeLinejoin="round">
+                      <Path d="M5 13l4 4L19 7" />
+                    </Svg>
+                  </View>
                 )}
               </Pressable>
             </Animated.View>
@@ -833,7 +969,13 @@ function DoneStep({ firstName, onFinish }: { firstName: string; onFinish: () => 
       -1,
       true
     );
-  }, []);
+    // Hold the celebration for 2 s, then bounce to the dashboard. The
+    // CTA stays in case the user wants to skip the wait.
+    const t = setTimeout(() => {
+      onFinish();
+    }, 2000);
+    return () => clearTimeout(t);
+  }, [onFinish]);
   const sealStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }, { rotate: `${rotate.value}deg` }],
   }));
@@ -874,14 +1016,37 @@ function DoneStep({ firstName, onFinish }: { firstName: string; onFinish: () => 
 
 // ── Reusable bits ────────────────────────────────────────────────────────────
 
-function Question({ title, helper }: { title: string; helper?: string }) {
+function Question({ title, helper, centered = true }: { title: string; helper?: string; centered?: boolean }) {
+  // Centered headers feel calmer in a one-question-per-screen flow. Each
+  // step still picks its own alignment for the answer area below.
   return (
-    <View style={{ marginTop: 12 }}>
-      <Animated.Text entering={FadeInUp.duration(380).springify().damping(18)} style={{ fontSize: 34, fontWeight: "700", color: "#000", letterSpacing: -1.2, lineHeight: 40 }}>
+    <View style={{ marginTop: 16, alignItems: centered ? "center" : "flex-start" }}>
+      <Animated.Text
+        entering={FadeInUp.duration(380).springify().damping(18)}
+        style={{
+          fontSize: 30,
+          fontWeight: "700",
+          color: "#000",
+          letterSpacing: -1,
+          lineHeight: 36,
+          textAlign: centered ? "center" : "left",
+          maxWidth: 340,
+        }}
+      >
         {title}
       </Animated.Text>
       {helper ? (
-        <Animated.Text entering={FadeInUp.duration(380).delay(80).springify().damping(18)} style={{ marginTop: 10, fontSize: 16, lineHeight: 23, color: "#86868b" }}>
+        <Animated.Text
+          entering={FadeInUp.duration(380).delay(80).springify().damping(18)}
+          style={{
+            marginTop: 12,
+            fontSize: 15,
+            lineHeight: 22,
+            color: "#86868b",
+            textAlign: centered ? "center" : "left",
+            maxWidth: 320,
+          }}
+        >
           {helper}
         </Animated.Text>
       ) : null}
