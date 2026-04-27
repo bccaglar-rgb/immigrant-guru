@@ -10,8 +10,9 @@ import { useAuth } from "@/lib/auth";
 import { getOfferings, purchasePackage, restorePurchases } from "@/lib/revenue-cat";
 
 export default function PaywallScreen() {
-  const { required } = useLocalSearchParams<{ required?: string }>();
+  const { required, redirectTo } = useLocalSearchParams<{ required?: string; redirectTo?: string }>();
   const isRequired = required === "true";
+  const successDest = (redirectTo && redirectTo.startsWith("/")) ? redirectTo : "/(tabs)";
 
   const refreshUser = useAuth((s) => s.refreshUser);
   const signOut = useAuth((s) => s.signOut);
@@ -38,7 +39,7 @@ export default function PaywallScreen() {
       return;
     }
     await refreshUser();
-    router.replace("/(tabs)");
+    router.replace(successDest as never);
   };
 
   const onRestore = async () => {
@@ -46,7 +47,7 @@ export default function PaywallScreen() {
     await restorePurchases();
     await refreshUser();
     setRestoring(false);
-    router.replace("/(tabs)");
+    router.replace(successDest as never);
   };
 
   const dismiss = () => {
