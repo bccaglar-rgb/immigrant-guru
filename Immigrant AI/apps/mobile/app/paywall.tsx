@@ -153,22 +153,23 @@ export default function PaywallScreen() {
           </Pressable>
         </View>
 
+        {/* Scroll only the marketing content; the CTA is pinned. */}
         <ScrollView
-          contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: 28, flexGrow: 1 }}
+          contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: 24 }}
           showsVerticalScrollIndicator={false}
         >
           {/* Hero */}
-          <View style={{ alignItems: "center", marginTop: 24 }}>
+          <View style={{ alignItems: "center", marginTop: 16 }}>
             <SparkleSeal />
             <Animated.Text
               entering={FadeInDown.duration(700).delay(120).springify().damping(18)}
               style={{
-                marginTop: 28,
+                marginTop: 22,
                 color: "#fff",
-                fontSize: 44,
+                fontSize: 36,
                 fontWeight: "700",
-                letterSpacing: -1.6,
-                lineHeight: 48,
+                letterSpacing: -1.4,
+                lineHeight: 40,
                 textAlign: "center",
               }}
             >
@@ -177,24 +178,24 @@ export default function PaywallScreen() {
             <Animated.Text
               entering={FadeInDown.duration(700).delay(260).springify().damping(18)}
               style={{
-                marginTop: 16,
+                marginTop: 12,
                 color: "rgba(255,255,255,0.62)",
-                fontSize: 17,
-                lineHeight: 25,
+                fontSize: 15,
+                lineHeight: 22,
                 textAlign: "center",
                 maxWidth: 320,
               }}
             >
-              One payment. Lifetime access.{"\n"}AI maps your path. You move with clarity.
+              One payment. Lifetime access.
             </Animated.Text>
           </View>
 
           {/* Plan card */}
           <Animated.View
-            entering={FadeInUp.duration(700).delay(420).springify().damping(20)}
+            entering={FadeInUp.duration(700).delay(360).springify().damping(20)}
             style={{
-              marginTop: 36,
-              padding: 26,
+              marginTop: 28,
+              padding: 22,
               borderRadius: 28,
               backgroundColor: "rgba(255,255,255,0.06)",
               borderWidth: 1,
@@ -202,116 +203,124 @@ export default function PaywallScreen() {
             }}
           >
             <View style={{ flexDirection: "row", alignItems: "flex-end", gap: 8 }}>
-              <Text style={{ color: "#fff", fontSize: 56, fontWeight: "700", letterSpacing: -2.4, lineHeight: 56 }}>
+              <Text style={{ color: "#fff", fontSize: 48, fontWeight: "700", letterSpacing: -2, lineHeight: 50 }}>
                 {displayPrice}
               </Text>
               <Text style={{ color: "rgba(255,255,255,0.55)", fontSize: 14, marginBottom: 10 }}>
                 one-time
               </Text>
             </View>
-            <Text style={{ marginTop: 4, color: "#7ab8ff", fontSize: 13, fontWeight: "700", letterSpacing: 1.4, textTransform: "uppercase" }}>
+            <Text style={{ marginTop: 4, color: "#7ab8ff", fontSize: 12, fontWeight: "700", letterSpacing: 1.4, textTransform: "uppercase" }}>
               Lifetime access
             </Text>
 
-            <View style={{ marginTop: 22, gap: 12 }}>
+            <View style={{ marginTop: 18, gap: 10 }}>
               {BENEFITS.map((b, i) => (
                 <Animated.View
                   key={b}
-                  entering={FadeIn.duration(500).delay(540 + i * 70)}
+                  entering={FadeIn.duration(500).delay(440 + i * 60)}
                   style={{ flexDirection: "row", alignItems: "flex-start", gap: 12 }}
                 >
                   <CheckBubble />
-                  <Text style={{ color: "rgba(255,255,255,0.88)", fontSize: 15, lineHeight: 22, flex: 1 }}>
+                  <Text style={{ color: "rgba(255,255,255,0.88)", fontSize: 14, lineHeight: 21, flex: 1 }}>
                     {b}
                   </Text>
                 </Animated.View>
               ))}
             </View>
           </Animated.View>
+        </ScrollView>
 
+        {/* Pinned bottom action sheet — always visible. */}
+        <View
+          style={{
+            paddingHorizontal: 24,
+            paddingTop: 14,
+            paddingBottom: 8,
+            backgroundColor: "rgba(0,0,0,0.6)",
+            borderTopWidth: 1,
+            borderTopColor: "rgba(255,255,255,0.06)",
+          }}
+        >
           {error ? (
             <View
               style={{
-                marginTop: 16,
-                paddingHorizontal: 16,
-                paddingVertical: 12,
-                borderRadius: 14,
+                marginBottom: 12,
+                paddingHorizontal: 14,
+                paddingVertical: 10,
+                borderRadius: 12,
                 backgroundColor: "rgba(255,69,58,0.12)",
                 borderWidth: 1,
                 borderColor: "rgba(255,69,58,0.25)",
               }}
             >
-              <Text style={{ color: "#ff453a", fontSize: 14 }}>{error}</Text>
+              <Text style={{ color: "#ff453a", fontSize: 13 }}>{error}</Text>
             </View>
           ) : null}
 
-          {/* Spacer pushes the CTA to the bottom on tall screens */}
-          <View style={{ flex: 1, minHeight: 18 }} />
-
-          {/* Primary CTA */}
-          <Animated.View
-            entering={FadeInUp.duration(700).delay(640).springify().damping(20)}
-            style={{ marginTop: 24 }}
+          <Pressable
+            onPress={buy}
+            disabled={purchasing || loading}
+            style={({ pressed }) => ({
+              paddingVertical: 18,
+              borderRadius: 999,
+              backgroundColor: purchasing || loading ? "rgba(255,255,255,0.14)" : "#0a84ff",
+              alignItems: "center",
+              shadowColor: "#0a84ff",
+              shadowOffset: { width: 0, height: 12 },
+              shadowOpacity: 0.45,
+              shadowRadius: 24,
+              elevation: 8,
+              transform: [{ scale: pressed ? 0.97 : 1 }],
+            })}
           >
-            <Pressable
-              onPress={buy}
-              disabled={purchasing || loading}
-              style={({ pressed }) => ({
-                paddingVertical: 18,
-                borderRadius: 999,
-                backgroundColor: purchasing || loading ? "rgba(255,255,255,0.14)" : "#0a84ff",
-                alignItems: "center",
-                shadowColor: "#0a84ff",
-                shadowOffset: { width: 0, height: 12 },
-                shadowOpacity: 0.45,
-                shadowRadius: 24,
-                elevation: 8,
-                transform: [{ scale: pressed ? 0.97 : 1 }],
-              })}
-            >
-              {purchasing ? (
-                <ActivityIndicator color="#fff" />
-              ) : loading ? (
-                <Text style={{ color: "rgba(255,255,255,0.6)", fontSize: 17, fontWeight: "700" }}>
-                  Loading…
-                </Text>
-              ) : (
-                <Text style={{ color: "#fff", fontSize: 17, fontWeight: "700", letterSpacing: -0.2 }}>
-                  Unlock for {displayPrice}
-                </Text>
-              )}
-            </Pressable>
-          </Animated.View>
+            {purchasing ? (
+              <ActivityIndicator color="#fff" />
+            ) : loading ? (
+              <Text style={{ color: "rgba(255,255,255,0.6)", fontSize: 17, fontWeight: "700" }}>
+                Loading…
+              </Text>
+            ) : (
+              <Text style={{ color: "#fff", fontSize: 17, fontWeight: "700", letterSpacing: -0.2 }}>
+                Unlock for {displayPrice}
+              </Text>
+            )}
+          </Pressable>
 
-          {/* Footer */}
-          <View style={{ marginTop: 16, alignItems: "center" }}>
-            <Text style={{ color: "rgba(255,255,255,0.45)", fontSize: 11, textAlign: "center", lineHeight: 16, paddingHorizontal: 12 }}>
-              One-time payment via the App Store. No auto-renewal.
-            </Text>
-            <View style={{ flexDirection: "row", gap: 16, marginTop: 10 }}>
-              <Pressable onPress={() => Linking.openURL("https://immigrant.guru/terms").catch(() => undefined)}>
-                <Text style={{ color: "rgba(255,255,255,0.5)", fontSize: 12 }}>Terms</Text>
-              </Pressable>
-              <Text style={{ color: "rgba(255,255,255,0.3)" }}>·</Text>
-              <Pressable onPress={() => Linking.openURL("https://immigrant.guru/privacy").catch(() => undefined)}>
-                <Text style={{ color: "rgba(255,255,255,0.5)", fontSize: 12 }}>Privacy</Text>
-              </Pressable>
-            </View>
+          <Text
+            style={{
+              marginTop: 10,
+              color: "rgba(255,255,255,0.45)",
+              fontSize: 11,
+              textAlign: "center",
+              lineHeight: 16,
+            }}
+          >
+            One-time payment via the App Store. No auto-renewal.
+          </Text>
+          <View style={{ flexDirection: "row", gap: 16, marginTop: 8, justifyContent: "center" }}>
+            <Pressable onPress={() => Linking.openURL("https://immigrant.guru/terms").catch(() => undefined)}>
+              <Text style={{ color: "rgba(255,255,255,0.5)", fontSize: 12 }}>Terms</Text>
+            </Pressable>
+            <Text style={{ color: "rgba(255,255,255,0.3)" }}>·</Text>
+            <Pressable onPress={() => Linking.openURL("https://immigrant.guru/privacy").catch(() => undefined)}>
+              <Text style={{ color: "rgba(255,255,255,0.5)", fontSize: 12 }}>Privacy</Text>
+            </Pressable>
             {isRequired ? (
-              <Pressable
-                onPress={async () => {
-                  await signOut();
-                  router.replace("/(auth)/sign-in");
-                }}
-                style={{ marginTop: 18, padding: 6 }}
-              >
-                <Text style={{ color: "rgba(255,255,255,0.5)", fontSize: 13 }}>
-                  Sign out
-                </Text>
-              </Pressable>
+              <>
+                <Text style={{ color: "rgba(255,255,255,0.3)" }}>·</Text>
+                <Pressable
+                  onPress={async () => {
+                    await signOut();
+                    router.replace("/(auth)/sign-in");
+                  }}
+                >
+                  <Text style={{ color: "rgba(255,255,255,0.5)", fontSize: 12 }}>Sign out</Text>
+                </Pressable>
+              </>
             ) : null}
           </View>
-        </ScrollView>
+        </View>
       </SafeAreaView>
     </View>
   );
