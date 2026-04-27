@@ -142,7 +142,7 @@ function Hero({ scrollY }: { scrollY: Animated.SharedValue<number> }) {
             entering={FadeInUp.duration(700).delay(620).springify().damping(20)}
             style={{ marginTop: 38, flexDirection: "row", gap: 12 }}
           >
-            <PrimaryCTA label="Get started" onPress={() => router.push("/(auth)/sign-up")} />
+            <PrimaryCTA label="Get started" onPress={() => router.push("/(auth)/sign-in")} />
             <GhostCTA label="Sign in" onPress={() => router.push("/(auth)/sign-in")} />
           </Animated.View>
         </Animated.View>
@@ -696,7 +696,7 @@ function FinalCta() {
             Ten minutes to your first plan.{"\n"}No spreadsheets. No guesswork.
           </Text>
           <View style={{ flexDirection: "row", gap: 12, marginTop: 36 }}>
-            <PrimaryCTA label="Get started" onPress={() => router.push("/(auth)/sign-up")} />
+            <PrimaryCTA label="Get started" onPress={() => router.push("/(auth)/sign-in")} />
             <GhostCTA label="Sign in" onPress={() => router.push("/(auth)/sign-in")} />
           </View>
         </View>
