@@ -253,6 +253,31 @@ export function isProfileComplete(profile: UserProfile | null | undefined): bool
   return REQUIRED_PROFILE_FIELDS.every((f) => isFilled(profile[f]));
 }
 
+/** Heuristic 0-100 readiness score combining profile completion with the
+ *  qualitative signals visa officers actually look at. Climbs as the user
+ *  fills the form so they always see something other than zero. */
+export function readinessScore(profile: UserProfile | null | undefined): number {
+  if (!profile) return 0;
+  let score = profileCompletionPct(profile) * 0.5; // up to 50 pts from completeness
+
+  const englishWeights: Record<string, number> = {
+    none: 0, basic: 6, intermediate: 12, advanced: 17, fluent: 20, native: 20
+  };
+  if (profile.english_level) score += englishWeights[profile.english_level] ?? 0;
+
+  const educationWeights: Record<string, number> = {
+    high_school: 4, vocational: 5, associate: 8, bachelor: 12, master: 16, doctorate: 18, other: 6
+  };
+  if (profile.education_level) score += educationWeights[profile.education_level] ?? 0;
+
+  if (isFilled(profile.profession)) score += 6;
+  if (profile.years_of_experience != null) {
+    score += Math.min(Math.max(profile.years_of_experience, 0), 6); // up to 6 pts
+  }
+
+  return Math.max(0, Math.min(100, Math.round(score)));
+}
+
 /** 0-100. Required fields weight 2x optional fields. */
 export function profileCompletionPct(profile: UserProfile | null | undefined): number {
   if (!profile) return 0;
