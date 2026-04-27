@@ -1,6 +1,6 @@
 import { router } from "expo-router";
 import * as Haptics from "expo-haptics";
-import { useState, useMemo } from "react";
+import { useEffect, useState, useMemo } from "react";
 import {
   ActivityIndicator,
   Modal,
@@ -17,6 +17,7 @@ import Svg, { Circle, Line, Path, Polyline } from "react-native-svg";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { api } from "@/lib/api-client";
+import { useAuth } from "@/lib/auth";
 
 // ── Country list ──────────────────────────────────────────────────────────────
 const COUNTRIES = [
@@ -273,10 +274,23 @@ function CountryPicker({
 
 // ── Screen ────────────────────────────────────────────────────────────────────
 export default function NewAnalysisScreen() {
+  const user = useAuth((s) => s.user);
+  const isPaid = Boolean(user?.plan && user.plan !== "free");
+
   const [selectedCountry, setSelectedCountry] = useState<Country | null>(null);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Free users hit the paywall before seeing the analysis form. Paywall
+  // bounces them back here on successful purchase via redirectTo.
+  useEffect(() => {
+    if (user && !isPaid) {
+      router.replace("/paywall?redirectTo=/analysis/new" as never);
+    }
+  }, [user, isPaid]);
+
+  if (!user || !isPaid) return null;
 
   const submit = async () => {
     setLoading(true);
